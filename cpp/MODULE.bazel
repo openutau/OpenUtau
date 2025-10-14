@@ -1,6 +1,8 @@
 """OpenUtau C++ module."""
 module(name = "openutau-cpp")
 
+bazel_dep(name = "bazel_skylib", version = "1.5.0")
+bazel_dep(name = "platforms", version = "0.0.8")
 bazel_dep(name = "abseil-cpp", version = "20240116.1", repo_name = "absl")
 bazel_dep(name = "googletest", version = "1.14.0", repo_name = "gtest")
 

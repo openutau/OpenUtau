@@ -8,7 +8,7 @@ test --define absl=1
 build:linux --cxxopt='-std=c++17'
 build:macos --cxxopt='-std=c++17'
 build:macos --macos_minimum_os=10.12
-build:windows --cxxopt='/std:c++17'
+# build:windows --cxxopt='/std:c++17'
 
 build:ubuntu-aarch64 --cxxopt='-std=c++17'
 build:ubuntu-aarch64 --linkopt='-lm'
