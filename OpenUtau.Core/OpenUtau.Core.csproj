@@ -39,6 +39,10 @@
   </ItemGroup>
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'false'">
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.16.3" />
+    <PackageReference Include="System.Formats.Asn1" Version="6.0.1" />
+  <PackageReference Include="System.Net.Http" Version="4.3.4" />
+  <PackageReference Include="System.Security.Cryptography.Xml" Version="6.0.1" />
+  <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Analysis\Crepe\Resources.Designer.cs">
