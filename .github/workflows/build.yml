@@ -49,7 +49,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - uses: repolevedavaj/install-nsis@v1.0.3
+      - name: Setup NSIS
+        uses: coolaj86/actions-setup-nsis@v1
         with:
           nsis-version: '3.11'
         if: ${{ matrix.arch.os == 'win' }}
