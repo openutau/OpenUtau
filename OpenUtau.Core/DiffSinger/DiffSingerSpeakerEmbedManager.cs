@@ -63,8 +63,12 @@ namespace OpenUtau.Core.DiffSinger
             if (speakerIndex >= 0) {
                 return speakerIndex;
             }
-            speakerIndex = dsConfig.speakers.FindIndex(
-                s => Path.GetFileName(s) == suffix);
+            speakerIndex = dsConfig.speakers.FindIndex(s => {
+                var spSegs = s.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                var sfSegs = suffix.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                return sfSegs.Length <= spSegs.Length
+                    && spSegs[^sfSegs.Length..].SequenceEqual(sfSegs);
+            });
             if (speakerIndex >= 0) {
                 return speakerIndex;
             }
