@@ -62,9 +62,15 @@ namespace OpenUtau.Core.DiffSinger
             if (speakerIndex >= 0) {
                 return speakerIndex;
             }
-            throw new Exception(
-                $"Speaker suffix \"{suffix}\" not found in dsConfig.speakers. " +
+            speakerIndex = dsConfig.speakers.FindIndex(
+                s => Path.GetFileName(s) == suffix);
+            if (speakerIndex >= 0) {
+                return speakerIndex;
+            }
+            Serilog.Log.Warning(
+                $"Speaker suffix \"{suffix}\" not found in dsConfig.speakers, falling back to first speaker. " +
                 $"Candidates: {string.Join(',', dsConfig.speakers)}.");
+            return 0;
         }
 
         //used by phonemizer (duration model)
