@@ -47,6 +47,15 @@ namespace OpenUtau.Core.Format {
             if (ext == ".aiff" || ext == ".aif" || ext == ".aifc") {
                 return new AiffFileReader(filepath);
             }
+            // M4A/AAC: MP4 container has a "ftyp" box at bytes 4–7
+            string ftyp = System.Text.Encoding.ASCII.GetString(buffer.AsSpan(4, 4));
+            if (ftyp == "ftyp" || ext == ".m4a" || ext == ".mp4") {
+#if WINDOWS
+                return new MediaFoundationReader(filepath);
+#else
+                return new FFmpegWaveReader(filepath);
+#endif
+            }
             throw new Exception("Unsupported audio file format.");
         }
 
