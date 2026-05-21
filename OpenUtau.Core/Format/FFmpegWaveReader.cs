@@ -36,8 +36,34 @@ namespace OpenUtau.Core.Format {
             if (proc.ExitCode != 0) {
                 throw new Exception($"ffmpeg failed to decode '{Path.GetFileName(filepath)}'.\n{stderrLog}");
             }
-            memStream.Seek(0, SeekOrigin.Begin);
+            // ffmpeg cannot seek back to fix WAV chunk sizes when writing to a non-seekable
+            // pipe, leaving them as 0 or 0xFFFFFFFF. Patch them now that the full size is known.
+            PatchWavHeader(memStream);
             return memStream;
+        }
+
+        private static void PatchWavHeader(MemoryStream stream) {
+            int total = (int)stream.Length;
+            // Fix RIFF chunk size at offset 4
+            stream.Position = 4;
+            stream.Write(BitConverter.GetBytes(total - 8), 0, 4);
+            // Scan sub-chunks starting after "RIFF" + size + "WAVE"
+            stream.Position = 12;
+            var id = new byte[4];
+            var sz = new byte[4];
+            while (stream.Position <= stream.Length - 8) {
+                stream.Read(id, 0, 4);
+                stream.Read(sz, 0, 4);
+                if (id[0] == 'd' && id[1] == 'a' && id[2] == 't' && id[3] == 'a') {
+                    stream.Position -= 4;
+                    stream.Write(BitConverter.GetBytes(total - (int)stream.Position - 4), 0, 4);
+                    break;
+                }
+                int chunkSize = BitConverter.ToInt32(sz, 0);
+                if (chunkSize < 0) break;
+                stream.Position += chunkSize;
+            }
+            stream.Position = 0;
         }
 
         public override WaveFormat WaveFormat => inner.WaveFormat;
