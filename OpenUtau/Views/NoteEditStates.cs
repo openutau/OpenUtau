@@ -300,6 +300,7 @@ namespace OpenUtau.App.Views {
         public readonly bool resizeNeighbor;
         public readonly bool fromStart;
         protected override string? commandNameKey => "command.note.edit";
+        public readonly bool ripple;
 
         public NoteResizeEditState(
             Control control,
