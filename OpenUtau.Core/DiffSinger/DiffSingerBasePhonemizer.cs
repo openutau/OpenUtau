@@ -47,17 +47,12 @@ namespace OpenUtau.Core.DiffSinger
         private bool _executeSetSinger(USinger singer) {
             this.singer = singer;
             if (singer == null) {
-                return false;
+                throw new Exception("Singer is null.");
             }
             if(singer.Location == null){
-                Log.Error("Singer location is null");
-                return false;
+                throw new Exception("Singer location is null.");
             }
-            if (File.Exists(Path.Join(singer.Location, "dsdur", "dsconfig.yaml"))) {
-                rootPath = Path.Combine(singer.Location, "dsdur");
-            } else {
-                rootPath = singer.Location;
-            }
+            rootPath = Path.Combine(singer.Location, "dsdur");
             //Load Config
             var configPath = Path.Join(rootPath, "dsconfig.yaml");
             try {
@@ -65,20 +60,19 @@ namespace OpenUtau.Core.DiffSinger
                 dsConfig = Yaml.DefaultDeserializer.Deserialize<DsConfig>(configTxt);
             } catch(Exception e) {
                 Log.Error(e, $"failed to load dsconfig from {configPath}");
-                return false;
+                throw new Exception($"Failed to load {configPath}", e);
             }
             //Load language id if needed
             if (dsConfig.use_lang_id) {
                 if (dsConfig.languages == null) {
-                    Log.Error("\"languages\" field is not specified in dsconfig.yaml");
-                    return false;
+                    throw new Exception("\"languages\" field is not specified in dsconfig.yaml");
                 }
                 var langIdPath = Path.Join(rootPath, dsConfig.languages);
                 try {
                     languageIds = DiffSingerUtils.LoadLanguageIds(langIdPath);
                 } catch (Exception e) {
                     Log.Error(e, $"failed to load language id from {langIdPath}");
-                    return false;
+                    throw new Exception($"Failed to load {langIdPath}", e);
                 }
             }
             this.frameMs = dsConfig.frameMs();
@@ -95,7 +89,7 @@ namespace OpenUtau.Core.DiffSinger
                 linguisticModel = new InferenceSession(linguisticModelBytes);
             } catch (Exception e) {
                 Log.Error(e, $"failed to load linguistic model from {linguisticModelPath}");
-                return false;
+                throw new Exception($"Failed to load {linguisticModelPath}", e);
             }
             var durationModelPath = Path.Join(rootPath, dsConfig.dur);
             try {
@@ -104,7 +98,7 @@ namespace OpenUtau.Core.DiffSinger
                 durationModel = new InferenceSession(durationModelBytes);
             } catch (Exception e) {
                 Log.Error(e, $"failed to load duration model from {durationModelPath}");
-                return false;
+                throw new Exception($"Failed to load {durationModelPath}", e);
             }
             return true;
         }
@@ -117,6 +111,7 @@ namespace OpenUtau.Core.DiffSinger
             var dictionaryNames = new string[] {GetDictionaryName(), "dsdict.yaml"};
             // Load dictionary from singer folder.
             G2pDictionary.Builder g2pBuilder = new G2pDictionary.Builder();
+            bool dictFound = false;
             foreach(var dictionaryName in dictionaryNames){
                 string dictionaryPath = Path.Combine(rootPath, dictionaryName);
                 if (File.Exists(dictionaryPath)) {
@@ -124,9 +119,16 @@ namespace OpenUtau.Core.DiffSinger
                         g2pBuilder.Load(File.ReadAllText(dictionaryPath)).Build();
                     } catch (Exception e) {
                         Log.Error(e, $"Failed to load {dictionaryPath}");
+                        throw;
                     }
+                    dictFound = true;
                     break;
                 }
+            }
+            if(!dictFound){
+                var triedPaths = string.Join(", ", dictionaryNames.Select(n => Path.Combine(rootPath, n)));
+                throw new FileNotFoundException(
+                    $"No dictionary file found. Tried: {triedPaths}");
             }
             //SP and AP should always be vowel
             g2pBuilder.AddSymbol("SP", true);
@@ -158,14 +160,21 @@ namespace OpenUtau.Core.DiffSinger
                 .ToArray();
         }
 
-        string[] GetSymbols(Note note) {
+        string[] GetRejectedSymbols(string phoneticHint) {
+            return phoneticHint.Split()
+                .Where(s => String.IsNullOrEmpty(ValidatePhoneme(s)))
+                .ToArray();
+        }
+
+        string[] GetSymbols(Note note, out string[] rejectedSymbols) {
+            rejectedSymbols = Array.Empty<string>();
             //priority:
             //1. phonetic hint
             //2. query from g2p dictionary
             //3. treat lyric as phonetic hint, including single phoneme
             //4. empty
             if (!string.IsNullOrEmpty(note.phoneticHint)) {
-                // Split space-separated symbols into an array.
+                rejectedSymbols = GetRejectedSymbols(note.phoneticHint);
                 return ParsePhoneticHint(note.phoneticHint);
             }
             // User has not provided hint, query g2p dictionary.
@@ -175,6 +184,7 @@ namespace OpenUtau.Core.DiffSinger
                 return g2presult;
             }
             //not found in g2p dictionary, treat lyric as phonetic hint
+            rejectedSymbols = GetRejectedSymbols(note.lyric);
             var lyricSplited = ParsePhoneticHint(note.lyric);
             if (lyricSplited.Length > 0) {
                 return lyricSplited;
@@ -182,13 +192,23 @@ namespace OpenUtau.Core.DiffSinger
             return new string[] { };
         }
 
-        string GetSpeakerAtIndex(Note note, int index){
+        string GetSpeakerAtIndex(Note note, int index) {
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == index) ?? default;
             var speaker = singer.Subbanks
-                .Where(subbank => subbank.Color == attr.voiceColor && subbank.toneSet.Contains(note.tone))
-                .FirstOrDefault();
-            if(speaker is null) {
-                return "";
+                .FirstOrDefault(subbank => subbank.Color == attr.voiceColor && subbank.toneSet.Contains(note.tone));
+            if (speaker is null) {
+                //Fall back to the first subbank matching the voice color
+                speaker = singer.Subbanks
+                    .FirstOrDefault(subbank => subbank.Color == attr.voiceColor);
+            }
+            if (speaker is null) {
+                //Fall back to the first defined subbank
+                speaker = singer.Subbanks.FirstOrDefault();
+            }
+            if (speaker is null) {
+                throw new Exception(
+                    $"No subbanks defined for singer \"{singer.Name}\". " +
+                    "Please check the singer's configuration.");
             }
             return speaker.Suffix;
         }
@@ -286,7 +306,7 @@ namespace OpenUtau.Core.DiffSinger
         int PhonemeTokenize(string phoneme){
             bool success = phonemeTokens.TryGetValue(phoneme, out int token);
             if(!success){
-                throw new Exception($"Phoneme \"{phoneme}\" isn't supported by timing model. Please check {Path.Combine(rootPath, dsConfig.phonemes)}");
+                throw new Exception($"Phoneme \"{phoneme}\" isn't supported by duration model. Please check {Path.Combine(rootPath, dsConfig.phonemes)}");
             }
             return token;
         }
@@ -306,8 +326,17 @@ namespace OpenUtau.Core.DiffSinger
             var wordFound = new bool[phrase.Length];
             foreach (int wordIndex in Enumerable.Range(0, phrase.Length)) {
                 Note[] word = phrase[wordIndex];
-                var symbols = GetSymbols(word[0]).Where(s => phonemeTokens.ContainsKey(s)).ToArray();
-                if (symbols == null || symbols.Length == 0) {
+                var rawSymbols = GetSymbols(word[0], out string[] rejectedSymbols);
+                var symbols = rawSymbols.Where(s => phonemeTokens.ContainsKey(s)).ToArray();
+                // Collect symbols that passed GetSymbols but failed phonemeTokens lookup
+                var tokensRejected = rawSymbols.Where(s => !phonemeTokens.ContainsKey(s));
+                rejectedSymbols = rejectedSymbols.Concat(tokensRejected).ToArray();
+                if (rejectedSymbols.Length > 0) {
+                    unrecognizedLyrics[word[0].position] = string.Join(" ", rejectedSymbols);
+                } else if (symbols.Length == 0) {
+                    unrecognizedLyrics[word[0].position] = word[0].lyric ?? string.Empty;
+                }
+                if (symbols.Length == 0) {
                     symbols = new string[] { defaultPause };
                     wordFound[wordIndex] = false;
                 } else {
@@ -433,7 +462,7 @@ namespace OpenUtau.Core.DiffSinger
                 Note[] word = phrase[wordIndex];
                 var noteResult = new List<Tuple<string, int>>();
                 if (!wordFound[wordIndex]){
-                    //partResult[word[0].position] = noteResult;
+                    partResult[word[0].position] = noteResult;
                     continue;
                 }
                 if (word[0].lyric.StartsWith("+")) {

@@ -14,16 +14,18 @@ namespace OpenUtau.Classic {
 
     public static class Ust {
         static readonly Encoding ShiftJIS = Encoding.GetEncoding("shift_jis");
+        static List<string> undefinedFlags = new List<string>();
+        static string tool2 = string.Empty;
 
         public static UProject Load(string[] files) {
             foreach (var file in files) {
                 if (Formats.DetectProjectFormat(file) != ProjectFormats.Ust) {
-                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("Multiple files must be all Ust files"));
-                    return null;
+                    throw new MessageCustomizableException("Multiple files must be all Ust files", "<translate:errors.failed.importustandothers>", new FileFormatException(), false);
                 }
             }
 
             var projects = new List<UProject>();
+            undefinedFlags.Clear();
             foreach (var file in files) {
                 var encoding = DetectEncoding(file);
                 using (var reader = new StreamReader(file, encoding)) {
@@ -46,6 +48,11 @@ namespace OpenUtau.Classic {
             }
             project.AfterLoad();
             project.ValidateFull();
+            if (undefinedFlags.Count > 0) {
+                var flags = string.Join(", ", undefinedFlags.Distinct());
+                var customEx = new MessageCustomizableException("Unable to import undefined flags within the project", $"<translate:errors.failed.importustflags>\n{flags}", new FileLoadException(), false);
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
+            }
             return project;
         }
 
@@ -171,13 +178,20 @@ namespace OpenUtau.Classic {
                         }
                         project.tracks[0].Singer = singer;
                         break;
+                    case "Tool2":
+                        tool2 = parts[1].Trim();
+                        break;
                     case "Flags":
                         var parser = new UstFlagParser();
                         var track = project.tracks[0];
                         foreach (var flag in parser.Parse(parts[1].Trim())) {
-                            var descriptor = project.expressions.Values.FirstOrDefault(exp => exp.flag == flag.Key).Clone();
-                            descriptor.CustomDefaultValue = flag.Value;
-                            track.TrackExpressions.Add(descriptor);
+                            var descriptor = project.expressions.Values.FirstOrDefault(exp => exp.flag == flag.Key)?.Clone();
+                            if (descriptor == null) {
+                                undefinedFlags.Add(flag.Key);
+                            } else {
+                                descriptor.CustomDefaultValue = flag.Value;
+                                track.TrackExpressions.Add(descriptor);
+                            }
                         }
                         break;
                 }
@@ -225,8 +239,24 @@ namespace OpenUtau.Classic {
             var parser = new UstFlagParser();
             var list = parser.Parse(flags);
             list.ForEach((flag) => {
+                if (flag.Key == "t") {
+                    switch (tool2) {
+                        case { } when tool2.StartsWith("resampler"):
+                        case { } when tool2.StartsWith("doppeltler"):
+                        case { } when tool2.StartsWith("f2resamp"):
+                        case { } when tool2.StartsWith("moresampler"):
+                            note.tuning = flag.Value;
+                            break;
+                        default: // fresamp11-14, model4, TIPS, tn_fnds, bkh01
+                            note.tuning = flag.Value * 10;
+                            break;
+                    }
+                    return;
+                }
                 var abbr = FindAbbrFromFlagKey(project.expressions, flag);
-                if (abbr != String.Empty) {
+                if (string.IsNullOrEmpty(abbr)) {
+                    undefinedFlags.Add(flag.Key);
+                } else {
                     SetExpression(project, note, abbr, flag.Value);
                 }
             });

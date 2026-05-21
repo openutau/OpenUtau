@@ -181,4 +181,100 @@ namespace OpenUtau.Core.Ustx {
             return merged.Values.ToList();
         }
     }
+
+    public class CurveSelection {
+        public string? Abbr { get; private set; }
+        public (int x, int y) StartPoint { get; set; } = (0, 0);
+        public (int x, int y) EndPoint { get; set; } = (0, 0);
+        private List<int> xs = new List<int>(); // tick from part start
+        private List<int> ys = new List<int>();
+
+        public CurveSelection() { }
+
+        public bool HasValue(string? abbr = null) {
+            return Abbr != null && (abbr == null || Abbr == abbr);
+        }
+
+        public void Clear() {
+            Abbr = null;
+            StartPoint = (0, 0);
+            EndPoint = (0, 0);
+            xs.Clear();
+            ys.Clear();
+        }
+
+        public void Add (string abbr, (int x, int y) startPoint, (int x, int y) endPoint, IEnumerable<int> xs, IEnumerable<int> ys) {
+            Abbr = abbr;
+            StartPoint = startPoint;
+            EndPoint = endPoint;
+            this.xs.AddRange(xs);
+            this.ys.AddRange(ys);
+        }
+
+        public void GetWholeCurveAndSelection(string abbr, UCurve? curve, out List<int> wholeXs, out List<int> wholeYs) {
+            wholeXs = new List<int>();
+            wholeYs = new List<int>();
+            if (curve != null) {
+                wholeXs.AddRange(curve.xs);
+                wholeYs.AddRange(curve.ys);
+            }
+            if (HasValue(abbr)) {
+                bool flag = false;
+                for (int i = 0; i < wholeXs.Count; i++) {
+                    int x = wholeXs[i];
+                    if (StartPoint.x < x) {
+                        wholeXs.Insert(i, StartPoint.x);
+                        wholeYs.Insert(i, StartPoint.y);
+                        flag = true;
+                        break;
+                    }
+                }
+                if (!flag) {
+                    wholeXs.Add(StartPoint.x);
+                    wholeYs.Add(StartPoint.y);
+                }
+
+                if (StartPoint.x != EndPoint.x) {
+                    flag = false;
+                    for (int i = 0; i < wholeXs.Count; i++) {
+                        int x = wholeXs[i];
+                        if (EndPoint.x < x) {
+                            wholeXs.Insert(i, EndPoint.x);
+                            wholeYs.Insert(i, EndPoint.y);
+                            flag = true;
+                            break;
+                        }
+                    }
+                    if (!flag) {
+                        wholeXs.Add(EndPoint.x);
+                        wholeYs.Add(EndPoint.y);
+                    }
+                }
+            }
+        }
+
+        public void GetSelectedRange(string abbr, out List<int> xs, out List<int> ys) {
+            xs = new List<int>();
+            ys = new List<int>();
+            if (!HasValue(abbr)) {
+                return;
+            }
+            xs.Add(StartPoint.x);
+            ys.Add(StartPoint.y);
+            xs.AddRange(this.xs);
+            ys.AddRange(this.ys);
+            xs.Add(EndPoint.x);
+            ys.Add(EndPoint.y);
+        }
+
+        public CurveSelection Clone() {
+            return new CurveSelection() {
+                Abbr = Abbr,
+                StartPoint = StartPoint,
+                EndPoint = EndPoint,
+                xs = new List<int>(xs),
+                ys = new List<int>(ys)
+            };
+        }
+    }
 }

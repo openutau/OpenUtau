@@ -68,7 +68,7 @@ namespace OpenUtau.App.ViewModels {
                 return false;
             }
 
-            DocManager.Inst.StartUndoGroup();
+            DocManager.Inst.StartUndoGroup("command.batch.lyric");
             for (int i = 0; i < Lyrics.Length && i < notes.Length; ++i) {
                 if (notes[i].lyric != Lyrics[i]) {
                     DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(part, notes[i], Lyrics[i]));

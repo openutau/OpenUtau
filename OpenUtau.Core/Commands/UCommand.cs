@@ -14,9 +14,11 @@ namespace OpenUtau.Core {
     }
 
     public class UCommandGroup {
+        public string? NameKey;
         public bool DeferValidate;
         public List<UCommand> Commands;
-        public UCommandGroup(bool deferValidate) {
+        public UCommandGroup(string? nameKey, bool deferValidate) {
+            NameKey = nameKey;
             DeferValidate = deferValidate;
             Commands = new List<UCommand>();
         }

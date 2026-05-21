@@ -17,7 +17,7 @@ namespace OpenUtau.App.ViewModels {
 
         public void Finish() {
             if(SelectedColor.Name != track.TrackColor) {
-                DocManager.Inst.StartUndoGroup();
+                DocManager.Inst.StartUndoGroup("command.track.setting");
                 DocManager.Inst.ExecuteCmd(new ChangeTrackColorCommand(DocManager.Inst.Project, track, SelectedColor.Name));
                 DocManager.Inst.EndUndoGroup();
             }

@@ -184,8 +184,6 @@
   <system:String x:Key="menu.file.exit">Выход</system:String>
   <system:String x:Key="menu.file.exportaudio">Экспортировать аудио</system:String>
   <system:String x:Key="menu.file.exportds">Экспортировать скрипты DiffSinger</system:String>
-  <system:String x:Key="menu.file.exportds.v2">Экспортировать скрипты DiffSinger (v2)</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">Экспортировать скрипты DiffSinger (v2, без кривой питча)</system:String>
   <system:String x:Key="menu.file.exportmidi">Экспорт midi-файла</system:String>
   <system:String x:Key="menu.file.exportmixdown">Свести в wav файл</system:String>
   <system:String x:Key="menu.file.exportproject">Экспортировать проект</system:String>

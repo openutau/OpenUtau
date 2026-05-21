@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="OpenUtau.App.Views.PackageManagerDialog"
+        Icon="/Assets/open-utau.ico"
+        Title="{DynamicResource packages.caption}" Width="900" Height="600" WindowStartupLocation="CenterScreen">
+  <Design.DataContext>
+    <vm:PackageManagerViewModel/>
+  </Design.DataContext>
+  <Grid Margin="10">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <Grid Grid.Row="0">
+      <DataGrid ItemsSource="{Binding Available}" AutoGenerateColumns="False" CanUserSortColumns="False"
+                BorderThickness="1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="{DynamicResource packages.col.id}" Binding="{Binding Id}"/>
+          <DataGridTextColumn Header="{DynamicResource packages.col.developer}" Binding="{Binding Developer}"/>
+          <DataGridTextColumn Header="{DynamicResource packages.col.version}" Binding="{Binding Version}"/>
+          <DataGridTextColumn Header="{DynamicResource packages.col.installed}" Binding="{Binding InstalledDisplay}"/>
+          <DataGridTemplateColumn Header="{DynamicResource packages.col.action}">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Button Content="{Binding PrimaryActionLabel}" Click="OnPrimaryActionClick" IsVisible="{Binding CanInstallOrUpdate}"/>
+                  <Button Content="{DynamicResource packages.uninstall}" Click="OnUninstallClick" IsVisible="{Binding CanUninstall}"/>
+                </StackPanel>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+        </DataGrid.Columns>
+      </DataGrid>
+    </Grid>
+
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,8,0,0">
+      <TextBlock Text="{Binding Status}" Margin="0,4,0,0"/>
+    </StackPanel>
+
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,8,0,0" HorizontalAlignment="Right">
+      <Button Content="{DynamicResource packages.installfromfile}" Click="OnInstallFromFile"/>
+      <Button Content="{DynamicResource packages.openinstalllocation}" Click="OpenLocation"/>
+      <Button Content="{DynamicResource packages.refresh}" Command="{Binding RefreshCommand}"/>
+    </StackPanel>
+  </Grid>
+</Window>

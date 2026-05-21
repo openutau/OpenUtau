@@ -14,5 +14,5 @@ build()
     cp bazel-bin/worldline/libworldline.so ../runtimes/linux-$1/native
 }
 
-build x64 "--cpu=k8"
+build x64 "--cpu=k8 --copt=-march=x86-64"
 build arm64 "--config=ubuntu-aarch64"

@@ -14,6 +14,11 @@
   <system:String x:Key="context.part.replaceaudio">替换音频</system:String>
   <system:String x:Key="context.part.transcribe">将音频识别为音符区段</system:String>
   <system:String x:Key="context.part.transcribing">正在识别音符</system:String>
+  <system:String x:Key="context.part.applypitch">从音频区段应用音高</system:String>
+  <system:String x:Key="context.part.nopitchsource">无可用的音频区段</system:String>
+  <system:String x:Key="context.part.extractingpitch">正在提取音高</system:String>
+  <system:String x:Key="context.part.nopitchregion">源音频区段与目标音符区段无重叠区域。</system:String>
+  <system:String x:Key="context.part.nopitchdetected">未从源音频区段中提取到音高。</system:String>
   <system:String x:Key="context.pitch.easein">缓入</system:String>
   <system:String x:Key="context.pitch.easeinout">缓入缓出</system:String>
   <system:String x:Key="context.pitch.easeout">缓出</system:String>
@@ -44,6 +49,12 @@
   <system:String x:Key="dialogs.installdependency.message">安装 </system:String>
   <system:String x:Key="dialogs.installdll.caption">安装音素器</system:String>
   <system:String x:Key="dialogs.installdll.message">安装 </system:String>
+  <system:String x:Key="dialogs.exportds.caption">导出DiffSinger脚本</system:String>
+  <system:String x:Key="dialogs.exportds.curves">曲线</system:String>
+  <system:String x:Key="dialogs.exportds.pitch">音高 (f0)</system:String>
+  <system:String x:Key="dialogs.exportds.variance">唱法参数</system:String>
+  <system:String x:Key="dialogs.exportds.variance.hint">请在偏好设置中启用DiffSinger张量缓存以导出唱法参数曲线。</system:String>
+  <system:String x:Key="dialogs.exportds.notrendered">请先渲染所有片段后再导出。</system:String>
   <system:String x:Key="dialogs.messagebox.cancel">取消</system:String>
   <system:String x:Key="dialogs.messagebox.copy">将错误信息复制到剪贴板</system:String>
   <system:String x:Key="dialogs.messagebox.no">否</system:String>
@@ -64,6 +75,22 @@
   <system:String x:Key="dialogs.unsupportedfile.message">不支持的文件格式： </system:String>
   <system:String x:Key="dialogs.voicecolorremapping">音色重映射</system:String>
   <system:String x:Key="dialogs.voicecolorremapping.caption">以下设置将应用于音轨中的所有音符：</system:String>
+  <system:String x:Key="dialogs.transcribe.caption">音频转写</system:String>
+  <system:String x:Key="dialogs.transcribe.midialgorithm">算法</system:String>
+  <system:String x:Key="dialogs.transcribe.some.notfound">SOME 当前未安装。</system:String>
+  <system:String x:Key="dialogs.transcribe.game.notfound">GAME 当前未安装。</system:String>
+  <system:String x:Key="dialogs.transcribe.allnotfound">当前未安装任何音频转写模型。请通过包管理器安装 GAME，或从此处手动下载：{0}</system:String>
+  <system:String x:Key="dialogs.transcribe.rmvpe">使用 RMVPE 提取音高</system:String>
+  <system:String x:Key="dialogs.transcribe.game.options">GAME 选项</system:String>
+  <system:String x:Key="dialogs.transcribe.game.language">语言</system:String>
+  <system:String x:Key="dialogs.transcribe.game.language.universal">[通用]</system:String>
+  <system:String x:Key="dialogs.transcribe.game.steps">采样步数</system:String>
+  <system:String x:Key="dialogs.transcribe.game.segthreshold">音符分割阈值</system:String>
+  <system:String x:Key="dialogs.transcribe.game.segradius">音符分割半径</system:String>
+  <system:String x:Key="dialogs.transcribe.game.estthreshold">音符发声阈值</system:String>
+  <system:String x:Key="dialogs.transcribe.game.batchsize">最大批处理数量</system:String>
+  <system:String x:Key="dialogs.transcribe.game.batchduration">最大批处理长度（秒）</system:String>
+  <system:String x:Key="dialogs.transcribe.longchunk.message">音频中含有超长区段，转写时可能消耗大量内存。这通常是由于音频中带有伴奏。是否确定继续？</system:String>
 
   <system:String x:Key="errors.caption">错误</system:String>
   <system:String x:Key="errors.details">错误详情</system:String>
@@ -97,6 +124,7 @@
   <system:String x:Key="errors.failed.searchsinger">查找歌手失败</system:String>
   <!--<system:String x:Key="errors.failed.synth.cutoffbeforeoffset">Oto error: cutoff before offset</system:String>-->
   <!--<system:String x:Key="errors.failed.synth.cutoffexceedduration">Oto error: cutoff exceeds audio duration</system:String>-->
+  <system:String x:Key="errors.failed.transcribe.some">加载 SOME 模型失败。请从此处下载：{0}</system:String>
   <system:String x:Key="errors.install.cpp">请安装最新的 Visual C++ 运行环境。 https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170</system:String>
   <system:String x:Key="errors.lyrics.regex">正则表达式包含不支持的字符</system:String>
   <system:String x:Key="errors.lyrics.regexpreview">- 正则表达式错误 -</system:String>
@@ -184,8 +212,6 @@
   <system:String x:Key="menu.file.exit">退出</system:String>
   <system:String x:Key="menu.file.exportaudio">导出音频</system:String>
   <system:String x:Key="menu.file.exportds">导出DiffSinger脚本至</system:String>
-  <system:String x:Key="menu.file.exportds.v2">导出DiffSinger脚本至（v2）</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">导出DiffSinger脚本至（v2，不包含音高曲线）</system:String>
   <system:String x:Key="menu.file.exportmidi">导出Midi文件</system:String>
   <system:String x:Key="menu.file.exportmixdown">混缩为Wav文件</system:String>
   <system:String x:Key="menu.file.exportproject">导出工程</system:String>

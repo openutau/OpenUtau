@@ -2,18 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
-using Avalonia.Media;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using NWaves.Signals;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
-using Avalonia.Media.Imaging;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Serilog;
-using System.Threading;
-using NWaves.Signals;
 
 namespace OpenUtau.App.Controls {
     class PartControl : Control, IDisposable, IProgress<int> {
@@ -52,6 +51,16 @@ namespace OpenUtau.App.Controls {
                 nameof(Selected),
                 o => o.Selected,
                 (o, v) => o.Selected = v);
+        public static readonly DirectProperty<PartControl, double> FadeInProperty =
+            AvaloniaProperty.RegisterDirect<PartControl, double>(
+                nameof(FadeIn),
+                o => o.FadeIn,
+                (o, v) => o.FadeIn = v);
+        public static readonly DirectProperty<PartControl, double> FadeOutProperty =
+            AvaloniaProperty.RegisterDirect<PartControl, double>(
+                nameof(FadeOut),
+                o => o.FadeOut,
+                (o, v) => o.FadeOut = v);
 
         // Tick width in pixel.
         public double TickWidth {
@@ -82,6 +91,14 @@ namespace OpenUtau.App.Controls {
             get { return selected; }
             set { SetAndRaise(SelectedProperty, ref selected, value); }
         }
+        public double FadeIn {
+            get { return fadeIn * TickWidth; }
+            set { SetAndRaise(FadeInProperty, ref fadeIn, value); }
+        }
+        public double FadeOut {
+            get { return Width - (fadeOut * TickWidth); }
+            set { SetAndRaise(FadeOutProperty, ref fadeOut, value); }
+        }
 
         private double tickWidth;
         private double trackHeight;
@@ -90,17 +107,21 @@ namespace OpenUtau.App.Controls {
         private Point offset;
         private string text = string.Empty;
         private bool selected;
+        private double fadeIn;
+        private double fadeOut;
+        private Geometry pointGeometry;
 
         public readonly UPart part;
         private readonly Pen notePen = new Pen(Brushes.White, 3);
+        private readonly Pen fadePen = new Pen(Brushes.White);
         private List<IDisposable> unbinds = new List<IDisposable>();
         private WriteableBitmap? bitmap;
         private int[] bitmapData;
 
         public PartControl(UPart part, PartsCanvas canvas) {
             this.part = part;
-            Text = part.DisplayName;
             bitmapData = new int[0];
+            pointGeometry = new EllipseGeometry(new Rect(0, 0, 6, 6));
 
             unbinds.Add(this.Bind(TickWidthProperty, canvas.GetObservable(PartsCanvas.TickWidthProperty)));
             unbinds.Add(this.Bind(TrackHeightProperty, canvas.GetObservable(PartsCanvas.TrackHeightProperty)));
@@ -112,6 +133,7 @@ namespace OpenUtau.App.Controls {
             unbinds.Add(this.Bind(TickOffsetProperty, canvas.WhenAnyValue(x => x.TickOffset).Select(tickOffset => tickOffset)));
 
             SetPosition();
+            Refersh();
 
             if (part is UWavePart wavePart) {
                 var scheduler = TaskScheduler.FromCurrentSynchronizationContext();
@@ -133,7 +155,9 @@ namespace OpenUtau.App.Controls {
                 SetPosition();
             }
             if (change.Property == SelectedProperty ||
-                change.Property == TextProperty) {
+                change.Property == TextProperty || 
+                change.Property == FadeInProperty ||
+                change.Property == FadeOutProperty) {
                 InvalidateVisual();
             }
         }
@@ -149,7 +173,11 @@ namespace OpenUtau.App.Controls {
         }
 
         public void Refersh() {
-            Text = part.name;
+            Text = part.DisplayName;
+            if (part is UWavePart wavePart) {
+                FadeIn = wavePart.fadein;
+                FadeOut = wavePart.fadeout;
+            }
         }
 
         public override void Render(DrawingContext context) {
@@ -194,6 +222,21 @@ namespace OpenUtau.App.Controls {
                 } catch (Exception e) {
                     Log.Error(e, "failed to draw bitmap");
                 }
+                // Fade
+                var brush = Brushes.White;
+                var pen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
+                using (var state = context.PushTransform(Matrix.CreateTranslation(FadeIn, 0))) {
+                    context.DrawGeometry(brush, pen, pointGeometry);
+                }
+                if (wavePart.fadein > 0) {
+                    context.DrawLine(fadePen, new Point(2, Height - 2), new Point(FadeIn + 1, 2));
+                }
+                using (var state = context.PushTransform(Matrix.CreateTranslation(FadeOut - 6, 0))) {
+                    context.DrawGeometry(brush, pen, pointGeometry);
+                }
+                if (wavePart.fadeout > 0) {
+                    context.DrawLine(fadePen, new Point(Width - 1, Height - 2), new Point(FadeOut, 2));
+                }
             }
         }
 
@@ -218,12 +261,20 @@ namespace OpenUtau.App.Controls {
                 wavePart.Peaks.Result == null) {
                 return;
             }
+            var wholePeaks = wavePart.Peaks.Result;
+            int skipCount = (int)(wavePart.peaksSampleRate * wavePart.GetSkipMs(Core.DocManager.Inst.Project) / 1000);
+            if (skipCount >= wholePeaks[0].Length) return;
+
             double height = TrackHeight;
             double monoChnlAmp = (height - 4.0) / 2;
             double stereoChnlAmp = (height - 6.0) / 4;
 
             var timeAxis = Core.DocManager.Inst.Project.timeAxis;
-            DiscreteSignal[] peaks = wavePart.Peaks.Result;
+            DiscreteSignal[] peaks = new DiscreteSignal[wholePeaks.Length];
+            for (int i = 0; i < wholePeaks.Length; i++) {
+                var newSamples = wholePeaks[i].Samples.Skip(skipCount);
+                peaks[i] = new DiscreteSignal(wavePart.peaksSampleRate, newSamples);
+            }
             int x = 0;
             if (TickOffset <= wavePart.position) {
                 // Part starts in or to the right of view.

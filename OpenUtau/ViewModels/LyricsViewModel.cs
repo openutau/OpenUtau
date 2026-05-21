@@ -43,7 +43,7 @@ namespace OpenUtau.App.ViewModels {
             UpdateTotalCount();
             CurrentCount = TotalCount;
             Text = SplitLyrics.Join(startLyrics!);
-            DocManager.Inst.StartUndoGroup();
+            DocManager.Inst.StartUndoGroup("command.note.lyric");
         }
 
         private void Preview(bool update) {

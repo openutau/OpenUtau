@@ -1,0 +1,75 @@
+name: Worldline Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      create_pr:
+        description: 'Create a Pull Request'
+        required: false
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ${{ matrix.arch.runs-on }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - { name: win, runs-on: windows-latest }
+          - { name: mac, runs-on: macos-latest }
+          - { name: linux, runs-on: ubuntu-22.04 }
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bazel-contrib/setup-bazel@0.18.0
+
+      - name: Remove old runtimes
+        run: rm -r runtimes
+
+      - name: Build Worldline (Windows)
+        working-directory: cpp
+        shell: cmd
+        run: ./build_win.bat
+        if: ${{ matrix.arch.name == 'win' }}
+
+      - name: Build Worldline (Linux)
+        working-directory: cpp
+        run: |
+          sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi binutils-arm-linux-gnueabi
+          sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+          bash ./build_linux.sh
+        if: ${{ matrix.arch.name == 'linux' }}
+
+      - name: Build Worldline (Mac)
+        working-directory: cpp
+        run: bash ./build_mac.sh
+        if: ${{ matrix.arch.name == 'mac' }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: worldline-${{ matrix.arch.name }}
+          path: runtimes
+
+  pull-request:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.create_pr }}
+    permissions:
+      contents: write
+      pull-requests: write
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: worldline-*
+          path: runtimes
+          merge-multiple: true
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "Rebuild Worldline"
+          branch: rebuild-worldline
+          title: "Rebuild Worldline"
+          add-paths: runtimes

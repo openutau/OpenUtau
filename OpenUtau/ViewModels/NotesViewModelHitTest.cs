@@ -156,10 +156,12 @@ namespace OpenUtau.App.ViewModels {
                     continue;
                 }
                 double lastX = 0, lastY = 0;
+                double x_1 = 0, y_1 = 0;
                 PitchPointShape lastShape = PitchPointShape.l;
+                var timeAxis = viewModel.Project.timeAxis;
                 for (int i = 0; i < note.pitch.data.Count; i++) {
                     var pit = note.pitch.data[i];
-                    int posTick = viewModel.Project.timeAxis.MsPosToTickPos(note.PositionMs + pit.X) - viewModel.Part.position;
+                    int posTick = timeAxis.MsPosToTickPos(note.PositionMs + pit.X) - viewModel.Part.position;
                     double tone = note.AdjustedTone + pit.Y / 10;
                     var pitPoint = viewModel.TickToneToPoint(posTick, tone);
                     double x = pitPoint.X;
@@ -172,16 +174,48 @@ namespace OpenUtau.App.ViewModels {
                         };
                     else if (point.X < x && i > 0 && point.X > lastX) {
                         // Hit test curve
-                        double castY = MusicMath.InterpolateShape(lastX, x, lastY, y, point.X, lastShape) - point.Y;
-                        if (y >= lastY) {
-                            if (point.Y - y > 3 || lastY - point.Y > 3) break;
+                        double castY;
+                        CubicSplineSegment? curve = null;
+                        if (note.pitch.data.Count > 2 && note.pitch.data[i - 1].shape == PitchPointShape.sp) {
+                            double x2 = x, y2 = y;
+                            if (i == 1) {
+                                if (note.pitch.data[0].X > 0) {
+                                    var pitPoint_1 = viewModel.TickToneToPoint(note.position, note.AdjustedTone);
+                                    x2 = pitPoint_1.X;
+                                } else {
+                                    x_1 = lastX;
+                                }
+                                y_1 = lastY;
+                            }
+                            if (i < note.pitch.data.Count - 1) {
+                                var pit2 = note.pitch.data[i + 1];
+                                int posTick2 = timeAxis.MsPosToTickPos(note.PositionMs + pit2.X) - viewModel.Part.position;
+                                double tone2 = note.AdjustedTone + pit2.Y / 10;
+                                var pitPoint2 = viewModel.TickToneToPoint(posTick2, tone2);
+                                x2 = pitPoint2.X;
+                                y2 = pitPoint2.Y + viewModel.TrackHeight / 2;
+                            } else if (note.pitch.data[i].X < note.DurationMs) {
+                                var pitPoint2 = viewModel.TickToneToPoint(note.End, note.AdjustedTone);
+                                x2 = pitPoint2.X;
+                                y2 = pitPoint2.Y + viewModel.TrackHeight / 2;
+                            }
+                            curve = new CubicSplineSegment(
+                                        x_1, y_1,
+                                        lastX, lastY,
+                                        x, y,
+                                        x2, y2);
+                            castY = curve.GetY(point.X) - point.Y;
                         } else {
-                            if (y - point.Y > 3 || point.Y - lastY > 3) break;
+                            if (y >= lastY) {
+                                if (point.Y - y > 3 || lastY - point.Y > 3) break;
+                            } else {
+                                if (y - point.Y > 3 || point.Y - lastY > 3) break;
+                            }
+                            castY = MusicMath.InterpolateShape(lastX, x, lastY, y, point.X, lastShape) - point.Y;
                         }
-                        double castX = MusicMath.InterpolateShapeX(lastX, x, lastY, y, point.Y, lastShape) - point.X;
+                        double castX = (curve?.GetX(point.Y) ?? MusicMath.InterpolateShapeX(lastX, x, lastY, y, point.Y, lastShape)) - point.X;
                         double dis = double.IsNaN(castX) ? Math.Abs(castY) : Math.Cos(Math.Atan2(Math.Abs(castY), Math.Abs(castX))) * Math.Abs(castY);
                         if (dis < 3) {
-                            var timeAxis = viewModel.Project.timeAxis;
                             double msX = timeAxis.TickPosToMsPos(viewModel.PointToTick(point) + viewModel.Part.position) - note.PositionMs;
                             double decCentY = (viewModel.PointToToneDouble(point) - note.AdjustedTone) * 10;
                             return new PitchPointHitInfo() {
@@ -193,6 +227,8 @@ namespace OpenUtau.App.ViewModels {
                             };
                         } else break;
                     }
+                    x_1 = lastX;
+                    y_1 = lastY;
                     lastX = x;
                     lastY = y;
                     lastShape = pit.shape;

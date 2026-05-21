@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Collections.Generic;
+using Serilog;
 
 using OpenUtau.Core.Ustx;
 
@@ -80,7 +81,10 @@ namespace OpenUtau.Core.Format {
             uproject.tempos.Sort((lhs, rhs) => lhs.position.CompareTo(rhs.position));
             uproject.tempos[0].position = 0;
 
-            uproject.resolution = int.Parse(root.SelectSingleNode(resolutionPath, nsmanager).InnerText);
+            int resolution = int.Parse(root.SelectSingleNode(resolutionPath, nsmanager).InnerText);
+            if (resolution != uproject.resolution) {
+                Log.Error($"Unexpected resolution {resolution}");
+            }
             uproject.FilePath = file;
             uproject.name = root.SelectSingleNode(projectnamePath, nsmanager).InnerText;
             uproject.comment = root.SelectSingleNode(projectcommentPath, nsmanager).InnerText;

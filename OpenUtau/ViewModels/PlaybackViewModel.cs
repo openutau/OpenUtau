@@ -48,7 +48,7 @@ namespace OpenUtau.App.ViewModels {
 
         public void SetTimeSignature(int beatPerBar, int beatUnit) {
             if (beatPerBar > 1 && (beatUnit == 2 || beatUnit == 4 || beatUnit == 8 || beatUnit == 16)) {
-                DocManager.Inst.StartUndoGroup();
+                DocManager.Inst.StartUndoGroup("command.project.timesignature");
                 DocManager.Inst.ExecuteCmd(new TimeSignatureCommand(Project, beatPerBar, beatUnit));
                 DocManager.Inst.EndUndoGroup();
             }
@@ -58,7 +58,7 @@ namespace OpenUtau.App.ViewModels {
             if (bpm == DocManager.Inst.Project.tempos[0].bpm) {
                 return;
             }
-            DocManager.Inst.StartUndoGroup();
+            DocManager.Inst.StartUndoGroup("command.project.tempo");
             DocManager.Inst.ExecuteCmd(new BpmCommand(Project, bpm));
             DocManager.Inst.EndUndoGroup();
         }
@@ -67,7 +67,7 @@ namespace OpenUtau.App.ViewModels {
             if (key == DocManager.Inst.Project.key) {
                 return;
             }
-            DocManager.Inst.StartUndoGroup();
+            DocManager.Inst.StartUndoGroup("command.project.key");
             DocManager.Inst.ExecuteCmd(new KeyCommand(Project, key));
             DocManager.Inst.EndUndoGroup();
         }

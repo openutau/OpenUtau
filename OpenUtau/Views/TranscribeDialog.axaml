@@ -1,0 +1,178 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="380" d:DesignHeight="320"
+        x:Class="OpenUtau.App.Views.TranscribeDialog"
+        Icon="/Assets/open-utau.ico"
+        Title="{DynamicResource dialogs.transcribe.caption}"
+        WindowStartupLocation="CenterOwner"
+        SizeToContent="Height" Width="380" CanResize="False">
+  <Window.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+    </Style>
+    <Style Selector="ComboBoxItem">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+    </Style>
+    <Style Selector="Label">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+  </Window.Styles>
+  <Border Margin="{Binding $parent.WindowDecorationMargin}">
+    <StackPanel Margin="12" Spacing="8">
+
+      <!-- Algorithm selection -->
+      <TextBlock Text="{DynamicResource dialogs.transcribe.midialgorithm}"
+                 FontWeight="SemiBold"/>
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <Panel ToolTip.Tip="{Binding GameNotFoundTip}">
+          <RadioButton Content="GAME"
+                       IsChecked="{Binding UseGame}"
+                       IsEnabled="{Binding GameAvailable}"/>
+        </Panel>
+        <Panel ToolTip.Tip="{Binding SomeNotFoundTip}">
+          <RadioButton Content="SOME"
+                       IsChecked="{Binding UseSome}"
+                       IsEnabled="{Binding SomeAvailable}"/>
+        </Panel>
+      </StackPanel>
+
+      <Panel ToolTip.Tip="{Binding RmvpeNotFoundTip}">
+        <Grid ColumnDefinitions="Auto,Auto"
+              Background="Transparent"
+              PointerPressed="OnRmvpeRowPressed">
+          <CheckBox Name="RmvpeCheck"
+                    Grid.Column="0"
+                    IsChecked="{Binding PredictPitd}"
+                    IsHitTestVisible="False"
+                    VerticalAlignment="Center"/>
+          <TextBlock Grid.Column="1"
+                     Margin="6,0,0,0"
+                     Text="{DynamicResource dialogs.transcribe.rmvpe}"
+                     VerticalAlignment="Center"
+                     IsVisible="{Binding RmvpeAvailable}"
+                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+          <TextBlock Grid.Column="1"
+                     Margin="6,0,0,0"
+                     Text="{DynamicResource dialogs.transcribe.rmvpe}"
+                     VerticalAlignment="Center"
+                     IsVisible="{Binding !RmvpeAvailable}"
+                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Grid>
+      </Panel>
+
+
+      <!-- GAME options panel, shown when GAME is selected and available -->
+      <Border IsVisible="{Binding GameOptionsVisible}"
+              BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseHighBrush}"
+              CornerRadius="4" Padding="8">
+        <StackPanel Spacing="6">
+          <TextBlock Text="{DynamicResource dialogs.transcribe.game.options}"
+                     FontWeight="SemiBold"/>
+
+          <!-- Language (only if config has languages) -->
+          <Grid ColumnDefinitions="160,*" IsVisible="{Binding GameHasLanguages}">
+            <Label Content="{DynamicResource dialogs.transcribe.game.language}"/>
+            <ComboBox Grid.Column="1" HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding LanguageDisplayOptions}"
+                      SelectedIndex="{Binding LanguageDisplayIndex}"/>
+          </Grid>
+
+          <!-- Sampling Steps -->
+          <Grid ColumnDefinitions="160,*">
+            <Label Content="{DynamicResource dialogs.transcribe.game.steps}"/>
+            <ComboBox Grid.Column="1" HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding SamplingStepsOptions}"
+                      SelectedIndex="{Binding SamplingStepsIndex}"/>
+          </Grid>
+
+          <!-- Boundary Threshold -->
+          <Grid ColumnDefinitions="160,60,8,*">
+            <Label Content="{DynamicResource dialogs.transcribe.game.segthreshold}"/>
+            <TextBox Grid.Column="1"
+                     Text="{Binding BoundaryThreshold, StringFormat=F2}"
+                     TextAlignment="Right"/>
+            <Slider Grid.Column="3" Classes="fader"
+                    Value="{Binding BoundaryThreshold}"
+                    Minimum="0.0" Maximum="1.0"
+                    TickFrequency="0.01" IsSnapToTickEnabled="True"
+                    TickPlacement="BottomRight"/>
+          </Grid>
+
+          <!-- Boundary Radius -->
+          <Grid ColumnDefinitions="160,60,8,*">
+            <Label Content="{DynamicResource dialogs.transcribe.game.segradius}"/>
+            <TextBox Grid.Column="1"
+                     Text="{Binding BoundaryRadius}"
+                     TextAlignment="Right"/>
+            <Slider Grid.Column="3" Classes="fader"
+                    Value="{Binding BoundaryRadius}"
+                    Minimum="0" Maximum="10"
+                    TickFrequency="1" IsSnapToTickEnabled="True"
+                    TickPlacement="BottomRight"/>
+          </Grid>
+
+          <!-- Score Threshold -->
+          <Grid ColumnDefinitions="160,60,8,*">
+            <Label Content="{DynamicResource dialogs.transcribe.game.estthreshold}"/>
+            <TextBox Grid.Column="1"
+                     Text="{Binding ScoreThreshold, StringFormat=F2}"
+                     TextAlignment="Right"/>
+            <Slider Grid.Column="3" Classes="fader"
+                    Value="{Binding ScoreThreshold}"
+                    Minimum="0.0" Maximum="1.0"
+                    TickFrequency="0.01" IsSnapToTickEnabled="True"
+                    TickPlacement="BottomRight"/>
+          </Grid>
+
+          <!-- Batch Size -->
+          <Grid ColumnDefinitions="160,60,8,*">
+            <Label Content="{DynamicResource dialogs.transcribe.game.batchsize}"/>
+            <TextBox Grid.Column="1"
+                     Text="{Binding BatchSize}"
+                     TextAlignment="Right"/>
+            <Slider Grid.Column="3" Classes="fader"
+                    Value="{Binding BatchSize}"
+                    Minimum="1" Maximum="32"
+                    TickFrequency="1" IsSnapToTickEnabled="True"
+                    TickPlacement="BottomRight"/>
+          </Grid>
+
+          <!-- Max Batch Duration -->
+          <Grid ColumnDefinitions="160,60,8,*">
+            <Label Content="{DynamicResource dialogs.transcribe.game.batchduration}"/>
+            <TextBox Grid.Column="1"
+                     Text="{Binding MaxBatchDuration, StringFormat=F0}"
+                     TextAlignment="Right"/>
+            <Slider Grid.Column="3" Classes="fader"
+                    Value="{Binding MaxBatchDuration}"
+                    Minimum="10" Maximum="600"
+                    TickFrequency="10" IsSnapToTickEnabled="True"
+                    TickPlacement="BottomRight"/>
+          </Grid>
+
+        </StackPanel>
+      </Border>
+
+      <!-- OK / Cancel -->
+      <Grid ColumnDefinitions="*,8,*" Margin="0,4,0,0">
+        <Button Grid.Column="0" Content="{DynamicResource dialogs.messagebox.ok}"
+                HorizontalAlignment="Stretch" Name="OkButton"
+                Click="OnOkClicked"
+                IsEnabled="{Binding CanRun}"/>
+        <Button Grid.Column="2" Content="{DynamicResource dialogs.messagebox.cancel}"
+                HorizontalAlignment="Stretch"
+                Click="OnCancelClicked"/>
+      </Grid>
+    </StackPanel>
+  </Border>
+</Window>

@@ -75,6 +75,11 @@ namespace OpenUtau.App {
                 new TrackColor("Purple2", "#7B1FA2", "#4A148C", "#AB47BC", "#D5A3DE"),
             };
 
+        public static List<string> GetAvailableThemes() {
+            Colors.CustomTheme.ListThemes();
+            return ["Light", "Dark", ..Colors.CustomTheme.Themes.Select(v => v.Key)];
+        }
+
         public static void LoadTheme() {
             if (Application.Current == null) {
                 return;

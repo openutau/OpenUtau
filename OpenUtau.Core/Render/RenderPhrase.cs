@@ -211,6 +211,12 @@ namespace OpenUtau.Core.Render {
                 uNotes.Add(next);
                 next = next.Next;
             }
+            if (uNotes.First().Prev != null && uNotes.First().Prev.End == uNotes.First().position) {
+                uNotes.Insert(0, uNotes.First().Prev);
+            }
+            if (uNotes.Last().Next != null && uNotes.Last().End == uNotes.Last().Next.position) {
+                uNotes.Add(uNotes.Last().Next);
+            }
 
             singer = track.Singer;
             renderer = track.RendererSettings.Renderer;
@@ -278,31 +284,52 @@ namespace OpenUtau.Core.Render {
                     })
                     .ToList();
                 if (pitchPoints.Count == 0) {
-                    pitchPoints.Add(new PitchPoint(note.position, note.AdjustedTone * 100));
-                    pitchPoints.Add(new PitchPoint(note.End, note.AdjustedTone * 100));
+                    pitchPoints.Add(new PitchPoint(note.position, note.AdjustedTone * 100, PitchPointShape.io, true));
+                    pitchPoints.Add(new PitchPoint(note.End, note.AdjustedTone * 100, PitchPointShape.io, true));
                 }
                 if (note == uNotes.First() && pitchPoints[0].X > pitchStart) {
-                    pitchPoints.Insert(0, new PitchPoint(pitchStart, pitchPoints[0].Y));
+                    pitchPoints.Insert(0, new PitchPoint(pitchStart, pitchPoints[0].Y, PitchPointShape.io, true));
                 } else if (pitchPoints[0].X > note.position) {
-                    pitchPoints.Insert(0, new PitchPoint(note.position, pitchPoints[0].Y));
+                    pitchPoints.Insert(0, new PitchPoint(note.position, pitchPoints[0].Y, PitchPointShape.io, true));
                 }
                 if (pitchPoints.Last().X < note.End) {
-                    pitchPoints.Add(new PitchPoint(note.End, pitchPoints.Last().Y));
+                    pitchPoints.Add(new PitchPoint(note.End, pitchPoints.Last().Y, PitchPointShape.io, true));
                 }
-                PitchPoint lastPoint = pitchPoints[0];
-                index = Math.Max(0, (int)((lastPoint.X - pitchStart) / pitchInterval));
-                foreach (var point in pitchPoints.Skip(1)) {
+                index = Math.Max(0, (int)((pitchPoints[0].X - pitchStart) / pitchInterval));
+
+                for (int i = 0; i < pitchPoints.Count - 1; i++) {
+                    PitchPoint point_1 = i == 0 ? pitchPoints[i] : pitchPoints[i - 1];
+                    PitchPoint point0 = pitchPoints[i];
+                    PitchPoint point1 = pitchPoints[i + 1];
+                    PitchPoint point2 = i >= pitchPoints.Count - 2 ? pitchPoints[i + 1] : pitchPoints[i + 2];
                     int x = pitchStart + index * pitchInterval;
-                    while (x < point.X && index < pitches.Length) {
-                        float pitch = (float)MusicMath.InterpolateShape(lastPoint.X, point.X, lastPoint.Y, point.Y, x, lastPoint.shape);
-                        float basePitch = note.Prev != null && x < note.Prev.End
-                            ? note.Prev.AdjustedTone * 100
-                            : note.AdjustedTone * 100;
-                        pitches[index] += pitch - basePitch;
-                        index++;
-                        x += pitchInterval;
+
+                    if (note.pitch.data.Count > 2 && point0.shape == PitchPointShape.sp && !point1.autoCompleted) {
+                        var curve = new CubicSplineSegment(
+                            point_1.X, point_1.Y,
+                            point0.X, point0.Y,
+                            point1.X, point1.Y,
+                            point2.X, point2.Y);
+                        while (x < point1.X && index < pitches.Length) {
+                            float pitch = (float)curve.GetY(x);
+                            float basePitch = note.Prev != null && x < note.Prev.End
+                                ? note.Prev.AdjustedTone * 100
+                                : note.AdjustedTone * 100;
+                            pitches[index] += pitch - basePitch;
+                            index++;
+                            x += pitchInterval;
+                        }
+                    } else {
+                        while (x < point1.X && index < pitches.Length) {
+                            float pitch = (float)MusicMath.InterpolateShape(point0.X, point1.X, point0.Y, point1.Y, x, point0.shape);
+                            float basePitch = note.Prev != null && x < note.Prev.End
+                                ? note.Prev.AdjustedTone * 100
+                                : note.AdjustedTone * 100;
+                            pitches[index] += pitch - basePitch;
+                            index++;
+                            x += pitchInterval;
+                        }
                     }
-                    lastPoint = point;
                 }
             }
             // Mod plus

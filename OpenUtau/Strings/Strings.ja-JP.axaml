@@ -186,8 +186,6 @@
   <system:String x:Key="menu.file.exit">OpenUtauを終了</system:String>
   <system:String x:Key="menu.file.exportaudio">音声をエクスポート</system:String>
   <system:String x:Key="menu.file.exportds">DiffSinger Scriptsをエクスポート...</system:String>
-  <system:String x:Key="menu.file.exportds.v2">DiffSinger Scriptsをエクスポート(v2)...</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">DiffSinger Scriptsをエクスポート(v2, ピッチカーブなし)...</system:String>
   <system:String x:Key="menu.file.exportmidi">MIDIをエクスポート</system:String>
   <system:String x:Key="menu.file.exportmixdown">ミックスダウンしたWavファイルを出力</system:String>
   <system:String x:Key="menu.file.exportproject">プロジェクトファイルをエクスポート</system:String>

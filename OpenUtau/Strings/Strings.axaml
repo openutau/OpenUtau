@@ -2,6 +2,55 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+  <system:String x:Key="command.batch.lyric">Lyrics batch edit</system:String>
+  <system:String x:Key="command.batch.note">Notes batch edit</system:String>
+  <system:String x:Key="command.batch.plugin">Apply plugin edit</system:String>
+  <system:String x:Key="command.batch.reset">Batch reset</system:String>
+  <system:String x:Key="command.exp.edit">Edit expression</system:String>
+  <system:String x:Key="command.exp.paste">Paste expression curve</system:String>
+  <system:String x:Key="command.exp.reset">Reset expression</system:String>
+  <system:String x:Key="command.import.audio">Import audio</system:String>
+  <system:String x:Key="command.import.track">Import track(s)</system:String>
+  <system:String x:Key="command.note.add">Add note</system:String>
+  <system:String x:Key="command.note.delete">Delete note(s)</system:String>
+  <system:String x:Key="command.note.edit">Edit note(s)</system:String>
+  <system:String x:Key="command.part.fadein">Edit part fade in</system:String>
+  <system:String x:Key="command.part.fadeout">Edit part fade out</system:String>
+  <system:String x:Key="command.note.lyric">Edit lyric(s)</system:String>
+  <system:String x:Key="command.note.move">Move note(s)</system:String>
+  <system:String x:Key="command.note.paste">Paste note(s)</system:String>
+  <system:String x:Key="command.note.split">Split note</system:String>
+  <system:String x:Key="command.parameter.paste">Paste parameter(s)</system:String>
+  <system:String x:Key="command.part.add">Add part</system:String>
+  <system:String x:Key="command.part.delete">Delete part(s)</system:String>
+  <system:String x:Key="command.part.edit">Edit part(s)</system:String>
+  <system:String x:Key="command.part.move">Move part(s)</system:String>
+  <system:String x:Key="command.part.paste">Paste part(s)</system:String>
+  <system:String x:Key="command.part.transcribe">Transcribe audio to create a note part</system:String>
+  <system:String x:Key="command.phoneme.edit">Edit phoneme</system:String>
+  <system:String x:Key="command.phoneme.reset">Reset phoneme</system:String>
+  <system:String x:Key="command.pitch.add">Add pitch point</system:String>
+  <system:String x:Key="command.pitch.delete">Delete pitch point</system:String>
+  <system:String x:Key="command.pitch.draw">Draw pitch</system:String>
+  <system:String x:Key="command.pitch.edit">Edit pitch</system:String>
+  <system:String x:Key="command.pitch.editpoint">Edit pitch point</system:String>
+  <system:String x:Key="command.pitch.reset">Reset pitch</system:String>
+  <system:String x:Key="command.project.exp">Edit project expressions</system:String>
+  <system:String x:Key="command.project.key">Change project key</system:String>
+  <system:String x:Key="command.project.tempo">Edit tempo</system:String>
+  <system:String x:Key="command.project.timesignature">Edit time signature</system:String>
+  <system:String x:Key="command.property.edit">Edit note(s) property</system:String>
+  <system:String x:Key="command.property.reset">Reset note(s) property</system:String>
+  <system:String x:Key="command.track.add">Add track</system:String>
+  <system:String x:Key="command.track.delete">Delete track</system:String>
+  <system:String x:Key="command.track.duplicate">Duplicate track</system:String>
+  <system:String x:Key="command.track.exp">Edit track expressions</system:String>
+  <system:String x:Key="command.track.order">Edit track order</system:String>
+  <system:String x:Key="command.track.remapvc">Remap voice color</system:String>
+  <system:String x:Key="command.track.setting">Change track setting</system:String>
+  <system:String x:Key="command.track.singer">Change track singer</system:String>
+  <system:String x:Key="command.vibrato.edit">Edit vibrato</system:String>
+
   <system:String x:Key="context.note.clearcache">Clear cache of phrase</system:String>
   <system:String x:Key="context.note.copy">Copy note</system:String>
   <system:String x:Key="context.note.delete">Delete note</system:String>
@@ -11,12 +60,20 @@
   <system:String x:Key="context.part.merge">Merge parts</system:String>
   <system:String x:Key="context.part.rename">Rename part</system:String>
   <system:String x:Key="context.part.replaceaudio">Reselect audio file</system:String>
+  <system:String x:Key="context.part.split">Split part at playhead</system:String>
   <system:String x:Key="context.part.transcribe">Transcribe audio to create a note part</system:String>
   <system:String x:Key="context.part.transcribing">Transcribing</system:String>
+  <system:String x:Key="context.part.applypitch">Apply pitch from...</system:String>
+  <system:String x:Key="context.part.nopitchsource">No wave part available</system:String>
+  <system:String x:Key="context.part.extractingpitch">Extracting pitch</system:String>
+  <system:String x:Key="context.part.nopitchregion">There is no overlapping region between the source wave part and the target note part.</system:String>
+  <system:String x:Key="context.part.nopitchdetected">No pitch detected from the source wave part.</system:String>
   <system:String x:Key="context.pitch.easein">Ease in</system:String>
   <system:String x:Key="context.pitch.easeinout">Ease in/out</system:String>
   <system:String x:Key="context.pitch.easeout">Ease out</system:String>
   <system:String x:Key="context.pitch.linear">Linear</system:String>
+  <system:String x:Key="context.pitch.shape">Curve shape</system:String>
+  <system:String x:Key="context.pitch.smooth">Smooth</system:String>
   <system:String x:Key="context.pitch.pointadd">Add point</system:String>
   <system:String x:Key="context.pitch.pointdel">Delete point</system:String>
   <system:String x:Key="context.pitch.pointsnapprev">Snap to previous note</system:String>
@@ -44,6 +101,15 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="dialogs.installdll.message">Installing </system:String>
   <system:String x:Key="dialogs.merge.caption">Merging Parts</system:String>
   <system:String x:Key="dialogs.merge.multitracks">Parts on different tracks cannot be merged.</system:String>
+  <system:String x:Key="dialogs.splitpart.caption">Splitting Part</system:String>
+  <system:String x:Key="dialogs.splitpart.intheway">There are one or more note(s) overlapping with the playhead.
+Do you want to continue by splitting at the nearest position after current playhead with no notes in the way?</system:String>
+  <system:String x:Key="dialogs.exportds.caption">Export DiffSinger Scripts</system:String>
+  <system:String x:Key="dialogs.exportds.curves">Curves</system:String>
+  <system:String x:Key="dialogs.exportds.pitch">Pitch (f0)</system:String>
+  <system:String x:Key="dialogs.exportds.variance">Variance expressions</system:String>
+  <system:String x:Key="dialogs.exportds.variance.hint">Enable DiffSinger Tensor Cache in Preferences to export variance curves.</system:String>
+  <system:String x:Key="dialogs.exportds.notrendered">Please render all parts before exporting.</system:String>
   <system:String x:Key="dialogs.messagebox.cancel">Cancel</system:String>
   <system:String x:Key="dialogs.messagebox.copy">Copy error to clipboard</system:String>
   <system:String x:Key="dialogs.messagebox.no">No</system:String>
@@ -65,6 +131,23 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="dialogs.voicecolorremapping">Voice color remapping</system:String>
   <system:String x:Key="dialogs.voicecolorremapping.error">This singer has no voice color</system:String>
   <system:String x:Key="dialogs.voicecolorremapping.caption">Applies to all notes in this track:</system:String>
+  <system:String x:Key="dialogs.transcribe.caption">Transcribe Audio</system:String>
+  <system:String x:Key="dialogs.transcribe.midialgorithm">Algorithm</system:String>
+  <system:String x:Key="dialogs.transcribe.some.notfound">SOME is not installed.</system:String>
+  <system:String x:Key="dialogs.transcribe.game.notfound">GAME is not installed.</system:String>
+  <system:String x:Key="dialogs.transcribe.rmvpe.notfound">RMVPE is not installed. Install it from the Package Manager.</system:String>
+  <system:String x:Key="dialogs.transcribe.allnotfound">No transcription models are installed. Please install GAME via the Package Manager or download manually from {0}.</system:String>
+  <system:String x:Key="dialogs.transcribe.rmvpe">Extract pitch using RMVPE</system:String>
+  <system:String x:Key="dialogs.transcribe.game.options">GAME Options</system:String>
+  <system:String x:Key="dialogs.transcribe.game.language">Language</system:String>
+  <system:String x:Key="dialogs.transcribe.game.language.universal">[universal]</system:String>
+  <system:String x:Key="dialogs.transcribe.game.steps">Sampling Steps</system:String>
+  <system:String x:Key="dialogs.transcribe.game.segthreshold">Boundary Threshold</system:String>
+  <system:String x:Key="dialogs.transcribe.game.segradius">Boundary Radius</system:String>
+  <system:String x:Key="dialogs.transcribe.game.estthreshold">Score Threshold</system:String>
+  <system:String x:Key="dialogs.transcribe.game.batchsize">Batch Size</system:String>
+  <system:String x:Key="dialogs.transcribe.game.batchduration">Max Batch Duration (s)</system:String>
+  <system:String x:Key="dialogs.transcribe.longchunk.message">One or more audio segments are very long and may consume large amount of memory when transcribing. This usually happens when the audio contains accompaniment. Still proceed?</system:String>
 
   <system:String x:Key="errors.caption">Error</system:String>
   <system:String x:Key="errors.details">Error Details</system:String>
@@ -86,6 +169,8 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="errors.failed.importaudio">Failed to import audio</system:String>
   <system:String x:Key="errors.failed.importfiles">Failed to import files</system:String>
   <system:String x:Key="errors.failed.importmidi">Failed to import midi</system:String>
+  <system:String x:Key="errors.failed.importustandothers">Failed to open the projects. It contains a mix of ust and other file formats.</system:String>
+  <system:String x:Key="errors.failed.importustflags">The following undefined flags within the project were not imported:</system:String>
   <system:String x:Key="errors.failed.installsinger">Failed to install singer</system:String>
   <system:String x:Key="errors.failed.load">Failed to load</system:String>
   <system:String x:Key="errors.failed.loadprefs">Failed to load prefs. Initialize it.</system:String>
@@ -99,7 +184,8 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="errors.failed.searchsinger">Failed to search singers</system:String>
   <system:String x:Key="errors.failed.synth.cutoffbeforeoffset">Oto error: cutoff before offset</system:String>
   <system:String x:Key="errors.failed.synth.cutoffexceedduration">Oto error: cutoff exceeds audio duration</system:String>
-  <system:String x:Key="errors.failed.transcribe">Error loading SOME. Please download SOME from {0}</system:String>
+  <system:String x:Key="errors.failed.transcribe.rmvpe">Error loading RMVPE ONNX model. Install it from the Package Manager, or put rmvpe.onnx in {0}</system:String>
+  <system:String x:Key="errors.failed.transcribe.some">Error loading SOME. Please download SOME from {0}</system:String>
   <system:String x:Key="errors.install.cpp">Try installing the latest Visual C++ Redistributable. https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170</system:String>
   <system:String x:Key="errors.lyrics.regex">Character not allowed in regular expression</system:String>
   <system:String x:Key="errors.lyrics.regexpreview">- regular expression error -</system:String>
@@ -195,8 +281,6 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="menu.file.exit">Exit</system:String>
   <system:String x:Key="menu.file.exportaudio">Export Audio</system:String>
   <system:String x:Key="menu.file.exportds">Export DiffSinger Scripts To</system:String>
-  <system:String x:Key="menu.file.exportds.v2">Export DiffSinger Scripts To (v2)</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">Export DiffSinger Scripts To (v2, without pitch curve)</system:String>
   <system:String x:Key="menu.file.exportmidi">Export Midi File</system:String>
   <system:String x:Key="menu.file.exportmixdown">Mixdown To Wav File</system:String>
   <system:String x:Key="menu.file.exportproject">Export Project</system:String>
@@ -231,7 +315,6 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="menu.tools">Tools</system:String>
   <system:String x:Key="menu.tools.clearcache">Clear Cache</system:String>
   <system:String x:Key="menu.tools.debugwindow">Debug Window</system:String>
-  <system:String x:Key="menu.tools.dependency.install">Install Dependency (.oudep)...</system:String>
   <system:String x:Key="menu.tools.fullscreen">Full Screen</system:String>
   <system:String x:Key="menu.tools.layout">Layout</system:String>
   <system:String x:Key="menu.tools.layout.hsplit11">Horizontal 1:1</system:String>
@@ -241,6 +324,7 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="menu.tools.layout.vsplit11">Vertical 1:1</system:String>
   <system:String x:Key="menu.tools.layout.vsplit12">Vertical 1:2</system:String>
   <system:String x:Key="menu.tools.layout.vsplit13">Vertical 1:3</system:String>
+  <system:String x:Key="menu.tools.packages">Packages...</system:String>
   <system:String x:Key="menu.tools.prefs">Preferences...</system:String>
   <system:String x:Key="menu.tools.singer.install">Install Singer...</system:String>
   <system:String x:Key="menu.tools.singer.installadv">Install Singer (Advanced)...</system:String>
@@ -296,6 +380,8 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="noteproperty.tone">Tone</system:String>
   <system:String x:Key="noteproperty.tuning">Tuning</system:String>
   <system:String x:Key="noteproperty.vibratoenable">Enable</system:String>
+  <system:String x:Key="noteproperty.phonemizer">Phonemizer</system:String>
+  <system:String x:Key="noteproperty.parent.phonemizer">Follows Parent Phonemizer</system:String>
 
   <system:String x:Key="oto.alias">Alias</system:String>
   <system:String x:Key="oto.color">Color</system:String>
@@ -315,15 +401,51 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="oto.set">Set</system:String>
   <system:String x:Key="oto.suffix">Suffix</system:String>
 
+  <system:String x:Key="packages.caption">Packages</system:String>
+  <system:String x:Key="packages.refresh">Refresh</system:String>
+  <system:String x:Key="packages.installed">Installed</system:String>
+  <system:String x:Key="packages.col.name">Name</system:String>
+  <system:String x:Key="packages.col.id">Id</system:String>
+  <system:String x:Key="packages.col.developer">Developer</system:String>
+  <system:String x:Key="packages.col.version">Version</system:String>
+  <system:String x:Key="packages.col.action">Action</system:String>
+  <system:String x:Key="packages.col.installed">Installed</system:String>
+  <system:String x:Key="packages.unknownversion">unknown version</system:String>
+  <system:String x:Key="packages.install">Install</system:String>
+  <system:String x:Key="packages.update">Update</system:String>
+  <system:String x:Key="packages.uninstall">Uninstall</system:String>
+  <system:String x:Key="packages.openinstalllocation">Open Install Location</system:String>
+  <system:String x:Key="packages.installfromfile">Install From File (.oudep)...</system:String>
+  <system:String x:Key="packages.confirm.install.caption">Install package</system:String>
+  <system:String x:Key="packages.confirm.install.message">Do you want to install {0}?</system:String>
+  <system:String x:Key="packages.confirm.update.caption">Update package</system:String>
+  <system:String x:Key="packages.confirm.update.message">Do you want to update {0} to version {1}?</system:String>
+  <system:String x:Key="packages.confirm.uninstall.caption">Uninstall package</system:String>
+  <system:String x:Key="packages.confirm.uninstall.message">Do you want to uninstall {0}?</system:String>
+  <system:String x:Key="packages.status.fetching">Fetching registry...</system:String>
+  <system:String x:Key="packages.status.uninstalling">Uninstalling {0}...</system:String>
+  <system:String x:Key="packages.status.uninstallfinished">Uninstall finished</system:String>
+  <system:String x:Key="packages.status.uninstallfailed">Uninstall failed</system:String>
+  <system:String x:Key="packages.status.listinginstalled">Listing installed...</system:String>
+  <system:String x:Key="packages.status.ready">Ready</system:String>
+  <system:String x:Key="packages.status.error">Error</system:String>
+  <system:String x:Key="packages.status.installing">Installing {0}...</system:String>
+  <system:String x:Key="packages.status.installfinished">Install finished</system:String>
+  <system:String x:Key="packages.status.installfailed">Install failed</system:String>
+  <system:String x:Key="packages.errors.missing">Package {0} not found. Install it using the Package Manager.</system:String>
+
   <system:String x:Key="phoneticassistant.caption">Phonetic Assistant</system:String>
   <system:String x:Key="phoneticassistant.copy">Copy</system:String>
 
   <system:String x:Key="pianoroll.key">Key (for scale degree display)</system:String>
+  <system:String x:Key="pianoroll.menu.view.pianoroll">Piano Roll</system:String>
+  <system:String x:Key="pianoroll.menu.view.pianoroll.detach">Detach</system:String>
+  <system:String x:Key="pianoroll.menu.view.pianoroll.hide">Hide</system:String>
   <system:String x:Key="pianoroll.menu.batch">Batch Edits</system:String>
   <system:String x:Key="pianoroll.menu.batch.running">Running batch edit</system:String>
   <system:String x:Key="pianoroll.menu.lyrics">Lyrics</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.dashtoplus">Replace "-" with "+"</system:String>
-    <system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">Replace "-" with "+~"</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">Replace "-" with "+~"</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.edit">Edit Lyrics</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.hiraganatoromaji">Hiragana to Romaji</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.insertslur">Insert slur lyric</system:String>
@@ -369,6 +491,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.menu.plugin.openfolder">Open folder</system:String>
   <system:String x:Key="pianoroll.menu.plugin.reload">Reload</system:String>
   <system:String x:Key="pianoroll.menu.reset">Reset</system:String>
+  <system:String x:Key="pianoroll.menu.external">External</system:String>
   <system:String x:Key="pianoroll.menu.searchnote">Search Note</system:String>
   <system:String x:Key="pianoroll.menu.searchnote.alias">Alias</system:String>
   <system:String x:Key="pianoroll.menu.searchnote.all">Select All</system:String>
@@ -385,6 +508,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.snap">Toggle Snap (P)</system:String>
   <system:String x:Key="pianoroll.toggle.snap.auto">Auto</system:String>
   <system:String x:Key="pianoroll.toggle.snap.autotriplet">Auto (triplet)</system:String>
+  <system:String x:Key="pianoroll.toggle.phonemizer">View Phonemizer Tags</system:String>
   <system:String x:Key="pianoroll.toggle.tips">View Tips (T)</system:String>
   <system:String x:Key="pianoroll.toggle.tone">Toggle Note Tone (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">View Vibrato (U)</system:String>
@@ -407,14 +531,17 @@ Warning: this option removes custom presets.</system:String>
     Right click to reset
     Hold Ctrl to select
     Hold Alt to smoothen</system:String>
-    <system:String x:Key="pianoroll.tool.overwritelinepitch">
-        Line Draw Pitch Tool (Ctrl + Shift + 4)
-        Left click to draw 
-        (draw straight line overwrites the vibrato or mod+)
-        Right click to reset
-        Hold Ctrl to select
-        Hold Alt to smoothen
-    </system:String>
+  <system:String x:Key="pianoroll.tool.overwritelinepitch">
+    Line Draw Pitch Tool (Ctrl + Shift + 4)
+    Left click to draw 
+    (draw straight line overwrites the vibrato or mod+)
+    Hold Ctrl to draw sine curve
+    Hold Alt + Shift to tune S-curve
+    Hold Alt to draw S-curve
+    Right click to reset
+    Hold Ctrl to select
+    Hold Alt to smoothen
+  </system:String>
   <system:String x:Key="pianoroll.tool.penplus">Pen Plus Tool (Ctrl + 2)
     Left click to draw
     Right click to delete
@@ -448,6 +575,12 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.theme">Theme</system:String>
   <system:String x:Key="prefs.appearance.theme.dark">Dark</system:String>
   <system:String x:Key="prefs.appearance.theme.light">Light</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.edit.title">Edit Custom Theme</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.delete.title">Delete Custom Theme</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.delete.message">Are you sure you want to delete this theme?</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.create.title">Create Custom Theme</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.create.prompt">Enter Theme Name</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.create.empty">Theme name cannot be empty.</system:String>
   <system:String x:Key="prefs.appearance.trackcolor">Use track color in UI</system:String>
   <system:String x:Key="prefs.cache">Cache</system:String>
   <system:String x:Key="prefs.cache.clearonquit">Clear cache on quit</system:String>
@@ -486,6 +619,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.off">Do nothing</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.on">Move cursor and view position back to where you started playing</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.onlycursor">Move only cursor back to where you started playing</system:String>
+  <system:String x:Key="prefs.playback.systemdefault">Use system default device</system:String>
   <system:String x:Key="prefs.playback.test">Test</system:String>
   <system:String x:Key="prefs.rendering">Rendering</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Default renderer (for classic voicebanks)</system:String>
@@ -695,4 +829,8 @@ General
   <system:String x:Key="welcome.recent">Recent</system:String>
   <system:String x:Key="welcome.start">Start</system:String>
   <system:String x:Key="welcome.template">Template</system:String>
+
+  <system:String x:Key="themeeditor.title">Theme Editor</system:String>
+  <system:String x:Key="themeeditor.save">Save</system:String>
+  <system:String x:Key="themeeditor.cancel">Cancel</system:String>
 </ResourceDictionary>

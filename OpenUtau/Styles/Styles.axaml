@@ -50,6 +50,7 @@
     <Setter Property="Command" Value="{Binding Command}"/>
     <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
     <Setter Property="Height" Value="{Binding Height}"/>
+    <Setter Property="Icon" Value="{Binding Icon}"/>
   </Style>
 
   <Style Selector="ContextMenu MenuItem">
@@ -62,6 +63,16 @@
     <Setter Property="Header" Value="{Binding Header}"/>
     <Setter Property="Command" Value="{Binding Command}"/>
     <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
+  </Style>
+
+  <Style Selector="Path.checkmenu">
+    <Setter Property="IsHitTestVisible" Value="False"/>
+    <Setter Property="Data" Value="M1,5 L4,8 L9,1"/>
+    <Setter Property="Stroke" Value="{DynamicResource AccentBrush1}"/>
+    <Setter Property="StrokeThickness" Value="2"/>
+    <Setter Property="Width" Value="12"/>
+    <Setter Property="Height" Value="12"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
   </Style>
 
   <Style Selector="TextBlock">
@@ -469,4 +480,13 @@
       <Setter Property="Margin" Value="7,0,0,0"/>
     </Style>
   </Style>
+
+  <Style Selector="ColorPicker TextBox">
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="CornerRadius" Value="0,4,4,0"/>
+    <Setter Property="Height" Value="32"/>
+    <Setter Property="Padding" Value="5"/>
+    <Setter Property="Margin" Value="0"/>
+  </Style>
+
 </Styles>
