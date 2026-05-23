@@ -75,8 +75,8 @@ namespace OpenUtau.App.Controls {
         private byte[]? wavBitmapData;
         private WriteableBitmap? melBitmap;
 
-        private IBrush blueFill = new SolidColorBrush(Colors.LightBlue, 0.5);
-        private IBrush pinkFill = new SolidColorBrush(Colors.Pink, 0.5);
+        private IBrush blueFill = new SolidColorBrush(Avalonia.Media.Colors.LightBlue, 0.5);
+        private IBrush pinkFill = new SolidColorBrush(Avalonia.Media.Colors.Pink, 0.5);
         private IPen blueLine = new Pen(SolidColorBrush.Parse("#4EA6EA"), 2);
         private IPen limeLine = new Pen(Brushes.Lime);
         private IPen redLine = new Pen(Brushes.Red);

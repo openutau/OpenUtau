@@ -167,6 +167,7 @@ namespace OpenUtau.Core {
         public static double InterpolateShape(double x0, double x1, double y0, double y1, double x, Ustx.PitchPointShape shape) {
             switch (shape) {
                 case Ustx.PitchPointShape.io: return SinEasingInOut(x0, x1, y0, y1, x);
+                case Ustx.PitchPointShape.sp: return SinEasingInOut(x0, x1, y0, y1, x);
                 case Ustx.PitchPointShape.i: return SinEasingIn(x0, x1, y0, y1, x);
                 case Ustx.PitchPointShape.o: return SinEasingOut(x0, x1, y0, y1, x);
                 default: return Linear(x0, x1, y0, y1, x);
@@ -176,6 +177,7 @@ namespace OpenUtau.Core {
         public static double InterpolateShapeX(double x0, double x1, double y0, double y1, double y, Ustx.PitchPointShape shape) {
             switch (shape) {
                 case Ustx.PitchPointShape.io: return SinEasingInOutX(x0, x1, y0, y1, y);
+                case Ustx.PitchPointShape.sp: return SinEasingInOutX(x0, x1, y0, y1, y);
                 case Ustx.PitchPointShape.i: return SinEasingInX(x0, x1, y0, y1, y);
                 case Ustx.PitchPointShape.o: return SinEasingOutX(x0, x1, y0, y1, y);
                 default: return LinearX(x0, x1, y0, y1, y);
@@ -243,9 +245,8 @@ namespace OpenUtau.Core {
         }
 
         public static (float, float) PanToChannelVolumes(float pan) {
-            float volumeLeft = (Math.Max(pan, 0) - 100) / 100;
-            float volumeRight = (Math.Min(pan, 0) + 100) / -100;
-            return (volumeLeft, volumeRight);
+            float angle = (Math.Clamp(pan, -100f, 100f) + 100f) / 200f * (float)(Math.PI / 2);
+            return ((float)Math.Cos(angle), (float)Math.Sin(angle));
         }
     }
 }

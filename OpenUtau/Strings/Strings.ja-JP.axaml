@@ -148,10 +148,12 @@
   <system:String x:Key="languages.zh-yue">広東語</system:String>
 
   <system:String x:Key="lyrics.apply">適用</system:String>
+  <system:String x:Key="lyrics.applyselected">選択した音符のみ適用する</system:String>
   <system:String x:Key="lyrics.cancel">キャンセル</system:String>
   <system:String x:Key="lyrics.caption">歌詞を編集</system:String>
   <system:String x:Key="lyrics.livepreview">リアルタイムプレビュー</system:String>
   <!--<system:String x:Key="lyrics.max">Max</system:String>-->
+  <system:String x:Key="lyrics.nonote">音符がありません！</system:String>
   <system:String x:Key="lyrics.reset">リセット</system:String>
   <system:String x:Key="lyrics.selectnotes">音符を選択してください！</system:String>
   <system:String x:Key="lyrics.separators">区切り文字</system:String>
@@ -184,8 +186,6 @@
   <system:String x:Key="menu.file.exit">OpenUtauを終了</system:String>
   <system:String x:Key="menu.file.exportaudio">音声をエクスポート</system:String>
   <system:String x:Key="menu.file.exportds">DiffSinger Scriptsをエクスポート...</system:String>
-  <system:String x:Key="menu.file.exportds.v2">DiffSinger Scriptsをエクスポート(v2)...</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">DiffSinger Scriptsをエクスポート(v2, ピッチカーブなし)...</system:String>
   <system:String x:Key="menu.file.exportmidi">MIDIをエクスポート</system:String>
   <system:String x:Key="menu.file.exportmixdown">ミックスダウンしたWavファイルを出力</system:String>
   <system:String x:Key="menu.file.exportproject">プロジェクトファイルをエクスポート</system:String>
@@ -281,6 +281,7 @@
   <system:String x:Key="noteproperty.set">セット</system:String>
   <system:String x:Key="noteproperty.setlongnote">長い音符のみセットする</system:String>
   <system:String x:Key="noteproperty.tone">音程</system:String>
+  <system:String x:Key="noteproperty.tuning">微分音</system:String>
   <system:String x:Key="noteproperty.vibratoenable">オン</system:String>
 
   <system:String x:Key="oto.alias">エイリアス</system:String>
@@ -333,6 +334,9 @@
   <system:String x:Key="pianoroll.menu.notes.octavedown">1オクターブ下げる</system:String>
   <system:String x:Key="pianoroll.menu.notes.octaveup">1オクターブ上げる</system:String>
   <system:String x:Key="pianoroll.menu.notes.quantize">グリッド幅にクオンタイズ</system:String>
+  <system:String x:Key="pianoroll.menu.notes.randomizeoffset">音素のタイミングをランダムにする</system:String>
+  <system:String x:Key="pianoroll.menu.notes.randomizetiming">ノートのタイミングをランダムにする</system:String>
+  <system:String x:Key="pianoroll.menu.notes.randomizetuning">微分音をランダムにする</system:String>
   <system:String x:Key="pianoroll.menu.notes.refreshrealcurves">表情パネルの実数値表示を更新（DiffSinger）</system:String>
   <system:String x:Key="pianoroll.menu.notes.removetaildash">末尾の"-"を削除</system:String>
   <system:String x:Key="pianoroll.menu.notes.removetailrest">末尾の"R"を削除</system:String>
@@ -439,8 +443,10 @@
   <system:String x:Key="prefs.paths.addlsinger.install">シンガーの場所(追加)にインストール</system:String>
   <system:String x:Key="prefs.paths.detect">検出</system:String>
   <system:String x:Key="prefs.paths.loaddeepfolders">深い階層のフォルダも読み込む</system:String>
+  <system:String x:Key="prefs.paths.open">開く</system:String>
   <system:String x:Key="prefs.paths.reset">リセット</system:String>
   <system:String x:Key="prefs.paths.select">選択</system:String>
+  <system:String x:Key="prefs.paths.singer">シンガーフォルダ</system:String>
   <system:String x:Key="prefs.penplus">ペン+ツールをデフォルトで使用する</system:String>
   <system:String x:Key="prefs.playback">再生</system:String>
   <system:String x:Key="prefs.playback.autoscroll">自動スクロール</system:String>
@@ -597,6 +603,7 @@
   <system:String x:Key="tracks.mute.allothers">このトラック以外をミュート</system:String>
   <system:String x:Key="tracks.mute.only">このトラックだけミュート</system:String>
   <system:String x:Key="tracks.mute.unmuteall">全トラックのミュートを解除</system:String>
+  <system:String x:Key="tracks.nosinger">シンガーがありません</system:String>
   <system:String x:Key="tracks.openaddsingers">シンガーの場所（追加）フォルダを開く</system:String>
   <system:String x:Key="tracks.opensingers">Singersフォルダを開く</system:String>
   <system:String x:Key="tracks.remove">削除</system:String>

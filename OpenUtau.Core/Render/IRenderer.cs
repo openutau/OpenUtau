@@ -32,7 +32,7 @@ namespace OpenUtau.Core.Render {
 
     public class RenderPitchResult {
         /// <summary>
-        /// Abbreviation of the expression.
+        /// Ticks relative to the start of the phrase.
         /// </summary>
         public float[] ticks;
 

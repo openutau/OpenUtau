@@ -185,6 +185,11 @@ namespace OpenUtau.Core {
     public class VoiceColorRemappingNotification : UNotification {
         public int TrackNo;
         public bool Validate;
+        /// <summary>
+        /// Remap when the singer's voice color changes. Or use when the user intentionally wants to remap.
+        /// </summary>
+        /// <param name="trackNo">Track number for remapping the singer. When -1, checks whether remapping is required for all tracks.</param>
+        /// <param name="validate">When verifying if the color lineup has changed, set to true; when forcing remapping even if no changes occur, set to false.</param>
         public VoiceColorRemappingNotification(int trackNo, bool validate) {
             TrackNo = trackNo;
             Validate = validate;

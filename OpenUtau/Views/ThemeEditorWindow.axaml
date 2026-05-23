@@ -1,0 +1,157 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" MinWidth="325" Width="325" Height="500"
+        x:Class="OpenUtau.App.Views.ThemeEditorWindow" WindowStartupLocation="CenterOwner"
+        Icon="/Assets/open-utau.ico"
+        Title="{DynamicResource themeeditor.title}"
+        Closing="WindowClosing" Topmost="True">
+  <Grid RowDefinitions="*,auto" Margin="0,10,0,10">
+    <ScrollViewer Grid.Row="0" Padding="10,0,10,0">
+      <StackPanel Spacing="5">
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="IsDarkMode"/>
+          <ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding IsDarkMode}"/>
+        </Panel>
+        <Separator Margin="0"/>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="BackgroundColor"/>
+          <ColorPicker Color="{Binding BackgroundColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="BackgroundColorPointerOver"/>
+          <ColorPicker Color="{Binding BackgroundColorPointerOver}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="BackgroundColorPressed"/>
+          <ColorPicker Color="{Binding BackgroundColorPressed}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="BackgroundColorDisabled"/>
+          <ColorPicker Color="{Binding BackgroundColorDisabled}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Separator Margin="0"/>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="ForegroundColor"/>
+          <ColorPicker Color="{Binding ForegroundColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="ForegroundColorPointerOver"/>
+          <ColorPicker Color="{Binding ForegroundColorPointerOver}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="ForegroundColorPressed"/>
+          <ColorPicker Color="{Binding ForegroundColorPressed}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="ForegroundColorDisabled"/>
+          <ColorPicker Color="{Binding ForegroundColorDisabled}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Separator Margin="0"/>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="BorderColor"/>
+          <ColorPicker Color="{Binding BorderColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="BorderColorPointerOver"/>
+          <ColorPicker Color="{Binding BorderColorPointerOver}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Separator Margin="0"/>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="SystemAccentColor"/>
+          <ColorPicker Color="{Binding SystemAccentColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="SystemAccentColorLight1"/>
+          <ColorPicker Color="{Binding SystemAccentColorLight1}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="SystemAccentColorDark1"/>
+          <ColorPicker Color="{Binding SystemAccentColorDark1}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Separator Margin="0"/>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="NeutralAccentColor"/>
+          <ColorPicker Color="{Binding NeutralAccentColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="NeutralAccentColorPointerOver"/>
+          <ColorPicker Color="{Binding NeutralAccentColorPointerOver}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="AccentColor1"/>
+          <ColorPicker Color="{Binding AccentColor1}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="AccentColor2"/>
+          <ColorPicker Color="{Binding AccentColor2}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="AccentColor3"/>
+          <ColorPicker Color="{Binding AccentColor3}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Separator Margin="0"/>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="TickLineColor"/>
+          <ColorPicker Color="{Binding TickLineColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="BarNumberColor"/>
+          <ColorPicker Color="{Binding BarNumberColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="FinalPitchColor"/>
+          <ColorPicker Color="{Binding FinalPitchColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="TrackBackgroundAltColor"/>
+          <ColorPicker Color="{Binding TrackBackgroundAltColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Separator Margin="0"/>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="WhiteKeyColorLeft"/>
+          <ColorPicker Color="{Binding WhiteKeyColorLeft}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="WhiteKeyColorRight"/>
+          <ColorPicker Color="{Binding WhiteKeyColorRight}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="WhiteKeyNameColor"/>
+          <ColorPicker Color="{Binding WhiteKeyNameColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Separator Margin="0"/>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="CenterKeyColorLeft"/>
+          <ColorPicker Color="{Binding CenterKeyColorLeft}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="CenterKeyColorRight"/>
+          <ColorPicker Color="{Binding CenterKeyColorRight}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="CenterKeyNameColor"/>
+          <ColorPicker Color="{Binding CenterKeyNameColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Separator Margin="0"/>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="BlackKeyColorLeft"/>
+          <ColorPicker Color="{Binding BlackKeyColorLeft}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="BlackKeyColorRight"/>
+          <ColorPicker Color="{Binding BlackKeyColorRight}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="BlackKeyNameColor"/>
+          <ColorPicker Color="{Binding BlackKeyNameColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+      </StackPanel>
+    </ScrollViewer>
+    <Grid Grid.Row="1" HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*" Margin="10,0,10,0">
+      <Button Grid.Column="0" Content="{DynamicResource themeeditor.cancel}" HorizontalAlignment="Stretch" Click="OnCancel" />
+      <Button Grid.Column="2" Content="{DynamicResource themeeditor.save}" HorizontalAlignment="Stretch" Click="OnSave"/>
+    </Grid>
+  </Grid>
+</Window>

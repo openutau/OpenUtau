@@ -14,16 +14,18 @@ namespace OpenUtau.Classic {
 
     public static class Ust {
         static readonly Encoding ShiftJIS = Encoding.GetEncoding("shift_jis");
+        static List<string> undefinedFlags = new List<string>();
+        static string tool2 = string.Empty;
 
         public static UProject Load(string[] files) {
             foreach (var file in files) {
                 if (Formats.DetectProjectFormat(file) != ProjectFormats.Ust) {
-                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("Multiple files must be all Ust files"));
-                    return null;
+                    throw new MessageCustomizableException("Multiple files must be all Ust files", "<translate:errors.failed.importustandothers>", new FileFormatException(), false);
                 }
             }
 
             var projects = new List<UProject>();
+            undefinedFlags.Clear();
             foreach (var file in files) {
                 var encoding = DetectEncoding(file);
                 using (var reader = new StreamReader(file, encoding)) {
@@ -46,6 +48,11 @@ namespace OpenUtau.Classic {
             }
             project.AfterLoad();
             project.ValidateFull();
+            if (undefinedFlags.Count > 0) {
+                var flags = string.Join(", ", undefinedFlags.Distinct());
+                var customEx = new MessageCustomizableException("Unable to import undefined flags within the project", $"<translate:errors.failed.importustflags>\n{flags}", new FileLoadException(), false);
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
+            }
             return project;
         }
 
@@ -109,7 +116,7 @@ namespace OpenUtau.Classic {
                         default:
                             if (int.TryParse(header.Substring(2, header.Length - 3), out var noteIndex)) {
                                 var note = project.CreateNote();
-                                ParseNote(note, lastNotePos, lastNoteEnd, block.lines, out var noteTempo, project.expressions);
+                                ParseNote(project, note, lastNotePos, lastNoteEnd, block.lines, out var noteTempo);
                                 lastNotePos = note.position;
                                 lastNoteEnd = note.End;
                                 if (note.lyric.ToLowerInvariant() != "r") {
@@ -171,11 +178,27 @@ namespace OpenUtau.Classic {
                         }
                         project.tracks[0].Singer = singer;
                         break;
+                    case "Tool2":
+                        tool2 = parts[1].Trim();
+                        break;
+                    case "Flags":
+                        var parser = new UstFlagParser();
+                        var track = project.tracks[0];
+                        foreach (var flag in parser.Parse(parts[1].Trim())) {
+                            var descriptor = project.expressions.Values.FirstOrDefault(exp => exp.flag == flag.Key)?.Clone();
+                            if (descriptor == null) {
+                                undefinedFlags.Add(flag.Key);
+                            } else {
+                                descriptor.CustomDefaultValue = flag.Value;
+                                track.TrackExpressions.Add(descriptor);
+                            }
+                        }
+                        break;
                 }
             }
         }
 
-        private static void ParseNote(UNote note, int lastNotePos, int lastNoteEnd, List<IniLine> iniLines, out float? noteTempo, Dictionary<string, UExpressionDescriptor> expressions) {
+        private static void ParseNote(UProject project, UNote note, int lastNotePos, int lastNoteEnd, List<IniLine> iniLines, out float? noteTempo) {
             var ustNote = new UstNote {
                 lyric = note.lyric,
                 position = note.position,
@@ -184,21 +207,25 @@ namespace OpenUtau.Classic {
                 pitch = note.pitch
             };
             ustNote.Parse(lastNotePos, lastNoteEnd, iniLines, out noteTempo);
-            note.lyric = ustNote.lyric;
+            if (ustNote.lyric.StartsWith("!")) {
+                note.lyric = $"[{ustNote.lyric.Substring(1)}]";
+            } else {
+                note.lyric = ustNote.lyric;
+            }
             note.position = ustNote.position;
             note.duration = ustNote.duration;
             note.tone = ustNote.noteNum;
             if (ustNote.velocity != null) {
-                SetExpression(note, Ustx.VEL, 0, ustNote.velocity.Value);
+                SetExpression(project, note, Ustx.VEL, ustNote.velocity.Value);
             }
             if (ustNote.intensity != null) {
-                SetExpression(note, Ustx.VOL, 0, ustNote.intensity.Value);
+                SetExpression(project, note, Ustx.VOL, ustNote.intensity.Value);
             }
             if (ustNote.modulation != null) {
-                SetExpression(note, Ustx.MOD, 0, ustNote.modulation.Value);
+                SetExpression(project, note, Ustx.MOD, ustNote.modulation.Value);
             }
             if (ustNote.flags != null) {
-                SetFlags(note, ustNote.flags, 0, expressions);
+                SetFlags(project, note, ustNote.flags);
             }
             if (ustNote.pitch != null) {
                 note.pitch = ustNote.pitch;
@@ -208,13 +235,29 @@ namespace OpenUtau.Classic {
             }
         }
 
-        private static void SetFlags(UNote note, string flags, int index, Dictionary<string, UExpressionDescriptor> expressions) {
+        private static void SetFlags(UProject project, UNote note, string flags) {
             var parser = new UstFlagParser();
             var list = parser.Parse(flags);
             list.ForEach((flag) => {
-                var abbr = FindAbbrFromFlagKey(expressions, flag);
-                if (abbr != String.Empty) {
-                    SetExpression(note, abbr, index, flag.Value);
+                if (flag.Key == "t") {
+                    switch (tool2) {
+                        case { } when tool2.StartsWith("resampler"):
+                        case { } when tool2.StartsWith("doppeltler"):
+                        case { } when tool2.StartsWith("f2resamp"):
+                        case { } when tool2.StartsWith("moresampler"):
+                            note.tuning = flag.Value;
+                            break;
+                        default: // fresamp11-14, model4, TIPS, tn_fnds, bkh01
+                            note.tuning = flag.Value * 10;
+                            break;
+                    }
+                    return;
+                }
+                var abbr = FindAbbrFromFlagKey(project.expressions, flag);
+                if (string.IsNullOrEmpty(abbr)) {
+                    undefinedFlags.Add(flag.Key);
+                } else {
+                    SetExpression(project, note, abbr, flag.Value);
                 }
             });
         }
@@ -224,17 +267,11 @@ namespace OpenUtau.Classic {
             return exp.Value != null ? exp.Value.abbr : String.Empty;
         }
 
-        private static void SetExpression(UNote note, string abbr, int index, float value) {
-            var exp = note.phonemeExpressions
-                .FirstOrDefault(exp => exp.abbr == abbr && exp.index == index);
-            if (exp == null) {
-                exp = new UExpression(abbr) {
-                    index = index,
-                    value = value,
-                };
-                note.phonemeExpressions.Add(exp);
+        private static void SetExpression(UProject project, UNote note, string abbr, float value) {
+            var track = project.tracks.First();
+            if (track.TryGetExpDescriptor(project, abbr, out var descriptor) && descriptor.CustomDefaultValue != value) {
+                note.SetExpression(project, track, abbr, new float?[] { value });
             }
-            exp.value = value;
         }
 
         static bool ParseFloat(string s, out float value) {
@@ -333,10 +370,8 @@ namespace OpenUtau.Classic {
             using (var writer = new StreamWriter(filePath, false, Encoding.GetEncoding(encoding))) {
                 WriteHeader(project, part, writer);
                 var position = 0;
-                var note_count = 0;
                 if (prev != null) {
-                    writer.WriteLine("[#PREV]");
-                    note_count += 1;
+                    writer.WriteLine($"[#PREV]");
                     WriteNoteBody(project, track, part, prev, writer);
                     position = prev.End;
                 }
@@ -349,8 +384,7 @@ namespace OpenUtau.Classic {
                     }
                     if (note.position > position) {
                         //Insert R note if there is space between two notes
-                        writer.WriteLine($"[#{note_count:D4}]");
-                        note_count += 1;
+                        writer.WriteLine($"[#{sequence.Count:D4}]");
                         var spacer = UNote.Create();
                         spacer.position = position;
                         spacer.duration = note.position - position;
@@ -359,8 +393,7 @@ namespace OpenUtau.Classic {
                         sequence.Add(spacer);
                         WriteNoteBody(project, track, part, spacer, writer);
                     }
-                    writer.WriteLine($"[#{note_count:D4}]");
-                    note_count += 1;
+                    writer.WriteLine($"[#{sequence.Count:D4}]");
                     WriteNoteBody(project, track, part, note, writer, forPlugin: true);
                     position = note.End;
                     sequence.Add(note);
@@ -418,7 +451,7 @@ namespace OpenUtau.Classic {
                         case "[#INSERT]":
                             if (index <= sequence.Count) {
                                 var newNote = project.CreateNote();
-                                ParseNote(newNote, 0, 0, block.lines, out var _, project.expressions);
+                                ParseNote(project, newNote, 0, 0, block.lines, out var _);
                                 newNote.AfterLoad(project, project.tracks[part.trackNo], part);
                                 sequence.Insert(index, newNote);
                                 toAdd.Add(newNote);
@@ -435,7 +468,7 @@ namespace OpenUtau.Classic {
                             if (index < sequence.Count) {
                                 toRemove.Add(sequence[index]);
                                 var newNote = sequence[index].Clone();
-                                ParseNote(newNote, 0, 0, block.lines, out var _, project.expressions);
+                                ParseNote(project, newNote, 0, 0, block.lines, out var _);
                                 newNote.AfterLoad(project, project.tracks[part.trackNo], part);
                                 sequence[index] = newNote;
                                 toAdd.Add(newNote);

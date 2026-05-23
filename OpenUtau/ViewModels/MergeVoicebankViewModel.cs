@@ -1,4 +1,4 @@
-using Serilog;
+﻿using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -335,9 +335,8 @@ namespace OpenUtau.App.ViewModels {
                     using (var stream = File.Open(yamlFile, FileMode.Create)) {
                         bankConfig.Save(stream);
                     }
-
                 } catch (Exception e) {
-                    var customEx = new MessageCustomizableException("Failed to merge voicebank", "<translate:errors.failed.merge>: voicebank", e);
+                    var customEx = new MessageCustomizableException("Failed to merge singer", "<translate:mergevoicebank.error>", e);
                     DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
                 } finally {
                     new Task(() =>

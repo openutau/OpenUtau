@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using OpenUtau.Core;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
@@ -118,14 +119,12 @@ Length=10
 Lyric=R
 NoteNum=60
 PreUtterance=
-Envelope=5,0,0,100,100,100,100,%,35
-[#0001]
+[#0000]
 Length=20
 Lyric=ka
 NoteNum=0
 PreUtterance=
-Envelope=5,0,0,100,100,100,100,%,35
-[#0002]
+[#0001]
 Length=30
 Lyric=r
 NoteNum=0
@@ -134,25 +133,21 @@ Velocity=40
 Intensity=50
 Modulation=60
 Flags=g30B0H0P86
-Envelope=5,0,0,100,100,100,100,%,35
-[#0003]
+[#0002]
 Length=40
 Lyric=ta
 NoteNum=0
 PreUtterance=
-Envelope=5,0,0,100,100,100,100,%,35
-[#0004]
+[#0003]
 Length=50
 Lyric=na
 NoteNum=0
 PreUtterance=
-Envelope=5,0,0,100,100,100,100,%,35
 [#NEXT]
 Length=60
 Lyric=ha
 NoteNum=0
 PreUtterance=
-Envelope=5,0,0,100,100,100,100,%,35
 ";
                     // Different line feed code for each OS
                     var eol = Environment.NewLine;
@@ -248,8 +243,8 @@ Envelope=5,0,0,100,100,100,100,%,35
         [ClassData(typeof(ExecuteTestData))]
         public void ExecuteTest(ExecuteArgument given, Action<StreamWriter, string> when, Action<ReplaceNoteEventArgs> then, Action<PluginErrorEventArgs> error) {
             // When
-            var action = new Action<PluginRunner>((runner) => {
-                runner.Execute(given.Project, given.Part, given.First, given.Last, new PluginStub(when));
+            var action = new Action<PluginRunner>(async (runner) => {
+                await runner.Execute(given.Project, given.Part, given.First, given.Last, new PluginStub(when));
             });
 
             // Then (Assert in ClassData)
@@ -262,8 +257,8 @@ Envelope=5,0,0,100,100,100,100,%,35
             var given = ExecuteTestData.BasicUProject();
 
             // When
-            var action = new Action<PluginRunner>((runner) => {
-                runner.Execute(given.Project, given.Part, given.First, given.Last, new PluginStub((writer, text) => {
+            var action = new Action<PluginRunner>(async (runner) => {
+                await runner.Execute(given.Project, given.Part, given.First, given.Last, new PluginStub((writer, text) => {
                     // return empty text (invoke error)
                 }));
             });
@@ -287,9 +282,9 @@ Envelope=5,0,0,100,100,100,100,%,35
 
         public string Encoding => "shift_jis";
 
-        public void Run(string tempFile) {
+        public async Task Run(string tempFile) {
             System.Text.Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            var text = File.ReadAllText(tempFile, System.Text.Encoding.GetEncoding(Encoding));
+            var text = await File.ReadAllTextAsync(tempFile, System.Text.Encoding.GetEncoding(Encoding));
             File.Delete(tempFile);
             using (var writer = new StreamWriter(tempFile, false, System.Text.Encoding.GetEncoding(Encoding))) {
                 action.Invoke(writer, text);

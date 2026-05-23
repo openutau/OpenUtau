@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using OpenUtau.Core.SignalChain;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
+using OpenUtau.Classic;
 using Serilog;
 
 namespace OpenUtau.Core.Render {
@@ -83,16 +84,7 @@ namespace OpenUtau.Core.Render {
                     .Where(part => part is UWavePart && part.trackNo == i)
                     .Select(part => part as UWavePart)
                     .Where(part => part.Samples != null)
-                    .Select(part => {
-                        double offsetMs = project.timeAxis.TickPosToMsPos(part.position);
-                        double estimatedLengthMs = project.timeAxis.TickPosToMsPos(part.End) - offsetMs;
-                        var waveSource = new WaveSource(
-                            offsetMs,
-                            estimatedLengthMs,
-                            part.skipMs, part.channels);
-                        waveSource.SetSamples(part.Samples);
-                        return (ISignalSource)waveSource;
-                    }));
+                    .Select(part => part.TrimSamples(project)));
                 var trackMix = new WaveMix(trackSources);
                 var fader = new Fader(trackMix);
                 fader.Scale = PlaybackManager.DecibelToVolume(track.Muted ? -24 : track.Volume);
@@ -107,13 +99,17 @@ namespace OpenUtau.Core.Render {
                 if (task.IsFaulted && !wait) {
                     Log.Error(task.Exception.Flatten(), "Failed to render.");
                     PlaybackManager.Inst.StopPlayback();
-                    MessageCustomizableException customEx;
-                    if (task.Exception.Flatten().InnerExceptions.ToList().Any(e => e is DllNotFoundException)) {
-                        customEx = new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>: <translate:errors.install.cpp>", task.Exception);
+                    var flatEx = task.Exception.Flatten();
+                    var innerEx = flatEx.InnerExceptions.ToList();
+                    if (innerEx.Count == 1 && innerEx[0] is MessageCustomizableException mce) {
+                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(mce));
+                    } else if (innerEx.Any(e => e is DllNotFoundException)) {
+                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
+                            new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>: <translate:errors.install.cpp>", flatEx)));
                     } else {
-                        customEx = new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>", task.Exception);
+                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
+                            new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>", flatEx)));
                     }
-                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
                 }
             }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, uiScheduler);
             if (wait) {
@@ -254,7 +250,7 @@ namespace OpenUtau.Core.Render {
         }
 
         public static void ReleaseSourceTemp() {
-            Classic.VoicebankFiles.Inst.ReleaseSourceTemp();
+            VoicebankFiles.Inst.ReleaseSourceTemp();
         }
     }
 }

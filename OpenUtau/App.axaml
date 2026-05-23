@@ -27,6 +27,7 @@
       <ResourceInclude x:Key="strings-th-TH" Source="/Strings/Strings.th-TH.axaml"/>
       <ResourceInclude x:Key="themes-dark" Source="/Colors/DarkTheme.axaml"/>
       <ResourceInclude x:Key="themes-light" Source="/Colors/LightTheme.axaml"/>
+      <ResourceInclude x:Key="themes-custom" Source="/Colors/CustomTheme.axaml"/>
       <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="/Colors/Brushes.axaml"/>
       </ResourceDictionary.MergedDictionaries>
@@ -35,6 +36,7 @@
   <Application.Styles>
     <FluentTheme />
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+    <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
     <StyleInclude Source="/Styles/Styles.axaml"/>
   </Application.Styles>
   <NativeMenu.Menu>

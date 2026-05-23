@@ -7,7 +7,6 @@ using Xunit;
 using Xunit.Abstractions;
 
 using OpenUtau.Core.Ustx;
-using ReactiveUI;
 
 namespace OpenUtau.Core.Format {
     public class MusicXMLTest {
@@ -112,6 +111,71 @@ namespace OpenUtau.Core.Format {
         }
 
         [Fact]
+        public void RhythmBackupTest() {
+            var project = MusicXML.LoadProject(Path.Join(basePath, "03b-Rhythm-Backup.musicxml"));
+            var part = project.parts.First() as UVoicePart;
+            var uNotes = part.notes
+                .OrderBy(n => n.position)
+                .ThenBy(n => n.tone)
+                .ToList();
+
+            var positions = new int[] { 0, 480, 480, 960 };
+            var tones = new int[] { 60, 57, 60, 57 };
+
+            Assert.Equal(4, part.notes.Count());
+            foreach (var (n, p) in uNotes.Zip(positions)) {
+                Assert.Equal(p, n.position);
+                Assert.Equal(480, n.duration);
+            }
+            foreach (var (n, t) in uNotes.Zip(tones)) {
+                Assert.Equal(t, n.tone);
+            }
+        }
+
+        [Fact]
+        public void TieTest() {
+            var project = MusicXML.LoadProject(Path.Join(basePath, "33b-Spanners-Tie.musicxml"));
+            var part = project.parts.First() as UVoicePart;
+
+            Assert.Equal(1, part.notes.Count());
+            var note = part.notes.First();
+            Assert.Equal(0, note.position);
+            Assert.Equal(480*8, note.duration);
+        }
+
+        [Fact]
+        public void ChordsTest() {
+            var project = MusicXML.LoadProject(Path.Join(basePath, "21c-Chords-ThreeNotesDuration.musicxml"));
+            var part = project.parts.First() as UVoicePart;
+            var positions = new int[] {
+                0, 0, 0,
+                720, 720,
+                960, 960, 960,
+                1440, 1440, 1440,
+                1920, 1920, 1920,
+                2400, 2400, 2400,
+                2880, 2880, 2880,
+            };
+
+            var durations = new int[] {
+                720, 720, 720,
+                240, 240,
+                480, 480, 480,
+                480, 480, 480,
+                480, 480, 480,
+                480, 480, 480,
+                960, 960, 960,
+            };
+
+            foreach (var (n, p) in part.notes.Zip(positions)) {
+                Assert.Equal(p, n.position);
+            }
+            foreach (var (n, d) in part.notes.Zip(durations)) {
+                Assert.Equal(d, n.duration);
+            }
+        }
+
+        [Fact]
         public void LyricsTest(){
             var project = MusicXML.LoadProject(Path.Join(basePath, "61a-Lyrics.musicxml"));
             var part = project.parts.First() as UVoicePart;
@@ -124,12 +188,12 @@ namespace OpenUtau.Core.Format {
             }
             Assert.Equal(69, notesList[^1].tone);
             Assert.Equal(960, notesList[^1].duration);
-            Assert.Equal("Tra", notesList[0].lyric);
-            Assert.Equal("la", notesList[1].lyric);
-            Assert.Equal("li", notesList[2].lyric);
+            Assert.Equal("Tralali", notesList[0].lyric);
+            Assert.Equal("+", notesList[1].lyric);
+            Assert.Equal("+", notesList[2].lyric);
             Assert.Equal("Ja!", notesList[3].lyric);
-            Assert.Equal("Tra", notesList[5].lyric);
-            Assert.Equal("ra!", notesList[7].lyric);
+            Assert.Equal("Trara!", notesList[5].lyric);
+            Assert.Equal("+", notesList[7].lyric);
             Assert.Equal("Bah!", notesList[9].lyric);
         }
     }

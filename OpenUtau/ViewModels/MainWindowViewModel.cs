@@ -23,6 +23,9 @@ namespace OpenUtau.App.ViewModels {
         public ReactiveCommand<UPart, Unit>? PartGotoFileCommand { get; set; }
         public ReactiveCommand<UPart, Unit>? PartReplaceAudioCommand { get; set; }
         public ReactiveCommand<UPart, Unit>? PartTranscribeCommand { get; set; }
+        public ReactiveCommand<UPart, Unit>? PartMergeCommand { get; set; }
+        public ReactiveCommand<UPart, Unit>? PartSplitCommand { get; set; }
+        public IEnumerable<MenuItemViewModel> PartApplyPitchMenuItems { get; set; } = new List<MenuItemViewModel>();
     }
 
     public class RecentFileInfo {
@@ -45,13 +48,18 @@ namespace OpenUtau.App.ViewModels {
         public string Title => !ProjectSaved
             ? $"{AppVersion}"
             : $"{(DocManager.Inst.ChangesSaved ? "" : "*")}{AppVersion} [{DocManager.Inst.Project.FilePath}]";
-        
+        public double Width => Preferences.Default.MainWindowSize.Width;
+        public double Height => Preferences.Default.MainWindowSize.Height;
+
         /// <summary>
         ///0: welcome page, 1: tracks page
         /// </summary>
         [Reactive] public int Page { get; set; } = 0;
         ObservableCollectionExtended<RecentFileInfo> RecentFiles { get; } = new ObservableCollectionExtended<RecentFileInfo>();
         ObservableCollectionExtended<RecentFileInfo> TemplateFiles { get; } = new ObservableCollectionExtended<RecentFileInfo>();
+        [Reactive] public bool HasRecovery { get; set; } = false;
+        [Reactive] public string RecoveryPath { get; set; } = String.Empty;
+        [Reactive] public string RecoveryString { get; set; } = String.Empty;
 
         [Reactive] public PlaybackViewModel PlaybackViewModel { get; set; }
         [Reactive] public TracksViewModel TracksViewModel { get; set; }
@@ -67,22 +75,33 @@ namespace OpenUtau.App.ViewModels {
         public string AppVersion => $"OpenUtau v{System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}";
         [Reactive] public double Progress { get; set; }
         [Reactive] public string ProgressText { get; set; }
+        [Reactive] public bool ShowPianoRoll { get; set; }
+        [Reactive] public double PianoRollMaxHeight { get; set; }
+        [Reactive] public double PianoRollMinHeight { get; set; }
         public ReactiveCommand<UPart, Unit> PartDeleteCommand { get; set; }
         public ReactiveCommand<int, Unit>? AddTempoChangeCmd { get; set; }
         public ReactiveCommand<int, Unit>? DelTempoChangeCmd { get; set; }
         public ReactiveCommand<int, Unit>? AddTimeSigChangeCmd { get; set; }
         public ReactiveCommand<int, Unit>? DelTimeSigChangeCmd { get; set; }
+        [Reactive] public bool CanUndo { get; set; } = false;
+        [Reactive] public bool CanRedo { get; set; } = false;
+        [Reactive] public string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
+        [Reactive] public string RedoText { get; set; } = ThemeManager.GetString("menu.edit.redo");
 
         private ObservableCollectionExtended<MenuItemViewModel> openRecentMenuItems
             = new ObservableCollectionExtended<MenuItemViewModel>();
         private ObservableCollectionExtended<MenuItemViewModel> openTemplatesMenuItems
             = new ObservableCollectionExtended<MenuItemViewModel>();
 
+        // view will set this to the real AskIfSaveAndContinue implementation
+        public Func<Task<bool>>? AskIfSaveAndContinue { get; set; }
+
         public MainWindowViewModel() {
             PlaybackViewModel = new PlaybackViewModel();
             TracksViewModel = new TracksViewModel();
             ClearCacheHeader = string.Empty;
             ProgressText = string.Empty;
+            ShowPianoRoll = false;
             RecentFiles.Clear();
             RecentFiles.AddRange(Preferences.Default.RecentFiles
                 .Select(file => new RecentFileInfo(file))
@@ -91,12 +110,32 @@ namespace OpenUtau.App.ViewModels {
             Directory.CreateDirectory(PathManager.Inst.TemplatesPath);
             TemplateFiles.AddRange(Directory.GetFiles(PathManager.Inst.TemplatesPath, "*.ustx")
                 .Select(file => new RecentFileInfo(file)));
-            OpenRecentCommand = ReactiveCommand.Create<string>(OpenRecent);
-            OpenTemplateCommand = ReactiveCommand.Create<string>(OpenTemplate);
+
+            // create async commands that consult the view's save prompt
+            OpenRecentCommand = ReactiveCommand.CreateFromTask<string>(async file => {
+                if (!DocManager.Inst.ChangesSaved && AskIfSaveAndContinue != null) {
+                    if (!await AskIfSaveAndContinue()) return;
+                }
+                OpenRecent(file);
+            });
+
+            OpenTemplateCommand = ReactiveCommand.CreateFromTask<string>(async file => {
+                if (!DocManager.Inst.ChangesSaved && AskIfSaveAndContinue != null) {
+                    if (!await AskIfSaveAndContinue()) return;
+                }
+                OpenTemplate(file);
+            });
+
             PartDeleteCommand = ReactiveCommand.Create<UPart>(part => {
                 TracksViewModel.DeleteSelectedParts();
             });
             DocManager.Inst.AddSubscriber(this);
+
+            this.WhenAnyValue(vm => vm.ShowPianoRoll)
+                .Subscribe(x => {
+                    PianoRollMaxHeight = x ? double.PositiveInfinity : 0;
+                    PianoRollMinHeight = x ? ViewConstants.PianoRollMinHeight : 0;
+                });
         }
 
         public void Undo() {
@@ -105,10 +144,25 @@ namespace OpenUtau.App.ViewModels {
         public void Redo() {
             DocManager.Inst.Redo();
         }
+        private void SetUndoState() {
+            CanUndo = DocManager.Inst.GetUndoState(out string? undoNameKey);
+            if (!string.IsNullOrWhiteSpace(undoNameKey)) {
+                UndoText = $"{ThemeManager.GetString("menu.edit.undo")}: {ThemeManager.GetString(undoNameKey)}";
+            } else {
+                UndoText = ThemeManager.GetString("menu.edit.undo");
+            }
+            CanRedo = DocManager.Inst.GetRedoState(out string? redoNameKey);
+            if (!string.IsNullOrWhiteSpace(redoNameKey)) {
+                RedoText = $"{ThemeManager.GetString("menu.edit.redo")}:  {ThemeManager.GetString(redoNameKey)}";
+            } else {
+                RedoText = ThemeManager.GetString("menu.edit.redo");
+            }
+        }
 
-        public async void InitProject(MainWindow window) {
+        public void InitProject(MainWindow window) {
             var recPath = Preferences.Default.RecoveryPath;
             if (!string.IsNullOrWhiteSpace(recPath) && File.Exists(recPath)) {
+                /*
                 var result = await MessageBox.Show(
                     window,
                     $"{ThemeManager.GetString("dialogs.recovery")}\n{recPath}",
@@ -127,6 +181,11 @@ namespace OpenUtau.App.ViewModels {
                     }
                     return;
                 }
+                */
+                RecoveryPath = recPath;
+                RecoveryString = ThemeManager.GetString("dialogs.recovery") + "\n" + recPath;
+                HasRecovery = true;
+                return;
             }
           
             var args = Environment.GetCommandLineArgs();
@@ -139,6 +198,7 @@ namespace OpenUtau.App.ViewModels {
                     var customEx = new MessageCustomizableException($"Failed to open file {args[1]}", $"<translate:errors.failed.openfile>: {args[1]}", e);
                     DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
                 }
+                return;
             }
         }
 
@@ -160,12 +220,15 @@ namespace OpenUtau.App.ViewModels {
             DocManager.Inst.Recovered = false;
         }
 
+
+
         public void OpenProject(string[] files) {
             if (files == null) {
                 return;
             }
             DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), true, "project"));
             try {
+
                 Core.Format.Formats.LoadProject(files);
                 DocManager.Inst.ExecuteCmd(new VoiceColorRemappingNotification(-1, true));
                 this.RaisePropertyChanged(nameof(Title));
@@ -234,7 +297,7 @@ namespace OpenUtau.App.ViewModels {
             }
             int trackNo = project.tracks.Count;
             part.trackNo = trackNo;
-            DocManager.Inst.StartUndoGroup();
+            DocManager.Inst.StartUndoGroup("command.import.audio");
             DocManager.Inst.ExecuteCmd(new AddTrackCommand(project, new UTrack(project) { TrackNo = trackNo }));
             DocManager.Inst.ExecuteCmd(new AddPartCommand(project, part));
             DocManager.Inst.EndUndoGroup();
@@ -246,7 +309,7 @@ namespace OpenUtau.App.ViewModels {
             }
             var project = DocManager.Inst.Project;
             var parts = Core.Format.MidiWriter.Load(file, project);
-            DocManager.Inst.StartUndoGroup();
+            DocManager.Inst.StartUndoGroup("command.import.track");
             foreach (var part in parts) {
                 var track = new UTrack(project);
                 track.TrackNo = project.tracks.Count;
@@ -359,7 +422,7 @@ namespace OpenUtau.App.ViewModels {
                     var partOldDuration = voicePart.Duration;
                     var partNewDuration = RemapTickPos(partOldStartTick + voicePart.duration, oldTimeAxis, newTimeAxis) - partNewStartTick;
                     if(partNewDuration != partOldDuration) {
-                        DocManager.Inst.ExecuteCmd(new ResizePartCommand(
+                        DocManager.Inst.ExecuteCmd(new ResizeVoicePartCommand(
                             project, voicePart, partNewDuration - partOldDuration, false));
                     }
                     var noteCommands = new List<UCommand>();
@@ -394,12 +457,13 @@ namespace OpenUtau.App.ViewModels {
                 Dispatcher.UIThread.InvokeAsync(() => {
                     Progress = progressBarNotification.Progress;
                     ProgressText = progressBarNotification.Info;
-                });
+                }, DispatcherPriority.Background);
             } else if (cmd is LoadProjectNotification loadProject) {
-                Core.Util.Preferences.AddRecentFileIfEnabled(loadProject.project.FilePath);
+                Preferences.AddRecentFileIfEnabled(loadProject.project.FilePath);
             } else if (cmd is SaveProjectNotification saveProject) {
-                Core.Util.Preferences.AddRecentFileIfEnabled(saveProject.Path);
+                Preferences.AddRecentFileIfEnabled(saveProject.Path);
             }
+            SetUndoState();
             this.RaisePropertyChanged(nameof(Title));
         }
 

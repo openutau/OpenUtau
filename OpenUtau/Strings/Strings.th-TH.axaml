@@ -184,8 +184,6 @@
   <system:String x:Key="menu.file.exit">ออก</system:String>
   <!--<system:String x:Key="menu.file.exportaudio">Export Audio</system:String>-->
   <!--<system:String x:Key="menu.file.exportds">Export DiffSinger Scripts To</system:String>-->
-  <!--<system:String x:Key="menu.file.exportds.v2">Export DiffSinger Scripts To (v2)</system:String>-->
-  <!--<system:String x:Key="menu.file.exportds.v2withoutpitch">Export DiffSinger Scripts To (v2, without pitch curve)</system:String>-->
   <!--<system:String x:Key="menu.file.exportmidi">Export Midi File</system:String>-->
   <!--<system:String x:Key="menu.file.exportmixdown">Mixdown To Wav File</system:String>-->
   <!--<system:String x:Key="menu.file.exportproject">Export Project</system:String>-->

@@ -33,10 +33,10 @@ jobs:
           - { name: win-x64, rid: win-x64, arch: x64, os: win, runs-on: windows-latest }
           - { name: win-x86, rid: win-x86, arch: x86, os: win, runs-on: windows-latest }
           - { name: win-arm64, rid: win-arm64, arch: arm64, os: win, runs-on: windows-latest }
-          - { name: osx-x64, rid: osx-x64, arch: x64, os: osx, runs-on: macos-13 }
-          - { name: osx-arm64, rid: osx-arm64, arch: arm64, os: osx, runs-on: macos-13 }
-          - { name: linux-x64, rid: linux-x64, arch: x64, os: linux, runs-on: ubuntu-latest }
-          - { name: linux-arm64, rid: linux-arm64, arch: arm64, os: linux, runs-on: ubuntu-latest }
+          - { name: osx-x64, rid: osx-x64, arch: x64, os: osx, runs-on: macos-15-intel }
+          - { name: osx-arm64, rid: osx-arm64, arch: arm64, os: osx, runs-on: macos-15-intel }
+          - { name: linux-x64, rid: linux-x64, arch: x64, os: linux, runs-on: ubuntu-latest, linuxarch: x86_64}
+          - { name: linux-arm64, rid: linux-arm64, arch: arm64, os: linux, runs-on: ubuntu-latest, linuxarch: aarch64}
 
     steps:
       # Setup
@@ -49,6 +49,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Install NSIS via Chocolatey
+        run: choco install nsis --version=3.11 --no-progress
+        if: ${{ matrix.arch.os == 'win' }}
       - uses: justalemon/VersionPatcher@v0.7.1
         with:
           version: ${{ inputs.version }}
@@ -62,15 +65,23 @@ jobs:
       - name: Restore
         run: dotnet restore OpenUtau -r ${{ matrix.arch.rid }}
 
-      - name: Publish
+      - name: Build (Windows and Linux)
         run: dotnet publish OpenUtau -c Release -r ${{ matrix.arch.rid }} --self-contained true -o bin/${{ matrix.arch.name }}/
         if: ${{ matrix.arch.os != 'osx' }}
+
+      - name: Build (MacOS)
+        run: dotnet msbuild OpenUtau -t:BundleApp -p:Configuration=Release -p:RuntimeIdentifier=${{ matrix.arch.rid }} -p:UseAppHost=true -p:SelfContained=true -p:OutputPath=../bin/${{ matrix.arch.name }}/
+        if: ${{ matrix.arch.os == 'osx' }}
+      
+      - name: Write release channel info
+        run: "@{Beta=$${{ inputs.beta }}} | ConvertTo-Json > bin/${{ matrix.arch.name }}/prefs-default.json"
+        shell: pwsh
 
       # Create Zip
       - name: DirectML
         shell: cmd
         run: |
-          curl -L https://www.nuget.org/api/v2/package/Microsoft.AI.DirectML/1.12.1 -o Microsoft.AI.DirectML.nupkg
+          curl -L https://www.nuget.org/api/v2/package/Microsoft.AI.DirectML/1.15.4 -o Microsoft.AI.DirectML.nupkg
           mkdir Microsoft.AI.DirectML
           tar -xf Microsoft.AI.DirectML.nupkg -C Microsoft.AI.DirectML
           copy /y Microsoft.AI.DirectML\bin\${{ matrix.arch.arch }}-${{ matrix.arch.os }}\DirectML.dll bin\${{ matrix.arch.name }}\
@@ -84,7 +95,13 @@ jobs:
         run: |
           cd bin/${{ matrix.arch.name }}
           7z a ../../OpenUtau-${{ matrix.arch.name }}.zip *
-        if: ${{ matrix.arch.os != 'osx' }}
+        if: ${{ matrix.arch.os == 'win' }}
+
+      - name: Tar.gz
+        run: |
+          cd bin/${{ matrix.arch.name }}
+          tar -czf ../../OpenUtau-${{ matrix.arch.name }}.tar.gz *
+        if: ${{ matrix.arch.os == 'linux' }}
 
       # Create Installer
       - name: Get VC Redist
@@ -102,7 +119,6 @@ jobs:
       # Create Dmg
       - name: Create Dmg
         run: |
-          dotnet msbuild OpenUtau -t:BundleApp -p:Configuration=Release -p:RuntimeIdentifier=${{ matrix.arch.rid }} -p:UseAppHost=true -p:OutputPath=../bin/${{ matrix.arch.name }}/
           npm install -g create-dmg
           cp OpenUtau/Assets/OpenUtau.icns bin/${{ matrix.arch.name }}/publish/OpenUtau.app/Contents/Resources/
           create-dmg bin/${{ matrix.arch.name }}/publish/OpenUtau.app || true
@@ -110,18 +126,48 @@ jobs:
           codesign -fvs - OpenUtau-${{ matrix.arch.name }}.dmg
         if: ${{ matrix.arch.os == 'osx' }}
 
+      # Create Appimage
+      - name: Install LinuxDeploy
+        uses: AnimMouse/setup-appimage@v1
+        with:
+          name: linuxdeploy
+          url: https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        if: ${{ matrix.arch.os == 'linux' }}
+
+      - name: Create appimage
+        run: |
+          cp OpenUtau/Assets/OpenUtau.desktop bin/${{ matrix.arch.name }}
+          cp OpenUtau/Assets/OpenUtau.png bin/${{ matrix.arch.name }}
+          cp OpenUtau/Assets/OpenUtau.png bin/${{ matrix.arch.name }}/.DirIcon
+          cp OpenUtau/Assets/AppRun bin/${{ matrix.arch.name }}
+          chmod 755 bin/${{ matrix.arch.name }}/AppRun
+          ARCH=${{ matrix.arch.linuxarch }} linuxdeploy --appdir bin/${{ matrix.arch.name }} --output appimage
+        if: ${{ matrix.arch.os == 'linux' }}
+
       # Upload Artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenUtau-${{ matrix.arch.name }}.tar.gz
+          path: OpenUtau-${{ matrix.arch.name }}.tar.gz
+        if: ${{ !inputs.release && matrix.arch.os == 'linux' }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: OpenUtau-${{ matrix.arch.name }}.zip
           path: OpenUtau-${{ matrix.arch.name }}.zip
-        if: ${{ !inputs.release && matrix.arch.os != 'osx' }}
+        if: ${{ !inputs.release && matrix.arch.os == 'win' }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: OpenUtau-${{ matrix.arch.name }}.exe
           path: OpenUtau-${{ matrix.arch.name }}.exe
         if: ${{ !inputs.release && matrix.arch.os == 'win' }}
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenUtau-${{ matrix.arch.name }}.AppImage
+          path: OpenUtau-${{ matrix.arch.linuxarch }}.AppImage
+        if: ${{ !inputs.release && matrix.arch.os == 'linux' }}
 
       - uses: actions/upload-artifact@v4
         with:
@@ -144,7 +190,7 @@ jobs:
 
       - name: Appcast Linux
         run: |
-          python appcast.py -v=${{ inputs.version }} -o=linux -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.zip
+          python appcast.py -v=${{ inputs.version }} -o=linux -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.tar.gz
         if: ${{ inputs.release && matrix.arch.os == 'linux' }}
 
       # Release

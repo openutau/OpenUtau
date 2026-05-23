@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -11,37 +8,46 @@ using ReactiveUI.Fody.Helpers;
 
 namespace OpenUtau.App.ViewModels {
     class LyricsViewModel : ViewModelBase {
-        [Reactive] public string? Text { get; set; }
+        [Reactive] public string? Text { get; set; } = string.Empty;
         [Reactive] public int CurrentCount { get; set; }
         [Reactive] public int TotalCount { get; set; }
-        [Reactive] public int MaxCount { get; set; }
-        [Reactive] public bool LivePreview { get; set; }
+        [Reactive] public bool LivePreview { get; set; } = true;
+        [Reactive] public bool ApplySelection { get; set; } = true;
 
         private UVoicePart? part;
         private UNote[]? notes;
+        private UNote[]? selection;
         private string[]? startLyrics;
 
         public LyricsViewModel() {
-            Text = string.Empty;
-            LivePreview = true;
             this.WhenAnyValue(x => x.LivePreview,
                 x => x.Text)
                 .Subscribe(t => {
                     Preview(t.Item1);
                 });
+            this.WhenAnyValue(x => x.ApplySelection)
+                .Subscribe(a => {
+                    UpdateTotalCount();
+                    Preview(LivePreview);
+                });
         }
 
-        public void Start(UVoicePart part, UNote[] notes, string[] lyrics) {
+        public void Start(UVoicePart part, UNote[] notes, UNote[] selection) {
             this.part = part;
             this.notes = notes;
-            CurrentCount = TotalCount = lyrics.Length;
-            MaxCount = notes.Length;
-            Text = SplitLyrics.Join(lyrics);
-            startLyrics = lyrics;
-            DocManager.Inst.StartUndoGroup();
+            this.selection = selection;
+            if (selection.Length < 1) {
+                ApplySelection = false;
+            }
+
+            UpdateTotalCount();
+            CurrentCount = TotalCount;
+            Text = SplitLyrics.Join(startLyrics!);
+            DocManager.Inst.StartUndoGroup("command.note.lyric");
         }
 
-        public void Preview(bool update) {
+        private void Preview(bool update) {
+            var notes = ApplySelection ? selection : this.notes;
             if (startLyrics == null || notes == null || part == null) {
                 return;
             }
@@ -54,6 +60,16 @@ namespace OpenUtau.App.ViewModels {
                         DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(part, notes[i], lyrics[i]));
                     }
                 }
+            }
+        }
+
+        private void UpdateTotalCount() {
+            if (ApplySelection) {
+                TotalCount = selection?.Length ?? 0;
+                startLyrics = selection?.Select(n => n.lyric).ToArray();
+            } else {
+                TotalCount = notes?.Length ?? 0;
+                startLyrics = notes?.Select(n => n.lyric).ToArray();
             }
         }
 

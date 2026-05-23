@@ -102,13 +102,11 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
             if (otos.Count > 0) {
-                if (otos.Any(oto => (oto.Color ?? string.Empty) == color)) {
-                    oto = otos.Find(oto => (oto.Color ?? string.Empty) == color);
-                    return true;
-                } else {
+                oto = otos.FirstOrDefault(oto => oto.IsColorMatch(color));
+                if (oto == null) {
                     oto = otos.First();
-                    return true;
                 }
+                return true;
             }
             return false;
         }

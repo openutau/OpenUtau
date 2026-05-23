@@ -55,10 +55,12 @@
   <ItemGroup>
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.4" />
     <PackageReference Include="Dotnet.Bundle" Version="0.9.13" />
+    <PackageReference Include="Material.Avalonia" Version="3.13.3" />
     <PackageReference Include="NetSparkleUpdater.SparkleUpdater" Version="2.2.3" />
     <PackageReference Include="ReactiveUI.Fody" Version="19.5.41" />
     <PackageReference Include="Avalonia" Version="11.2.4" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.2.4" />
+    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="11.2.4" />
     <PackageReference Include="Avalonia.Desktop" Version="11.2.4" />
     <PackageReference Include="Avalonia.Diagnostics" Version="11.2.4" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="11.2.4" />

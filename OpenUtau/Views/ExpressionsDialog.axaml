@@ -7,9 +7,9 @@
         mc:Ignorable="d"
         x:Class="OpenUtau.App.Views.ExpressionsDialog"
         Icon="/Assets/open-utau.ico"
-        Title="{DynamicResource exps.caption}"
+        Title="{Binding WindowTitle}"
         WindowStartupLocation="CenterScreen"
-        MinWidth="600" MinHeight="400" Width="600" Height="400">
+        MinWidth="600" MinHeight="440" Width="600" Height="440">
   <Design.DataContext>
     <vm:ExpressionsViewModel/>
   </Design.DataContext>
@@ -17,8 +17,13 @@
     <StyleInclude Source="/Styles/PianoRollStyles.axaml"/>
   </Window.Styles>
 
-  <Grid Margin="{Binding $parent.WindowDecorationMargin}">
-    <Border Margin="10,10,10,40" Width="150" HorizontalAlignment="Left">
+  <Grid Margin="{Binding $parent.WindowDecorationMargin}" RowDefinitions="Auto,*,Auto">
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10" IsVisible="{Binding IsSwitchVisible}">
+      <ToggleButton Content="{DynamicResource exps.project}" IsChecked="{Binding !IsTrackOverride}" CornerRadius="5,0,0,5" Classes="switch" Command="{Binding OnClickProject}"/>
+      <ToggleButton Content="{DynamicResource exps.track}" IsChecked="{Binding IsTrackOverride}" CornerRadius="0,5,5,0" Classes="switch" Command="{Binding OnClickTrack}"/>
+    </StackPanel>
+
+    <Border Grid.Row="1" Margin="10" Width="150" HorizontalAlignment="Left">
       <ListBox ItemsSource="{Binding Expressions}" SelectedItem="{Binding Expression}" SelectedItems="{Binding SelectExpressions}" SelectionMode="Multiple">
         <ListBox.ItemTemplate>
           <DataTemplate>
@@ -27,65 +32,103 @@
         </ListBox.ItemTemplate>
       </ListBox>
     </Border>
-    <Grid Margin="10" Width="150" Height="20" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+
+    <StackPanel Grid.Row="1" Margin="170,10,10,10" HorizontalAlignment="Stretch" IsEnabled="{Binding IsSelected}">
+      <StackPanel.Styles>
+        <Style Selector="TextBlock.label">
+            <Setter Property="TextWrapping" Value="WrapWithOverflow"/>
+            <Setter Property="Width" Value="140"/>
+            <Setter Property="Margin" Value="0,0,10,4"/>
+            <Setter Property="DockPanel.Dock" Value="Left"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+      </StackPanel.Styles>
+
+      <DockPanel>
+        <TextBlock Text="{DynamicResource exps.name}" Classes="label" DockPanel.Dock="Left"/>
+        <TextBox IsEnabled="{Binding Expression.IsCustom}" Text="{Binding Expression.Name}"/>
+      </DockPanel>
+      <DockPanel>
+        <TextBlock Text="{DynamicResource exps.abbr}" Classes="label"/>
+        <TextBox IsEnabled="{Binding Expression.IsCustom}" Text="{Binding Expression.Abbr}"/>
+      </DockPanel>
+      <DockPanel>
+        <TextBlock Text="{DynamicResource exps.type}" Classes="label"/>
+        <ComboBox Margin="0,0,0,4" HorizontalAlignment="Stretch"
+                  IsEnabled="{Binding Expression.IsCustom}"
+                  SelectedIndex="{Binding Expression.ExpressionType}">
+          <ComboBoxItem Content="{DynamicResource exps.type.numerical}"/>
+          <ComboBoxItem Content="{DynamicResource exps.type.options}"/>
+          <ComboBoxItem Content="{DynamicResource exps.type.curve}"/>
+        </ComboBox>
+      </DockPanel>
+      <DockPanel IsVisible="{Binding Expression.IsOptions}">
+        <TextBlock Text="{DynamicResource exps.isflag}" Classes="label"/>
+        <CheckBox IsEnabled="{Binding Expression.IsCustom}" IsChecked="{Binding Expression.IsFlag}" Margin="0,0,0,4"/>
+      </DockPanel>
+      <DockPanel IsVisible="{Binding Expression.IsNumerical}">
+        <TextBlock Text="{DynamicResource exps.flag}" Classes="label"/>
+        <TextBox IsEnabled="{Binding Expression.IsCustom}" Text="{Binding Expression.Flag}"/>
+      </DockPanel>
+      <DockPanel IsVisible="{Binding !Expression.IsOptions}">
+        <TextBlock Text="{DynamicResource exps.minvalue}" Classes="label"/>
+        <c:FloatEditor IsEnabled="{Binding Expression.IsCustom}" Value="{Binding Expression.Min}"/>
+      </DockPanel>
+      <DockPanel IsVisible="{Binding !Expression.IsOptions}">
+        <TextBlock Text="{DynamicResource exps.maxvalue}" Classes="label"/>
+        <c:FloatEditor IsEnabled="{Binding Expression.IsCustom}" Value="{Binding Expression.Max}"/>
+      </DockPanel>
+      <DockPanel IsVisible="{Binding Expression.IsCurve}">
+        <TextBlock Text="{DynamicResource exps.defaultvalue}" Classes="label"/>
+        <c:FloatEditor Value="{Binding Expression.DefaultValue}"/>
+      </DockPanel>
+      <DockPanel IsVisible="{Binding Expression.IsNumerical}">
+        <TextBlock Text="{DynamicResource exps.systemdefault}" Classes="label"/>
+        <c:FloatEditor Value="{Binding Expression.DefaultValue}"/>
+      </DockPanel>
+      <DockPanel IsVisible="{Binding Expression.IsNumerical}">
+        <TextBlock Text="{Binding CustomDefaultLabel}" Classes="label"/>
+        <c:FloatEditor Value="{Binding Expression.CustomeDefaultValue}"/>
+      </DockPanel>
+      <DockPanel IsVisible="{Binding Expression.IsOptions}">
+        <TextBlock Text="{DynamicResource exps.optionvalues}" Classes="label"/>
+        <TextBox Text="{Binding Expression.OptionValues}" Margin="0"/>
+      </DockPanel>
+      <TextBlock  IsVisible="{Binding Expression.IsOptions}" Margin="150,0,0,4" Text="{DynamicResource exps.sepbycomma}"/>
+      <DockPanel IsVisible="{Binding Expression.IsNumerical}">
+        <TextBlock Text="{DynamicResource exps.skipoutput}" Classes="label"/>
+        <CheckBox IsChecked="{Binding Expression.SkipOutputIfDefault}"/>
+      </DockPanel>
+    </StackPanel>
+
+    <Grid Grid.Row="2" Margin="10" Width="150" Height="20" HorizontalAlignment="Left">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="1*"/>
         <ColumnDefinition Width="10"/>
         <ColumnDefinition Width="1*"/>
       </Grid.ColumnDefinitions>
-      <Button Grid.Column="0" HorizontalAlignment="Stretch" Margin="0" Command="{Binding Add}">+</Button>
-      <Button Grid.Column="2" HorizontalAlignment="Stretch" Margin="0" Command="{Binding Remove}" IsEnabled="{Binding Expression.IsCustom}">-</Button>
+      <Button Grid.Column="0" HorizontalAlignment="Stretch" Click="AddButtonClicked">+
+        <Button.ContextMenu>
+          <ContextMenu Placement="Top" ItemsSource="{Binding AddMenuItems}">
+            <ContextMenu.Styles>
+              <Style Selector="MenuItem">
+                <Setter Property="Header" Value="{Binding Header}"/>
+                <Setter Property="Command" Value="{Binding Command}"/>
+                <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
+              </Style>
+            </ContextMenu.Styles>
+          </ContextMenu>
+        </Button.ContextMenu>
+      </Button>
+      <Button Grid.Column="2" HorizontalAlignment="Stretch" Command="{Binding Remove}" IsEnabled="{Binding Expression.IsRemovable}">-</Button>
     </Grid>
-    <StackPanel Margin="170,10,10,40" HorizontalAlignment="Stretch">
-      <Grid>
-        <Label Content="{DynamicResource exps.name}" Width="130" HorizontalAlignment="Left"/>
-        <TextBox Margin="140,0,0,4" IsEnabled="{Binding Expression.IsCustom}" Text="{Binding Expression.Name}"/>
-      </Grid>
-      <Grid>
-        <Label Content="{DynamicResource exps.abbr}" Width="130" HorizontalAlignment="Left"/>
-        <TextBox Margin="140,0,0,4" IsEnabled="{Binding Expression.IsCustom}" Text="{Binding Expression.Abbr}"/>
-      </Grid>
-      <Grid>
-        <Label Content="{DynamicResource exps.type}" Width="130" HorizontalAlignment="Left"/>
-        <ComboBox Margin="140,0,0,4" HorizontalAlignment="Stretch"
-                  IsEnabled="{Binding Expression.IsCustom}"
-                  SelectedIndex="{Binding Expression.SelectedType}"
-                  SelectionChanged="OnExpressionTypeChanged">
-          <ComboBoxItem Content="{DynamicResource exps.type.numerical}"/>
-          <ComboBoxItem Content="{DynamicResource exps.type.options}"/>
-          <ComboBoxItem Content="{DynamicResource exps.type.curve}"/>
-        </ComboBox>
-      </Grid>
-      <Grid IsVisible="{Binding Expression.IsOptions}">
-        <Label Content="{DynamicResource exps.isflag}" Width="130" HorizontalAlignment="Left"/>
-        <CheckBox Margin="140,0,0,4" IsEnabled="{Binding Expression.IsCustom}" IsChecked="{Binding Expression.IsFlag}"/>
-      </Grid>
-      <Grid IsVisible="{Binding Expression.IsNumerical}">
-        <Label Content="{DynamicResource exps.flag}" Width="130" HorizontalAlignment="Left"/>
-        <TextBox Margin="140,0,0,4" IsEnabled="{Binding Expression.IsCustom}" Text="{Binding Expression.Flag}"/>
-      </Grid>
-      <Grid IsVisible="{Binding Expression.ShowNumbers}">
-        <Label Content="{DynamicResource exps.minvalue}" Width="130" HorizontalAlignment="Left"/>
-        <c:FloatEditor Margin="140,0,0,4" IsEnabled="{Binding Expression.IsCustom}" Value="{Binding Expression.Min}"/>
-      </Grid>
-      <Grid IsVisible="{Binding Expression.ShowNumbers}">
-        <Label Content="{DynamicResource exps.maxvalue}" Width="130" HorizontalAlignment="Left"/>
-        <c:FloatEditor Margin="140,0,0,4" IsEnabled="{Binding Expression.IsCustom}" Value="{Binding Expression.Max}"/>
-      </Grid>
-      <Grid IsVisible="{Binding Expression.ShowNumbers}">
-        <Label Content="{DynamicResource exps.defaultvalue}" Width="130" HorizontalAlignment="Left"/>
-        <c:FloatEditor Margin="140,0,0,4" Value="{Binding Expression.DefaultValue}"/>
-      </Grid>
-      <Grid IsVisible="{Binding Expression.IsOptions}">
-        <Label Content="{DynamicResource exps.optionvalues}" Width="130" HorizontalAlignment="Left"/>
-        <TextBox Margin="140,0,0,4" Text="{Binding Expression.OptionValues}"/>
-        <TextBlock Margin="140,24,0,4" Text="{DynamicResource exps.sepbycomma}"/>
-      </Grid>
-    </StackPanel>
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
-      <Button Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Margin="10" HorizontalAlignment="Right" IsEnabled="{Binding !IsTrackOverride}"
             Content="{DynamicResource exps.getsuggestions}" Command="{Binding GetSuggestions}"/>
-      <Button Margin="10" Width="80" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+      <Button Margin="10" Width="80" HorizontalAlignment="Right"
             Content="{DynamicResource exps.apply}" Click="ApplyButtonClicked"/>
     </StackPanel>
   </Grid>

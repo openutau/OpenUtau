@@ -7,16 +7,18 @@ namespace OpenUtau.App {
         public const double TickWidthDefault = 24.0 / 480.0;
         public const double MinTicklineWidth = 12.0;
 
-        public const double TrackHeightMax = 144;
-        public const double TrackHeightMin = 44;
-        public const double TrackHeightDefault = 104;
-        public const double TrackHeightDelta = 20;
+        public const double TrackHeightMax = 147;
+        public const double TrackHeightMin = 42;
+        public const double TrackHeightDefault = 105;
+        public const double TrackHeightDelta = 21;
 
         public const double PianoRollTickWidthMax = 640.0 / 480.0;
         public const double PianoRollTickWidthMin = 4.0 / 480.0;
         public const double PianoRollTickWidthDefault = 128.0 / 480.0;
         public const double PianoRollTickWidthShowDetails = 64.0 / 480.0;
         public const double PianoRollMinTicklineWidth = 12.0;
+
+        public const double PianoRollMinHeight = 24;
 
         public const double NoteHeightMax = 128;
         public const double NoteHeightMin = 8;
@@ -50,5 +52,8 @@ namespace OpenUtau.App {
         public const int ExpressionHiddenZIndex = 0;
         public const int ExpressionVisibleZIndex = 200;
         public const int ExpressionShadowZIndex = 100;
+
+        public const double ExpHeightMin = 132;
+        public const double ExpHeightMax = 600;
     }
 }

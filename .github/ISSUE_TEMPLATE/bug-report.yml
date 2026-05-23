@@ -6,12 +6,15 @@ body:
       value: |
         GitHub issues are for reporting bugs and crashes. Vague help requests are not efficiently handled here.
         For help request please read [Getting-Started](https://github.com/stakira/OpenUtau/wiki/Getting-Started) and [FAQ](https://github.com/stakira/OpenUtau/wiki/FAQ) and other wiki pages first.
+        If dealing with version 0.1.549 or higher, your issue may be fixed by installing [the .NET 8 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
         If still not resolved, help requests are better handled in the Discord server or QQ group.
   - type: checkboxes
     attributes:
       label: Acknowledgement
       options:
         - label: I have read Getting-Started and FAQ
+          required: true
+        - label: If dealing with version 0.1.549 or higher, you have installed the .NET 8 runtime
           required: true
   - type: textarea
     attributes:
@@ -49,6 +52,7 @@ body:
       description: |
         Find the log corresponding to the bug and attach it here.
         Log files are under Logs folder.
+        The Logs folder can be opened through `Help` > `Open Logs Location`.
         When in doubt, delete all log files, reproduce the bug, and attach the new log file.
     validations:
       required: true

@@ -52,6 +52,7 @@ namespace OpenUtau.Core.DiffSinger
             // Load dictionary from singer folder.
             G2pDictionary.Builder g2pBuilder = new G2pDictionary.Builder();
             var replacements = new Dictionary<string,string>();
+            bool dictFound = false;
             foreach(var dictionaryName in dictionaryNames){
                 string dictionaryPath = Path.Combine(rootPath, dictionaryName);
                 if (File.Exists(dictionaryPath)) {
@@ -66,12 +67,19 @@ namespace OpenUtau.Core.DiffSinger
                                 phonemeSymbols[symbol.symbol.Trim()] = true;
                             }
                         }
-                        Log.Error("Loaded symbols: " + string.Join(", ", phonemeSymbols.Keys));
+                        Log.Information("Loaded symbols: " + string.Join(", ", phonemeSymbols.Keys));
                     } catch (Exception e) {
                         Log.Error(e, $"Failed to load {dictionaryPath}");
+                        throw new Exception($"Failed to load {dictionaryPath}", e);
                     }
+                    dictFound = true;
                     break;
                 }
+            }
+            if(!dictFound){
+                var triedPaths = string.Join(", ", dictionaryNames.Select(n => Path.Combine(rootPath, n)));
+                throw new FileNotFoundException(
+                    $"No dictionary file found. Tried: {triedPaths}");
             }
             //SP and AP should always be vowel
             g2pBuilder.AddSymbol("SP", true);
@@ -89,9 +97,9 @@ namespace OpenUtau.Core.DiffSinger
             foreach(var c in GetBaseG2pConsonants()){
                 phonemeSymbols[c]=false;
             }
-            if(useLangId){
+            var langCode = GetLangCode();
+            if(!string.IsNullOrEmpty(langCode)){
                 //For diffsinger multi dict voicebanks, the replacements of g2p phonemes default to the <langcode>/<phoneme>
-                var langCode = GetLangCode();
                 foreach(var ph in GetBaseG2pVowels().Concat(GetBaseG2pConsonants())){
                     if(!replacements.ContainsKey(ph)){
                         replacements[ph]=langCode + "/" + ph;

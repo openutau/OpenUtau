@@ -53,6 +53,7 @@ namespace OpenUtau.App.Views {
                     mainWindow.Show();
                     desktop.MainWindow = mainWindow;
                     mainWindow.InitProject();
+                    LoadingWindow.InitializeLoadingWindow();
                     Close();
                 }
             }, CancellationToken.None, TaskContinuationOptions.None, mainScheduler);
@@ -68,7 +69,7 @@ namespace OpenUtau.App.Views {
                 }
             } else {
                 try {
-                    PlaybackManager.Inst.AudioOutput = new Audio.NAudioOutput();
+                    PlaybackManager.Inst.AudioOutput = new NAudioOutput();
                 } catch (Exception e2) {
                     Log.Error(e2, "Failed to init NAudio");
                 }

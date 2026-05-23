@@ -15,10 +15,6 @@ namespace OpenUtau.App.Views {
             DIALOG_Box.Focus();
         }
 
-        void OnReset(object? sender, RoutedEventArgs e) {
-            (DataContext as LyricsViewModel)!.Reset();
-        }
-
         void OnCancel(object? sender, RoutedEventArgs e) {
             (DataContext as LyricsViewModel)!.Cancel();
             Close();

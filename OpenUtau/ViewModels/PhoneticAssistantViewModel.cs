@@ -28,12 +28,15 @@ namespace OpenUtau.App.ViewModels {
             new G2pOption(typeof(ArpabetG2p)),
             new G2pOption(typeof(ArpabetPlusG2p)),
             new G2pOption(typeof(FrenchG2p)),
+            new G2pOption(typeof(FrenchMillefeuilleG2p)),
             new G2pOption(typeof(GermanG2p)),
+            new G2pOption(typeof(GermanMarzipanG2p)),
             new G2pOption(typeof(ItalianG2p)),
             new G2pOption(typeof(PortugueseG2p)),
             new G2pOption(typeof(RussianG2p)),
             new G2pOption(typeof(SpanishG2p)),
             new G2pOption(typeof(KoreanG2p)),
+            new G2pOption(typeof(FilipinoG2p)),
         };
 
         private Api.G2pPack? g2p;

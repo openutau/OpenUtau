@@ -122,6 +122,8 @@
                    Color="#1E88E5" />
   <SolidColorBrush x:Key="SelectedTrackCenterKeyBrush"
                    Color="#C8E5FC" />
+  <SolidColorBrush x:Key="WarningBrush"
+                   Color="{DynamicResource WarningColor}" />
 
   <LinearGradientBrush x:Key="WhiteKeyBrush" StartPoint="0%,50%" EndPoint="100%,50%">
     <LinearGradientBrush.GradientStops>

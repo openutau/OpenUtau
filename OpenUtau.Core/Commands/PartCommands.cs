@@ -50,10 +50,12 @@ namespace OpenUtau.Core {
         }
     }
 
-    public class ResizePartCommand : PartCommand {
+    public class ResizeVoicePartCommand : PartCommand {
+        public readonly new UVoicePart part;
         readonly int deltaDur;
         readonly bool fromStart;
-        public ResizePartCommand(UProject project, UPart part, int deltaDur, bool fromStart) : base(project, part) {
+        public ResizeVoicePartCommand(UProject project, UVoicePart part, int deltaDur, bool fromStart) : base(project, part) {
+            this.part = part;
             this.deltaDur = deltaDur;
             this.fromStart = fromStart;
         }
@@ -62,12 +64,10 @@ namespace OpenUtau.Core {
             if (fromStart) {
                 part.position -= deltaDur;
                 part.Duration += deltaDur;
-                if (part is UVoicePart voicePart) {
-                    voicePart.notes.ForEach(note => note.position += deltaDur);
-                    foreach (var curve in voicePart.curves) {
-                        for (var i = 0; i < curve.xs.Count; i++) {
-                            curve.xs[i] += deltaDur;
-                        }
+                part.notes.ForEach(note => note.position += deltaDur);
+                foreach (var curve in part.curves) {
+                    for (var i = 0; i < curve.xs.Count; i++) {
+                        curve.xs[i] += deltaDur;
                     }
                 }
             } else {
@@ -78,17 +78,79 @@ namespace OpenUtau.Core {
             if (fromStart) {
                 part.position += deltaDur;
                 part.Duration -= deltaDur;
-                if (part is UVoicePart voicePart) {
-                    voicePart.notes.ForEach(note => note.position -= deltaDur);
-                    foreach (var curve in voicePart.curves) {
-                        for (var i = 0; i < curve.xs.Count; i++) {
-                            curve.xs[i] -= deltaDur;
-                        }
+                part.notes.ForEach(note => note.position -= deltaDur);
+                foreach (var curve in part.curves) {
+                    for (var i = 0; i < curve.xs.Count; i++) {
+                        curve.xs[i] -= deltaDur;
                     }
                 }
             } else {
                 part.Duration -= deltaDur;
             }
+        }
+    }
+
+    public class ResizeWavePartCommand : PartCommand {
+        public readonly new UWavePart part;
+        readonly int deltaDur;
+        readonly bool fromStart;
+        public ResizeWavePartCommand(UProject project, UWavePart part, int deltaDur, bool fromStart) : base(project, part) {
+            this.part = part;
+            this.deltaDur = deltaDur;
+            this.fromStart = fromStart;
+        }
+        public override string ToString() => "Change parts duration";
+        public override void Execute() {
+            if (fromStart) {
+                part.position -= deltaDur;
+                part.skip -= deltaDur;
+            } else {
+                part.trim -= deltaDur;
+            }
+        }
+        public override void Unexecute() {
+            if (fromStart) {
+                part.position += deltaDur;
+                part.skip += deltaDur;
+            } else {
+                part.trim += deltaDur;
+            }
+        }
+    }
+
+    public class PartFadeInCommand : PartCommand {
+        public readonly new UWavePart part;
+        readonly int fadeTick;
+        readonly int oldFade;
+        public PartFadeInCommand(UProject project, UWavePart part, int fadeTick) : base(project, part) {
+            this.part = part;
+            this.fadeTick = fadeTick;
+            this.oldFade = part.fadein;
+        }
+        public override string ToString() => "Fade in part";
+        public override void Execute() {
+            part.fadein = fadeTick;
+        }
+        public override void Unexecute() {
+            part.fadein = oldFade;
+        }
+    }
+
+    public class PartFadeOutCommand : PartCommand {
+        public readonly new UWavePart part;
+        readonly int fadeTick;
+        readonly int oldFade;
+        public PartFadeOutCommand(UProject project, UWavePart part, int fadeTick) : base(project, part) {
+            this.part = part;
+            this.fadeTick = fadeTick;
+            this.oldFade = part.fadeout;
+        }
+        public override string ToString() => "Fade out part";
+        public override void Execute() {
+            part.fadeout = fadeTick;
+        }
+        public override void Unexecute() {
+            part.fadeout = oldFade;
         }
     }
 

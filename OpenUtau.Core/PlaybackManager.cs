@@ -10,35 +10,159 @@ using OpenUtau.Core.Render;
 using OpenUtau.Core.SignalChain;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
+using OpenUtau.Core.Format;
 using Serilog;
 
 namespace OpenUtau.Core {
-    public class SineGen : ISampleProvider {
+    public class SineGenerator : ISampleProvider {
         public WaveFormat WaveFormat => waveFormat;
-        public double Freq { get; set; }
-        public bool Stop { get; set; }
         private WaveFormat waveFormat;
-        private double phase;
-        private double gain;
-        public SineGen() {
-            waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 1);
-            Freq = 440;
-            gain = 1;
+
+        private readonly double attackSampleCount;
+        private readonly double releaseSampleCount;
+
+        public double freq { get; set; }
+
+        private int position;
+        private int releasePosition = 0;
+        private float gain = 1;
+
+        public bool isActive { get; private set; } = true;
+        public bool isPlaying { get; private set; } = true;
+
+        public SineGenerator(double freq, float gain, int attackMs = 25, int releaseMs = 25) {
+            waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 2);
+            this.freq = freq;
+            this.gain = gain;
+            position = 0;
+
+            // Number of samples the attack & release fades take
+            attackSampleCount = (attackMs / 1000.0f) * waveFormat.SampleRate;
+            releaseSampleCount = (releaseMs / 1000.0f) * waveFormat.SampleRate;
         }
+
         public int Read(float[] buffer, int offset, int count) {
-            double delta = 2 * Math.PI * Freq / waveFormat.SampleRate;
-            for (int i = 0; i < count; i++) {
-                if (Stop) {
-                    gain = Math.Max(0, gain - 0.01);
-                }
-                if (gain == 0) {
-                    return i;
-                }
-                phase += delta;
-                double sampleValue = Math.Sin(phase) * 0.2 * gain;
-                buffer[offset++] = (float)sampleValue;
+            // Duplicate sample across two channels
+            for (int i = 0; i < count / 2; i++) {
+                float sample = GetNextSample();
+                buffer[offset + (i * 2)] += (float)sample * gain;
+                buffer[offset + (i * 2) + 1] += (float)sample * gain;
             }
             return count;
+        }
+
+        private float GetNextSample() {
+            double delta = 2 * Math.PI * freq / waveFormat.SampleRate;
+            double sample = Math.Sin(position * delta);
+
+            // Calculate attack envelope
+            sample *= Math.Clamp(position / attackSampleCount, 0, 1);
+
+            // Calculate release envelope
+            double releaseEnvelope = 1;
+            if (!isActive) {
+                releaseEnvelope = Math.Clamp(1.0f - ((position - releasePosition) / releaseSampleCount), 0, 1);
+            }
+            sample *= releaseEnvelope;
+
+            if (releaseEnvelope < double.Epsilon) {
+                // Stop sampling this generator if release is completed
+                // Instance will be cleaned up later
+                isPlaying = false;
+            }
+
+            position++;
+            return (float)sample * gain;
+        }
+
+        public void Stop() {
+            if (!isActive) return;
+
+            isActive = false;
+            releasePosition = position;
+        }
+    }
+
+    public class ToneGenerator : ISignalSource {
+        private Dictionary<double, SineGenerator> activeFrequencies = new Dictionary<double, SineGenerator>();
+        private List<SineGenerator> inactiveFrequencies = new List<SineGenerator>();
+        private readonly float gain = 0.4f;
+
+        private readonly object _lockObj = new object();
+
+        public ToneGenerator() {}
+
+        public ToneGenerator(float gain) {
+            this.gain = gain;
+        }
+
+        public bool IsReady(int position, int count) {
+            return true;
+        }
+
+        public int Mix(int position, float[] buffer, int offset, int count) {
+            lock (_lockObj) {
+                foreach (var freqEntry in activeFrequencies) {
+                    if (freqEntry.Value.isPlaying) {
+                        freqEntry.Value.Read(buffer, offset, count);
+                    }
+                }
+                foreach (var generator in inactiveFrequencies) {
+                    if (generator.isPlaying) {
+                        generator.Read(buffer, offset, count);
+                    }
+                }
+            }
+
+            return position + count;
+        }
+        public void StartTone(double freq) {
+            if (activeFrequencies.ContainsKey(freq)) {
+                if (activeFrequencies[freq].isActive) {
+                    // Don't cut off tone to replace with the same frequency
+                    // Should never happen
+                    return;
+                }
+            }
+
+            lock (_lockObj) {
+                activeFrequencies[freq] = new SineGenerator(freq, gain);
+            }
+        }
+
+        public void EndTone(double freq) {
+            if (activeFrequencies.ContainsKey(freq)) {
+                activeFrequencies[freq].Stop();
+
+                lock (_lockObj) {
+                    // Move to inactive frequencies list
+                    inactiveFrequencies.Add(activeFrequencies[freq]);
+                    activeFrequencies.Remove(freq);
+                }
+            }
+
+            CleanupTones();
+        }
+
+        public void EndAllTones() {
+            foreach (var tone in activeFrequencies) {
+                tone.Value.Stop();
+
+                lock (_lockObj) {
+                    // Move to inactive frequencies list
+                    inactiveFrequencies.Add(tone.Value);
+                    activeFrequencies.Remove(tone.Key);
+                }
+            }
+
+
+            CleanupTones();
+        }
+
+        private void CleanupTones() {
+            lock (_lockObj) {
+                inactiveFrequencies.RemoveAll(gen => !gen.isPlaying);
+            }
         }
     }
 
@@ -51,38 +175,69 @@ namespace OpenUtau.Core {
             } catch (Exception e) {
                 Log.Error(e, "Failed to release source temp.");
             }
+
+            toneGenerator = new ToneGenerator();
+            editingMix = new MasterAdapter(toneGenerator);
         }
 
+        public readonly ToneGenerator toneGenerator;
         List<Fader> faders;
         MasterAdapter masterMix;
+        MasterAdapter editingMix;
+        
         double startMs;
         public int StartTick => DocManager.Inst.Project.timeAxis.MsPosToTickPos(startMs);
         CancellationTokenSource renderCancellation;
 
         public Audio.IAudioOutput AudioOutput { get; set; } = new Audio.DummyAudioOutput();
-        public bool Playing => AudioOutput.PlaybackState == PlaybackState.Playing;
+        public bool OutputActive => AudioOutput.PlaybackState == PlaybackState.Playing;
         public bool StartingToPlay { get; private set; }
+        public bool PlayingMaster { get; private set; }
 
         public void PlayTestSound() {
             masterMix = null;
+            PlayingMaster = false;
             AudioOutput.Stop();
             AudioOutput.Init(new SignalGenerator(44100, 1).Take(TimeSpan.FromSeconds(1)));
             AudioOutput.Play();
         }
 
-        public SineGen PlayTone(double freq) {
-            masterMix = null;
-            AudioOutput.Stop();
-            var sineGen = new SineGen() {
-                Freq = freq,
-            };
-            AudioOutput.Init(sineGen);
-            AudioOutput.Play();
-            return sineGen;
+        public void PlayTone(double freq) {
+            toneGenerator.StartTone(freq);
+
+            // If nothing is playing, start editing mix
+            if (!OutputActive) {
+                AudioOutput.Stop();
+                AudioOutput.Init(editingMix);
+                AudioOutput.Play();
+            }
         }
 
+        public void EndTone(double freq) {
+            toneGenerator.EndTone(freq);
+        }
+
+        public void EndAllTones() {
+            toneGenerator.EndAllTones();
+        }
+
+        public void PlayFile(string file) {
+            masterMix = null;
+            if (AudioOutput.PlaybackState == PlaybackState.Playing) {
+                AudioOutput.Stop();
+            }
+            try{
+                var playSound = Wave.OpenFile(file);
+                AudioOutput.Init(playSound.ToSampleProvider());
+            } catch (Exception ex) {
+                Log.Error(ex, $"Failed to load sample {file}.");
+                return;
+            }
+            AudioOutput.Play();
+        } 
+
         public void PlayOrPause(int tick = -1, int endTick = -1, int trackNo = -1) {
-            if (Playing) {
+            if (PlayingMaster) {
                 PausePlayback();
             } else {
                 Play(
@@ -95,23 +250,29 @@ namespace OpenUtau.Core {
 
         public void Play(UProject project, int tick, int endTick = -1, int trackNo = -1) {
             if (AudioOutput.PlaybackState == PlaybackState.Paused) {
+                PlayingMaster = true;
                 AudioOutput.Play();
                 return;
             }
             AudioOutput.Stop();
             Render(project, tick, endTick, trackNo);
             StartingToPlay = true;
+            PlayingMaster = true;
         }
 
         public void StopPlayback() {
             AudioOutput.Stop();
+            PlayingMaster = false;
         }
 
         public void PausePlayback() {
             AudioOutput.Pause();
+            PlayingMaster = false;
         }
 
         private void StartPlayback(double startMs, MasterAdapter masterAdapter) {
+            toneGenerator.EndAllTones();
+
             this.startMs = startMs;
             var start = TimeSpan.FromMilliseconds(startMs);
             Log.Information($"StartPlayback at {start}");
@@ -139,7 +300,7 @@ namespace OpenUtau.Core {
         }
 
         public void UpdatePlayPos() {
-            if (AudioOutput != null && AudioOutput.PlaybackState == PlaybackState.Playing && masterMix != null) {
+            if (AudioOutput != null && AudioOutput.PlaybackState == PlaybackState.Playing && PlayingMaster) {
                 double ms = (AudioOutput.GetPosition() / sizeof(float) - masterMix.Waited / 2) * 1000.0 / 44100;
                 int tick = DocManager.Inst.Project.timeAxis.MsPosToTickPos(startMs + ms);
                 DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(tick, masterMix.IsWaiting));
@@ -159,7 +320,7 @@ namespace OpenUtau.Core {
                     DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"Exporting to {exportPath}."));
 
                     CheckFileWritable(exportPath);
-                    WaveFileWriter.CreateWaveFile16(exportPath, new ExportAdapter(projectMix).ToMono(1, 0));
+                    WaveFileWriter.CreateWaveFile16(exportPath, new ExportAdapter(projectMix));
                     DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"Exported to {exportPath}."));
                 } catch (IOException ioe) {
                     var customEx = new MessageCustomizableException($"Failed to export {exportPath}.", $"<translate:errors.failed.export>: {exportPath}", ioe);
@@ -238,6 +399,7 @@ namespace OpenUtau.Core {
                 }
             } else if (cmd is LoadProjectNotification) {
                 StopPlayback();
+                renderCancellation?.Cancel();
                 DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(0));
             }
             if (cmd is PreRenderNotification || cmd is LoadProjectNotification) {

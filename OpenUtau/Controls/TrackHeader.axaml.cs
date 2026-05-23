@@ -44,12 +44,15 @@ namespace OpenUtau.App.Controls {
         private double trackHeight;
         private Point offset;
         private int trackNo;
+        private readonly KeyModifiers cmdKey =
+            OS.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
 
         public TrackHeaderViewModel? ViewModel;
 
         private List<IDisposable> unbinds = new List<IDisposable>();
 
         private UTrack? track;
+        private TrackHeaderCanvas? canvas;
 
         public TrackHeader() {
             InitializeComponent();
@@ -66,6 +69,7 @@ namespace OpenUtau.App.Controls {
 
         internal void Bind(UTrack track, TrackHeaderCanvas canvas) {
             this.track = track;
+            this.canvas = canvas;
             unbinds.Add(this.Bind(TrackHeightProperty, canvas.GetObservable(TrackHeaderCanvas.TrackHeightProperty)));
             unbinds.Add(this.Bind(HeightProperty, canvas.GetObservable(TrackHeaderCanvas.TrackHeightProperty)));
             unbinds.Add(this.Bind(OffsetProperty, canvas.WhenAnyValue(x => x.TrackOffset, trackOffset => new Point(0, -trackOffset * TrackHeight))));
@@ -75,6 +79,26 @@ namespace OpenUtau.App.Controls {
         private void SetPosition() {
             Canvas.SetLeft(this, 0);
             Canvas.SetTop(this, Offset.Y + (track?.TrackNo ?? 0) * trackHeight);
+            if (ViewModel != null) {
+                ViewModel.IsSingerVisible = trackHeight >= ViewConstants.TrackHeightDelta * 3;
+                ViewModel.IsPhonemizerVisible = trackHeight >= ViewConstants.TrackHeightDelta * 4;
+                ViewModel.IsRendererVisible = trackHeight >= ViewConstants.TrackHeightDelta * 5;
+            }
+        }
+
+        void HeaderPointerPressed(object? sender, PointerPressedEventArgs args) {
+            if (!args.GetCurrentPoint(this).Properties.IsLeftButtonPressed ||
+                track == null ||
+                canvas?.DataContext is not TracksViewModel tracksViewModel) {
+                return;
+            }
+            if (args.KeyModifiers == KeyModifiers.Shift) {
+                tracksViewModel.SelectTracksUntil(track);
+            } else if (args.KeyModifiers == cmdKey) {
+                tracksViewModel.ToggleSelectTrack(track);
+            } else {
+                tracksViewModel.SelectTrack(track);
+            }
         }
 
         void TrackNameButtonClicked(object sender, RoutedEventArgs args) {
@@ -83,11 +107,11 @@ namespace OpenUtau.App.Controls {
         }
 
         void SingerButtonClicked(object sender, RoutedEventArgs args) {
-            if (SingerManager.Inst.Singers.Count > 0) {
+            try {
                 ViewModel?.RefreshSingers();
-                SingersMenu.Open();
-            } else {
-                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("There is no singer."));
+                SingersMenu.Open((Control)sender);
+            } catch (Exception e) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
             }
             args.Handled = true;
         }
@@ -97,10 +121,8 @@ namespace OpenUtau.App.Controls {
         }
 
         void PhonemizerButtonClicked(object sender, RoutedEventArgs args) {
-            if (DocManager.Inst.PhonemizerFactories.Length > 0) {
-                ViewModel?.RefreshPhonemizers();
-                PhonemizersMenu.Open();
-            }
+            ViewModel?.RefreshPhonemizers();
+            PhonemizersMenu.Open((Control)sender);
             args.Handled = true;
         }
 
@@ -111,7 +133,7 @@ namespace OpenUtau.App.Controls {
         void RendererButtonClicked(object sender, RoutedEventArgs args) {
             ViewModel?.RefreshRenderers();
             if (ViewModel?.RenderersMenuItems?.Count > 0) {
-                RenderersMenu.Open();
+                RenderersMenu.Open((Control)sender);
             }
             args.Handled = true;
         }

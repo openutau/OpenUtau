@@ -10,6 +10,7 @@ namespace OpenUtau.App.Views {
         public TypeInDialog() {
             InitializeComponent();
             OkButton.Click += OkButtonClick;
+            TextBox.AttachedToVisualTree += (s, e) => { TextBox.SelectAll(); TextBox.Focus(); };
         }
 
         public void SetPrompt(string prompt) {

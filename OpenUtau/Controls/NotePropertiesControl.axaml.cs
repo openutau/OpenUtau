@@ -67,7 +67,7 @@ namespace OpenUtau.App.Controls {
         void OnTextBoxLostFocus(object? sender, RoutedEventArgs args) {
             Log.Debug("Note property textbox lost focus");
             if (sender is TextBox textBox && textBoxValue != textBox.Text && textBox.Tag is string tag && !string.IsNullOrEmpty(tag)) {
-                DocManager.Inst.StartUndoGroup();
+                DocManager.Inst.StartUndoGroup("command.property.edit");
                 NotePropertiesViewModel.PanelControlPressed = true;
                 ViewModel.SetNoteParams(tag, textBox.Text);
                 NotePropertiesViewModel.PanelControlPressed = false;
@@ -80,11 +80,11 @@ namespace OpenUtau.App.Controls {
             if (sender is Control control) {
                 var point = args.GetCurrentPoint(control);
                 if (point.Properties.IsLeftButtonPressed) {
-                    DocManager.Inst.StartUndoGroup();
+                    DocManager.Inst.StartUndoGroup("command.property.edit");
                     NotePropertiesViewModel.PanelControlPressed = true;
                 } else if (point.Properties.IsRightButtonPressed) {
                     if (control.Tag is string tag && !string.IsNullOrEmpty(tag)) {
-                        DocManager.Inst.StartUndoGroup();
+                        DocManager.Inst.StartUndoGroup("command.property.reset");
                         NotePropertiesViewModel.PanelControlPressed = true;
                         ViewModel.SetNoteParams(tag, null);
                         NotePropertiesViewModel.PanelControlPressed = false;
@@ -144,7 +144,7 @@ namespace OpenUtau.App.Controls {
         private void OnKeyDown(object? sender, KeyEventArgs e) {
             switch (e.Key) {
                 case Key.Enter:
-                    TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();
+                    this.Focus();
                     e.Handled = true;
                     break;
                 default:
@@ -165,13 +165,20 @@ namespace OpenUtau.App.Controls {
                     }
                 }
             } else if (cmd is TrackCommand) {
-                if (cmd is RemoveTrackCommand removeTrack) {
-                    if (ViewModel.Part != null && removeTrack.removedParts.Contains(ViewModel.Part)) {
-                        LoadPart(null);
-                    }
+                if (cmd is RemoveTrackCommand removeTrack && ViewModel.Part != null && removeTrack.removedParts.Contains(ViewModel.Part)) {
+                    LoadPart(null);
+                } else if (cmd is TrackChangeRenderSettingCommand changeRenderer && ViewModel.Part != null && changeRenderer.track.TrackNo == ViewModel.Part.trackNo) {
+                    LoadPart(ViewModel.Part);
                 }
             } else if (cmd is ConfigureExpressionsCommand && ViewModel.Part != null) {
                 LoadPart(ViewModel.Part);
+            }
+        }
+
+        public void OnPhonemizerButtonClicked(object? sender, RoutedEventArgs e) {
+            if (ViewModel.IsPhonemizerEnabled && sender is Button button && button.ContextMenu != null) {
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.Open();
             }
         }
     }

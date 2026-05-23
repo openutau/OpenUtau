@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
 using OpenUtau.Core.Render;
+using OpenUtau.Classic;
 using Serilog;
 using YamlDotNet.Serialization;
 
@@ -13,8 +14,8 @@ namespace OpenUtau.Core.Ustx {
         public string wavtool;
 
         [YamlIgnore] public IRenderer Renderer { get; set; }
-        [YamlIgnore] public Classic.IResampler Resampler { get; set; }
-        [YamlIgnore] public Classic.IWavtool Wavtool { get; set; }
+        [YamlIgnore] public IResampler Resampler { get; set; }
+        [YamlIgnore] public IWavtool Wavtool { get; set; }
 
         public void Validate(UTrack track) {
             if (track.Singer == null || !track.Singer.Found) {
@@ -39,7 +40,7 @@ namespace OpenUtau.Core.Ustx {
                     }
                 }
                 if (string.IsNullOrEmpty(resampler) || resampler != Resampler?.ToString()) {
-                    Resampler = Classic.ToolsManager.Inst.GetResampler(resampler);
+                    Resampler = ToolsManager.Inst.GetResampler(resampler);
                     resampler = Resampler.ToString();
                 }
                 if (string.IsNullOrEmpty(wavtool)) {
@@ -48,7 +49,7 @@ namespace OpenUtau.Core.Ustx {
                     }
                 }
                 if (string.IsNullOrEmpty(wavtool) || wavtool != Wavtool?.ToString()) {
-                    Wavtool = Classic.ToolsManager.Inst.GetWavtool(wavtool);
+                    Wavtool = ToolsManager.Inst.GetWavtool(wavtool);
                     wavtool = Wavtool.ToString();
                 }
             } else {
@@ -94,7 +95,7 @@ namespace OpenUtau.Core.Ustx {
         public double Volume { set; get; }
         public double Pan { set; get; }
 
-        public List<UExpression> TrackExpressions { get; set; } = new List<UExpression>();
+        public List<UExpressionDescriptor> TrackExpressions { get; set; } = new List<UExpressionDescriptor>();
         [YamlIgnore] public UExpressionDescriptor VoiceColorExp { set; get; }
         public string[] VoiceColorNames { get; set; } = new string[] { "" };
 
@@ -114,60 +115,34 @@ namespace OpenUtau.Core.Ustx {
             TrackName = trackName;
         }
 
-        /**  
-            <summary>
-                Return false if there is no corresponding descriptor in the project
-            </summary>
-        */
         public bool TryGetExpDescriptor(UProject project, string abbr, out UExpressionDescriptor descriptor) {
-            if (!project.expressions.TryGetValue(abbr, out descriptor)) {
-                return false;
-            }
             if (abbr == Format.Ustx.CLR && VoiceColorExp != null) {
                 descriptor = VoiceColorExp;
+                return true;
             }
-            return true;
-        }
-
-
-        /**  
-            <summary>
-                Return false if there is no corresponding descriptor in the project
-            </summary>
-        */
-        public bool TryGetExpression(UProject project, string abbr, out UExpression expression) {
-            if (!TryGetExpDescriptor(project, abbr, out var descriptor)) {
-                expression = new UExpression(descriptor);
-                return false;
-            }
-
-            var trackExp = TrackExpressions.FirstOrDefault(e => e.descriptor.abbr == abbr);
+            var trackExp = TrackExpressions.FirstOrDefault(e => e.abbr == abbr);
             if (trackExp != null) {
-                expression = trackExp.Clone();
-            } else {
-                expression = new UExpression(descriptor) { value = descriptor.defaultValue };
+                descriptor = trackExp;
+                return true;
+            } else if (project.expressions.TryGetValue(abbr, out descriptor)) {
+                return true;
             }
-            return true;
+            return false;
         }
 
-        // May be used in the future
-        public void SetTrackExpression(UExpressionDescriptor descriptor, float? value) {
-            if (!TryGetExpDescriptor(DocManager.Inst.Project, descriptor.abbr, out var pDescriptor)) {
-                TrackExpressions.RemoveAll(exp => exp.descriptor?.abbr == descriptor.abbr);
-                return;
+        public List<UExpressionDescriptor> GetSupportedExps(UProject project) {
+            var list = new List<UExpressionDescriptor>();
+            if (RendererSettings.Renderer == null) {
+                return list;
             }
-
-            if (value == null || (descriptor.Equals(pDescriptor) && pDescriptor.defaultValue == value)) {
-                TrackExpressions.RemoveAll(exp => exp.descriptor?.abbr == descriptor.abbr);
-            } else {
-                var trackExp = TrackExpressions.FirstOrDefault(e => e.descriptor.abbr == descriptor.abbr);
-                if (trackExp != null) {
-                    trackExp.descriptor = descriptor;
-                    trackExp.value = (float)value;
-                } else {
-                    TrackExpressions.Add(new UExpression(descriptor) { value = (float)value });
+            var exps = project.expressions.Keys.ToList();
+            exps.Union(TrackExpressions.Select(exp => exp.abbr));
+            foreach (var abbr in exps) {
+                if (TryGetExpDescriptor(project, abbr, out var descriptor) && RendererSettings.Renderer.SupportsExpression(descriptor)) {
+                    list.Add(descriptor);
                 }
             }
+            return list;
         }
 
         public void OnSingerRefreshed() {
@@ -233,7 +208,7 @@ namespace OpenUtau.Core.Ustx {
         public void AfterLoad(UProject project) {
             if (Phonemizer == null || !string.IsNullOrEmpty(phonemizer)) {
                 try {
-                    var factory = DocManager.Inst.PhonemizerFactories.FirstOrDefault(factory => factory.type.FullName == phonemizer);
+                    var factory = PhonemizerFactory.Get(phonemizer);
                     Phonemizer = factory?.Create();
                     phonemizer = null;
                 } catch (Exception e) {
@@ -255,7 +230,7 @@ namespace OpenUtau.Core.Ustx {
             if (Singer != null && Singer.Found) {
                 if (string.IsNullOrEmpty(RendererSettings.renderer)) {
                     RendererSettings.renderer = Renderers.GetDefaultRenderer(Singer.SingerType);
-                };
+                }
             }
             TrackNo = project.tracks.IndexOf(this);
             if (!Solo && Mute) {

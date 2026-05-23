@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using OpenUtau.App.ViewModels;
-using Serilog;
+using OpenUtau.Core;
 
 namespace OpenUtau.App.Views {
     public partial class SingerSetupDialog : Window {
@@ -20,10 +20,7 @@ namespace OpenUtau.App.Views {
             var task = viewModel.Install();
             task.ContinueWith((task) => {
                 if (task.IsFaulted) {
-                    Log.Error(task.Exception, "Failed to install singer");
-                    if (Parent is Window window) {
-                        MessageBox.ShowError(window, task.Exception);
-                    }
+                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(new MessageCustomizableException("Failed to install singer.", "<translate:singersetup.failed>", task.Exception)));
                 }
             }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, scheduler);
             Close();

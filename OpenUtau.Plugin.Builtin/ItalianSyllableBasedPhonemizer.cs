@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using OpenUtau.Api;
 using OpenUtau.Core.G2p;
 using System.Linq;
 using Serilog;
+using System.IO;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Italian Syllable-Based Phonemizer", "IT SYL", "Lotte V", language:"IT")]
@@ -18,19 +18,45 @@ namespace OpenUtau.Plugin.Builtin {
 
         private readonly string[] vowels = "a,e,i,o,u,3,0".Split(',');
         private readonly string[] consonants = "b,d,dz,dZ,f,g,gn,j,k,l,m,M,n,N,p,r,rr,s,S,t,ts,tS,v,w,y,z,B,D,G,h,T,x,Y,'".Split(',');
-        private readonly Dictionary<string, string> dictionaryReplacements = ("a=a;e=e;i=i;o=o;u=u;EE=3;OO=0;" + "a1=a;e1=e;i1=i;o1=o;u1=u;" +
-                "b=b;d=d;dz=dz;dZZ=dZ;f=f;g=g;JJ=gn;k=k;l=l;LL=j;m=m;n=n;nf=M;ng=N;p=p;r=r;rr=rr;s=s;SS=S;t=t;ts=ts;tSS=tS;v=v;w=w;y=y;z=z").Split(';')
+        private readonly Dictionary<string, string> dictionaryReplacements = ("a=a;e=e;i=i;o=o;u=u;EE=3;OO=0;" +
+                "b=b;d=d;dz=dz;dZZ=dZ;f=f;g=g;j=y;" + "JJ=gn;k=k;l=l;LL=j;m=m;n=n;nf=M;ng=N;p=p;r=r;s=s;SS=S;t=t;ts=ts;tSS=tS;v=v;w=w;z=z").Split(';')
                 .Select(entry => entry.Split('='))
                 .Where(parts => parts.Length == 2)
                 .Where(parts => parts[0] != parts[1])
                 .ToDictionary(parts => parts[0], parts => parts[1]);
+
+        private readonly Dictionary<string, string> fallBacks = "dz=d;ts=t;dZ=d;tS=t".Split(';')
+                .Select(entry => entry.Split('='))
+                .Where(parts => parts.Length == 2)
+                .Where(parts => parts[0] != parts[1])
+                .ToDictionary(parts => parts[0], parts => parts[1]);
+
+        private bool isFallBack = false;
 
         protected override string[] GetVowels() => vowels;
         protected override string[] GetConsonants() => consonants;
         protected override string GetDictionaryName() => "cmudict_it.txt";
         protected override Dictionary<string, string> GetDictionaryPhonemesReplacement() => dictionaryReplacements;
 
-        protected override IG2p LoadBaseDictionary() => new ItalianG2p();
+        protected override IG2p LoadBaseDictionary() {
+            var g2ps = new List<IG2p>();
+
+            // Load dictionary from singer folder.
+            if (singer != null && singer.Found && singer.Loaded) {
+                string file = Path.Combine(singer.Location, "it-syl.yaml");
+
+                if (File.Exists(file)) {
+                    try {
+                        g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(file)).Build());
+                    } catch (Exception e) {
+                        Log.Error(e, $"Failed to load {file}");
+                    }
+                }
+            }
+
+            g2ps.Add(new ItalianG2p());
+            return new G2pFallbacks(g2ps.ToArray());
+        }
 
         protected override List<string> ProcessSyllable(Syllable syllable)
         {
@@ -42,6 +68,13 @@ namespace OpenUtau.Plugin.Builtin {
             var phonemes = new List<string>();
             var lastC = cc.Length - 1;
             var firstC = 0;
+
+
+            foreach (var cn in cc) {
+                if (!HasOto($"{cn} dz", syllable.tone) && !HasOto($"{cn} dZ", syllable.tone) && !HasOto($"{cn} ts", syllable.tone) && !HasOto($"{cn} tS", syllable.tone)) {
+                    isFallBack = true;
+                }
+            }           
 
             if (syllable.IsStartingV) {
                 basePhoneme = $"-{v}";
@@ -96,7 +129,19 @@ namespace OpenUtau.Plugin.Builtin {
                             }
                         }
                     }
-                phonemes.Add($"{prevV} {cc[0]}");
+
+                for (var i = lastC + 1; i >= 0; i--) {
+                    var vcc = $"{prevV} {string.Join("", cc.Take(2))}";
+                    var vc = $"{prevV} {cc[0]}";
+                    if ((HasOto(vcc, syllable.tone) || HasOto(ValidateAlias(vcc), syllable.tone))) {
+                        phonemes.Add(vcc);
+                        firstC = 1;
+                        break;
+                    } else {
+                        phonemes.Add(vc);
+                        break;
+                    }
+                }
             }
             for (var i = firstC; i < lastC; i++) {
                 var rccv = $"-{string.Join("", cc)}{v}";
@@ -109,7 +154,7 @@ namespace OpenUtau.Plugin.Builtin {
                         cc1 = $"{cc[i]}{cc[i + 1]}";
                     }
                     if (!HasOto($"{cc[i]}{cc[i + 1]}", syllable.tone) && !HasOto($"{string.Join("", cc.Skip(i))}", syllable.tone)) {
-                        cc1 = $"{cc[i]} {cc[i + 1]}";
+                        cc1 = ValidateAlias($"{cc[i]} {cc[i + 1]}");
                     }
                     if (HasOto(_cv, syllable.vowelTone) && HasOto(cc1, syllable.tone) && !cc1.Contains($"{cc[i]} {cc[i + 1]}")) {
                         basePhoneme = _cv;
@@ -120,7 +165,7 @@ namespace OpenUtau.Plugin.Builtin {
                            cc2 = $"{cc[i + 1]}{cc[i + 2]}";
                         }
                         if (!HasOto($"{cc[i + 1]}{cc[i + 2]}", syllable.tone) && !HasOto($"{string.Join("", cc.Skip(i))}", syllable.tone)) {
-                            cc2 = $"{cc[i + 1]} {cc[i + 2]}";
+                            cc2 = ValidateAlias($"{cc[i + 1]} {cc[i + 2]}");
                         }
                         if (HasOto($"_{cc.Last()}{v}", syllable.vowelTone) && HasOto(cc2, syllable.vowelTone) && !cc2.Contains($"{cc[i + 1]} {cc[i + 2]}")) {
                             basePhoneme = $"_{cc.Last()}{v}";
@@ -171,6 +216,15 @@ namespace OpenUtau.Plugin.Builtin {
                 }
             }
             return phonemes;
+        }
+
+        protected override string ValidateAlias(string alias) {
+            if (isFallBack) {
+                foreach (var fb in fallBacks) {
+                    alias = alias.Replace(fb.Key,fb.Value);
+                }
+            }
+            return alias;
         }
     }
 }

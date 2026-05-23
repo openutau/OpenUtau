@@ -1,0 +1,66 @@
+%YAML 1.2
+---
+version: 1.0
+symbols:
+#Con Pez
+  - {symbol: z, type: fricative}
+#nJokis
+  - {symbol: a, type: vowel}
+  - {symbol: e, type: vowel}
+  - {symbol: i, type: vowel}
+  - {symbol: o, type: vowel}
+  - {symbol: u, type: vowel}
+  - {symbol: w, type: semivowel}
+  - {symbol: y, type: semivowel}
+  - {symbol: U, type: semivowel}
+  - {symbol: I, type: semivowel}
+  - {symbol: r, type: liquid}
+  - {symbol: rr, type: liquid}
+  - {symbol: p, type: stop}
+  - {symbol: t, type: stop}
+  - {symbol: k, type: stop}
+  - {symbol: b, type: stop}
+  - {symbol: d, type: stop}
+  - {symbol: g, type: stop}
+  - {symbol: B, type: fricative}
+  - {symbol: D, type: fricative}
+  - {symbol: G, type: fricative}
+  - {symbol: f, type: fricative}
+  - {symbol: s, type: fricative}
+  - {symbol: x, type: fricative}
+  - {symbol: m, type: nasal}
+  - {symbol: n, type: nasal}
+  - {symbol: nJ, type: nasal}
+  - {symbol: l, type: liquid}
+  - {symbol: ch, type: affricate}
+  - {symbol: jj, type: affricate}
+
+#Combo??? (Phonemize like: [e k][ks i])
+  - {symbol: ks, type: stop}
+
+replacements:
+  - {from: [n, p], to: [m, p], where: all}
+  - {from: [n, B], to: [m, b], where: all}
+  - {from: [m, B], to: [m, b], where: all}
+  - {from: [n, b], to: [m, b], where: all}
+  - {from: [n, m], to: [m, m], where: all}
+  - {from: [n, D], to: [n, d], where: all}
+  - {from: [l, D], to: [l, d], where: all}
+  - {from: [n, G], to: [n, g], where: all}
+  - {from: [s, r], to: [s, rr], where: all}
+  - {from: [x, r], to: [x, rr], where: all}
+  - {from: [n, r], to: [n, rr], where: all}
+  - {from: [m, r], to: [m, rr], where: all}
+  - {from: [l, r], to: [l, rr], where: all}
+  - {from: [r, r], to: [rr]}
+  - {from: [vowel, b, vowel], to: [vowel, B, vowel], where: all}
+  - {from: [vowel, g, vowel], to: [vowel, G, vowel], where: all}
+  - {from: [vowel, d, vowel], to: [vowel, D, vowel], where: all}
+
+entries:
+  - grapheme: openutau
+    phonemes: [o, p, e, n, u, t, a, u]
+  - grapheme: vccv
+    phonemes: [b, e, s, e, s, e, B, e]
+  - grapheme: "VCCV"
+    phonemes: [b, e, s, e, s, e, B, e]

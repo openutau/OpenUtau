@@ -75,6 +75,11 @@ namespace OpenUtau.App {
                 new TrackColor("Purple2", "#7B1FA2", "#4A148C", "#AB47BC", "#D5A3DE"),
             };
 
+        public static List<string> GetAvailableThemes() {
+            Colors.CustomTheme.ListThemes();
+            return ["Light", "Dark", ..Colors.CustomTheme.Themes.Select(v => v.Key)];
+        }
+
         public static void LoadTheme() {
             if (Application.Current == null) {
                 return;
@@ -261,14 +266,8 @@ namespace OpenUtau.App {
         }
 
         public static string GetString(string key) {
-            if (Application.Current == null) {
-                return key;
-            }
-            IResourceDictionary resDict = Application.Current.Resources;
-            if (resDict.TryGetResource(key, ThemeVariant.Default, out var outVar) && outVar is string s) {
-                return s;
-            }
-            return key;
+            TryGetString(key, out string value);
+            return value;
         }
 
         public static bool TryGetString(string key, out string value) {

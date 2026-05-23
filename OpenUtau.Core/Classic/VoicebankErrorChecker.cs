@@ -2,32 +2,16 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Text.RegularExpressions;
 using NAudio.Wave;
 
 namespace OpenUtau.Classic {
     public class VoicebankError {
-        public string message = string.Empty;
+        public string messageKey = string.Empty;
+        public string[] strings = Array.Empty<string>();
         public FileTrace? trace;
         public string soundFile = string.Empty;
         public Exception? e;
-
-        public override string ToString() {
-            var builder = new StringBuilder();
-            if (!string.IsNullOrEmpty(message)) {
-                builder.AppendLine(message);
-            }
-            if (trace != null) {
-                builder.AppendLine(trace.ToString());
-            }
-            if (!string.IsNullOrEmpty(soundFile)) {
-                builder.AppendLine(soundFile);
-            }
-            if (e != null) {
-                builder.AppendLine(e.ToString());
-            }
-            return builder.ToString();
-        }
     }
 
     public class VoicebankErrorChecker {
@@ -50,21 +34,21 @@ namespace OpenUtau.Classic {
         public void Check() {
             if (!File.Exists(voicebank.File)) {
                 Errors.Add(new VoicebankError() {
-                    message = "character.txt not found",
+                    messageKey = "singererror.txtnotfound",
                 });
                 return;
             }
             string charYaml = Path.Combine(path, VoicebankLoader.kCharYaml);
             if (!File.Exists(charYaml)) {
                 Infos.Add(new VoicebankError() {
-                    message = "character.yaml not found",
+                    messageKey = "singererror.yamlnotfound",
                 });
             }
             try {
                 VoicebankLoader.LoadVoicebank(voicebank);
             } catch (Exception e) {
                 Errors.Add(new VoicebankError() {
-                    message = "Failed to load voicebank",
+                    messageKey = "singererror.failedload",
                     e = e,
                 });
                 return;
@@ -78,7 +62,7 @@ namespace OpenUtau.Classic {
                     if (!oto.IsValid) {
                         Errors.Add(new VoicebankError() {
                             trace = oto.FileTrace,
-                            message = $"Invalid oto format.",
+                            messageKey = "singererror.invalidoto",
                         });
                         continue;
                     }
@@ -88,9 +72,9 @@ namespace OpenUtau.Classic {
                     }
                     if (fileDuration <= 0) {
                         Errors.Add(new VoicebankError() {
-                            trace = oto.FileTrace,
                             soundFile = filePath,
-                            message = $"Invalid duration {fileDuration}.",
+                            messageKey = "singererror.invalidduration",
+                            strings = new string[] { fileDuration.ToString() }
                         });
                         continue;
                     }
@@ -102,7 +86,8 @@ namespace OpenUtau.Classic {
                 string message = "";
                 duplicates.ForEach(oto => message += $"\n{oto.FileTrace?.file} line {oto.FileTrace?.lineNumber}: {oto.Alias}");
                 Errors.Add(new VoicebankError() {
-                    message = $"There are duplicate aliases.{message}"
+                    messageKey = "singererror.duplicatealias",
+                    strings = new string[] { message },
                 });
             }
             foreach (var otoSet in voicebank.OtoSets) {
@@ -124,42 +109,37 @@ namespace OpenUtau.Classic {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
                     soundFile = filePath,
-                    message = $"Sound file missing",
+                    messageKey = "singererror.soundmissing",
                 });
                 return false;
             }
             try {
                 using (var wav = Core.Format.Wave.OpenFile(filePath)) {
                     fileDuration = wav.TotalTime.TotalMilliseconds;
-                    var waveFormat = wav.ToSampleProvider().WaveFormat;
+                    var waveFormat = wav.WaveFormat;
                     if (waveFormat.SampleRate != 44100) {
                         Errors.Add(new VoicebankError() {
-                            trace = oto.FileTrace,
                             soundFile = filePath,
-                            message = $"Sample rate of the sound file is not 44100Hz."
+                            messageKey = "singererror.samplerate"
                         });
                     }
                     if (waveFormat.Channels != 1) {
                         Infos.Add(new VoicebankError() {
-                            trace = oto.FileTrace,
                             soundFile = filePath,
-                            message = $"Sound file is not mono channel."
+                            messageKey = "singererror.mono"
                         });
                     }
-                    /* If sound is not 16bit, it cannot be opened.
                     if (waveFormat.BitsPerSample != 16) {
                         Errors.Add(new VoicebankError() {
-                            trace = oto.FileTrace,
                             soundFile = filePath,
-                            message = $"Bit rate of the sound file is not 16bit."
+                            messageKey = "singererror.bitdepth"
                         });
-                    }*/
+                    }
                 }
             } catch (Exception e) {
                 Errors.Add(new VoicebankError() {
-                    trace = oto.FileTrace,
                     soundFile = filePath,
-                    message = $"Cannot open sound file.",
+                    messageKey = "singererror.soundnotopened",
                     e = e,
                 });
                 return false;
@@ -173,49 +153,49 @@ namespace OpenUtau.Classic {
             if (oto.Offset < 0) {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
-                    message = "Offset must be >= 0.",
+                    messageKey = "singererror.offsetshort",
                 });
                 valid = false;
             }
             if (oto.Offset > fileDuration) {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
-                    message = $"Offset out of sound file duration {fileDuration}.",
+                    messageKey = "singererror.offsetoutofduration"
                 });
                 valid = false;
             }
             if (oto.Preutter < 0) {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
-                    message = "Preutter must be >= 0.",
+                    messageKey = "singererror.preuttershort",
                 });
                 valid = false;
             }
             if (oto.Preutter + oto.Offset > fileDuration) {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
-                    message = $"Preutter out of sound file duration {fileDuration}.",
+                    messageKey = "singererror.preutteroutofduration"
                 });
                 valid = false;
             }
             if (oto.Consonant < 0) {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
-                    message = "Consonant must be >= 0.",
+                    messageKey = "singererror.consonantshort",
                 });
                 valid = false;
             }
             if (oto.Consonant + oto.Offset > fileDuration) {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
-                    message = $"Consonant out of sound file duration {fileDuration}.",
+                    messageKey = "singererror.consonantoutofduration"
                 });
                 valid = false;
             }
             if (oto.Overlap + oto.Offset > fileDuration) {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
-                    message = $"Overlap out of sound file duration {fileDuration}.",
+                    messageKey = "singererror.overlapoutofduration"
                 });
                 valid = false;
             }
@@ -223,23 +203,54 @@ namespace OpenUtau.Classic {
             if (cutoff < oto.Offset + oto.Preutter) {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
-                    message = $"Cutoff must be to the right of preutter.",
+                    messageKey = "singererror.cutoffpreutter",
                 });
                 valid = false;
             }
             if (cutoff < oto.Offset + oto.Overlap) {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
-                    message = $"Cutoff must be to the right of overlap.",
+                    messageKey = "singererror.cutoffoverlap",
                 });
                 valid = false;
             }
             if (cutoff <= oto.Offset + oto.Consonant) {
                 Errors.Add(new VoicebankError() {
                     trace = oto.FileTrace,
-                    message = $"Cutoff must be to the right of consonant.",
+                    messageKey = "singererror.cutoffconsonant",
                 });
                 valid = false;
+            }
+            if (cutoff > fileDuration) {
+                Errors.Add(new VoicebankError() {
+                    trace = oto.FileTrace,
+                    messageKey = "singererror.cutoffoutofduration"
+                });
+                valid = false;
+            }
+
+            if (oto.Alias.StartsWith(" ") || oto.Alias.EndsWith(" ")) {
+                Infos.Add(new VoicebankError() {
+                    trace = oto.FileTrace,
+                    messageKey = "singererror.aliasstartwithspace",
+                });
+            } else if (Regex.Matches(oto.Alias, " ").Count > 1) {
+                Infos.Add(new VoicebankError() {
+                    trace = oto.FileTrace,
+                    messageKey = "singererror.aliasmultiplespaces",
+                });
+            }
+            if (oto.Alias.Contains('　')) {
+                Infos.Add(new VoicebankError() {
+                    trace = oto.FileTrace,
+                    messageKey = "singererror.aliasfullwidthspaces",
+                });
+            }
+            if (!oto.Alias.IsNormalized()) {
+                Infos.Add(new VoicebankError() {
+                    trace = oto.FileTrace,
+                    messageKey = "singererror.aliasisnfd",
+                });
             }
             return valid;
         }
@@ -254,7 +265,7 @@ namespace OpenUtau.Classic {
                 if (group.Key != fileTraceLine.Split('=')[0].Trim() && !group.Key.IsNormalized()) {
                     Errors.Add(new VoicebankError() {
                         soundFile = Path.Combine(Path.GetDirectoryName(otoSet.File), group.Key),
-                        message = $"Wav filename is NFD.",
+                        messageKey = "singererror.wavisnfd",
                     });
                 }
             }
@@ -263,6 +274,7 @@ namespace OpenUtau.Classic {
         bool FindDuplication(out List<Oto> duplicates) {
             duplicates = voicebank.OtoSets
                 .SelectMany(set => set.Otos)
+                .Where(oto => !string.IsNullOrWhiteSpace(oto.Alias))
                 .GroupBy(oto => oto.Alias)
                 .Where(alias => alias.Count() > 1)
                 .SelectMany(group => group).ToList();
@@ -296,10 +308,8 @@ namespace OpenUtau.Classic {
                 if (fileNamesLowerToActual[fileName.ToLower()] != fileName) {
                     valid = false;
                     Errors.Add(new VoicebankError() {
-                        message = $"Wrong case in file name: \n"
-                            + $"expected: {Path.Join(folder, fileName)}\n"
-                            + $"Actual: {Path.Join(folder, fileNamesLowerToActual[fileName.ToLower()])}\n"
-                            + $"The voicebank may not work on another OS."
+                        messageKey = "singererror.wrongcase",
+                        strings = new string[] { Path.Join(folder, fileName), Path.Join(folder, fileNamesLowerToActual[fileName.ToLower()]) },
                     });
                 }
             }
@@ -318,10 +328,8 @@ namespace OpenUtau.Classic {
                 .ToList();
             foreach (var group in duplicatedGroups) {
                 Errors.Add(new VoicebankError() {
-                    message = $"Duplicated file names found when ignoreing case in oto set \"{otoSet.Name}\":"
-                    + string.Join(", ", group.Select(x => $"\"{x}\""))
-                    + ".\n"
-                    + "The voicebank may not work on another OS with case-sensitivity."
+                    messageKey = "singererror.duplicatename",
+                    strings = new string[] { otoSet.Name, string.Join(", ", group.Select(x => $"\"{x}\"")) },
                 });
             }
             return duplicatedGroups.Count == 0;

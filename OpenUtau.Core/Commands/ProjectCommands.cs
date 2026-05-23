@@ -153,21 +153,38 @@ namespace OpenUtau.Core {
     }
 
     public class ConfigureExpressionsCommand : ProjectCommand {
-        readonly UExpressionDescriptor[] oldDescriptors;
-        readonly UExpressionDescriptor[] newDescriptors;
+        readonly UExpressionDescriptor[] oldProjectDescriptors;
+        readonly UExpressionDescriptor[] newProjectDescriptors;
+        readonly UExpressionDescriptor[] oldTrackDescriptors;
+        readonly UExpressionDescriptor[] newTrackDescriptors;
+        readonly UTrack? track;
         public override ValidateOptions ValidateOptions => new ValidateOptions {
             SkipTiming = true,
         };
         public ConfigureExpressionsCommand(
             UProject project,
             UExpressionDescriptor[] descriptors) : base(project) {
-            oldDescriptors = project.expressions.Values.ToArray();
-            newDescriptors = descriptors;
+            oldProjectDescriptors = project.expressions.Values.ToArray();
+            newProjectDescriptors = descriptors;
+        }
+        public ConfigureExpressionsCommand(
+            UProject project,
+            UExpressionDescriptor[] projectDescriptors,
+            UTrack track,
+            UExpressionDescriptor[] trackDescriptors) : base(project) {
+            oldProjectDescriptors = project.expressions.Values.ToArray();
+            newProjectDescriptors = projectDescriptors;
+            oldTrackDescriptors = track.TrackExpressions.ToArray();
+            newTrackDescriptors = trackDescriptors;
+            this.track = track;
         }
         public override string ToString() => "Configure expressions";
         public override void Execute() {
-            project.expressions = newDescriptors.ToDictionary(descriptor => descriptor.abbr);
+            project.expressions = newProjectDescriptors.ToDictionary(descriptor => descriptor.abbr);
             Format.Ustx.AddDefaultExpressions(project);
+            if (track != null) {
+                track.TrackExpressions = newTrackDescriptors.ToList();
+            }
             project.parts
                 .Where(part => part is UVoicePart)
                 .ToList()
@@ -175,8 +192,10 @@ namespace OpenUtau.Core {
             project.ValidateFull();
         }
         public override void Unexecute() {
-            project.expressions = oldDescriptors.ToDictionary(descriptor => descriptor.abbr);
-            Format.Ustx.AddDefaultExpressions(project);
+            project.expressions = oldProjectDescriptors.ToDictionary(descriptor => descriptor.abbr);
+            if (track != null) {
+                track.TrackExpressions = oldTrackDescriptors.ToList();
+            }
             project.parts
                 .Where(part => part is UVoicePart)
                 .ToList()

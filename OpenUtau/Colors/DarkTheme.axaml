@@ -32,6 +32,8 @@
   <Color x:Key="BarNumberColor">#D0D0D0</Color>
   <Color x:Key="FinalPitchColor">#D0D0D0</Color>
   <Color x:Key="TrackBackgroundAltColor">#404040</Color>
+  
+  <Color x:Key="WarningColor">#433519</Color>
 
   <!--Keyboard Background-->
   <Color x:Key="WhiteKeyColorLeft">#CC2A63</Color>

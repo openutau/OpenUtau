@@ -19,8 +19,6 @@ namespace OpenUtau.App.Views {
         public enum MessageBoxButtons { Ok, OkCancel, YesNo, YesNoCancel, OkCopy }
         public enum MessageBoxResult { Ok, Cancel, Yes, No }
 
-        private static MessageBox? loadingDialog;
-
         public MessageBox() {
             InitializeComponent();
         }
@@ -44,54 +42,37 @@ namespace OpenUtau.App.Views {
                 }
             }
 
-            if (e is MessageCustomizableException mce) {
-                if (!string.IsNullOrEmpty(mce.TranslatableMessage)) {
-                    var matches = Regex.Matches(mce.TranslatableMessage, "<translate:(.*?)>");
-                    matches.ForEach(m => mce.TranslatableMessage = mce.TranslatableMessage.Replace(m.Value, ThemeManager.GetString(m.Groups[1].Value)));
-                    try {
-                        if (mce.Replaces != null && mce.Replaces.Length > 0) {
-                            text = string.Format(mce.TranslatableMessage, mce.Replaces);
-                        } else {
-                            text = mce.TranslatableMessage;
-                        }
-                    } catch {
-                        text = mce.TranslatableMessage;
-                    }
-                    e = mce.SubstanceException;
-                }
-
-                if (!mce.ShowStackTrace) {
-                    return Show(parent, text, title, MessageBoxButtons.Ok);
-                }
-            }
-
             var builder = new StringBuilder();
             if (e != null) {
-                if (e is AggregateException ae) {
-                    ae = ae.Flatten();
-                    builder.AppendLine(ae.InnerExceptions.First().Message);
-                    builder.AppendLine();
-                    builder.Append(ae.ToString());
+                if (e is AggregateException ae && ae.Flatten().InnerExceptions.Count == 1) {
+                    e = ae.InnerExceptions.First();
+                }
 
-                    if (!string.IsNullOrWhiteSpace(text)) {
-                        text += "\n";
+                if (e is MessageCustomizableException mce) {
+                    text = Translate(mce);
+                    builder.AppendLine(mce.SubstanceException.Message);
+                    builder.AppendLine();
+                    builder.Append(mce.SubstanceException.ToString());
+                    if (!mce.ShowStackTrace) {
+                        return Show(parent, text, title, MessageBoxButtons.Ok);
                     }
-                    if (ae.InnerExceptions.First() is MessageCustomizableException innnerMce) {
-                        if (!string.IsNullOrEmpty(innnerMce.TranslatableMessage)) {
-                            var matches = Regex.Matches(innnerMce.TranslatableMessage, "<translate:(.*?)>");
-                            matches.ForEach(m => innnerMce.TranslatableMessage = innnerMce.TranslatableMessage.Replace(m.Value, ThemeManager.GetString(m.Groups[1].Value)));
-                            try {
-                                if (innnerMce.Replaces != null && innnerMce.Replaces.Length > 0) {
-                                    text += string.Format(innnerMce.TranslatableMessage, innnerMce.Replaces);
-                                } else {
-                                    text += innnerMce.TranslatableMessage;
-                                }
-                            } catch {
-                                text = text += innnerMce.TranslatableMessage;
-                            }
-                        } else {
-                            text += ae.InnerExceptions.First().Message;
+                } else if (e is AggregateException nestedAe) {
+                    foreach (var ie in nestedAe.Flatten().InnerExceptions) {
+                        if (!string.IsNullOrWhiteSpace(text)) {
+                            text += "\n";
                         }
+                        if (ie is MessageCustomizableException innnerMce) {
+                            text += Translate(innnerMce);
+                            builder.AppendLine(innnerMce.SubstanceException.Message);
+                            builder.AppendLine();
+                            builder.Append(innnerMce.SubstanceException.ToString());
+                        } else {
+                            text += ie.Message;
+                            builder.AppendLine(ie.Message);
+                            builder.AppendLine();
+                            builder.AppendLine(ie.ToString());
+                        }
+                        builder.AppendLine();
                     }
                 } else {
                     builder.AppendLine(e.Message);
@@ -107,6 +88,34 @@ namespace OpenUtau.App.Views {
             builder.AppendLine(System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "Unknown Version");
 
             return Show(parent, text, title, MessageBoxButtons.OkCopy, builder.ToString());
+
+            string Translate(MessageCustomizableException mce) {
+                string text;
+                if (string.IsNullOrWhiteSpace(mce.TranslatableMessage)) {
+                    text = mce.Message;
+                } else {
+                    text = mce.TranslatableMessage;
+                    try {
+                        var matches = Regex.Matches(mce.TranslatableMessage, "<translate:(.*?)>");
+                        foreach (Match match in matches) {
+                            if (ThemeManager.TryGetString(match.Groups[1].Value, out string translated)) {
+                                text = text.Replace(match.Value, translated);
+                            } else {
+                                text = mce.Message;
+                                break;
+                            }
+                        }
+                    } catch {
+                        text = mce.Message;
+                    }
+                }
+
+                if (mce.Replaces != null && mce.Replaces.Length > 0) {
+                    return string.Format(text, mce.Replaces);
+                } else {
+                    return text;
+                }
+            }
         }
 
         public static Task<MessageBoxResult> Show(Window parent, string text, string title, MessageBoxButtons buttons, string? stackTrace = null) {
@@ -169,24 +178,6 @@ namespace OpenUtau.App.Views {
             msgbox.Text.Text = text;
             msgbox.ShowDialog(parent);
             return msgbox;
-        }
-
-        public static void ShowLoading(Window parent) {
-            loadingDialog = new MessageBox() {
-                Title = "Loading"
-            };
-            loadingDialog.Text.Text = "Please wait...";
-            loadingDialog.ShowDialog(parent);
-        }
-
-        public static void CloseLoading() {
-            if (loadingDialog != null) {
-                loadingDialog.Close();
-            }
-        }
-
-        public static bool LoadingIsActive() {
-            return loadingDialog != null && loadingDialog.IsActive;
         }
 
         /// <summary>

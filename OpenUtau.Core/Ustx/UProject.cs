@@ -39,7 +39,7 @@ namespace OpenUtau.Core.Ustx {
         public string cacheDir = "UCache";
         [YamlMember(SerializeAs = typeof(string))]
         public Version ustxVersion;
-        public int resolution = 480;
+        [YamlIgnore] public int resolution => 480;
 
         [Obsolete("Since ustx v0.6")] public double bpm = 120;
         [Obsolete("Since ustx v0.6")] public int beatPerBar = 4;
@@ -119,8 +119,9 @@ namespace OpenUtau.Core.Ustx {
             UNote note = UNote.Create();
             int start = NotePresets.Default.DefaultPortamento.PortamentoStart;
             int length = NotePresets.Default.DefaultPortamento.PortamentoLength;
-            note.pitch.AddPoint(new PitchPoint(start, 0));
-            note.pitch.AddPoint(new PitchPoint(start + length, 0));
+            var shape = NotePresets.Default.DefaultPitchShape;
+            note.pitch.AddPoint(new PitchPoint(start, 0, shape));
+            note.pitch.AddPoint(new PitchPoint(start + length, 0, shape));
             return note;
         }
 

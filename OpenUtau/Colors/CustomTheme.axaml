@@ -1,0 +1,48 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <system:Boolean x:Key="IsDarkMode">False</system:Boolean>
+
+  <Color x:Key="BackgroundColor">#FFFFFF</Color>
+  <Color x:Key="BackgroundColorPointerOver">#F0F0F0</Color>
+  <Color x:Key="BackgroundColorPressed">#E0E0E0</Color>
+  <Color x:Key="BackgroundColorDisabled">#D0D0D0</Color>
+
+  <Color x:Key="ForegroundColor">#000000</Color>
+  <Color x:Key="ForegroundColorPointerOver">#000000</Color>
+  <Color x:Key="ForegroundColorPressed">#202020</Color>
+  <Color x:Key="ForegroundColorDisabled">#808080</Color>
+
+  <Color x:Key="BorderColor">#707070</Color>
+  <Color x:Key="BorderColorPointerOver">#B0B0B0</Color>
+
+  <Color x:Key="SystemAccentColor">#4EA6EA</Color>
+  <!-- PointerOver -->
+  <Color x:Key="SystemAccentColorLight1">#90CAF9</Color>
+  <!-- Pressed -->
+  <Color x:Key="SystemAccentColorDark1">#1E88E5</Color>
+
+  <Color x:Key="NeutralAccentColor">#ADA1B3</Color>
+  <Color x:Key="NeutralAccentColorPointerOver">#948A99</Color>
+  <Color x:Key="AccentColor1">#4EA6EA</Color>
+  <Color x:Key="AccentColor2">#FF679D</Color>
+  <Color x:Key="AccentColor3">#E62E6E</Color>
+  
+  <Color x:Key="TickLineColor">#AFA3B5</Color>
+  <Color x:Key="BarNumberColor">#AFA3B5</Color>
+  <Color x:Key="FinalPitchColor">#C0C0C0</Color>
+  <Color x:Key="TrackBackgroundAltColor">#F0F0F0</Color>
+
+  <!--Keyboard Background-->
+  <Color x:Key="WhiteKeyColorLeft">Transparent</Color>
+  <Color x:Key="WhiteKeyColorRight">Transparent</Color>
+  <Color x:Key="WhiteKeyNameColor">#FF347c</Color>
+
+  <Color x:Key="CenterKeyColorLeft">#FFDDE6</Color>
+  <Color x:Key="CenterKeyColorRight">#FFCEDC</Color>
+  <Color x:Key="CenterKeyNameColor">#FF347C</Color>
+
+  <Color x:Key="BlackKeyColorLeft">#FF71A3</Color>
+  <Color x:Key="BlackKeyColorRight">#FF347C</Color>
+  <Color x:Key="BlackKeyNameColor">#FFFFFF</Color>
+</ResourceDictionary>

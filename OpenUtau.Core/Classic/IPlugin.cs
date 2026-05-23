@@ -1,6 +1,8 @@
-﻿namespace OpenUtau.Classic {
+﻿using System.Threading.Tasks;
+
+namespace OpenUtau.Classic {
     public interface IPlugin {
         string Encoding { get; }
-        void Run(string tempFile);
+        Task Run(string tempFile);
     }
 }

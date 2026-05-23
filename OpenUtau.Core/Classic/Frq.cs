@@ -44,6 +44,11 @@ namespace OpenUtau.Classic {
                 frqFile = frq;
                 return;
             }
+            var mrq = new Mrq();
+            if (mrq.Load(otoPath)) {
+                frqFile = mrq;
+                return;
+            }
             // Please write a code to read other frequency files!
 
             frqFile = null;
@@ -196,6 +201,84 @@ namespace OpenUtau.Classic {
                 frq.amp[i] = count == 0 ? 0 : sum * ampMult / count;
             }
             return frq;
+        }
+    }
+    public class Mrq : IFrqFiles {
+        public int hopSize { get; private set; }
+        public double averageF0 { get; private set; }
+        public double[] f0 { get; private set; } = new double[0];
+        public int wavSampleRate { get; set; } = 44100;
+
+        public bool Load(string wavPath) {
+            if (string.IsNullOrEmpty(wavPath)) return false;
+            string mrqPath = VoicebankFiles.GetMrqFile(wavPath);
+            if (!File.Exists(mrqPath)) return false;
+
+            try {
+                using var fs = File.OpenRead(mrqPath);
+                using var br = new BinaryReader(fs);
+
+                // i wish there was a better way to do this
+                var magic = new string(br.ReadChars(4));
+                if (magic != "mrq ")
+                    throw new FormatException("mrq header not found");
+
+                int ver = br.ReadInt32();
+                if (ver <= 0) throw new FormatException("invalid mrq version");
+
+                int nentries = br.ReadInt32();
+                string target = Path.GetFileName(wavPath);
+
+                for (int i = 0; i < nentries; i++) {
+                    int nfilename = br.ReadInt32();
+                    if (nfilename < 0) throw new FormatException("bad name length");
+
+                    // moresampler stores filenames as UTF-16LE, because that's what Windows uses
+                    byte[] nameBytes = br.ReadBytes(checked(nfilename * 2));
+                    if (nameBytes.Length != nfilename * 2) throw new EndOfStreamException();
+                    string filename = Encoding.Unicode.GetString(nameBytes);
+
+                    int size = br.ReadInt32();
+                    if (size < 0) throw new FormatException("negative payload size");
+
+                    if (!string.Equals(filename, target, StringComparison.Ordinal)) {
+                        fs.Seek(size, SeekOrigin.Current); // skip if it's not the target file
+                        continue;
+                    }
+
+                    int nf0 = br.ReadInt32();
+                    wavSampleRate = br.ReadInt32();
+                    hopSize = br.ReadInt32();
+
+                    if (nf0 < 0 || size < 12 || size < 12 + nf0 * 4)
+                        throw new FormatException("f0 length mismatch");
+
+                    f0 = new double[nf0]; // i can't believe that cs lets me do this
+                    for (int j = 0; j < nf0; j++) f0[j] = br.ReadSingle();
+
+                    // optional tail: timestamp + modified (8 bytes), but we don't need it
+                    int used = 12 + nf0 * 4;
+                    if (size - used >= 8) { _ = br.ReadInt32(); _ = br.ReadInt32(); }
+
+
+                    var voiced = f0.Where(v => v > 0).ToArray();
+                    if (voiced.Length == 0) {
+                        averageF0 = 0.0;
+                    } else {
+                        // mean in log space, then convert back to hz
+                        double meanLog2 = voiced.Average(v => Math.Log(v, 2.0));
+                        averageF0 = Math.Pow(2.0, meanLog2);
+                    }
+                    return true;
+                }
+
+                return false; // entry not found
+            } catch (Exception e) {
+                var ex = new MessageCustomizableException("Failed to load mrq file",
+                    "<translate:errors.failed.load>: mrq file", e);
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(ex));
+                return false;
+            }
         }
     }
 }
