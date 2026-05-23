@@ -1,0 +1,184 @@
+;;; Made And Checked By DELTA SYNTH & Gemini AI
+;;; Version 1.2 (23/05/2569)
+;;; ต้นฉบับจากไฟล์ words_th.txt และ dict.txt
+;;; ----------------------------------------------------
+;;; * อัพเดต V.1.1: ยกเลิกการใช้สระ I และ 8 
+;;; * เปลี่ยนแปลงระบบหน่วยเสียงไปใช้กลุ่มตัวสะกด a y (ไอ) และ a w (เอา) ทดแทนทั้งหมด
+;;; * รองรับการปรับสมดุลเพื่อเพิ่มพื้นที่พยัญชนะให้กว้างขึ้น ร้องได้ชัดเจน ไพเราะ เป็นธรรมชาติ
+;;; * ร่างเส้นแดงกำหนดทิศทางน้ำเสียงและเพิ่มการเอื้อนแบบจังหวะเร็วอัตโนมัติ
+;;; * อัพเดต V.1.2: เพิ่มคำที่ออกเสียงผิดในชีวิตประจำวัน: แล้ว หมด เหลือ หวาน ลม (words_th.txt ด้วย)
+;;; ----------------------------------------------------
+ก  k Q
+ข  kh Q
+ก็  k Q
+ก๊ก  k o k
+กก  k o k
+กกกอด  k o k k Q d
+กกช้าง  k o k ch a g
+ก้ง  k o g
+ก๋ง  k o g
+ก๊ง  k o g
+ก่ง  k o g
+กง  k o g
+กฎ  k o d
+กด  k o d
+กดกริ่ง  k o d k r i g
+กตัญญู  k a t a n y u
+กติกา  k a t i k a
+ก้น  k o n
+ก่น  k o n
+กนก  k a n o k
+กบ  k o b
+กบฏ  k a b o d
+ก้ม  k o m
+กมล  k a m o l
+กรณี  k Q r a n i
+กรด  k r o d
+กรม  k r o m
+กรวด  k r ua d
+กรวย  k r ua y
+กรอก  k r Q k
+กรอง  k r Q g
+กรอบ  k r Q b
+กระ  k r a
+กระจก  k r a j o k
+กระจอก  k r a j Q k
+กระจ่าง  k r a j a g
+กระจาย  k r a j a y
+กระจุย  k r a j u y
+กระเป๋า  k r a p a w
+กระแส  k r a s @
+กระหาย  k r a h a y
+กราบ  k r a b
+กราฟ  k r a f
+กริ่ง  k r i g
+กรุงเทพ  k r u g th e b
+กรุณา  k a r u n a
+กล  k o n
+กลไก  k o n k a y
+กลอง  k l Q g
+กลับ  k l a b
+กลัว  k l ua
+กลาง  k l a g
+กล้าม  k l a m
+กลายเป็น  k l a y p e n
+กล่าว  k l a w
+กลิ้ง  k l i g
+กลืน  k l 1 n
+กลุ่ม  k l u m
+กล้วย  k l ua y
+กวาด  k w a d
+กว้าง  k w a g
+กวาง  k w a g
+แกว่ง  k w a g
+กอด  k Q d
+ก้อน  k Q n
+กะ  k a
+กะทิ  k a th i
+กะบะ  k a b a
+กังวล  k a g w o n
+กัด  k a d
+กัน  k a n
+กันยายน  k a n y a y o n
+กับ  k a b
+กาง  k a g
+กางเกง  k a g k e g
+กาชาด  k a ch a d
+กาด  k a d
+กานต์  k a n
+การ  k a n
+กำลัง  k a m l a g
+กำแพง  k a m ph @ g
+กำไร  k a m r a y
+กิน  k i n
+กีฬา  k i l a
+กุนเชียง  k u n ch ia g
+กุหลาบ  k u l a b
+กู้  k u
+กุ้ง  k u g
+เก  k e
+เก่ง  k e g
+เก็บ  k e b
+เกลือ  k l 6
+เก้า  k a w
+เก่า  k a w
+เก้าอี้  k a w i
+เกียรติ  k ia d
+เกิด  k 3 d
+เกิน  k 3 n
+เกือบ  k 6 b
+แก  k @
+แก่  k @
+แกง  k @ g
+แก้  k @
+แก้ว  k @ w
+โกรธ  k r o d
+ใกล้  k l a y
+ไก่  k a y
+ไกล  k l a y
+ของ  kh Q g
+เข้า  kh a w
+เขา  kh a w
+ไข่  kh a y
+ไข  kh a y
+คน  kh o n
+ค้น  kh o n
+คม  kh o m
+ความ  kh w a m
+ควาย  kh w a y
+คำ  kh a m
+คิด  kh i d
+คืน  kh 1 n
+คือ  kh 1
+เคย  kh 3 y
+เครื่อง  kh r 6 g
+เค้า  kh a w
+ใคร  kh r a y
+เงา  g a w
+ไง  g a y
+ใจ  j a y
+ใช่  ch a y
+เช้า  ch a w
+เช่า  ch a w
+ดาว  d a w
+ดำ  d a m
+ดี  d i
+ได้  d a y
+ตัง  t a g
+ตัว  t ua
+ตา  t a
+ตาย  t a y
+เต่า  t a w
+ใต้  t a y
+ไต่  t a y
+เถ้า  th a w
+เท้า  th a w
+ไทย  th a y
+เท่า  th a w
+ไถ  th a y
+ไป  p a y
+เป้า  p a w
+เฝ้า  f a w
+ไฝ  f a y
+เรา  r a w
+ไร  r a y
+เล่า  l a w
+ไล่  l a y
+ลม  l o m
+เศร้า  s a w
+ใส  s a y
+ใส่  s a y
+ไส้  s a y
+เห่า  h a w
+ให้  h a y
+ไหล่  h a y
+หมด  m o d
+หวาน  w a n
+เหลือ  l 6
+แล้ว  l @ w
+ใหม่  m a y
+ไหม  m a y
+ไหม้  m a y
+เอา  a w
+ไอ  a y
+ไอ้  a y
