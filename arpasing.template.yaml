@@ -1,0 +1,653 @@
+%YAML 1.2
+---
+# Arpasing Dictionary Template — Thai-OpenUtau by DELTA SYNTH
+# Updated: 2026-05-23 | Version 2.1
+# รองรับ: คำเชื่อม, คำแสลง, คำในชีวิตประจำวัน, คำที่ CMUdict แปลงผิดบ่อย
+# v2.1: เพิ่ม user-defined phoneme corrections (fire, hubby, study, different)
+symbols:
+  - {symbol: aa, type: vowel}
+  - {symbol: ae, type: vowel}
+  - {symbol: ah, type: vowel}
+  - {symbol: ao, type: vowel}
+  - {symbol: aw, type: vowel}
+  - {symbol: ax, type: vowel}
+  - {symbol: ay, type: vowel}
+  - {symbol: b, type: stop}
+  - {symbol: ch, type: affricate}
+  - {symbol: d, type: stop}
+  - {symbol: dh, type: fricative}
+  - {symbol: dr, type: fricative}
+  - {symbol: dx, type: tap}
+  - {symbol: eh, type: vowel}
+  - {symbol: er, type: vowel}
+  - {symbol: ey, type: vowel}
+  - {symbol: f, type: fricative}
+  - {symbol: g, type: stop}
+  - {symbol: hh, type: aspirate}
+  - {symbol: ih, type: vowel}
+  - {symbol: iy, type: vowel}
+  - {symbol: jh, type: affricate}
+  - {symbol: k, type: stop}
+  - {symbol: l, type: liquid}
+  - {symbol: m, type: nasal}
+  - {symbol: n, type: nasal}
+  - {symbol: ng, type: nasal}
+  - {symbol: ow, type: vowel}
+  - {symbol: oy, type: vowel}
+  - {symbol: p, type: stop}
+  - {symbol: q, type: stop}
+  - {symbol: r, type: liquid}
+  - {symbol: s, type: fricative}
+  - {symbol: sh, type: fricative}
+  - {symbol: t, type: stop}
+  - {symbol: th, type: fricative}
+  - {symbol: tr, type: fricative}
+  - {symbol: uh, type: vowel}
+  - {symbol: uw, type: vowel}
+  - {symbol: v, type: fricative}
+  - {symbol: w, type: semivowel}
+  - {symbol: y, type: semivowel}
+  - {symbol: z, type: fricative}
+  - {symbol: zh, type: fricative}
+
+entries:
+  # =====================================================
+  # 🎵 คำดั้งเดิม
+  # =====================================================
+  - grapheme: openutau
+    phonemes: [ow, p, eh, n, w, uw, t, ah, w, uw]
+
+  # =====================================================
+  # 🔤 คำพื้นฐานที่ CMUdict แปลงผิดบ่อย
+  # =====================================================
+  # Articles & Pronouns
+  - grapheme: the
+    phonemes: [dh, ah]
+  - grapheme: a
+    phonemes: [ah]
+  - grapheme: an
+    phonemes: [ah, n]
+  - grapheme: i
+    phonemes: [ay]
+  - grapheme: you
+    phonemes: [y, uw]
+  - grapheme: your
+    phonemes: [y, ao, r]
+  - grapheme: you're
+    phonemes: [y, ao, r]
+  - grapheme: you've
+    phonemes: [y, uw, v]
+  - grapheme: you'd
+    phonemes: [y, uw, d]
+  - grapheme: you'll
+    phonemes: [y, uw, l]
+  - grapheme: we
+    phonemes: [w, iy]
+  - grapheme: we're
+    phonemes: [w, iy, r]
+  - grapheme: we've
+    phonemes: [w, iy, v]
+  - grapheme: we'll
+    phonemes: [w, iy, l]
+  - grapheme: they
+    phonemes: [dh, ey]
+  - grapheme: their
+    phonemes: [dh, eh, r]
+  - grapheme: there
+    phonemes: [dh, eh, r]
+  - grapheme: they're
+    phonemes: [dh, eh, r]
+  - grapheme: they've
+    phonemes: [dh, ey, v]
+  - grapheme: they'll
+    phonemes: [dh, ey, l]
+  - grapheme: he
+    phonemes: [hh, iy]
+  - grapheme: he's
+    phonemes: [hh, iy, z]
+  - grapheme: he'll
+    phonemes: [hh, iy, l]
+  - grapheme: he'd
+    phonemes: [hh, iy, d]
+  - grapheme: she
+    phonemes: [sh, iy]
+  - grapheme: she's
+    phonemes: [sh, iy, z]
+  - grapheme: she'll
+    phonemes: [sh, iy, l]
+  - grapheme: she'd
+    phonemes: [sh, iy, d]
+  - grapheme: it
+    phonemes: [ih, t]
+  - grapheme: it's
+    phonemes: [ih, t, s]
+  - grapheme: its
+    phonemes: [ih, t, s]
+  - grapheme: that
+    phonemes: [dh, ae, t]
+  - grapheme: that's
+    phonemes: [dh, ae, t, s]
+  - grapheme: this
+    phonemes: [dh, ih, s]
+  - grapheme: these
+    phonemes: [dh, iy, z]
+  - grapheme: those
+    phonemes: [dh, ow, z]
+  - grapheme: what
+    phonemes: [w, ah, t]
+  - grapheme: what's
+    phonemes: [w, ah, t, s]
+  - grapheme: who
+    phonemes: [hh, uw]
+  - grapheme: who's
+    phonemes: [hh, uw, z]
+  - grapheme: whose
+    phonemes: [hh, uw, z]
+  - grapheme: which
+    phonemes: [w, ih, ch]
+  - grapheme: where
+    phonemes: [w, eh, r]
+  - grapheme: when
+    phonemes: [w, eh, n]
+  - grapheme: why
+    phonemes: [w, ay]
+  - grapheme: how
+    phonemes: [hh, aw]
+
+  # Prepositions & Conjunctions (ออกเสียงตามจังหวะเพลง)
+  - grapheme: to
+    phonemes: [t, uw]
+  - grapheme: of
+    phonemes: [ah, v]
+  - grapheme: in
+    phonemes: [ih, n]
+  - grapheme: on
+    phonemes: [ao, n]
+  - grapheme: at
+    phonemes: [ae, t]
+  - grapheme: for
+    phonemes: [f, ao, r]
+  - grapheme: with
+    phonemes: [w, ih, dh]
+  - grapheme: by
+    phonemes: [b, ay]
+  - grapheme: from
+    phonemes: [f, r, ah, m]
+  - grapheme: up
+    phonemes: [ah, p]
+  - grapheme: about
+    phonemes: [ah, b, aw, t]
+  - grapheme: into
+    phonemes: [ih, n, t, uw]
+  - grapheme: through
+    phonemes: [th, r, uw]
+  - grapheme: and
+    phonemes: [ae, n, d]
+  - grapheme: or
+    phonemes: [ao, r]
+  - grapheme: but
+    phonemes: [b, ah, t]
+  - grapheme: so
+    phonemes: [s, ow]
+  - grapheme: as
+    phonemes: [ae, z]
+  - grapheme: if
+    phonemes: [ih, f]
+  - grapheme: like
+    phonemes: [l, ay, k]
+  - grapheme: cause
+    phonemes: [k, ao, z]
+  - grapheme: cuz
+    phonemes: [k, ah, z]
+  - grapheme: cos
+    phonemes: [k, ah, z]
+  - grapheme: because
+    phonemes: [b, ih, k, ao, z]
+  - grapheme: though
+    phonemes: [dh, ow]
+  - grapheme: although
+    phonemes: [ao, l, dh, ow]
+  - grapheme: even
+    phonemes: [iy, v, ah, n]
+
+  # Auxiliaries (กริยาช่วย)
+  - grapheme: is
+    phonemes: [ih, z]
+  - grapheme: are
+    phonemes: [aa, r]
+  - grapheme: was
+    phonemes: [w, ah, z]
+  - grapheme: were
+    phonemes: [w, er]
+  - grapheme: be
+    phonemes: [b, iy]
+  - grapheme: been
+    phonemes: [b, ih, n]
+  - grapheme: being
+    phonemes: [b, iy, ih, ng]
+  - grapheme: have
+    phonemes: [hh, ae, v]
+  - grapheme: has
+    phonemes: [hh, ae, z]
+  - grapheme: had
+    phonemes: [hh, ae, d]
+  - grapheme: do
+    phonemes: [d, uw]
+  - grapheme: does
+    phonemes: [d, ah, z]
+  - grapheme: did
+    phonemes: [d, ih, d]
+  - grapheme: will
+    phonemes: [w, ih, l]
+  - grapheme: would
+    phonemes: [w, uh, d]
+  - grapheme: shall
+    phonemes: [sh, ae, l]
+  - grapheme: should
+    phonemes: [sh, uh, d]
+  - grapheme: may
+    phonemes: [m, ey]
+  - grapheme: might
+    phonemes: [m, ay, t]
+  - grapheme: must
+    phonemes: [m, ah, s, t]
+  - grapheme: can
+    phonemes: [k, ae, n]
+  - grapheme: could
+    phonemes: [k, uh, d]
+  - grapheme: need
+    phonemes: [n, iy, d]
+  - grapheme: dare
+    phonemes: [d, eh, r]
+
+  # Contractions (คำย่อ)
+  - grapheme: i'm
+    phonemes: [ay, m]
+  - grapheme: i've
+    phonemes: [ay, v]
+  - grapheme: i'll
+    phonemes: [ay, l]
+  - grapheme: i'd
+    phonemes: [ay, d]
+  - grapheme: isn't
+    phonemes: [ih, z, ah, n, t]
+  - grapheme: aren't
+    phonemes: [aa, r, ah, n, t]
+  - grapheme: wasn't
+    phonemes: [w, ah, z, ah, n, t]
+  - grapheme: weren't
+    phonemes: [w, er, ah, n, t]
+  - grapheme: haven't
+    phonemes: [hh, ae, v, ah, n, t]
+  - grapheme: hasn't
+    phonemes: [hh, ae, z, ah, n, t]
+  - grapheme: hadn't
+    phonemes: [hh, ae, d, ah, n, t]
+  - grapheme: won't
+    phonemes: [w, ow, n, t]
+  - grapheme: wouldn't
+    phonemes: [w, uh, d, ah, n, t]
+  - grapheme: don't
+    phonemes: [d, ow, n, t]
+  - grapheme: doesn't
+    phonemes: [d, ah, z, ah, n, t]
+  - grapheme: didn't
+    phonemes: [d, ih, d, ah, n, t]
+  - grapheme: can't
+    phonemes: [k, ae, n, t]
+  - grapheme: couldn't
+    phonemes: [k, uh, d, ah, n, t]
+  - grapheme: shouldn't
+    phonemes: [sh, uh, d, ah, n, t]
+  - grapheme: mustn't
+    phonemes: [m, ah, s, ah, n, t]
+  - grapheme: let's
+    phonemes: [l, eh, t, s]
+  - grapheme: that'll
+    phonemes: [dh, ae, t, ah, l]
+  - grapheme: it'll
+    phonemes: [ih, t, ah, l]
+
+  # =====================================================
+  # 🗣️ คำเชื่อม/คำแสลง/คำในชีวิตประจำวัน
+  # =====================================================
+  # Informal contractions (คำย่อแบบพูด)
+  - grapheme: gonna
+    phonemes: [g, ah, n, ah]
+  - grapheme: gotta
+    phonemes: [g, ao, t, ah]
+  - grapheme: wanna
+    phonemes: [w, ah, n, ah]
+  - grapheme: wanna
+    phonemes: [w, ah, n, ah]
+  - grapheme: lemme
+    phonemes: [l, eh, m, iy]
+  - grapheme: gimme
+    phonemes: [g, ih, m, iy]
+  - grapheme: kinda
+    phonemes: [k, ay, n, d, ah]
+  - grapheme: sorta
+    phonemes: [s, ao, r, t, ah]
+  - grapheme: outta
+    phonemes: [aw, t, ah]
+  - grapheme: lotta
+    phonemes: [l, ao, t, ah]
+  - grapheme: tryna
+    phonemes: [t, r, ay, n, ah]
+  - grapheme: dunno
+    phonemes: [d, ah, n, ow]
+  - grapheme: ain't
+    phonemes: [ey, n, t]
+  - grapheme: y'know
+    phonemes: [y, ah, n, ow]
+  - grapheme: ya
+    phonemes: [y, ah]
+  - grapheme: yep
+    phonemes: [y, eh, p]
+  - grapheme: nope
+    phonemes: [n, ow, p]
+  - grapheme: nah
+    phonemes: [n, aa]
+  - grapheme: yeah
+    phonemes: [y, ae, ah]
+  - grapheme: yea
+    phonemes: [y, ae, ah]
+  - grapheme: yah
+    phonemes: [y, aa]
+  - grapheme: hmm
+    phonemes: [hh, m]
+  - grapheme: hm
+    phonemes: [hh, m]
+  - grapheme: uh
+    phonemes: [ah]
+  - grapheme: um
+    phonemes: [ah, m]
+  - grapheme: ugh
+    phonemes: [ah]
+  - grapheme: oh
+    phonemes: [ow]
+  - grapheme: ah
+    phonemes: [aa]
+  - grapheme: aw
+    phonemes: [ao]
+  - grapheme: ow
+    phonemes: [aw]
+  - grapheme: ha
+    phonemes: [hh, aa]
+  - grapheme: haha
+    phonemes: [hh, aa, hh, aa]
+  - grapheme: hah
+    phonemes: [hh, aa]
+  - grapheme: hey
+    phonemes: [hh, ey]
+  - grapheme: hi
+    phonemes: [hh, ay]
+  - grapheme: bye
+    phonemes: [b, ay]
+  - grapheme: ok
+    phonemes: [ow, k, ey]
+  - grapheme: okay
+    phonemes: [ow, k, ey]
+  - grapheme: ok.
+    phonemes: [ow, k, ey]
+
+  # คำแสลง/ย่อ (Slang & Abbreviations ที่ต้องออกเสียง)
+  - grapheme: lol
+    phonemes: [l, ow, l]
+  - grapheme: omg
+    phonemes: [ow, eh, m, jh, iy]
+  - grapheme: brb
+    phonemes: [b, iy, aa, r, b, iy]
+  - grapheme: idk
+    phonemes: [ay, d, iy, k, ey]
+  - grapheme: imo
+    phonemes: [ay, eh, m, ow]
+  - grapheme: tbh
+    phonemes: [t, iy, b, iy, ey, ch]
+  - grapheme: ngl
+    phonemes: [eh, n, jh, iy, eh, l]
+  - grapheme: fr
+    phonemes: [f, ao, r, r, iy, l]
+  - grapheme: rn
+    phonemes: [r, ay, t, n, aw]
+  - grapheme: asap
+    phonemes: [ey, s, ae, p]
+  - grapheme: diy
+    phonemes: [d, iy, ay, w, ay]
+  - grapheme: fyi
+    phonemes: [eh, f, w, ay, ay]
+  - grapheme: btw
+    phonemes: [b, iy, t, iy, d, ah, b, ah, l, y, uw]
+  - grapheme: irl
+    phonemes: [ay, n, r, iy, l, l, ay, f]
+  - grapheme: aka
+    phonemes: [ey, k, ey, ey]
+
+  # =====================================================
+  # 🎤 คำที่ใช้ในเนื้อเพลงบ่อย
+  # =====================================================
+  - grapheme: love
+    phonemes: [l, ah, v]
+  - grapheme: heart
+    phonemes: [hh, aa, r, t]
+  - grapheme: feel
+    phonemes: [f, iy, l]
+  - grapheme: fall
+    phonemes: [f, ao, l]
+  - grapheme: fly
+    phonemes: [f, l, ay]
+  - grapheme: free
+    phonemes: [f, r, iy]
+  - grapheme: dream
+    phonemes: [d, r, iy, m]
+  - grapheme: light
+    phonemes: [l, ay, t]
+  - grapheme: night
+    phonemes: [n, ay, t]
+  - grapheme: right
+    phonemes: [r, ay, t]
+  - grapheme: fight
+    phonemes: [f, ay, t]
+  - grapheme: sight
+    phonemes: [s, ay, t]
+  - grapheme: bright
+    phonemes: [b, r, ay, t]
+  - grapheme: shine
+    phonemes: [sh, ay, n]
+  - grapheme: mine
+    phonemes: [m, ay, n]
+  - grapheme: time
+    phonemes: [t, ay, m]
+  - grapheme: life
+    phonemes: [l, ay, f]
+  - grapheme: alive
+    phonemes: [ah, l, ay, v]
+  - grapheme: alone
+    phonemes: [ah, l, ow, n]
+  - grapheme: away
+    phonemes: [ah, w, ey]
+  - grapheme: stay
+    phonemes: [s, t, ey]
+  - grapheme: play
+    phonemes: [p, l, ey]
+  - grapheme: day
+    phonemes: [d, ey]
+  - grapheme: way
+    phonemes: [w, ey]
+  - grapheme: say
+    phonemes: [s, ey]
+  - grapheme: pray
+    phonemes: [p, r, ey]
+  - grapheme: sky
+    phonemes: [s, k, ay]
+  - grapheme: high
+    phonemes: [hh, ay]
+  - grapheme: cry
+    phonemes: [k, r, ay]
+  - grapheme: try
+    phonemes: [t, r, ay]
+  - grapheme: die
+    phonemes: [d, ay]
+  - grapheme: lie
+    phonemes: [l, ay]
+  - grapheme: tie
+    phonemes: [t, ay]
+  - grapheme: forever
+    phonemes: [f, ao, r, eh, v, er]
+  - grapheme: together
+    phonemes: [t, ah, g, eh, dh, er]
+  - grapheme: never
+    phonemes: [n, eh, v, er]
+  - grapheme: always
+    phonemes: [ao, l, w, ey, z]
+  - grapheme: maybe
+    phonemes: [m, ey, b, iy]
+  - grapheme: baby
+    phonemes: [b, ey, b, iy]
+  - grapheme: lady
+    phonemes: [l, ey, d, iy]
+  - grapheme: crazy
+    phonemes: [k, r, ey, z, iy]
+  - grapheme: amazing
+    phonemes: [ah, m, ey, z, ih, ng]
+  - grapheme: beautiful
+    phonemes: [b, y, uw, t, ih, f, ah, l]
+  - grapheme: wonderful
+    phonemes: [w, ah, n, d, er, f, ah, l]
+  - grapheme: everything
+    phonemes: [eh, v, r, iy, th, ih, ng]
+  - grapheme: everyone
+    phonemes: [eh, v, r, iy, w, ah, n]
+  - grapheme: somewhere
+    phonemes: [s, ah, m, w, eh, r]
+  - grapheme: nothing
+    phonemes: [n, ah, th, ih, ng]
+  - grapheme: something
+    phonemes: [s, ah, m, th, ih, ng]
+  - grapheme: anything
+    phonemes: [eh, n, iy, th, ih, ng]
+  - grapheme: somebody
+    phonemes: [s, ah, m, b, ao, d, iy]
+  - grapheme: nobody
+    phonemes: [n, ow, b, ao, d, iy]
+  - grapheme: anybody
+    phonemes: [eh, n, iy, b, ao, d, iy]
+
+  # =====================================================
+  # 🔁 คำที่ออกเสียงแบบ Informal (ลดสระ)
+  # =====================================================
+  - grapheme: 'em
+    phonemes: [ah, m]
+  - grapheme: 'cause
+    phonemes: [k, ao, z]
+  - grapheme: 'til
+    phonemes: [t, ih, l]
+  - grapheme: till
+    phonemes: [t, ih, l]
+  - grapheme: til
+    phonemes: [t, ih, l]
+  - grapheme: 'bout
+    phonemes: [b, aw, t]
+  - grapheme: c'mon
+    phonemes: [k, ah, m, ao, n]
+  - grapheme: c'mere
+    phonemes: [k, ah, m, ih, r]
+  - grapheme: 'cause
+    phonemes: [k, ao, z]
+  - grapheme: nothin
+    phonemes: [n, ah, th, ih, n]
+  - grapheme: somethin
+    phonemes: [s, ah, m, th, ih, n]
+  - grapheme: nothin'
+    phonemes: [n, ah, th, ih, n]
+  - grapheme: somethin'
+    phonemes: [s, ah, m, th, ih, n]
+  - grapheme: runnin'
+    phonemes: [r, ah, n, ih, n]
+  - grapheme: comin'
+    phonemes: [k, ah, m, ih, n]
+  - grapheme: goin'
+    phonemes: [g, ow, ih, n]
+  - grapheme: lovin'
+    phonemes: [l, ah, v, ih, n]
+  - grapheme: feelin'
+    phonemes: [f, iy, l, ih, n]
+  - grapheme: wavin'
+    phonemes: [w, ey, v, ih, n]
+  - grapheme: standin'
+    phonemes: [s, t, ae, n, d, ih, n]
+  - grapheme: fallin'
+    phonemes: [f, ao, l, ih, n]
+  - grapheme: cryin'
+    phonemes: [k, r, ay, ih, n]
+  - grapheme: tryin'
+    phonemes: [t, r, ay, ih, n]
+  - grapheme: flyin'
+    phonemes: [f, l, ay, ih, n]
+  - grapheme: dyin'
+    phonemes: [d, ay, ih, n]
+  - grapheme: lyin'
+    phonemes: [l, ay, ih, n]
+  - grapheme: shinin'
+    phonemes: [sh, ay, n, ih, n]
+  - grapheme: dreamin'
+    phonemes: [d, r, iy, m, ih, n]
+  - grapheme: breathin'
+    phonemes: [b, r, iy, dh, ih, n]
+
+  # =====================================================
+  # ✏️ User-Defined Phoneme Corrections (v2.1)
+  # กำหนดโดย DELTA SYNTH — ออกเสียงให้ตรงกับการร้องจริง
+  # =====================================================
+
+  # fire: f ay y er  (สระ ay แล้วลื่นไปหา y ก่อน er)
+  - grapheme: fire
+    phonemes: [f, ay, y, er]
+  - grapheme: fires
+    phonemes: [f, ay, y, er, z]
+  - grapheme: fired
+    phonemes: [f, ay, y, er, d]
+  - grapheme: firing
+    phonemes: [f, ay, y, er, ih, ng]
+  - grapheme: fireworks
+    phonemes: [f, ay, y, er, w, er, k, s]
+
+  # hubby: h aa b b iy  (double-b เสียงพยัญชนะดีดชัด)
+  - grapheme: hubby
+    phonemes: [hh, aa, b, b, iy]
+  - grapheme: hubbies
+    phonemes: [hh, aa, b, b, iy, z]
+
+  # study: s t aa d iy  (สระ aa กลาง ไม่ใช่ ah)
+  - grapheme: study
+    phonemes: [s, t, aa, d, iy]
+  - grapheme: studied
+    phonemes: [s, t, aa, d, iy, d]
+  - grapheme: studies
+    phonemes: [s, t, aa, d, iy, z]
+  - grapheme: studying
+    phonemes: [s, t, aa, d, iy, ih, ng]
+  - grapheme: studious
+    phonemes: [s, t, aa, d, iy, ah, s]
+
+  # different: d ih f f er r eh n t  (double-f และ double-r เน้นจังหวะ)
+  - grapheme: different
+    phonemes: [d, ih, f, f, er, r, eh, n, t]
+  - grapheme: differently
+    phonemes: [d, ih, f, f, er, r, eh, n, t, l, iy]
+  - grapheme: difference
+    phonemes: [d, ih, f, f, er, r, ah, n, s]
+  - grapheme: differences
+    phonemes: [d, ih, f, f, er, r, ah, n, s, ih, z]
+
+  # mystery: m ih s t er r iy  (double-r เน้นจังหวะ)
+  - grapheme: mystery
+    phonemes: [m, ih, s, t, er, r, iy]
+  - grapheme: mistery
+    phonemes: [m, ih, s, t, er, r, iy]
+  - grapheme: mysteries
+    phonemes: [m, ih, s, t, er, r, iy, z]
+  - grapheme: mysterious
+    phonemes: [m, ih, s, t, ih, r, iy, ah, s]
+  - grapheme: mysteriously
+    phonemes: [m, ih, s, t, ih, r, iy, ah, s, l, iy]

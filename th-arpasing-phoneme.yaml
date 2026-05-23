@@ -1,0 +1,94 @@
+# th-arpasing-phoneme.yaml
+# Version: 1.1 (Updated: 2026)
+# Created By: DELTA SYNTH & Gemini AI
+
+system:
+  name: "Thai Arpasing Phonemizer Engine"
+  version: "1.1"
+  description: "Rule-based phoneme weight splitter without G2P model"
+
+phonemes:
+  consonants:
+    - b
+    - ch
+    - d
+    - f
+    - g
+    - h
+    - j
+    - k
+    - kh
+    - l
+    - m
+    - n
+    - p
+    - ph
+    - r
+    - s
+    - t
+    - th
+    - w
+    - y
+    - "-"
+  vowels:
+    - ah
+    - ih
+    - uh
+    - eh
+    - oh
+    - ae
+    - ao
+    - er
+    - ue
+    - eu
+    - ia
+    - ua
+    - ay
+    - aw
+    - am
+
+weights:
+  # --- คำปกติ ---
+  normal_word:
+    start_sentence:
+      "- C": 0.5
+      "CV": 0.7
+      "VC": 0.3
+    middle_sentence_open_syllable: # แม่ ก กา
+      "CV": 0.8
+      "V C": 0.2  # หรือ V V
+    middle_sentence:
+      "CV": 0.7
+      "VC": 0.3
+    end_sentence:
+      "CV": 0.7
+      "VC": 0.2
+      "V -": 0.1
+    end_sentence_open_syllable: # แม่ ก กา
+      "CV": 0.8
+      "V -": 0.2
+
+  # --- คำควบกล้ำ ---
+  cluster_word:
+    start_sentence:
+      "- C": 0.5
+      "CCV": 0.1
+      "CV": 0.7
+      "VC": 0.3
+    middle_sentence_open_syllable: # แม่ ก กา
+      "CCV": 0.1
+      "CV": 0.7
+      "V V": 0.2
+    middle_sentence:
+      "CCV": 0.1
+      "CV": 0.6
+      "VC": 0.3
+    end_sentence:
+      "CCV": 0.1
+      "CV": 0.6
+      "VC": 0.2
+      "V -": 0.1
+    end_sentence_open_syllable: # แม่ ก กา
+      "CCV": 0.1
+      "CV": 0.7
+      "V -": 0.2

@@ -1,0 +1,63 @@
+%YAML 1.2
+---
+symbols:
+  - {symbol: a, type: vowel}
+  - {symbol: i, type: vowel}
+  - {symbol: u, type: vowel}
+  - {symbol: e, type: vowel}
+  - {symbol: o, type: vowel}
+  - {symbol: '@', type: vowel}
+  - {symbol: Q, type: vowel}
+  - {symbol: '3', type: vowel}
+  - {symbol: '6', type: vowel}
+  - {symbol: '1', type: vowel}
+  - {symbol: ia, type: vowel}
+  - {symbol: ua, type: vowel}
+  - {symbol: I, type: vowel}
+  - {symbol: '8', type: vowel}
+  - {symbol: b, type: stop}
+  - {symbol: p, type: stop}
+  - {symbol: ph, type: stop}
+  - {symbol: d, type: stop}
+  - {symbol: t, type: stop}
+  - {symbol: th, type: stop}
+  - {symbol: k, type: stop}
+  - {symbol: kh, type: stop}
+  - {symbol: j, type: affricate}
+  - {symbol: ch, type: affricate}
+  - {symbol: f, type: fricative}
+  - {symbol: s, type: fricative}
+  - {symbol: h, type: aspirate}
+  - {symbol: m, type: nasal}
+  - {symbol: n, type: nasal}
+  - {symbol: g, type: nasal}
+  - {symbol: r, type: liquid}
+  - {symbol: l, type: liquid}
+  - {symbol: w, type: semivowel}
+  - {symbol: y, type: semivowel}
+
+entries:
+  - grapheme: openutau
+    phonemes: [o, p, e, n, u, t, a, u]
+  - grapheme: โอเพ่นอูตาอุ
+    phonemes: [o, p, e, n, u, t, a, u]
+  - grapheme: เดลต้า
+    phonemes: [d, e, l, t, a]
+  - grapheme: ปริ้นโมฟ
+    phonemes: [p, r, i, n, m, o, f]
+  - grapheme: ช้าง
+    phonemes: [ch, a, g]
+  - grapheme: ส้ม
+    phonemes: [s, o, m]
+  - grapheme: หมา
+    phonemes: [ m, a]
+  - grapheme: รัก
+    phonemes: [r, a, k]
+  - grapheme: แล้ว
+    phonemes: [l, '@', w]
+  - grapheme: เเล้ว
+    phonemes: [l, '@', w]
+  - grapheme: ยาว
+    phonemes: [y, a, w]
+  - grapheme: กิน
+    phonemes: [k, i, n]

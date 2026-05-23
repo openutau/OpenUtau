@@ -1,0 +1,83 @@
+%YAML 1.2
+---
+symbols:
+#Con Pez
+  - {symbol: z, type: fricative}
+#nJokis
+  - {symbol: a, type: vowel}
+  - {symbol: e, type: vowel}
+  - {symbol: i, type: vowel}
+  - {symbol: o, type: vowel}
+  - {symbol: u, type: vowel}
+  - {symbol: w, type: semivowel}
+  - {symbol: y, type: semivowel}
+  - {symbol: U, type: semivowel}
+  - {symbol: I, type: semivowel}
+  - {symbol: r, type: liquid}
+  - {symbol: rr, type: liquid}
+  - {symbol: p, type: stop}
+  - {symbol: t, type: stop}
+  - {symbol: k, type: stop}
+  - {symbol: b, type: stop}
+  - {symbol: d, type: stop}
+  - {symbol: g, type: stop}
+  - {symbol: B, type: fricative}
+  - {symbol: D, type: fricative}
+  - {symbol: G, type: fricative}
+  - {symbol: f, type: fricative}
+  - {symbol: s, type: fricative}
+  - {symbol: x, type: fricative}
+  - {symbol: m, type: nasal}
+  - {symbol: n, type: nasal}
+  - {symbol: nJ, type: nasal}
+  - {symbol: l, type: liquid}
+  - {symbol: ch, type: affricate}
+  - {symbol: jj, type: affricate}
+
+#Combo??? (Phonemize like: [e k][ks i])
+  - {symbol: ks, type: stop}
+
+replacements:
+  - {from: [n, p], to: [m, p]}
+  - {from: [n, B], to: [m, b]}
+  - {from: [m, B], to: [m, b]}
+  - {from: [n, b], to: [m, b]}
+  - {from: [n, m], to: [m, m]}
+  - {from: [n, D], to: [n, d]}
+  - {from: [l, D], to: [l, d]}
+  - {from: [n, G], to: [n, g]}
+  - {from: [s, r], to: [s, rr]}
+  - {from: [x, r], to: [x, rr]}
+  - {from: [n, r], to: [n, rr]}
+  - {from: [m, r], to: [m, rr]}
+  - {from: [l, r], to: [l, rr]}
+  - {from: [r, r], to: [rr]}
+  - {from: [a, b], to: [a, B]}
+  - {from: [e, b], to: [e, B]}
+  - {from: [i, b], to: [i, B]}
+  - {from: [o, b], to: [o, B]}
+  - {from: [u, b], to: [u, B]}
+  - {from: [I, b], to: [I, B]}
+  - {from: [U, b], to: [U, B]}
+  - {from: [a, g], to: [a, G]}
+  - {from: [e, g], to: [e, G]}
+  - {from: [i, g], to: [i, G]}
+  - {from: [o, g], to: [o, G]}
+  - {from: [u, g], to: [u, G]}
+  - {from: [I, g], to: [I, G]}
+  - {from: [U, g], to: [U, G]}
+  - {from: [a, d], to: [a, D]}
+  - {from: [e, d], to: [e, D]}
+  - {from: [i, d], to: [i, D]}
+  - {from: [o, d], to: [o, D]}
+  - {from: [u, d], to: [u, D]}
+  - {from: [I, d], to: [I, D]}
+  - {from: [U, d], to: [U, D]}
+
+entries:
+  - grapheme: openutau
+    phonemes: [o, p, e, n, u, t, a, u]
+  - grapheme: vccv
+    phonemes: [b, e, s, e, s, e, B, e]
+  - grapheme: "VCCV"
+    phonemes: [b, e, s, e, s, e, B, e]

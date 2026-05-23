@@ -1,0 +1,95 @@
+%YAML 1.2
+---
+version: 1.1
+symbols:
+#CZsampa standard vowels
+  - {symbol: '@', type: vowel}
+  - {symbol: a, type: vowel}
+  - {symbol: i, type: vowel}
+  - {symbol: u, type: vowel}
+  - {symbol: e, type: vowel}
+  - {symbol: o, type: vowel}
+  - {symbol: A, type: vowel}
+  - {symbol: I, type: vowel}
+  - {symbol: E, type: vowel}
+  - {symbol: O, type: vowel}
+  - {symbol: 0, type: vowel}
+  - {symbol: 3, type: vowel}
+  - {symbol: 6, type: vowel}
+  - {symbol: 8, type: vowel}
+  - {symbol: Q, type: vowel}
+  - {symbol: h, type: aspirate}
+  - {symbol: j, type: affricate}
+#Arpasing
+  - {symbol: aa, type: vowel}
+  - {symbol: ae, type: vowel}
+  - {symbol: ah, type: vowel}
+  - {symbol: ao, type: vowel}
+  - {symbol: aw, type: vowel}
+  - {symbol: ax, type: vowel}
+  - {symbol: ay, type: vowel}
+  - {symbol: b, type: stop}
+  - {symbol: ch, type: affricate}
+  - {symbol: d, type: stop}
+  - {symbol: dh, type: fricative}
+  - {symbol: dr, type: fricative}
+  - {symbol: dx, type: tap}
+  - {symbol: eh, type: vowel}
+  - {symbol: er, type: vowel}
+  - {symbol: ey, type: vowel}
+  - {symbol: f, type: fricative}
+  - {symbol: g, type: stop}
+  - {symbol: hh, type: aspirate}
+  - {symbol: ih, type: vowel}
+  - {symbol: iy, type: vowel}
+  - {symbol: jh, type: affricate}
+  - {symbol: k, type: stop}
+  - {symbol: l, type: liquid}
+  - {symbol: m, type: nasal}
+  - {symbol: n, type: nasal}
+  - {symbol: ng, type: nasal}
+  - {symbol: ow, type: vowel}
+  - {symbol: oy, type: vowel}
+  - {symbol: p, type: stop}
+  - {symbol: q, type: stop}
+  - {symbol: r, type: liquid}
+  - {symbol: s, type: fricative}
+  - {symbol: sh, type: fricative}
+  - {symbol: t, type: stop}
+  - {symbol: th, type: fricative}
+  - {symbol: tr, type: fricative}
+  - {symbol: uh, type: vowel}
+  - {symbol: uw, type: vowel}
+  - {symbol: v, type: fricative}
+  - {symbol: w, type: semivowel}
+  - {symbol: y, type: semivowel}
+  - {symbol: z, type: fricative}
+  - {symbol: zh, type: fricative}
+  #bonus symbols
+  - {symbol: '&', type: vowel}
+  - {symbol: 1, type: vowel}
+  - {symbol: 9, type: vowel}
+  - {symbol: x, type: vowel}
+  - {symbol: dd, type: tap}
+
+replacements:
+  - {from: [h, E], to: [hh, E]}
+  - {from: [h, y], to: [hh, y]}
+  - {from: [i, ng], to: [1, ng]}
+  - {from: [9, r], to: [0, r]}
+  - {from: [e, r], to: [A, r]}
+  - {from: ['@', m], to: ['&', m]}
+  - {from: ['@', n], to: ['&', n]}
+  - {from: ['@', ng], to: [A, ng]}
+  - {from: [O, l], to: [0, l]}
+
+fallbacks: 
+  - {from: h, to: hh}
+
+entries:
+  - grapheme: openutau
+    phonemes: [ow, p, eh, n, w, uw, t, ah, w, uw]
+  - grapheme: vccv
+    phonemes: [v, E, s, E, s, E, v, E]
+  - grapheme: "VCCV"
+    phonemes: [v, E, s, E, s, E, v, E]

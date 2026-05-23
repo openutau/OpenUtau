@@ -1,0 +1,62 @@
+%YAML 1.2
+---
+symbols:
+  - {symbol: a, type: vowel}
+  - {symbol: aw, type: vowel}
+  - {symbol: ay, type: vowel}
+  - {symbol: b, type: stop}
+  - {symbol: ch, type: affricate}
+  - {symbol: d, type: stop}
+  - {symbol: e, type: vowel}
+  - {symbol: ey, type: vowel}
+  - {symbol: ew, type: vowel}
+  - {symbol: f, type: fricative}
+  - {symbol: g, type: stop}
+  - {symbol: h, type: aspirate}
+  - {symbol: i, type: vowel}
+  - {symbol: iw, type: vowel}
+  - {symbol: j, type: affricate}
+  - {symbol: k, type: stop}
+  - {symbol: l, type: tap}
+  - {symbol: ll, type: liquid}
+  - {symbol: m, type: nasal}
+  - {symbol: n, type: nasal}
+  - {symbol: ng, type: nasal}
+  - {symbol: o, type: vowel}
+  - {symbol: ow, type: vowel}
+  - {symbol: oy, type: vowel}
+  - {symbol: p, type: stop}
+  - {symbol: q, type: stop}
+  - {symbol: r, type: tap}
+  - {symbol: rr, type: liquid}
+  - {symbol: s, type: fricative}
+  - {symbol: sh, type: fricative}
+  - {symbol: t, type: stop}
+  - {symbol: u, type: vowel}
+  - {symbol: uy, type: vowel}
+  - {symbol: v, type: fricative}
+  - {symbol: w, type: semivowel}
+  - {symbol: y, type: semivowel}
+  - {symbol: z, type: fricative}
+replacements:
+  - {from: [d, y], to: j}
+  - {from: [d, i, y], to: j}
+  - {from: [s, y], to: sh}
+  - {from: [s, i, y], to: sh}
+  - {from: ay, to: [a, y]}
+  - {from: ey, to: [e, y]}
+  - {from: oy, to: [o, y]}
+  - {from: uy, to: [u, y]}
+  - {from: aw, to: [a, w]}
+  - {from: ew, to: [e, w]}
+  - {from: ow, to: [o, w]}
+  - {from: iw, to: [i, w]}
+
+entries:
+  - grapheme: openutau
+    phonemes: [ow, p, e, n, u, t, a, u]
+  - grapheme: mga
+    phonemes: [m, a, ng, a]
+  - grapheme: ng
+    phonemes: [n, a, ng]
+
