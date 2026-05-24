@@ -174,5 +174,12 @@ namespace OpenUtau.App.Controls {
                 LoadPart(ViewModel.Part);
             }
         }
+
+        public void OnPhonemizerButtonClicked(object? sender, RoutedEventArgs e) {
+            if (ViewModel.IsPhonemizerEnabled && sender is Button button && button.ContextMenu != null) {
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.Open();
+            }
+        }
     }
 }

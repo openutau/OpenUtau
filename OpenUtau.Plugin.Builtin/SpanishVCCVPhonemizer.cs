@@ -18,48 +18,39 @@ namespace OpenUtau.Plugin.Builtin {
         /// Based on the nJokis method.
         /// Supports automatic consonant substitutes, such as seseo, through ValidateAlias.
         ///</summary>
+        protected override string YamlFileName => "njokis_vccv.yaml";
+        protected override byte[] YamlTemplate => Data.Resources.njokis_template;
+        protected override string YamlVersion => "1.0";
 
-        private string[] vowels = "a,e,i,o,u,BB,DD,ff,GG,ll,mm,nn,rrr,ss,xx".Split(',');
-        private readonly string[] consonants = "b,B,ch,d,D,E,f,g,G,h,I,jj,k,l,L,m,n,nJ,p,r,rr,s,sh,t,U,w,x,y,z".Split(',');
-        private readonly string[] shortConsonants = "r".Split(",");
-        private readonly string[] longConsonants = "ch,k,p,s,sh,t".Split(",");
-        private Dictionary<string, string> dictionaryReplacements = ("a=a;e=e;i=i;o=o;u=u;" +
+        public SpanishVCCVPhonemizer() {
+            this.vowels = "a,e,i,o,u,BB,DD,ff,GG,ll,mm,nn,rrr,ss,xx".Split(',');
+            this.consonants = "b,B,ch,d,D,E,f,g,G,h,I,jj,k,l,L,m,n,nJ,p,r,rr,s,sh,t,U,w,x,y,z".Split(',');
+            this.dictionaryReplacements = ("a=a;e=e;i=i;o=o;u=u;" +
                 "b=b;ch=ch;d=d;f=f;g=g;gn=nJ;k=k;l=l;ll=jj;m=m;n=n;p=p;r=r;rr=rr;s=s;t=t;w=w;x=x;y=y;z=z;I=I;U=U;B=B;D=D;G=G;Y=y").Split(';')
                 .Select(entry => entry.Split('='))
                 .Where(parts => parts.Length == 2)
                 .Where(parts => parts[0] != parts[1])
                 .ToDictionary(parts => parts[0], parts => parts[1]);
+        }
+
+        private bool isYamlFallbacks = false;
         protected override string[] GetVowels() => vowels;
         protected override string[] GetConsonants() => consonants;
         protected override string GetDictionaryName() => "cmudict_es.txt";
-        protected override Dictionary<string, string> GetDictionaryPhonemesReplacement() => dictionaryReplacements;
-        // Store the splitting replacements
-        private List<Replacement> splittingReplacements = new List<Replacement>();
-        // Store the merging replacements
-        private List<Replacement> mergingReplacements = new List<Replacement>();
-        private string[] tails = "-".Split(',');
-
-        private readonly Dictionary<string, string> replacements = "D=d".Split(';')
-                .Select(entry => entry.Split('='))
-                .Where(parts => parts.Length == 2)
-                .Where(parts => parts[0] != parts[1])
-                .ToDictionary(parts => parts[0], parts => parts[1]);
-        private bool isReplacements = false;
-
         protected override IG2p LoadBaseDictionary() {
             var g2ps = new List<IG2p>();
 
             // Load dictionary from plugin folder.
-            string path = Path.Combine(PluginDir, "njokis_vccv.yaml");
+            string path = Path.Combine(PluginDir, YamlFileName);
             if (!File.Exists(path)) {
                 Directory.CreateDirectory(PluginDir);
-                File.WriteAllBytes(path, Data.Resources.njokis_template);
+                File.WriteAllBytes(path, YamlTemplate);
             }
             g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(path)).Build());
 
             // Load dictionary from singer folder.
             if (singer != null && singer.Found && singer.Loaded) {
-                string file = Path.Combine(singer.Location, "njokis_vccv.yaml");
+                string file = Path.Combine(singer.Location, YamlFileName);
                 if (File.Exists(file)) {
                     try {
                         g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(file)).Build());
@@ -74,72 +65,11 @@ namespace OpenUtau.Plugin.Builtin {
 
         protected override string[] GetSymbols(Note note) {
             string[] original = base.GetSymbols(note);
-            if (tails.Contains(note.lyric)) {
-                return new string[] { note.lyric };
-            }
             if (original == null) {
                 return null;
             }
-            List<string> modified = new List<string>(original);
-            List<string> finalPhonemes = new List<string>();
-            int i = 0;
-            bool hasReplacements = mergingReplacements.Any() == true || splittingReplacements.Any() == true; // Check for any replacements
-            if (hasReplacements) {
-                finalPhonemes = new List<string>();
-                while (i < modified.Count) {
-                    bool replaced = false;
-                    foreach (var rule in mergingReplacements.Concat(splittingReplacements)) {
-                        if (rule.from is string[] fromArray && i + fromArray.Length <= modified.Count) {
-                            bool match = true;
-                            for (int j = 0; j < fromArray.Length; j++) {
-                                if (modified[i + j] != fromArray[j]) {
-                                    match = false;
-                                    break;
-                                }
-                            }
-                            if (match) {
-                                if (rule.to is string toString) {
-                                    finalPhonemes.Add(toString);
-                                } else if (rule.to is string[] toArray) {
-                                    finalPhonemes.AddRange(toArray);
-                                }
-                                i += fromArray.Length;
-                                replaced = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!replaced && splittingReplacements.Any()) {
-                        string currentPhoneme = modified[i];
-                        bool singleReplaced = false;
-                        foreach (var rule in splittingReplacements) {
-                            if (rule.from.ToString() == currentPhoneme && rule.to is string[] toArray) {
-                                finalPhonemes.AddRange(toArray);
-                                singleReplaced = true;
-                                break;
-                            }
-                        }
-                        if (!singleReplaced) {
-                            finalPhonemes.Add(ReplacePhoneme(modified[i], note.tone));
-                        }
-                        i++;
-                    } else if (!replaced) {
-                        finalPhonemes.Add(ReplacePhoneme(modified[i], note.tone));
-                        i++;
-                    }
-                }
-            } else {
-                finalPhonemes = new List<string>(modified);
-            }
             List<string> finalProcessedPhonemes = new List<string>();
-            IEnumerable<string> phonemes;
-            if (hasReplacements) {
-                phonemes = finalPhonemes;
-            } else {
-                phonemes = original;
-            }
-            foreach (string s in phonemes) {
+            foreach (string s in original) {
                 switch (s) {
                     default:
                         finalProcessedPhonemes.Add(s);
@@ -147,145 +77,6 @@ namespace OpenUtau.Plugin.Builtin {
                 }
             }
             return finalProcessedPhonemes.ToArray();
-        }
-
-        public override void SetSinger(USinger singer) {
-            if (this.singer != singer) {
-                string file;
-                if (singer != null && singer.Found && singer.Loaded && !string.IsNullOrEmpty(singer.Location)) {
-                    file = Path.Combine(singer.Location, "njokis_vccv.yaml");
-                    if (!File.Exists(file)) {
-                        try {
-                            File.WriteAllBytes(file, Data.Resources.njokis_template);
-                        } catch (Exception e) {
-                            Log.Error(e, $"Failed to write 'njokis_vccv.yaml' to singer folder at {file}");
-                        }
-                    }
-                } else if (!string.IsNullOrEmpty(PluginDir)) {
-                    file = Path.Combine(PluginDir, "njokis_vccv.yaml");
-                } else {
-                    Log.Error("Singer location and PluginDir are both null or empty. Cannot locate 'njokis_vccv.yaml'.");
-                    return; // Exit early to avoid null file issues
-                }
-
-                if (File.Exists(file)) {
-                    try {
-                        var data = Core.Yaml.DefaultDeserializer.Deserialize<NjokisYAMLData>(File.ReadAllText(file));
-
-                        // Load vowels
-                        try {
-                            var loadVowels = data.symbols
-                                ?.Where(s => s.type == "vowel")
-                                .Select(s => s.symbol)
-                                .ToList() ?? new List<string>();
-
-                            vowels = vowels.Concat(loadVowels).Distinct().ToArray();
-                        } catch (Exception ex) {
-                            Log.Error($"Failed to load vowels from njokis_vccv.yaml: {ex.Message}");
-                        }
-                        // Load replacements
-                        try {
-                            if (data?.replacements != null && data.replacements.Any() == true) {
-                                mergingReplacements = new List<Replacement>();
-                                splittingReplacements = new List<Replacement>();
-
-                                foreach (var replacement in data.replacements) {
-                                    try {
-                                        if (replacement.from != null && replacement.to != null) {
-                                            if (replacement.from is IEnumerable<object> fromList) {
-                                                // 'from' is a list (e.g., [ae, n])
-                                                string[] fromArray = fromList.Select(item => item.ToString()).ToArray();
-                                                if (replacement.to is string toString) {
-                                                    mergingReplacements.Add(new Replacement { from = fromArray, to = toString });
-                                                } else if (replacement.to is IEnumerable<object> toList) {
-                                                    splittingReplacements.Add(new Replacement { from = fromArray, to = toList.Select(item => item.ToString()).ToArray() });
-                                                } else {
-                                                    Log.Error($"Error: Invalid 'to' type in replacement: {replacement}");
-                                                }
-                                            } else if (replacement.from is string fromString) {
-                                                // 'from' is a single string (e.g., tr, aw, ae, m, ng)
-                                                if (replacement.to is string toString) {
-                                                    dictionaryReplacements[fromString] = toString;
-                                                } else if (replacement.to is IEnumerable<object> toList) {
-                                                    splittingReplacements.Add(new Replacement { from = fromString, to = toList.Select(item => item.ToString()).ToArray() });
-                                                } else {
-                                                    Log.Error($"Error: Invalid 'to' type in replacement: {replacement}");
-                                                }
-                                            } else {
-                                                Log.Error($"Error: Invalid 'from' type in replacement: {replacement}");
-                                            }
-                                        } else {
-                                            Log.Error($"Error: 'from' or 'to' is null in replacement: {replacement}");
-                                        }
-                                    } catch (Exception ex) {
-                                        Log.Error($"Failed to process replacement entry: {replacement}. Error: {ex.Message}");
-                                    }
-                                }
-                            } else {
-                                mergingReplacements = new List<Replacement>();
-                                splittingReplacements = new List<Replacement>();
-                            }
-                        } catch (Exception ex) {
-                            Log.Error($"Failed to load replacements from en-vccv.yaml: {ex.Message}");
-                        }
-                        // Load fallbacks
-                        try {
-                            if (data?.fallbacks?.Any() == true) {
-                                foreach (var df in data.fallbacks) {
-                                    if (!string.IsNullOrEmpty(df.from) && !string.IsNullOrEmpty(df.to)) {
-                                        // Overwrite or add
-                                        replacements[df.from] = df.to;
-                                    } else {
-                                        Log.Warning("Ignored YAML fallback with missing 'from' or 'to' value.");
-                                    }
-                                }
-                            }
-                        } catch (Exception ex) {
-                            Log.Error($"Failed to load fallbacks from YAML: {ex.Message}");
-                        }
-
-                    } catch (Exception ex) {
-                        Log.Error($"Failed to parse njokis_vccv.yaml: {ex.Message}, Exception Type: {ex.GetType()}");
-                    }
-                }
-                ReadDictionaryAndInit();
-                this.singer = singer;
-            }
-        }
-        public class NjokisYAMLData {
-            public SymbolData[] symbols { get; set; } = Array.Empty<SymbolData>();
-            public Replacement[] replacements { get; set; } = Array.Empty<Replacement>();
-            public Fallbacks[] fallbacks { get; set; } = Array.Empty<Fallbacks>();
-
-            public struct SymbolData {
-                public string symbol { get; set; }
-                public string type { get; set; }
-            }
-            public struct Fallbacks {
-                public string from { get; set; }
-                public string to { get; set; }
-            }
-        }
-        // can split or merge
-        public class Replacement {
-            public object from { get; set; }
-            public object to { get; set; }
-
-            public List<string> FromList {
-                get {
-                    if (from is string s) return new List<string> { s };
-                    if (from is IEnumerable<object> list) return list.Select(x => x.ToString()).ToList();
-                    return new List<string>();
-                }
-            }
-
-            public List<string> ToList {
-                get {
-                    if (to is string s) return new List<string> { s };
-                    if (to is IEnumerable<object> list) return list.Select(x => x.ToString()).ToList();
-                    return new List<string>();
-                }
-            }
         }
 
         // prioritize yaml replacements over dictionary replacements
@@ -305,16 +96,20 @@ namespace OpenUtau.Plugin.Builtin {
             syllable.prevV = tails.Contains(syllable.prevV) ? "" : syllable.prevV;
             var replacedPrevV = ReplacePhoneme(syllable.prevV, syllable.tone);
             var prevV = string.IsNullOrEmpty(replacedPrevV) ? "" : replacedPrevV;
+            string[] cc = syllable.cc.Select(c => ReplacePhoneme(c, syllable.tone)).ToArray();
             string v = ReplacePhoneme(syllable.v, syllable.vowelTone);
-            string[] cc = syllable.cc.Select(ReplacePhoneme).ToArray();
+            List<string> vowels = new List<string> { v };
             string basePhoneme;
             var phonemes = new List<string>();
             var lastC = cc.Length - 1;
             var firstC = 0;
+            string[] CurrentWordCc = syllable.CurrentWordCc.Select(c => ReplacePhoneme(c, syllable.tone)).ToArray();
+            string[] PreviousWordCc = syllable.PreviousWordCc.Select(c => ReplacePhoneme(c, syllable.tone)).ToArray();
+            int prevWordConsonantsCount = syllable.prevWordConsonantsCount;
 
-            foreach (var entry in replacements) {
+            foreach (var entry in yamlFallbacks) {
                 if (!HasOto(entry.Key, syllable.tone) && !HasOto(entry.Key, syllable.tone)) {
-                    isReplacements = true;
+                    isYamlFallbacks = true;
                     break;
                 }
             }
@@ -590,17 +385,18 @@ namespace OpenUtau.Plugin.Builtin {
         protected override List<string> ProcessEnding(Ending ending) {
             string[] cc = ending.cc.Select(c => ReplacePhoneme(c, ending.tone)).ToArray();
             string v = ReplacePhoneme(ending.prevV, ending.tone);
+            string t = ending.HasTail ? ReplacePhoneme(ending.tail, ending.tone) : "-";
 
             var phonemes = new List<string>();
             if (ending.IsEndingV) {
-                TryAddPhoneme(phonemes, ending.tone, $"{v}-", ValidateAlias($"{v}-"));
+                TryAddPhoneme(phonemes, ending.tone, $"{v}{t}", ValidateAlias($"{v}{t}"));
             } else if (ending.IsEndingVCWithOneConsonant) {
-                var vcr = $"{v}{cc[0]}-";
+                var vcr = $"{v}{cc[0]}{t}";
                 if (HasOto(vcr, ending.tone)) {
                     phonemes.Add(vcr);
                 } else {
                     phonemes.Add($"{v} {cc[0]}");
-                    TryAddPhoneme(phonemes, ending.tone, $"{cc[0]}-", ValidateAlias($"{cc[0]}-"));
+                    TryAddPhoneme(phonemes, ending.tone, $"{cc[0]}{t}", ValidateAlias($"{cc[0]}{t}"));
                 }
             } else {
                 var vcc1 = $"{v} {string.Join("", cc)}";
@@ -636,7 +432,7 @@ namespace OpenUtau.Plugin.Builtin {
                         cc1 = ValidateAlias(cc1);
                     }
                     TryAddPhoneme(phonemes, ending.tone, cc1, ValidateAlias(cc1));
-                    TryAddPhoneme(phonemes, ending.tone, $"{cc.Last()}-", ValidateAlias($"{cc.Last()}-"));
+                    TryAddPhoneme(phonemes, ending.tone, $"{cc.Last()}{t}", ValidateAlias($"{cc.Last()}{t}"));
                 }
             }
             return phonemes;
@@ -648,8 +444,8 @@ namespace OpenUtau.Plugin.Builtin {
             //foreach (var consonant in new[] { "y" }) {
             //    alias = alias.Replace("y", "i");
             // }
-            if (isReplacements) {
-                foreach (var syllable in replacements.OrderByDescending(f => f.Key.Length)) {
+            if (isYamlFallbacks) {
+                foreach (var syllable in yamlFallbacks.OrderByDescending(f => f.Key.Length)) {
                     alias = alias.Replace(syllable.Key, syllable.Value);
                 }
             }
@@ -682,16 +478,6 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         protected override double GetTransitionBasicLengthMs(string alias = "") {
-            foreach (var c in shortConsonants) {
-                if (alias.Contains(c) && !alias.Contains("rr") && !alias.StartsWith(c) && !alias.Contains("ar") && !alias.Contains("er") && !alias.Contains("ir") && !alias.Contains("or") && !alias.Contains("ur")) {
-                    return base.GetTransitionBasicLengthMs() * 0.50;
-                }
-            }
-            foreach (var c in longConsonants) {
-                if (alias.Contains(c) && !alias.StartsWith(c) && !alias.StartsWith("-" + c)) {
-                    return base.GetTransitionBasicLengthMs() * 2.0;
-                }
-            }
             return base.GetTransitionBasicLengthMs();
         }
     }

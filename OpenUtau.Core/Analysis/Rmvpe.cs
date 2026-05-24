@@ -7,7 +7,6 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using OpenUtau.Core.Ustx;
-using OpenUtau.Core.Util;
 using Serilog;
 
 namespace OpenUtau.Core.Analysis;
@@ -124,11 +123,11 @@ public class RmvpeResult {
             .ToList();
     }
 
-    public void ApplyToPart(UProject project, UVoicePart part) {
-        ApplyToPart(project, part, BuildSegments(project, part));
+    public void ApplyToPart(UProject project, UVoicePart part, double offsetMs = 0) {
+        ApplyToPart(project, part, BuildSegments(project, part), offsetMs);
     }
 
-    void ApplyToPart(UProject project, UVoicePart part, IReadOnlyList<NoteSegment> notes) {
+    void ApplyToPart(UProject project, UVoicePart part, IReadOnlyList<NoteSegment> notes, double offsetMs) {
         if (MidiPitch.Length == 0 || notes.Count == 0 || !project.expressions.TryGetValue(Format.Ustx.PITD, out var descriptor)) {
             Log.Information(
                 "RMVPE apply skipped. pitch={PitchCount} notes={NoteCount} hasPITD={HasPitd}",
@@ -146,7 +145,7 @@ public class RmvpeResult {
         for (int i = 0; i < MidiPitch.Length; ++i) {
             var midiPitch = MidiPitch[i];
             var localTimeMs = i * frameMs;
-            var absoluteTimeMs = partStartMs + localTimeMs;
+            var absoluteTimeMs = partStartMs + localTimeMs + offsetMs;
             while (noteIndex + 1 < notes.Count && notes[noteIndex].onsetMs + notes[noteIndex].durationMs <= absoluteTimeMs) {
                 noteIndex++;
             }
@@ -183,8 +182,17 @@ public class RmvpeResult {
         AppendSmoothedPoints(curve, pendingPoints);
         curve.Simplify();
         if (curve.xs.Count > 0) {
-            part.curves.RemoveAll(c => c.abbr == Format.Ustx.PITD);
-            part.curves.Add(curve);
+            var oldCurve = part.curves.FirstOrDefault(c => c.abbr == Format.Ustx.PITD);
+            var oldXs = oldCurve?.xs.ToArray();
+            var oldYs = oldCurve?.ys.ToArray();
+            DocManager.Inst.ExecuteCmd(new MergedSetCurveCommand(
+                project,
+                part,
+                Format.Ustx.PITD,
+                oldXs,
+                oldYs,
+                curve.xs.ToArray(),
+                curve.ys.ToArray()));
         }
         Log.Information("RMVPE applied pitch curve. points={PointCount}", curve.xs.Count);
     }
@@ -201,6 +209,7 @@ public class RmvpeTranscriber : IDisposable {
     readonly string f0OutputName;
     readonly string uvOutputName;
     readonly string modelPath;
+    RunOptions? runOptions;
     bool disposed;
 
     public RmvpeTranscriber() {
@@ -225,6 +234,7 @@ public class RmvpeTranscriber : IDisposable {
             thresholdInputName,
             f0OutputName,
             uvOutputName);
+        runOptions = new RunOptions();
     }
 
     public static bool IsInstalled() {
@@ -244,30 +254,53 @@ public class RmvpeTranscriber : IDisposable {
             ?? Path.Combine(PathManager.Inst.DependencyPath, "rmvpe", "rmvpe.onnx");
     }
 
-    public RmvpeResult Infer(UWavePart wavePart) {
-        var mono = ToMono(wavePart);
+    public RmvpeResult? Infer(UWavePart wavePart, double startMs = 0, double endMs = 0) {
+        int startSample = 0;
+        int endSample = wavePart.Samples.Length / wavePart.channels;
+        int totalSamples = endSample;
+        if (startMs > 0 || endMs > 0) {
+            if (startMs > 0) {
+                startSample = (int)(startMs * wavePart.sampleRate / 1000);
+            }
+            if (endMs > 0) {
+                endSample = (int)(endMs * wavePart.sampleRate / 1000);
+            }
+            startSample = Math.Clamp(startSample, 0, totalSamples);
+            endSample = Math.Clamp(endSample, startSample, totalSamples);
+        }
+        if (endSample <= startSample) {
+            return null;
+        }
+        var mono = ToMono(wavePart.Samples, startSample, endSample, wavePart.channels);
         var resampled = ResampleTo16k(mono, wavePart.sampleRate);
         var waveform = new DenseTensor<float>(new[] { 1, resampled.Length });
         for (int i = 0; i < resampled.Length; ++i) {
             waveform[0, i] = Math.Clamp(resampled[i], -1f, 1f);
         }
         var threshold = new DenseTensor<float>(new[] { Threshold }, Array.Empty<int>());
-        using var outputs = session.Run(new[] {
-            NamedOnnxValue.CreateFromTensor(waveformInputName, waveform),
-            NamedOnnxValue.CreateFromTensor(thresholdInputName, threshold),
-        });
-        var f0Tensor = outputs.First(output => output.Name == f0OutputName).AsTensor<float>();
-        var uvTensor = outputs.First(output => output.Name == uvOutputName).AsTensor<bool>();
-        var f0 = f0Tensor.ToArray();
-        var uv = uvTensor.ToArray();
-        if (f0.Length != uv.Length) {
-            throw new InvalidDataException($"Unexpected RMVPE output sizes: f0={f0.Length}, uv={uv.Length}");
+        try {
+            using var outputs = session.Run(new[] {
+                NamedOnnxValue.CreateFromTensor(waveformInputName, waveform),
+                NamedOnnxValue.CreateFromTensor(thresholdInputName, threshold),
+            }, session.OutputNames, runOptions);
+            var f0Tensor = outputs.First(output => output.Name == f0OutputName).AsTensor<float>();
+            var uvTensor = outputs.First(output => output.Name == uvOutputName).AsTensor<bool>();
+            var f0 = f0Tensor.ToArray();
+            var uv = uvTensor.ToArray();
+            if (f0.Length != uv.Length) {
+                throw new InvalidDataException($"Unexpected RMVPE output sizes: f0={f0.Length}, uv={uv.Length}");
+            }
+            var midiPitch = ConvertToInterpolatedMidiPitch(f0, uv);
+            return new RmvpeResult {
+                TimeStepSeconds = (double)HopLength / SampleRate,
+                MidiPitch = midiPitch,
+            };
+        } catch (OnnxRuntimeException) {
+            if (runOptions != null && runOptions.Terminate) {
+                return null;
+            }
+            throw;
         }
-        var midiPitch = ConvertToInterpolatedMidiPitch(f0, uv);
-        return new RmvpeResult {
-            TimeStepSeconds = (double)HopLength / SampleRate,
-            MidiPitch = midiPitch,
-        };
     }
 
     static float[] ConvertToInterpolatedMidiPitch(float[] f0, bool[] uv) {
@@ -351,18 +384,18 @@ public class RmvpeTranscriber : IDisposable {
             ?? throw new InvalidDataException("RMVPE model must expose a uv output.");
     }
 
-    static float[] ToMono(UWavePart wavePart) {
-        if (wavePart.channels == 1) {
-            return wavePart.Samples;
+    static float[] ToMono(float[] samples, int startSample, int endSample, int channels) {
+        if (channels == 1 && startSample == 0 && endSample == samples.Length) {
+            return samples;
         }
-        var mono = new float[wavePart.Samples.Length / wavePart.channels];
+        var mono = new float[endSample - startSample];
         for (int i = 0; i < mono.Length; ++i) {
             float sum = 0;
-            var offset = i * wavePart.channels;
-            for (int ch = 0; ch < wavePart.channels; ++ch) {
-                sum += wavePart.Samples[offset + ch];
+            var offset = (startSample + i) * channels;
+            for (int ch = 0; ch < channels; ++ch) {
+                sum += samples[offset + ch];
             }
-            mono[i] = sum / wavePart.channels;
+            mono[i] = sum / channels;
         }
         return mono;
     }
@@ -392,8 +425,15 @@ public class RmvpeTranscriber : IDisposable {
         if (!disposed) {
             if (disposing) {
                 session.Dispose();
+                runOptions?.Dispose();
             }
             disposed = true;
+        }
+    }
+
+    public void Interrupt() {
+        if (!disposed && runOptions != null) {
+            runOptions.Terminate = true;
         }
     }
 

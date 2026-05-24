@@ -13,11 +13,26 @@
         }
 
         public void Set(double width, double height, int posX, int posY, int state) {
-            Width = width;
-            Height = height;
+            if (state == 0) { // When WindowState is Normal
+                Width = width;
+                Height = height;
+            }
             PositionX = posX;
             PositionY = posY;
-            State = state == 1 ? 0 : state; // Ignore minimized state
+            switch (state) {
+                case 1: // Minimized
+                    State = 0; // Launch as normal next time
+                    break;
+                case 2: // Maximized
+                    State = 2;
+                    break;
+                case 3: // FullScreen
+                    State = 2; // Convert to Maximized so the taskbar doesn't hide
+                    break;
+                default: // Normal
+                    State = 0;
+                    break;
+            }
         }
     }
 }

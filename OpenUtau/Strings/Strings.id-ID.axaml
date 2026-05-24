@@ -184,8 +184,6 @@
   <system:String x:Key="menu.file.exit">Keluar</system:String>
   <system:String x:Key="menu.file.exportaudio">Ekspor Audio</system:String>
   <system:String x:Key="menu.file.exportds">Ekspor Skrip DiffSinger Ke</system:String>
-  <system:String x:Key="menu.file.exportds.v2">Ekspor Skrip DiffSinger Ke (v2)</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">Ekspor Skrip DiffSinger Ke (v2, tanpa kurva nada)</system:String>
   <system:String x:Key="menu.file.exportmidi">Ekspor Berkas Midi</system:String>
   <system:String x:Key="menu.file.exportmixdown">Campur ke Berkas Wav</system:String>
   <system:String x:Key="menu.file.exportproject">Ekspor Proyek</system:String>

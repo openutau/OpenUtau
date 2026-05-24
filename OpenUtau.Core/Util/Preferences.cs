@@ -113,6 +113,13 @@ namespace OpenUtau.Core.Util {
                     if (!ValidString(new Action(() => CultureInfo.GetCultureInfo(Default.SortingOrder)))) Default.SortingOrder = string.Empty;
                     if (!Renderers.getRendererOptions().Contains(Default.DefaultRenderer)) Default.DefaultRenderer = string.Empty;
                     if (!Onnx.getRunnerOptions().Contains(Default.OnnxRunner)) Default.OnnxRunner = string.Empty;
+                    if (Default.Theme != null) {
+                        Default.ThemeName = Default.Theme switch {
+                            1 => "Dark",
+                            _ => "Light"
+                        };
+                        Default.Theme = null;
+                    }
                 } else {
                     Reset();
                 }
@@ -173,6 +180,7 @@ namespace OpenUtau.Core.Util {
             public Dictionary<string, string> SingerPhonemizers = new Dictionary<string, string>();
             public List<string> RecentPhonemizers = new List<string>();
             public bool PreferPortAudio = false;
+            public bool UseSystemDefaultAudioDevice = true;
             public double PlayPosMarkerMargin = 0.9;
             public int LockStartTime = 0;
             public int PlaybackAutoScroll = 2;
@@ -188,6 +196,7 @@ namespace OpenUtau.Core.Util {
             public bool ShowWaveform = true;
             public bool ShowPhoneme = true;
             public bool ShowExpressions = true;
+            public bool ShowPhonemizerTags = true;
             public bool ShowNoteParams = true;
             public Dictionary<string, string> DefaultResamplers = new Dictionary<string, string>();
             public Dictionary<string, string> DefaultWavtools = new Dictionary<string, string>();
@@ -242,6 +251,10 @@ errors.txt
 ";
             public string RecoveryPath = string.Empty;
             public bool DetachPianoRoll = false;
+
+            // Legacy
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+            public int? Theme;
         }
     }
 }

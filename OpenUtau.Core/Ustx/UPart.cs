@@ -50,6 +50,7 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public List<RenderPhrase> renderPhrases = new List<RenderPhrase>();
 
         [YamlIgnore] private PhonemizerResponse phonemizerResponse;
+        [YamlIgnore] private Dictionary<string, Phonemizer> overridePhonemizers = new Dictionary<string, Phonemizer>();
         [YamlIgnore] private long notesTimestamp;
         [YamlIgnore] private long phonemesTimestamp;
 
@@ -116,6 +117,10 @@ namespace OpenUtau.Core.Ustx {
             if (!options.SkipPhonemizer) {
                 var noteIndexes = new List<int>();
                 var groups = new List<Phonemizer.Note[]>();
+                
+                var trackPhonemizers = new List<Phonemizer> { track.Phonemizer };
+                var notePhonemizerIndices = new List<int>();
+
                 int noteIndex = 0;
                 foreach (var note in notes) {
                     if (note.OverlapError || note.Extends != null) {
@@ -130,15 +135,42 @@ namespace OpenUtau.Core.Ustx {
                     }
                     groups.Add(group.Select(e => e.ToPhonemizerNote(track, this)).ToArray());
                     noteIndexes.Add(noteIndex);
+
+                    int pIndex = 0;
+                    if (!string.IsNullOrEmpty(note.PhonemizerOverride)) {
+                        pIndex = trackPhonemizers.FindIndex(p => p != null && p.Name == note.PhonemizerOverride);
+                        if (pIndex == -1) {
+                            if (!overridePhonemizers.TryGetValue(note.PhonemizerOverride, out var newPhonemizer)) {
+                                var factory = PhonemizerFactory.GetAll().FirstOrDefault(f => f.name == note.PhonemizerOverride);
+                                newPhonemizer = factory?.Create();
+                                if (newPhonemizer != null) {
+                                    overridePhonemizers[note.PhonemizerOverride] = newPhonemizer;
+                                }
+                            }
+                            
+                            if (newPhonemizer != null) {
+                                trackPhonemizers.Add(newPhonemizer);
+                                pIndex = trackPhonemizers.Count - 1;
+                            } else {
+                                pIndex = 0;
+                            }
+                        }
+                    }
+                    notePhonemizerIndices.Add(pIndex);
                     noteIndex++;
                 }
+
                 var request = new PhonemizerRequest() {
                     singer = track.Singer,
                     part = this,
                     timestamp = DateTime.Now.ToFileTimeUtc(),
                     noteIndexes = noteIndexes.ToArray(),
                     notes = groups.ToArray(),
-                    phonemizer = track.Phonemizer,
+                    
+                    // NEW: Feed the runner our multi-phonemizer data instead of a single phonemizer
+                    phonemizers = trackPhonemizers.ToArray(),
+                    notePhonemizerIndices = notePhonemizerIndices.ToArray(),
+                    
                     timeAxis = project.timeAxis.Clone(),
                 };
                 notesTimestamp = request.timestamp;
@@ -159,7 +191,8 @@ namespace OpenUtau.Core.Ustx {
                                     rawPosition = resp.phonemes[i][j].position - position,
                                     rawPhoneme = resp.phonemes[i][j].phoneme,
                                     index = resp.phonemes[i][j].index ?? j,
-                                    Parent = note
+                                    Parent = note,
+                                    ErrorException = resp.phonemes[i][j].error
                                 };
                                 // Check for duplicate indexes
                                 if (phonemes.Any(p => p.Parent == phoneme.Parent && p.index == phoneme.index)) {

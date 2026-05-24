@@ -99,13 +99,17 @@ namespace OpenUtau.Core.Render {
                 if (task.IsFaulted && !wait) {
                     Log.Error(task.Exception.Flatten(), "Failed to render.");
                     PlaybackManager.Inst.StopPlayback();
-                    MessageCustomizableException customEx;
-                    if (task.Exception.Flatten().InnerExceptions.ToList().Any(e => e is DllNotFoundException)) {
-                        customEx = new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>: <translate:errors.install.cpp>", task.Exception);
+                    var flatEx = task.Exception.Flatten();
+                    var innerEx = flatEx.InnerExceptions.ToList();
+                    if (innerEx.Count == 1 && innerEx[0] is MessageCustomizableException mce) {
+                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(mce));
+                    } else if (innerEx.Any(e => e is DllNotFoundException)) {
+                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
+                            new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>: <translate:errors.install.cpp>", flatEx)));
                     } else {
-                        customEx = new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>", task.Exception);
+                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
+                            new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>", flatEx)));
                     }
-                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
                 }
             }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, uiScheduler);
             if (wait) {

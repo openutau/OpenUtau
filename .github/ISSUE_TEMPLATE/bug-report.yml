@@ -52,6 +52,7 @@ body:
       description: |
         Find the log corresponding to the bug and attach it here.
         Log files are under Logs folder.
+        The Logs folder can be opened through `Help` > `Open Logs Location`.
         When in doubt, delete all log files, reproduce the bug, and attach the new log file.
     validations:
       required: true

@@ -34,6 +34,7 @@ namespace OpenUtau.Core.Ustx {
         public UPhoneme Prev { get; set; }
         public UPhoneme Next { get; set; }
         public bool Error { get; set; } = false;
+        public Exception? ErrorException { get; set; }
 
         public override string ToString() => $"\"{phoneme}\" pos:{position}";
 
@@ -47,6 +48,9 @@ namespace OpenUtau.Core.Ustx {
         public void Validate(ValidateOptions options, UProject project, UTrack track, UVoicePart part, UNote note) {
             Error = note.Error;
             ValidateDuration(project, part);
+            if (ErrorException != null) {
+                Error = true;
+            }
             ValidateOto(track, note);
             ValidateOverlap(project, track, part, note);
             ValidateEnvelope(project, track, note);
@@ -67,6 +71,9 @@ namespace OpenUtau.Core.Ustx {
             PositionMs = project.timeAxis.TickPosToMsPos(part.position + position);
             EndMs = project.timeAxis.TickPosToMsPos(part.position + End);
             Error = Duration <= 0;
+            if (Error) {
+                ErrorException ??= new Exception("Phoneme duration is not positive.");
+            }
         }
 
         void ValidateOto(UTrack track, UNote note) {
@@ -76,6 +83,7 @@ namespace OpenUtau.Core.Ustx {
             }
             if (track.Singer == null || !track.Singer.Found || !track.Singer.Loaded) {
                 Error = true;
+                ErrorException ??= new Exception("Singer is not loaded.");
                 return;
             }
             // Load oto.
@@ -86,6 +94,7 @@ namespace OpenUtau.Core.Ustx {
             } else {
                 this.oto = default;
                 Error = true;
+                ErrorException ??= new Exception($"Oto not found for \"{phoneme}\".");
                 phonemeMapped = string.Empty;
             }
         }

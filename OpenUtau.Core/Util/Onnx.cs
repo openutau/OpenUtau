@@ -117,6 +117,8 @@ namespace OpenUtau.Core {
                     // so we always use NeuralNetwork format (default) as MLProgram fails with complex models.
                     options.AppendExecutionProvider("CoreML", new Dictionary<string, string> {
                         { "MLComputeUnits", "ALL" },
+                        { "RequireStaticInputShapes", "1"},
+                        { "ModelFormat", "NeuralNetwork"},
                         { "EnableOnSubgraphs", coremlEnableOnSubgraphs ? "1" : "0" }  // Disable subgraph processing to avoid complex control flow issues
                     });
                     break;

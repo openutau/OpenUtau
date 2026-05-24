@@ -49,9 +49,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - uses: repolevedavaj/install-nsis@v1.0.3
-        with:
-          nsis-version: '3.11'
+      - name: Install NSIS via Chocolatey
+        run: choco install nsis --version=3.11 --no-progress
         if: ${{ matrix.arch.os == 'win' }}
       - uses: justalemon/VersionPatcher@v0.7.1
         with:

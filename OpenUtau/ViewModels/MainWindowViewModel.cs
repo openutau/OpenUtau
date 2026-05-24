@@ -25,6 +25,7 @@ namespace OpenUtau.App.ViewModels {
         public ReactiveCommand<UPart, Unit>? PartTranscribeCommand { get; set; }
         public ReactiveCommand<UPart, Unit>? PartMergeCommand { get; set; }
         public ReactiveCommand<UPart, Unit>? PartSplitCommand { get; set; }
+        public IEnumerable<MenuItemViewModel> PartApplyPitchMenuItems { get; set; } = new List<MenuItemViewModel>();
     }
 
     public class RecentFileInfo {

@@ -18,6 +18,10 @@ namespace OpenUtau.Core.DiffSinger{
         public float[]? breathiness;
         public float[]? voicing;
         public float[]? tension;
+        public float frameMs;
+        public int headFrames;
+        public int tailFrames;
+        public int totalFrames;
     }
     public class DsVariance : IDisposable{
         string rootPath;
@@ -37,9 +41,13 @@ namespace OpenUtau.Core.DiffSinger{
         public DsVariance(string rootPath)
         {
             this.rootPath = rootPath;
-            dsConfig = Yaml.DefaultDeserializer.Deserialize<DsConfig>(
-                File.ReadAllText(Path.Combine(rootPath, "dsconfig.yaml"),
-                    Encoding.UTF8));
+            var dsconfigPath = Path.Combine(rootPath, "dsconfig.yaml");
+            try {
+                dsConfig = Yaml.DefaultDeserializer.Deserialize<DsConfig>(
+                    File.ReadAllText(dsconfigPath, Encoding.UTF8));
+            } catch (Exception e) {
+                throw new Exception($"Failed to load {dsconfigPath}", e);
+            }
             if(dsConfig.variance == null){
                 throw new Exception("This voicebank doesn't contain a variance model");
             }
@@ -53,7 +61,7 @@ namespace OpenUtau.Core.DiffSinger{
                     languageIds = DiffSingerUtils.LoadLanguageIds(langIdPath);
                 } catch (Exception e) {
                     Log.Error(e, $"failed to load language id from {langIdPath}");
-                    return;
+                    throw new Exception($"Failed to load {langIdPath}", e);
                 }
             }
             //Load phonemes list
@@ -85,11 +93,15 @@ namespace OpenUtau.Core.DiffSinger{
             if(!File.Exists(file)){
                 throw new Exception($"File not found: {file}");
             }
-            var g2pBuilder = G2pDictionary.NewBuilder().Load(File.ReadAllText(file));
-            //SP and AP should always be vowel
-            g2pBuilder.AddSymbol("SP", true);
-            g2pBuilder.AddSymbol("AP", true);
-            return g2pBuilder.Build(); 
+            try {
+                var g2pBuilder = G2pDictionary.NewBuilder().Load(File.ReadAllText(file));
+                //SP and AP should always be vowel
+                g2pBuilder.AddSymbol("SP", true);
+                g2pBuilder.AddSymbol("AP", true);
+                return g2pBuilder.Build();
+            } catch (Exception e) {
+                throw new Exception($"Failed to load {file}", e);
+            }
         }
 
         public DiffSingerSpeakerEmbedManager getSpeakerEmbedManager(){
@@ -126,32 +138,14 @@ namespace OpenUtau.Core.DiffSinger{
                 .Append("SP")
                 .Select(x => (Int64)PhonemeTokenize(x))
                 .ToArray();
-            var ph_dur = phrase.phones
-                .Select(p => (int)Math.Round(p.endMs / frameMs) - (int)Math.Round(p.positionMs / frameMs))//prevent cumulative error
-                .Prepend(headFrames)
-                .Append(tailFrames)
-                .ToArray();
+            var ph_dur = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames);
             int totalFrames = ph_dur.Sum();
             linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("tokens",
                 new DenseTensor<Int64>(tokens, new int[] { tokens.Length }, false)
                 .Reshape(new int[] { 1, tokens.Length })));
             if(dsConfig.predict_dur){
                 //if predict_dur is true, use word encode mode
-                var vowelIds = Enumerable.Range(0,phrase.phones.Length)
-                    .Where(i=>g2p.IsVowel(phrase.phones[i].phoneme))
-                    .ToArray();
-                if(vowelIds.Length == 0){
-                    vowelIds = new int[]{phrase.phones.Length-1};
-                }
-                var word_div = vowelIds.Zip(vowelIds.Skip(1),(a,b)=>(Int64)(b-a))
-                    .Prepend(vowelIds[0] + 1)
-                    .Append(phrase.phones.Length - vowelIds[^1] + 1)
-                    .ToArray();
-                var word_dur = vowelIds.Zip(vowelIds.Skip(1),
-                        (a,b)=>(Int64)(phrase.phones[b-1].endMs/frameMs) - (Int64)(phrase.phones[a].positionMs/frameMs))
-                    .Prepend((Int64)(phrase.phones[vowelIds[0]].positionMs/frameMs) - (Int64)(phrase.phones[0].positionMs/frameMs) + headFrames)
-                    .Append((Int64)(phrase.notes[^1].endMs/frameMs) - (Int64)(phrase.phones[vowelIds[^1]].positionMs/frameMs) + tailFrames)
-                    .ToArray();
+                var (word_div, word_dur) = DiffSingerUtils.PaddedWordDivAndDur(phrase, ph_dur, g2p.IsVowel);
                 linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_div",
                     new DenseTensor<Int64>(word_div, new int[] { word_div.Length }, false)
                     .Reshape(new int[] { 1, word_div.Length })));
@@ -301,6 +295,10 @@ namespace OpenUtau.Core.DiffSinger{
                 breathiness = breathiness_pred?.ToArray(),
                 voicing = voicing_pred?.ToArray(),
                 tension = tension_pred?.ToArray(),
+                frameMs = frameMs,
+                headFrames = headFrames,
+                tailFrames = tailFrames,
+                totalFrames = totalFrames,
             };
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.ML.OnnxRuntime;
@@ -18,7 +19,9 @@ public class Some : MidiExtractor<SomeOptions> {
     private const string PackageId = "some";
 
     InferenceSession session;
+    RunOptions? runOptions;
     SomeConfig config;
+    bool disposed = false;
 
     protected override int ExpectedSampleRate => config.sample_rate;
 
@@ -44,6 +47,7 @@ public class Some : MidiExtractor<SomeOptions> {
         config = Yaml.DefaultDeserializer.Deserialize<SomeConfig>(
             File.ReadAllText(yamlpath, System.Text.Encoding.UTF8));
         session = Onnx.getInferenceSession(Path.Combine(location, config.model));
+        runOptions = new RunOptions();
     }
 
     protected override List<TranscribedNote> TranscribeWaveform(float[] samples, SomeOptions options) {
@@ -51,31 +55,47 @@ public class Some : MidiExtractor<SomeOptions> {
         inputs.Add(NamedOnnxValue.CreateFromTensor("waveform",
             new DenseTensor<float>(samples, new int[] { samples.Length }, false)
                 .Reshape(new int[] { 1, samples.Length })));
-        using var outputs = session.Run(inputs);
-        float[] note_midi = outputs
-            .Where(o => o.Name == "note_midi")
-            .First()
-            .AsTensor<float>()
-            .ToArray();
-        bool[] note_rest = outputs
-            .Where(o => o.Name == "note_rest")
-            .First()
-            .AsTensor<bool>()
-            .ToArray();
-        float[] note_dur = outputs
-            .Where(o => o.Name == "note_dur")
-            .First()
-            .AsTensor<float>()
-            .ToArray();
-        var notes = new List<TranscribedNote>(note_midi.Length);
-        for (int i = 0; i < note_midi.Length; i++) {
-            notes.Add(new TranscribedNote(note_dur[i], note_midi[i], !note_rest[i]));
-        }
+        try {
+            using var outputs = session.Run(inputs, session.OutputNames, runOptions);
+            float[] note_midi = outputs
+                .Where(o => o.Name == "note_midi")
+                .First()
+                .AsTensor<float>()
+                .ToArray();
+            bool[] note_rest = outputs
+                .Where(o => o.Name == "note_rest")
+                .First()
+                .AsTensor<bool>()
+                .ToArray();
+            float[] note_dur = outputs
+                .Where(o => o.Name == "note_dur")
+                .First()
+                .AsTensor<float>()
+                .ToArray();
+            var notes = new List<TranscribedNote>(note_midi.Length);
+            for (int i = 0; i < note_midi.Length; i++) {
+                notes.Add(new TranscribedNote(note_dur[i], note_midi[i], !note_rest[i]));
+            }
 
-        return notes;
+            return notes;
+        } catch (OnnxRuntimeException) {
+            if (runOptions != null && runOptions.Terminate) {
+                throw new OperationCanceledException();
+            }
+            throw;
+        }
+    }
+
+    public override void Interrupt() {
+        if (!disposed && runOptions != null) {
+            runOptions.Terminate = true;
+        }
     }
 
     protected override void DisposeManaged() {
+        if (disposed) return;
+        disposed = true;
+        runOptions?.Dispose();
         session.Dispose();
     }
 }

@@ -91,8 +91,13 @@
         
         <!-- Playback -->
         <StackPanel>
-          <TextBlock Text="{DynamicResource prefs.playback.device}"/>
-          <ComboBox ItemsSource="{Binding AudioOutputDevices}" SelectedItem="{Binding AudioOutputDevice}"/>
+          <Grid>
+            <TextBlock Text="{DynamicResource prefs.playback.systemdefault}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding UseSystemDefaultDevice}"/>
+          </Grid>
+          <TextBlock Classes="restart"/>
+          <TextBlock Text="{DynamicResource prefs.playback.device}" Margin="0,10,0,0"/>
+          <ComboBox ItemsSource="{Binding AudioOutputDevices}" SelectedItem="{Binding AudioOutputDevice}" IsEnabled="{Binding !UseSystemDefaultDevice}"/>
           <Button Content="{DynamicResource prefs.playback.test}" HorizontalAlignment="Stretch" Command="{Binding TestAudioOutputDevice}"/>
           <TextBlock Text="{DynamicResource prefs.playback.backend}" Margin="0,10,0,0"/>
           <ComboBox SelectedIndex="{Binding PreferPortAudio}">

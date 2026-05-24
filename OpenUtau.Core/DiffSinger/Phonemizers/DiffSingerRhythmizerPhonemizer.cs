@@ -7,6 +7,7 @@ using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
 using System.Text;
 using System.Linq;
+using Serilog;
 
 namespace OpenUtau.Core.DiffSinger {
 
@@ -92,12 +93,13 @@ namespace OpenUtau.Core.DiffSinger {
                     } else {
                         rhythmizerName = DsRhythmizer.DefaultRhythmizer;
                     }
-                        rhythmizer = DsRhythmizer.FromName(rhythmizerName);
+                    rhythmizer = DsRhythmizer.FromName(rhythmizerName);
                 }
                 //Load pinyin to phoneme dictionary from rhythmizer package
                 phoneDict = rhythmizer.phoneDict;
             } catch (Exception ex) {
-                return;
+                Log.Error(ex, "Failed to load rhythmizer");
+                throw;
             }
         }
 
@@ -120,11 +122,14 @@ namespace OpenUtau.Core.DiffSinger {
                 Note[] group = phrase[groupIndex];
                 if (group[0].phoneticHint is null) {
                     var lyric = group[0].lyric;
-                    
+
                     if (phoneDict.ContainsKey(lyric)) {
                         notePhonemes = phoneDict[lyric];
-                    } else {
+                    } else if (rhythmizer.phonemes.Contains(lyric)) {
                         notePhonemes = new string[] { lyric };
+                    } else {
+                        notePhonemes = new string[] { "SP" };
+                        unrecognizedLyrics[group[0].position] = lyric;
                     }
                 } else {
                     notePhonemes = group[0].phoneticHint.Split(" ");
@@ -151,8 +156,13 @@ namespace OpenUtau.Core.DiffSinger {
             //error phonemes are replaced with SP
             long defaultToken = rhythmizer.phonemes.IndexOf("SP");
             var tokens = phonemes
-                .Select(x => (long)(rhythmizer.phonemes.IndexOf(x)))
-                .Select(x => x < 0 ? defaultToken : x)
+                .Select(x => {
+                    var idx = rhythmizer.phonemes.IndexOf(x);
+                    if (idx < 0) {
+                        Log.Warning($"Phoneme \"{x}\" not found in rhythmizer, replacing with SP");
+                    }
+                    return (long)(idx < 0 ? defaultToken : idx);
+                })
                 .ToList();
             var inputs = new List<NamedOnnxValue>();
             inputs.Add(NamedOnnxValue.CreateFromTensor("tokens",

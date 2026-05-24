@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using OpenUtau.Api;
 using OpenUtau.Core.G2p;
 using System.Linq;
+using Serilog;
+using System.IO;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Italian Syllable-Based Phonemizer", "IT SYL", "Lotte V", language:"IT")]
@@ -35,7 +38,25 @@ namespace OpenUtau.Plugin.Builtin {
         protected override string GetDictionaryName() => "cmudict_it.txt";
         protected override Dictionary<string, string> GetDictionaryPhonemesReplacement() => dictionaryReplacements;
 
-        protected override IG2p LoadBaseDictionary() => new ItalianG2p();
+        protected override IG2p LoadBaseDictionary() {
+            var g2ps = new List<IG2p>();
+
+            // Load dictionary from singer folder.
+            if (singer != null && singer.Found && singer.Loaded) {
+                string file = Path.Combine(singer.Location, "it-syl.yaml");
+
+                if (File.Exists(file)) {
+                    try {
+                        g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(file)).Build());
+                    } catch (Exception e) {
+                        Log.Error(e, $"Failed to load {file}");
+                    }
+                }
+            }
+
+            g2ps.Add(new ItalianG2p());
+            return new G2pFallbacks(g2ps.ToArray());
+        }
 
         protected override List<string> ProcessSyllable(Syllable syllable)
         {
@@ -108,10 +129,18 @@ namespace OpenUtau.Plugin.Builtin {
                             }
                         }
                     }
-                if (cc[0] == "r" && cc[1] == "r") {
-                    phonemes.Add($"{prevV} {cc[0]}{cc[1]}");
-                } else {
-                    phonemes.Add($"{prevV} {cc[0]}");
+
+                for (var i = lastC + 1; i >= 0; i--) {
+                    var vcc = $"{prevV} {string.Join("", cc.Take(2))}";
+                    var vc = $"{prevV} {cc[0]}";
+                    if ((HasOto(vcc, syllable.tone) || HasOto(ValidateAlias(vcc), syllable.tone))) {
+                        phonemes.Add(vcc);
+                        firstC = 1;
+                        break;
+                    } else {
+                        phonemes.Add(vc);
+                        break;
+                    }
                 }
             }
             for (var i = firstC; i < lastC; i++) {

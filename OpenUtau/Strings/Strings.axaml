@@ -63,6 +63,11 @@
   <system:String x:Key="context.part.split">Split part at playhead</system:String>
   <system:String x:Key="context.part.transcribe">Transcribe audio to create a note part</system:String>
   <system:String x:Key="context.part.transcribing">Transcribing</system:String>
+  <system:String x:Key="context.part.applypitch">Apply pitch from...</system:String>
+  <system:String x:Key="context.part.nopitchsource">No wave part available</system:String>
+  <system:String x:Key="context.part.extractingpitch">Extracting pitch</system:String>
+  <system:String x:Key="context.part.nopitchregion">There is no overlapping region between the source wave part and the target note part.</system:String>
+  <system:String x:Key="context.part.nopitchdetected">No pitch detected from the source wave part.</system:String>
   <system:String x:Key="context.pitch.easein">Ease in</system:String>
   <system:String x:Key="context.pitch.easeinout">Ease in/out</system:String>
   <system:String x:Key="context.pitch.easeout">Ease out</system:String>
@@ -99,6 +104,12 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="dialogs.splitpart.caption">Splitting Part</system:String>
   <system:String x:Key="dialogs.splitpart.intheway">There are one or more note(s) overlapping with the playhead.
 Do you want to continue by splitting at the nearest position after current playhead with no notes in the way?</system:String>
+  <system:String x:Key="dialogs.exportds.caption">Export DiffSinger Scripts</system:String>
+  <system:String x:Key="dialogs.exportds.curves">Curves</system:String>
+  <system:String x:Key="dialogs.exportds.pitch">Pitch (f0)</system:String>
+  <system:String x:Key="dialogs.exportds.variance">Variance expressions</system:String>
+  <system:String x:Key="dialogs.exportds.variance.hint">Enable DiffSinger Tensor Cache in Preferences to export variance curves.</system:String>
+  <system:String x:Key="dialogs.exportds.notrendered">Please render all parts before exporting.</system:String>
   <system:String x:Key="dialogs.messagebox.cancel">Cancel</system:String>
   <system:String x:Key="dialogs.messagebox.copy">Copy error to clipboard</system:String>
   <system:String x:Key="dialogs.messagebox.no">No</system:String>
@@ -126,7 +137,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="dialogs.transcribe.game.notfound">GAME is not installed.</system:String>
   <system:String x:Key="dialogs.transcribe.rmvpe.notfound">RMVPE is not installed. Install it from the Package Manager.</system:String>
   <system:String x:Key="dialogs.transcribe.allnotfound">No transcription models are installed. Please install GAME via the Package Manager or download manually from {0}.</system:String>
-  <system:String x:Key="dialogs.transcribe.rmvpe">Predict f0 (PITD) using RMVPE</system:String>
+  <system:String x:Key="dialogs.transcribe.rmvpe">Extract pitch using RMVPE</system:String>
   <system:String x:Key="dialogs.transcribe.game.options">GAME Options</system:String>
   <system:String x:Key="dialogs.transcribe.game.language">Language</system:String>
   <system:String x:Key="dialogs.transcribe.game.language.universal">[universal]</system:String>
@@ -270,8 +281,6 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.file.exit">Exit</system:String>
   <system:String x:Key="menu.file.exportaudio">Export Audio</system:String>
   <system:String x:Key="menu.file.exportds">Export DiffSinger Scripts To</system:String>
-  <system:String x:Key="menu.file.exportds.v2">Export DiffSinger Scripts To (v2)</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">Export DiffSinger Scripts To (v2, without pitch curve)</system:String>
   <system:String x:Key="menu.file.exportmidi">Export Midi File</system:String>
   <system:String x:Key="menu.file.exportmixdown">Mixdown To Wav File</system:String>
   <system:String x:Key="menu.file.exportproject">Export Project</system:String>
@@ -371,6 +380,8 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="noteproperty.tone">Tone</system:String>
   <system:String x:Key="noteproperty.tuning">Tuning</system:String>
   <system:String x:Key="noteproperty.vibratoenable">Enable</system:String>
+  <system:String x:Key="noteproperty.phonemizer">Phonemizer</system:String>
+  <system:String x:Key="noteproperty.parent.phonemizer">Follows Parent Phonemizer</system:String>
 
   <system:String x:Key="oto.alias">Alias</system:String>
   <system:String x:Key="oto.color">Color</system:String>
@@ -497,6 +508,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.snap">Toggle Snap (P)</system:String>
   <system:String x:Key="pianoroll.toggle.snap.auto">Auto</system:String>
   <system:String x:Key="pianoroll.toggle.snap.autotriplet">Auto (triplet)</system:String>
+  <system:String x:Key="pianoroll.toggle.phonemizer">View Phonemizer Tags</system:String>
   <system:String x:Key="pianoroll.toggle.tips">View Tips (T)</system:String>
   <system:String x:Key="pianoroll.toggle.tone">Toggle Note Tone (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">View Vibrato (U)</system:String>
@@ -604,6 +616,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.off">Do nothing</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.on">Move cursor and view position back to where you started playing</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.onlycursor">Move only cursor back to where you started playing</system:String>
+  <system:String x:Key="prefs.playback.systemdefault">Use system default device</system:String>
   <system:String x:Key="prefs.playback.test">Test</system:String>
   <system:String x:Key="prefs.rendering">Rendering</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Default renderer (for classic voicebanks)</system:String>

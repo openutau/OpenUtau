@@ -1,8 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using NAudio.Wave;
+#if WINDOWS
+using NAudio.CoreAudioApi;
+using NAudio.CoreAudioApi.Interfaces;
+#endif
 using OpenUtau.Audio;
+using OpenUtau.Core;
 using OpenUtau.Core.Util;
+using Serilog;
 
 namespace OpenUtau.App {
 #if !WINDOWS
@@ -13,9 +20,20 @@ namespace OpenUtau.App {
 
         private readonly object lockObj = new object();
         private WaveOutEvent? waveOutEvent;
+        private WasapiOut? wasapiOut;
         private int deviceNumber;
 
+        // Auto-mode fields
+        private MMDeviceEnumerator? mmEnumerator;
+        private DefaultDeviceNotificationClient? notificationClient;
+
         public NAudioOutput() {
+            if (Preferences.Default.UseSystemDefaultAudioDevice) {
+                mmEnumerator = new MMDeviceEnumerator();
+                notificationClient = new DefaultDeviceNotificationClient(() => Task.Run(() => PlaybackManager.Inst.StopPlayback()));
+                mmEnumerator.RegisterEndpointNotificationCallback(notificationClient);
+                return;
+            }
             if (Guid.TryParse(Preferences.Default.PlaybackDevice, out var guid)) {
                 SelectDevice(guid, Preferences.Default.PlaybackDeviceNumber);
             } else {
@@ -23,9 +41,20 @@ namespace OpenUtau.App {
             }
         }
 
+        // Fired when WasapiOut stops unexpectedly (e.g. USB headset unplugged).
+        private void OnWasapiPlaybackStopped(object? sender, StoppedEventArgs e) {
+            if (e.Exception != null) {
+                Log.Warning(e.Exception, "WasapiOut stopped unexpectedly.");
+                Task.Run(() => PlaybackManager.Inst.StopPlayback());
+            }
+        }
+
         public PlaybackState PlaybackState {
             get {
                 lock (lockObj) {
+                    if (Preferences.Default.UseSystemDefaultAudioDevice) {
+                        return wasapiOut == null ? PlaybackState.Stopped : wasapiOut.PlaybackState;
+                    }
                     return waveOutEvent == null ? PlaybackState.Stopped : waveOutEvent.PlaybackState;
                 }
             }
@@ -35,52 +64,89 @@ namespace OpenUtau.App {
 
         public long GetPosition() {
             lock (lockObj) {
-                return waveOutEvent == null
-                    ? 0
-                    : waveOutEvent.GetPosition() / Channels;
+                if (Preferences.Default.UseSystemDefaultAudioDevice) {
+                    return wasapiOut == null ? 0 : wasapiOut.GetPosition() / Channels;
+                }
+                return waveOutEvent == null ? 0 : waveOutEvent.GetPosition() / Channels;
             }
         }
 
         public void Init(ISampleProvider sampleProvider) {
             lock (lockObj) {
-                if (waveOutEvent != null) {
-                    waveOutEvent.Stop();
-                    waveOutEvent.Dispose();
+                if (Preferences.Default.UseSystemDefaultAudioDevice) {
+                    // Re-register notification client if Stop() previously unregistered it.
+                    if (notificationClient == null && mmEnumerator != null) {
+                        notificationClient = new DefaultDeviceNotificationClient(() => Task.Run(() => PlaybackManager.Inst.StopPlayback()));
+                        mmEnumerator.RegisterEndpointNotificationCallback(notificationClient);
+                    }
+                    if (wasapiOut != null) {
+                        wasapiOut.PlaybackStopped -= OnWasapiPlaybackStopped;
+                        wasapiOut.Stop();
+                        wasapiOut.Dispose();
+                    }
+                    wasapiOut = new WasapiOut(AudioClientShareMode.Shared, 200);
+                    wasapiOut.PlaybackStopped += OnWasapiPlaybackStopped;
+                    wasapiOut.Init(sampleProvider);
+                } else {
+                    if (waveOutEvent != null) {
+                        waveOutEvent.Stop();
+                        waveOutEvent.Dispose();
+                    }
+                    waveOutEvent = new WaveOutEvent() {
+                        DeviceNumber = deviceNumber,
+                    };
+                    waveOutEvent.Init(sampleProvider);
                 }
-                waveOutEvent = new WaveOutEvent() {
-                    DeviceNumber = deviceNumber,
-                };
-                waveOutEvent.Init(sampleProvider);
             }
         }
 
         public void Pause() {
             lock (lockObj) {
-                if (waveOutEvent != null) {
-                    waveOutEvent.Pause();
+                if (Preferences.Default.UseSystemDefaultAudioDevice) {
+                    wasapiOut?.Pause();
+                } else {
+                    waveOutEvent?.Pause();
                 }
             }
         }
 
         public void Play() {
             lock (lockObj) {
-                if (waveOutEvent != null) {
-                    waveOutEvent.Play();
+                if (Preferences.Default.UseSystemDefaultAudioDevice) {
+                    wasapiOut?.Play();
+                } else {
+                    waveOutEvent?.Play();
                 }
             }
         }
 
         public void Stop() {
             lock (lockObj) {
-                if (waveOutEvent != null) {
-                    waveOutEvent.Stop();
-                    waveOutEvent.Dispose();
-                    waveOutEvent = null;
+                if (Preferences.Default.UseSystemDefaultAudioDevice) {
+                    if (notificationClient != null && mmEnumerator != null) {
+                        mmEnumerator.UnregisterEndpointNotificationCallback(notificationClient);
+                        notificationClient = null;
+                    }
+                    if (wasapiOut != null) {
+                        wasapiOut.PlaybackStopped -= OnWasapiPlaybackStopped;
+                        wasapiOut.Stop();
+                        wasapiOut.Dispose();
+                        wasapiOut = null;
+                    }
+                } else {
+                    if (waveOutEvent != null) {
+                        waveOutEvent.Stop();
+                        waveOutEvent.Dispose();
+                        waveOutEvent = null;
+                    }
                 }
             }
         }
 
         public void SelectDevice(Guid guid, int deviceNumber) {
+            if (Preferences.Default.UseSystemDefaultAudioDevice) {
+                return;
+            }
             Preferences.Default.PlaybackDevice = guid.ToString();
             Preferences.Default.PlaybackDeviceNumber = deviceNumber;
             Preferences.Save();
@@ -100,6 +166,9 @@ namespace OpenUtau.App {
         }
 
         public List<AudioOutputDevice> GetOutputDevices() {
+            if (Preferences.Default.UseSystemDefaultAudioDevice) {
+                return new List<AudioOutputDevice>();
+            }
             var outDevices = new List<AudioOutputDevice>();
             for (int i = 0; i < WaveOut.DeviceCount; ++i) {
                 var capability = WaveOut.GetCapabilities(i);
@@ -111,6 +180,26 @@ namespace OpenUtau.App {
                 });
             }
             return outDevices;
+        }
+
+        // Implements IMMNotificationClient; only acts on default render device changes.
+        private class DefaultDeviceNotificationClient : IMMNotificationClient {
+            private readonly Action onDefaultRenderDeviceChanged;
+
+            public DefaultDeviceNotificationClient(Action onDefaultRenderDeviceChanged) {
+                this.onDefaultRenderDeviceChanged = onDefaultRenderDeviceChanged;
+            }
+
+            public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId) {
+                if (flow == DataFlow.Render && role == Role.Multimedia) {
+                    onDefaultRenderDeviceChanged();
+                }
+            }
+
+            public void OnDeviceAdded(string pwstrDeviceId) { }
+            public void OnDeviceRemoved(string deviceId) { }
+            public void OnDeviceStateChanged(string deviceId, DeviceState newState) { }
+            public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key) { }
         }
     }
 #endif

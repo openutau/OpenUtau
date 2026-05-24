@@ -361,6 +361,10 @@ namespace OpenUtau.App.Views {
                 var maxDelta = Math.Max(0, neighborNote.duration - minNoteTicks);
                 deltaDuration = Math.Min(deltaDuration, maxDelta);
             }
+            // Prevent note from moving past part start (position < 0)
+            if (this.fromStart) {
+                deltaDuration = Math.Min(deltaDuration, note.position);
+            }
             if (deltaDuration == 0) {
                 valueTip.UpdateValueTip(note.duration.ToString());
                 return;
@@ -625,6 +629,13 @@ namespace OpenUtau.App.Views {
             } else if (isFirst && note.pitch.snapFirst) {
                 var snapTo = note.Prev == null ? note : note.Prev.End == note.position ? note.Prev : note;
                 deltaY = (snapTo.AdjustedTone - note.AdjustedTone) * 10 - pitchPoint.Y;
+            } else if (ctrlHeld) {
+                var snappedSemitone = Math.Round(notesVm.PointToToneDouble(point) - note.AdjustedTone, MidpointRounding.AwayFromZero);
+                deltaY = snappedSemitone * 10 - pitchPoint.Y;
+            } else if (altShiftHeld && note.pitch.data.Count > 2 && !isLast) {
+                deltaY = note.pitch.data[index + 1].Y - pitchPoint.Y;
+            } else if (shiftHeld && note.pitch.data.Count > 2 && !isFirst) {
+                deltaY = note.pitch.data[index - 1].Y - pitchPoint.Y;
             } else {
                 deltaY = (notesVm.PointToToneDouble(point) - note.AdjustedTone) * 10 - pitchPoint.Y;
             }
