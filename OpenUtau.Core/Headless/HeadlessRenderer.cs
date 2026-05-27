@@ -123,7 +123,15 @@ namespace OpenUtau.Core.Headless {
                 if (!string.IsNullOrEmpty(dir)) {
                     Directory.CreateDirectory(dir);
                 }
-                using (File.Open(outputPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite)) {
+                var exists = File.Exists(outputPath);
+                using (File.Open(
+                    outputPath,
+                    exists ? FileMode.Open : FileMode.CreateNew,
+                    FileAccess.ReadWrite,
+                    FileShare.ReadWrite)) {
+                }
+                if (!exists) {
+                    File.Delete(outputPath);
                 }
             } catch (Exception e) {
                 throw new HeadlessRenderException($"Output is not writable: {outputPath}", e);
