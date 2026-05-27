@@ -1,23 +1,26 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using OpenUtau.Core.Headless;
 using Serilog;
 
-namespace OpenUtau.Cli {
-    internal static class RenderCommand {
-        public static int Run(string[] args) {
+namespace OpenUtau.Core.Headless {
+    public static class HeadlessRenderCommand {
+        public static bool IsCommand(string[] args) {
+            return args.Length > 0 &&
+                string.Equals(args[0], "render", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static int Run(string[] args, string executableName = "OpenUtau") {
             if (args.Length == 0 || IsHelp(args[0])) {
-                PrintUsage(args.Length > 0 && IsHelp(args[0]) ? Console.Out : Console.Error);
+                PrintUsage(args.Length > 0 && IsHelp(args[0]) ? Console.Out : Console.Error, executableName);
                 return args.Length > 0 && IsHelp(args[0]) ? 0 : 2;
             }
             if (!string.Equals(args[0], "render", StringComparison.OrdinalIgnoreCase)) {
                 Console.Error.WriteLine($"Unknown command: {args[0]}");
-                PrintUsage(Console.Error);
+                PrintUsage(Console.Error, executableName);
                 return 2;
             }
             if (args.Skip(1).Any(IsHelp)) {
-                PrintUsage(Console.Out);
+                PrintUsage(Console.Out, executableName);
                 return 0;
             }
 
@@ -32,7 +35,7 @@ namespace OpenUtau.Cli {
                 return exitCode;
             } catch (CommandLineException e) {
                 Console.Error.WriteLine(e.Message);
-                PrintUsage(Console.Error);
+                PrintUsage(Console.Error, executableName);
                 return 2;
             } catch (HeadlessRenderException e) {
                 Console.Error.WriteLine(e.Message);
@@ -49,7 +52,6 @@ namespace OpenUtau.Cli {
             var job = new RenderJob();
             var options = new HeadlessOpenUtauOptions();
             for (int i = 0; i < args.Length; i++) {
-                var arg = args[i];
                 var (name, value, consumedNext) = ReadOption(args, i);
                 if (consumedNext) {
                     i++;
@@ -120,9 +122,9 @@ namespace OpenUtau.Cli {
                 string.Equals(arg, "-h", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static void PrintUsage(System.IO.TextWriter writer) {
+        private static void PrintUsage(System.IO.TextWriter writer, string executableName) {
             writer.WriteLine("Usage:");
-            writer.WriteLine("  OpenUtau.Cli render --input <project.ust|project.ustx> --output <output.wav> [options]");
+            writer.WriteLine($"  {executableName} render --input <project.ust|project.ustx> --output <output.wav> [options]");
             writer.WriteLine();
             writer.WriteLine("Options:");
             writer.WriteLine("  --singer <id-or-name>");

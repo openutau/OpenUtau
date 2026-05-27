@@ -52,8 +52,11 @@ namespace OpenUtau.Core.Headless {
             if (renderErrors.Length > 0) {
                 throw new HeadlessRenderException(string.Join(Environment.NewLine, renderErrors));
             }
-            if (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0) {
+            if (!File.Exists(outputPath)) {
                 throw new HeadlessRenderException($"Render failed; output was not written: {outputPath}");
+            }
+            if (new FileInfo(outputPath).Length <= 46) {
+                throw new HeadlessRenderException($"Render failed; output contains no audio data: {outputPath}");
             }
         }
 
@@ -166,6 +169,21 @@ namespace OpenUtau.Core.Headless {
             if (staleParts.Length > 0) {
                 throw new HeadlessRenderException("Phonemization did not complete for all voice parts.");
             }
+            var silentParts = project.parts
+                .OfType<UVoicePart>()
+                .Where(part => HasRenderableNotes(part) && part.renderPhrases.Count == 0)
+                .ToArray();
+            if (silentParts.Length > 0) {
+                var names = string.Join(", ", silentParts.Select(part => part.DisplayName));
+                throw new HeadlessRenderException(
+                    $"No render phrases were generated for voice part(s): {names}. Check singer, phonemizer, and aliases.");
+            }
+        }
+
+        private static bool HasRenderableNotes(UVoicePart part) {
+            return part.notes.Any(note =>
+                !string.IsNullOrWhiteSpace(note.lyric) &&
+                !string.Equals(note.lyric, "R", StringComparison.OrdinalIgnoreCase));
         }
 
         private static USinger ResolveSinger(string value) {
