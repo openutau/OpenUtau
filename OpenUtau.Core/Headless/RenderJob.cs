@@ -11,5 +11,12 @@ namespace OpenUtau.Core.Headless {
 
     public class HeadlessOpenUtauOptions {
         public string? SingersPath { get; set; }
+        public string? OnnxRunner { get; set; }
+        public int? OnnxGpu { get; set; }
+        public double? DiffSingerDepth { get; set; }
+        public int? DiffSingerSteps { get; set; }
+        public int? DiffSingerVarianceSteps { get; set; }
+        public int? DiffSingerPitchSteps { get; set; }
+        public bool? DiffSingerTensorCache { get; set; }
     }
 }

@@ -28,6 +28,7 @@ namespace OpenUtau.Core.Headless {
             if (!string.IsNullOrWhiteSpace(options?.SingersPath)) {
                 Preferences.Default.AdditionalSingerPath = Path.GetFullPath(options.SingersPath);
             }
+            ApplyPreferenceOverrides(options);
 
             Log.Information("Initializing OpenUtau headless host.");
             ToolsManager.Inst.Initialize();
@@ -36,6 +37,33 @@ namespace OpenUtau.Core.Headless {
             DocManager.Inst.PostOnUIThread = scheduler.Post;
             DocManager.Inst.AddSubscriber(this);
             Log.Information("Initialized OpenUtau headless host.");
+        }
+
+        private static void ApplyPreferenceOverrides(HeadlessOpenUtauOptions? options) {
+            if (options == null) {
+                return;
+            }
+            if (!string.IsNullOrWhiteSpace(options.OnnxRunner)) {
+                Preferences.Default.OnnxRunner = options.OnnxRunner;
+            }
+            if (options.OnnxGpu.HasValue) {
+                Preferences.Default.OnnxGpu = options.OnnxGpu.Value;
+            }
+            if (options.DiffSingerDepth.HasValue) {
+                Preferences.Default.DiffSingerDepth = options.DiffSingerDepth.Value;
+            }
+            if (options.DiffSingerSteps.HasValue) {
+                Preferences.Default.DiffSingerSteps = options.DiffSingerSteps.Value;
+            }
+            if (options.DiffSingerVarianceSteps.HasValue) {
+                Preferences.Default.DiffSingerStepsVariance = options.DiffSingerVarianceSteps.Value;
+            }
+            if (options.DiffSingerPitchSteps.HasValue) {
+                Preferences.Default.DiffSingerStepsPitch = options.DiffSingerPitchSteps.Value;
+            }
+            if (options.DiffSingerTensorCache.HasValue) {
+                Preferences.Default.DiffSingerTensorCache = options.DiffSingerTensorCache.Value;
+            }
         }
 
         public T Run<T>(Func<Task<T>> operation) {

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using Serilog;
 
@@ -83,6 +84,27 @@ namespace OpenUtau.Core.Headless {
                     case "--singers-path":
                         options.SingersPath = value;
                         break;
+                    case "--onnx-runner":
+                        options.OnnxRunner = ParseOnnxRunner(value);
+                        break;
+                    case "--onnx-gpu":
+                        options.OnnxGpu = ParseNonNegativeInt(name, value);
+                        break;
+                    case "--diffsinger-depth":
+                        options.DiffSingerDepth = ParseNonNegativeDouble(name, value);
+                        break;
+                    case "--diffsinger-steps":
+                        options.DiffSingerSteps = ParsePositiveInt(name, value);
+                        break;
+                    case "--diffsinger-variance-steps":
+                        options.DiffSingerVarianceSteps = ParsePositiveInt(name, value);
+                        break;
+                    case "--diffsinger-pitch-steps":
+                        options.DiffSingerPitchSteps = ParsePositiveInt(name, value);
+                        break;
+                    case "--diffsinger-tensor-cache":
+                        options.DiffSingerTensorCache = ParseBool(name, value);
+                        break;
                     default:
                         throw new CommandLineException($"Unknown option: {name}");
                 }
@@ -94,6 +116,53 @@ namespace OpenUtau.Core.Headless {
                 throw new CommandLineException("Missing required option: --output");
             }
             return (job, options);
+        }
+
+        private static string ParseOnnxRunner(string value) {
+            var runner = OpenUtau.Core.Onnx.getRunnerOptions()
+                .FirstOrDefault(option => string.Equals(option, value, StringComparison.OrdinalIgnoreCase));
+            if (runner == null) {
+                throw new CommandLineException(
+                    $"Invalid value for --onnx-runner: {value}. Expected one of: {string.Join(", ", OpenUtau.Core.Onnx.getRunnerOptions())}");
+            }
+            return runner;
+        }
+
+        private static int ParsePositiveInt(string name, string value) {
+            if (!int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var result) ||
+                result <= 0) {
+                throw new CommandLineException($"Invalid value for {name}: {value}. Expected a positive integer.");
+            }
+            return result;
+        }
+
+        private static int ParseNonNegativeInt(string name, string value) {
+            if (!int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var result) ||
+                result < 0) {
+                throw new CommandLineException($"Invalid value for {name}: {value}. Expected a non-negative integer.");
+            }
+            return result;
+        }
+
+        private static double ParseNonNegativeDouble(string name, string value) {
+            if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var result) ||
+                result < 0) {
+                throw new CommandLineException($"Invalid value for {name}: {value}. Expected a non-negative number.");
+            }
+            return result;
+        }
+
+        private static bool ParseBool(string name, string value) {
+            if (bool.TryParse(value, out var result)) {
+                return result;
+            }
+            if (value == "1") {
+                return true;
+            }
+            if (value == "0") {
+                return false;
+            }
+            throw new CommandLineException($"Invalid value for {name}: {value}. Expected true or false.");
         }
 
         private static (string name, string value, bool consumedNext) ReadOption(string[] args, int index) {
@@ -133,6 +202,13 @@ namespace OpenUtau.Core.Headless {
             writer.WriteLine("  --resampler <name>");
             writer.WriteLine("  --wavtool <name>");
             writer.WriteLine("  --singers-path <path>");
+            writer.WriteLine("  --onnx-runner <CPU|DirectML|CoreML|NNAPI>");
+            writer.WriteLine("  --onnx-gpu <device-index>");
+            writer.WriteLine("  --diffsinger-depth <value>");
+            writer.WriteLine("  --diffsinger-steps <count>");
+            writer.WriteLine("  --diffsinger-variance-steps <count>");
+            writer.WriteLine("  --diffsinger-pitch-steps <count>");
+            writer.WriteLine("  --diffsinger-tensor-cache <true|false>");
         }
 
         private sealed class CommandLineException : Exception {
