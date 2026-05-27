@@ -1,10 +1,23 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Serilog;
 
 namespace OpenUtau.Core.Headless {
     public static class HeadlessRenderCommand {
+        private static readonly string[] ProjectFileExtensions = new[] {
+            ".ustx",
+            ".vsqx",
+            ".ust",
+            ".mid",
+            ".midi",
+            ".ufdata",
+            ".musicxml",
+        };
+
         public static bool IsCommand(string[] args) {
             return args.Length > 0 &&
                 string.Equals(args[0], "render", StringComparison.OrdinalIgnoreCase);
@@ -27,13 +40,9 @@ namespace OpenUtau.Core.Headless {
 
             try {
                 var (job, options) = ParseRenderArgs(args.Skip(1).ToArray());
+                var plan = ExpandRenderJobs(job);
                 using var host = new HeadlessOpenUtauHost(options, Console.Out);
-                var exitCode = host.Run(async () => {
-                    await HeadlessRenderer.RenderOneAsync(job, host);
-                    return 0;
-                });
-                Console.WriteLine($"Rendered to {job.OutputPath}");
-                return exitCode;
+                return host.Run(() => RunRenderPlanAsync(plan, host));
             } catch (CommandLineException e) {
                 Console.Error.WriteLine(e.Message);
                 PrintUsage(Console.Error, executableName);
@@ -118,6 +127,96 @@ namespace OpenUtau.Core.Headless {
             return (job, options);
         }
 
+        private static RenderPlan ExpandRenderJobs(RenderJob template) {
+            var inputPath = Path.GetFullPath(template.InputPath);
+            if (File.Exists(inputPath)) {
+                return new RenderPlan(
+                    isBatch: false,
+                    jobs: new[] { CloneJob(template, inputPath, Path.GetFullPath(template.OutputPath)) });
+            }
+            if (!Directory.Exists(inputPath)) {
+                throw new CommandLineException($"Input project or directory not found: {inputPath}");
+            }
+
+            var outputDir = Path.GetFullPath(template.OutputPath);
+            if (File.Exists(outputDir)) {
+                throw new CommandLineException($"Batch output must be a directory: {outputDir}");
+            }
+            var files = Directory.EnumerateFiles(inputPath)
+                .Where(IsProjectFile)
+                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (files.Length == 0) {
+                throw new CommandLineException(
+                    $"No project files found in input directory: {inputPath}");
+            }
+            var jobs = files
+                .Select(file => {
+                    var relative = Path.GetRelativePath(inputPath, file);
+                    var outputPath = Path.Combine(outputDir, Path.ChangeExtension(relative, ".wav"));
+                    return CloneJob(template, Path.GetFullPath(file), Path.GetFullPath(outputPath));
+                })
+                .ToArray();
+            EnsureDistinctOutputs(jobs);
+            return new RenderPlan(isBatch: true, jobs);
+        }
+
+        private static RenderJob CloneJob(RenderJob template, string inputPath, string outputPath) {
+            return new RenderJob {
+                InputPath = inputPath,
+                OutputPath = outputPath,
+                Singer = template.Singer,
+                Renderer = template.Renderer,
+                Phonemizer = template.Phonemizer,
+                Resampler = template.Resampler,
+                Wavtool = template.Wavtool,
+            };
+        }
+
+        private static bool IsProjectFile(string file) {
+            var ext = Path.GetExtension(file);
+            return ProjectFileExtensions.Any(projectExt =>
+                string.Equals(projectExt, ext, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static void EnsureDistinctOutputs(IEnumerable<RenderJob> jobs) {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var job in jobs) {
+                if (!seen.Add(job.OutputPath)) {
+                    throw new CommandLineException(
+                        $"Multiple input projects map to output path: {job.OutputPath}");
+                }
+            }
+        }
+
+        private static async Task<int> RunRenderPlanAsync(RenderPlan plan, HeadlessOpenUtauHost host) {
+            if (!plan.IsBatch) {
+                var job = plan.Jobs[0];
+                await HeadlessRenderer.RenderOneAsync(job, host);
+                Console.WriteLine($"Rendered to {job.OutputPath}");
+                return 0;
+            }
+
+            Console.WriteLine($"Rendering {plan.Jobs.Length} project(s).");
+            var succeeded = 0;
+            var failed = 0;
+            for (var i = 0; i < plan.Jobs.Length; i++) {
+                var job = plan.Jobs[i];
+                Console.WriteLine($"[{i + 1}/{plan.Jobs.Length}] {job.InputPath} -> {job.OutputPath}");
+                try {
+                    await HeadlessRenderer.RenderOneAsync(job, host);
+                    succeeded++;
+                    Console.WriteLine($"Rendered to {job.OutputPath}");
+                } catch (Exception e) {
+                    failed++;
+                    Console.Error.WriteLine($"Failed to render {job.InputPath}: {e.Message}");
+                    Log.Error(e, "Batch render failed for {InputPath}.", job.InputPath);
+                }
+            }
+            Console.WriteLine($"Batch render complete: {succeeded} succeeded, {failed} failed.");
+            return failed == 0 ? 0 : 1;
+        }
+
         private static string ParseOnnxRunner(string value) {
             var runner = OpenUtau.Core.Onnx.getRunnerOptions()
                 .FirstOrDefault(option => string.Equals(option, value, StringComparison.OrdinalIgnoreCase));
@@ -193,7 +292,10 @@ namespace OpenUtau.Core.Headless {
 
         private static void PrintUsage(System.IO.TextWriter writer, string executableName) {
             writer.WriteLine("Usage:");
-            writer.WriteLine($"  {executableName} render --input <project.ust|project.ustx> --output <output.wav> [options]");
+            writer.WriteLine($"  {executableName} render --input <project|input-dir> --output <wav|output-dir> [options]");
+            writer.WriteLine();
+            writer.WriteLine("If input is a directory, project files directly inside it are rendered");
+            writer.WriteLine("serially to matching .wav files in the output directory.");
             writer.WriteLine();
             writer.WriteLine("Options:");
             writer.WriteLine("  --singer <id-or-name>");
@@ -214,6 +316,16 @@ namespace OpenUtau.Core.Headless {
         private sealed class CommandLineException : Exception {
             public CommandLineException(string message) : base(message) {
             }
+        }
+
+        private sealed class RenderPlan {
+            public RenderPlan(bool isBatch, RenderJob[] jobs) {
+                IsBatch = isBatch;
+                Jobs = jobs;
+            }
+
+            public bool IsBatch { get; }
+            public RenderJob[] Jobs { get; }
         }
     }
 }
