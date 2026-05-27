@@ -19,7 +19,7 @@ namespace OpenUtau.Core.Headless {
         public bool IsOwnerThread => Thread.CurrentThread == ownerThread;
 
         public void Post(Action action) {
-            QueueTask(new Task(action));
+            Task.Factory.StartNew(action, CancellationToken.None, TaskCreationOptions.None, this);
         }
 
         public bool RunOne(TimeSpan timeout) {

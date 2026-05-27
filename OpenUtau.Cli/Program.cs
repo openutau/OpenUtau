@@ -23,7 +23,6 @@ namespace OpenUtau.Cli {
             Directory.CreateDirectory(PathManager.Inst.LogsPath);
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
-                .WriteTo.Console()
                 .WriteTo.File(PathManager.Inst.LogFilePath, rollingInterval: RollingInterval.Day, encoding: Encoding.UTF8)
                 .CreateLogger();
         }
