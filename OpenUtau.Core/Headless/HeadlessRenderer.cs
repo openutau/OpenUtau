@@ -141,7 +141,7 @@ namespace OpenUtau.Core.Headless {
             }
         }
 
-        private static void EnsureProjectReady(UProject project) {
+        internal static void EnsureProjectReady(UProject project) {
             var voiceTrackNos = project.parts
                 .OfType<UVoicePart>()
                 .Select(part => part.trackNo)
@@ -218,7 +218,7 @@ namespace OpenUtau.Core.Headless {
                 (singer.LocalizedNames?.Values.Any(name => EqualsIgnoreCase(name, value)) ?? false);
         }
 
-        private static PhonemizerFactory ResolvePhonemizer(string value) {
+        internal static PhonemizerFactory ResolvePhonemizer(string value) {
             var factory = PhonemizerFactory.Get(value);
             if (factory != null) {
                 return factory;
@@ -234,7 +234,7 @@ namespace OpenUtau.Core.Headless {
             return factory;
         }
 
-        private static string ResolveRenderer(string value) {
+        internal static string ResolveRenderer(string value) {
             var renderer = KnownRenderers.FirstOrDefault(r => EqualsIgnoreCase(r, value));
             renderer ??= value;
             if (Renderers.CreateRenderer(renderer) == null) {

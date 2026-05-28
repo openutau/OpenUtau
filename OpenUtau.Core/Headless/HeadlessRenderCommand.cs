@@ -58,7 +58,7 @@ namespace OpenUtau.Core.Headless {
             }
         }
 
-        private static (RenderJob job, HeadlessOpenUtauOptions options) ParseRenderArgs(string[] args) {
+        internal static (RenderJob job, HeadlessOpenUtauOptions options) ParseRenderArgs(string[] args) {
             var job = new RenderJob();
             var options = new HeadlessOpenUtauOptions();
             for (int i = 0; i < args.Length; i++) {
@@ -127,7 +127,7 @@ namespace OpenUtau.Core.Headless {
             return (job, options);
         }
 
-        private static RenderPlan ExpandRenderJobs(RenderJob template) {
+        internal static RenderPlan ExpandRenderJobs(RenderJob template) {
             var inputPath = Path.GetFullPath(template.InputPath);
             if (File.Exists(inputPath)) {
                 return new RenderPlan(
@@ -313,12 +313,12 @@ namespace OpenUtau.Core.Headless {
             writer.WriteLine("  --diffsinger-tensor-cache <true|false>");
         }
 
-        private sealed class CommandLineException : Exception {
+        internal sealed class CommandLineException : Exception {
             public CommandLineException(string message) : base(message) {
             }
         }
 
-        private sealed class RenderPlan {
+        internal sealed class RenderPlan {
             public RenderPlan(bool isBatch, RenderJob[] jobs) {
                 IsBatch = isBatch;
                 Jobs = jobs;
