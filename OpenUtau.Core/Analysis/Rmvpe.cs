@@ -87,7 +87,7 @@ public class RmvpeResult {
         return expanded;
     }
 
-    static void FlushPendingPoints(UProject project, UVoicePart part, List<PitchPoint> points, ref int totalPoints) {
+    static void FlushPendingPoints(UCurve curve, List<PitchPoint> points, ref int totalPoints) {
         if (points.Count == 0) {
             return;
         }
@@ -99,10 +99,7 @@ public class RmvpeResult {
         for (int i = 0; i < processedPoints.Count; i++) {
             lastX ??= processedPoints[i].x;
             lastY ??= smoothedYs[i];
-            DocManager.Inst.ExecuteCmd(new SetCurveCommand(
-                project, part, Format.Ustx.PITD,
-                processedPoints[i].x, smoothedYs[i],
-                lastX.Value, lastY.Value));
+            curve.Set(processedPoints[i].x, smoothedYs[i], lastX.Value, lastY.Value);
             lastX = processedPoints[i].x;
             lastY = smoothedYs[i];
         }
@@ -142,6 +139,10 @@ public class RmvpeResult {
         }
         var frameMs = TimeStepSeconds * 1000.0;
         var partStartMs = project.timeAxis.TickPosToMsPos(part.position);
+        var existingCurve = part.curves.FirstOrDefault(c => c.abbr == Format.Ustx.PITD);
+        var oldXs = existingCurve?.xs.ToArray();
+        var oldYs = existingCurve?.ys.ToArray();
+        var curve = existingCurve?.Clone() ?? new UCurve(descriptor);
         var pendingPoints = new List<PitchPoint>();
         var pendingNoteIndex = -1;
         int noteIndex = 0;
@@ -158,7 +159,7 @@ public class RmvpeResult {
             }
             var note = notes[noteIndex];
             if (pendingPoints.Count > 0 && pendingNoteIndex != noteIndex) {
-                FlushPendingPoints(project, part, pendingPoints, ref totalPoints);
+                FlushPendingPoints(curve, pendingPoints, ref totalPoints);
                 pendingPoints.Clear();
                 pendingNoteIndex = -1;
             }
@@ -183,7 +184,14 @@ public class RmvpeResult {
                 pendingPoints.Add(new PitchPoint { x = snappedX, y = y });
             }
         }
-        FlushPendingPoints(project, part, pendingPoints, ref totalPoints);
+        FlushPendingPoints(curve, pendingPoints, ref totalPoints);
+        curve.Simplify();
+        if (totalPoints > 0) {
+            DocManager.Inst.ExecuteCmd(new MergedSetCurveCommand(
+                project, part, Format.Ustx.PITD,
+                oldXs, oldYs,
+                curve.xs.ToArray(), curve.ys.ToArray()));
+        }
         Log.Information("RMVPE applied pitch curve. points={PointCount}", totalPoints);
     }
 }
