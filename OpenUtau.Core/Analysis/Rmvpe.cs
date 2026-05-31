@@ -87,22 +87,26 @@ public class RmvpeResult {
         return expanded;
     }
 
-    static void AppendSmoothedPoints(UCurve curve, List<PitchPoint> points) {
+    static void FlushPendingPoints(UProject project, UVoicePart part, List<PitchPoint> points, ref int totalPoints) {
         if (points.Count == 0) {
             return;
         }
         var processedPoints = FillShortGaps(points);
-        var ys = processedPoints.Select(point => point.y).ToList();
-        var smoothedYs = AdaptiveSmooth(MedianFilter(ys));
-        for (var i = 0; i < processedPoints.Count; ++i) {
-            var point = processedPoints[i];
-            if (curve.xs.Count > 0 && curve.xs[^1] == point.x) {
-                curve.ys[^1] = smoothedYs[i];
-            } else {
-                curve.xs.Add(point.x);
-                curve.ys.Add(smoothedYs[i]);
-            }
+        var rawYs = processedPoints.Select(p => p.y).ToList();
+        var smoothedYs = AdaptiveSmooth(MedianFilter(rawYs));
+        int? lastX = null;
+        int? lastY = null;
+        for (int i = 0; i < processedPoints.Count; i++) {
+            lastX ??= processedPoints[i].x;
+            lastY ??= smoothedYs[i];
+            DocManager.Inst.ExecuteCmd(new SetCurveCommand(
+                project, part, Format.Ustx.PITD,
+                processedPoints[i].x, smoothedYs[i],
+                lastX.Value, lastY.Value));
+            lastX = processedPoints[i].x;
+            lastY = smoothedYs[i];
         }
+        totalPoints += processedPoints.Count;
     }
 
     static List<NoteSegment> BuildSegments(UProject project, UVoicePart part) {
@@ -136,12 +140,12 @@ public class RmvpeResult {
                 project.expressions.ContainsKey(Format.Ustx.PITD));
             return;
         }
-        var curve = new UCurve(descriptor);
         var frameMs = TimeStepSeconds * 1000.0;
         var partStartMs = project.timeAxis.TickPosToMsPos(part.position);
         var pendingPoints = new List<PitchPoint>();
         var pendingNoteIndex = -1;
         int noteIndex = 0;
+        int totalPoints = 0;
         for (int i = 0; i < MidiPitch.Length; ++i) {
             var midiPitch = MidiPitch[i];
             var localTimeMs = i * frameMs;
@@ -154,7 +158,7 @@ public class RmvpeResult {
             }
             var note = notes[noteIndex];
             if (pendingPoints.Count > 0 && pendingNoteIndex != noteIndex) {
-                AppendSmoothedPoints(curve, pendingPoints);
+                FlushPendingPoints(project, part, pendingPoints, ref totalPoints);
                 pendingPoints.Clear();
                 pendingNoteIndex = -1;
             }
@@ -179,22 +183,8 @@ public class RmvpeResult {
                 pendingPoints.Add(new PitchPoint { x = snappedX, y = y });
             }
         }
-        AppendSmoothedPoints(curve, pendingPoints);
-        curve.Simplify();
-        if (curve.xs.Count > 0) {
-            var oldCurve = part.curves.FirstOrDefault(c => c.abbr == Format.Ustx.PITD);
-            var oldXs = oldCurve?.xs.ToArray();
-            var oldYs = oldCurve?.ys.ToArray();
-            DocManager.Inst.ExecuteCmd(new MergedSetCurveCommand(
-                project,
-                part,
-                Format.Ustx.PITD,
-                oldXs,
-                oldYs,
-                curve.xs.ToArray(),
-                curve.ys.ToArray()));
-        }
-        Log.Information("RMVPE applied pitch curve. points={PointCount}", curve.xs.Count);
+        FlushPendingPoints(project, part, pendingPoints, ref totalPoints);
+        Log.Information("RMVPE applied pitch curve. points={PointCount}", totalPoints);
     }
 }
 
