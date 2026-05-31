@@ -91,8 +91,13 @@
         
         <!-- Playback -->
         <StackPanel>
-          <TextBlock Text="{DynamicResource prefs.playback.device}"/>
-          <ComboBox ItemsSource="{Binding AudioOutputDevices}" SelectedItem="{Binding AudioOutputDevice}"/>
+          <Grid>
+            <TextBlock Text="{DynamicResource prefs.playback.systemdefault}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding UseSystemDefaultDevice}"/>
+          </Grid>
+          <TextBlock Classes="restart"/>
+          <TextBlock Text="{DynamicResource prefs.playback.device}" Margin="0,10,0,0"/>
+          <ComboBox ItemsSource="{Binding AudioOutputDevices}" SelectedItem="{Binding AudioOutputDevice}" IsEnabled="{Binding !UseSystemDefaultDevice}"/>
           <Button Content="{DynamicResource prefs.playback.test}" HorizontalAlignment="Stretch" Command="{Binding TestAudioOutputDevice}"/>
           <TextBlock Text="{DynamicResource prefs.playback.backend}" Margin="0,10,0,0"/>
           <ComboBox SelectedIndex="{Binding PreferPortAudio}">
@@ -201,19 +206,47 @@
           </Grid>
           <TextBlock Text="{DynamicResource prefs.rendering.onnxrunner}" Margin="0,10,0,0"/>
           <ComboBox ItemsSource="{Binding OnnxRunnerOptions}" SelectedItem="{Binding OnnxRunner}"/>
-          <TextBlock Text="{DynamicResource prefs.rendering.onnxgpu}" Margin="0,10,0,0"/>
-          <ComboBox ItemsSource="{Binding OnnxGpuOptions}" SelectedItem="{Binding OnnxGpu}"/>
-          <TextBlock Classes="restart"/>
+          <StackPanel IsVisible="{Binding ShowOnnxGpu}">
+            <TextBlock Text="{DynamicResource prefs.rendering.onnxgpu}" Margin="0,10,0,0"/>
+            <ComboBox ItemsSource="{Binding OnnxGpuOptions}" SelectedItem="{Binding OnnxGpu}"/>
+            <TextBlock Classes="restart"/>
+          </StackPanel>
         </StackPanel>
 
         <!-- Appearance -->
         <StackPanel>
           <TextBlock Text="{DynamicResource prefs.appearance.theme}" Margin="0,10,0,0"/>
-          <ComboBox SelectedIndex="{Binding Theme}">
-            <ComboBoxItem Content="{DynamicResource prefs.appearance.theme.light}"/>
-            <ComboBoxItem Content="{DynamicResource prefs.appearance.theme.dark}"/>
-            <ComboBoxItem Content="{Binding CustomName}"/>
-          </ComboBox>
+          <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,auto,auto,auto">
+            <ComboBox Grid.Column="0" IsEnabled="{Binding !IsThemeEditorOpen}" ItemsSource="{Binding ThemeItems}" SelectedItem="{Binding ThemeName}"/>
+            <Button Grid.Column="1" IsEnabled="{Binding !IsThemeEditorOpen}" IsVisible="{Binding ThemeEditable}" MinWidth="18" MinHeight="18" 
+                Click="OpenCustomThemeEditor" Margin="5,0,0,0" Padding="0" ToolTip.Tip="{DynamicResource prefs.appearance.customtheme.edit.title}">
+                <Grid Width="18" Height="18">
+                  <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      Classes="filled" Data="M14.06,9L15,9.94L5.92,19H5V18.08L14.06,9M17.66,3C17.41,3 17.15,3.1 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18.17,3.09 17.92,3 17.66,3M14.06,6.19L3,17.25V21H6.75L17.81,9.94L14.06,6.19Z" >
+                    <Path.RenderTransform>
+                      <TransformGroup>
+                        <ScaleTransform ScaleX=".6" ScaleY=".6" />
+                        <TranslateTransform X="-2" Y="-2"/>
+                      </TransformGroup>
+                    </Path.RenderTransform>
+                  </Path>
+                </Grid>
+            </Button>
+            <Button Grid.Column="2" IsEnabled="{Binding !IsThemeEditorOpen}" IsVisible="{Binding ThemeEditable}" Click="OnCustomThemeDelete"
+                MinWidth="18" MinHeight="18" Margin="5,0,0,0" Padding="0" ToolTip.Tip="{DynamicResource prefs.appearance.customtheme.delete.title}">
+              <Grid Width="18" Height="18">
+                  <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                    Data="M7.03 2.81c-.23 0-.38.17-.38.37v1.27h-2.65c-.19 0-.38.17-.38.37v.29c0 .21.19.37.38.37h.26v8.9c0 .21.19.37.38.37h8.7c.23 0 .38-.17.38-.42V5.68h.26c.23 0 .38-.17.38-.37v-.29c0-.21-.15-.42-.38-.42h-2.65V3.22c0-.21-.15-.42-.38-.42H7.05zm.76 1.04h2.42v.75h-2.38v-.75zm-2.49 1.79h7.4v8.23H5.29V6.28zm1.82 1.49a.38.38 0 0 0-.38.42v4.32c0 .21.19.42.38.42h.42a.38.38 0 0 0 .38-.42V7.77a.38.38 0 0 0-.38-.42h-.42zm3.37 0a.38.38 0 0 0-.38.42v4.32c0 .21.15.42.38.42h.38a.38.38 0 0 0 .38-.42V7.77a.38.38 0 0 0-.38-.42h-.38z" />
+              </Grid>
+            </Button>
+            <Button Grid.Column="3" IsEnabled="{Binding !IsThemeEditorOpen}" Click="OnCustomThemeCreate" MinWidth="18" MinHeight="18"
+                Margin="5,0,0,0" Padding="0" ToolTip.Tip="{DynamicResource prefs.appearance.customtheme.create.title}" >
+              <Grid Width="18" Height="18">
+                  <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                    Data="M8.43 3.33 a0.38 0.38 0 0 0 -0.38 0.38 v4.35 H3.7 a0.38 0.38 0 0 0 -0.38 0.38 v1.13 c0 0.23 0.19 0.38 0.38 0.38 h4.35 v4.35 c0 0.23 0.19 0.38 0.38 0.38 h1.13 a0.38 0.38 0 0 0 0.38 -0.38 V9.97 h4.35 a0.38 0.38 0 0 0 0.38 -0.38 v-1.13 a0.38 0.38 0 0 0 -0.38 -0.38 H9.97 V3.7 a0.38 0.38 0 0 0 -0.38 -0.38 h-1.13 z" />
+              </Grid>
+            </Button>
+          </Grid>
           <TextBlock Text="{DynamicResource prefs.appearance.degree}" Margin="0,10,0,0"/>
           <ComboBox SelectedIndex="{Binding DegreeStyle}">
             <ComboBoxItem Content="{DynamicResource prefs.appearance.degree.off}"/>

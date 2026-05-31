@@ -12,11 +12,16 @@ namespace OpenUtau.Core {
         //key: tick position of each note.
         //value: a list of phonemes and their positions in the note
         protected Dictionary<int, List<Tuple<string, int>>> partResult = new Dictionary<int, List<Tuple<string, int>>>();
-
+        protected Dictionary<int, string> unrecognizedLyrics = new Dictionary<int, string>();
+        private Exception? lastProcessPartException;
         //Called when the note is changed, and the entire song is passed into the SetUp function as long as the note is changed
         //groups is a two-dimensional array of Note, each Note[] represents a lyrical note and its following slur notes
         //Run phoneme timing model in sections to prevent butterfly effect
         public override void SetUp(Note[][] groups, UProject project, UTrack track) {
+            SetUpException = null;
+            lastProcessPartException = null;
+            partResult.Clear();
+            unrecognizedLyrics.Clear();
             if (groups.Length == 0) {
                 return;
             }
@@ -34,6 +39,7 @@ namespace OpenUtau.Core {
                     try{
                         ProcessPart(phrase.ToArray());
                     }catch(Exception e){
+                        lastProcessPartException = e;
                         var sentenceLyrics = string.Join(" ", phrase.Select(group => group[0].lyric));
                         Log.Error($"Failed to phonemize sentence {sentenceLyrics}: {e.Message}");
                     }
@@ -42,12 +48,28 @@ namespace OpenUtau.Core {
                 }
             }
             if (phrase.Count > 0) {
-                ProcessPart(phrase.ToArray());
+                try{
+                    ProcessPart(phrase.ToArray());
+                }catch(Exception e){
+                    lastProcessPartException = e;
+                    var sentenceLyrics = string.Join(" ", phrase.Select(group => group[0].lyric));
+                    Log.Error($"Failed to phonemize sentence {sentenceLyrics}: {e.Message}");
+                }
             }
         }
 
         public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevs) {
+            if (unrecognizedLyrics.TryGetValue(notes[0].position, out var lyric)) {
+                if (string.IsNullOrEmpty(lyric)) {
+                    throw new Exception("Phoneme not found for this note");
+                }
+                throw new Exception($"Unrecognized phoneme \"{lyric}\"");
+            }
             if (!partResult.TryGetValue(notes[0].position, out var phonemes)) {
+                var cause = lastProcessPartException ?? SetUpException;
+                if (cause != null) {
+                    throw new Exception("Phonemizer failed to process.", cause);
+                }
                 throw new Exception("Part result not found");
             }
             return new Result {
@@ -62,6 +84,7 @@ namespace OpenUtau.Core {
 
         public override void CleanUp() {
             partResult.Clear();
+            unrecognizedLyrics.Clear();
         }
 
         //Run timing model for a sentence, and put the results into partResult

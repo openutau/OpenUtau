@@ -354,7 +354,7 @@ namespace OpenUtau.Plugin.Builtin {
                 return new Result {
                     phonemes = new Phoneme[] {
                         new Phoneme() {
-                            phoneme = phoneme, // Output the entered lyrics.
+                            phoneme = GetOtoAlias(singer, phoneme, notes[0]), // 防止无尾音歌词在多音阶情况下丢失prefix map suffix
                         }
                     }
                 };

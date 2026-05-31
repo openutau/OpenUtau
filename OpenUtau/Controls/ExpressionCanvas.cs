@@ -7,6 +7,7 @@ using Avalonia.Media;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
+using OpenUtau.ViewModels;
 using ReactiveUI;
 
 namespace OpenUtau.App.Controls {
@@ -67,6 +68,7 @@ namespace OpenUtau.App.Controls {
         private bool showRealCurve = true;
 
         private HashSet<UNote> selectedNotes = new HashSet<UNote>();
+        private CurveSelection curveSelection = new CurveSelection();
         private Geometry pointGeometry;
         private Geometry circleGeometry;
 
@@ -81,6 +83,11 @@ namespace OpenUtau.App.Controls {
                     selectedNotes.Clear();
                     selectedNotes.UnionWith(e.selectedNotes);
                     selectedNotes.UnionWith(e.tempSelectedNotes);
+                    InvalidateVisual();
+                });
+            MessageBus.Current.Listen<CurveSelectionEvent>()
+                .Subscribe(e => {
+                    curveSelection = e.selection;
                     InvalidateVisual();
                 });
         }
@@ -118,34 +125,62 @@ namespace OpenUtau.App.Controls {
                 double defaultHeight = Math.Round(Bounds.Height - Bounds.Height * (descriptor.defaultValue - descriptor.min) / (descriptor.max - descriptor.min));
                 var lPen = ThemeManager.AccentPen1;
                 var lPen2 = ThemeManager.AccentPen1Thickness2;
+                var lPenSelected = ThemeManager.AccentPen2;
+                var lPen2Selected = ThemeManager.AccentPen2Thickness2;
                 var lPen3 = new Pen(ThemeManager.NeutralAccentBrush, 1, new DashStyle(new double[] { 4, 4 }, 0));
                 var brush = ThemeManager.AccentBrush1;
                 double x3 = Math.Round(viewModel.TickToneToPoint(leftTick, 0).X);
                 double x4 = Math.Round(viewModel.TickToneToPoint(rightTick, 0).X);
                 context.DrawLine(lPen3, new Point(x3, defaultHeight), new Point(x4, defaultHeight));
+
+                curveSelection.GetWholeCurveAndSelection(descriptor.abbr, curve, out List<int> xs, out List<int> ys);
                 if (curve == null) {
-                    double x1 = Math.Round(viewModel.TickToneToPoint(leftTick, 0).X);
-                    double x2 = Math.Round(viewModel.TickToneToPoint(rightTick, 0).X);
-                    context.DrawLine(lPen, new Point(x1, defaultHeight), new Point(x2, defaultHeight));
+                    xs.Insert(0, (int)leftTick);
+                    xs.Add((int)rightTick);
+                    for (int i = 0; i < xs.Count - 1; i++) {
+                        double x1 = Math.Round(viewModel.TickToneToPoint(xs[i], 0).X);
+                        double x2 = Math.Round(viewModel.TickToneToPoint(xs[i + 1], 0).X);
+                        if (curveSelection.HasValue(descriptor.abbr)) {
+                            if (curveSelection.StartPoint.x <= xs[i] && xs[i] <= curveSelection.EndPoint.x
+                                && curveSelection.StartPoint.x <= xs[i + 1] && xs[i + 1] <= curveSelection.EndPoint.x) {
+                                context.DrawLine(lPenSelected, new Point(x1, defaultHeight), new Point(x2, defaultHeight));
+                            } else {
+                                context.DrawLine(lPen, new Point(x1, defaultHeight), new Point(x2, defaultHeight));
+                            }
+                        } else {
+                            context.DrawLine(lPen, new Point(x1, defaultHeight), new Point(x2, defaultHeight));
+                        }
+                    }
                     return;
                 }
+
                 int lTick = (int)Math.Floor(leftTick / 5) * 5;
                 int rTick = (int)Math.Ceiling(rightTick / 5) * 5;
-                int index = curve.xs.BinarySearch(lTick);
+                int index = xs.BinarySearch(lTick);
                 if (index < 0) {
                     index = -index - 1;
                 }
                 index = Math.Max(0, index) - 1;
-                while (index < curve.xs.Count) {
-                    float tick1 = index < 0 ? lTick : curve.xs[index];
-                    float value1 = index < 0 ? descriptor.defaultValue : curve.ys[index];
+                while (index < xs.Count) {
+                    float tick1 = index < 0 ? lTick : xs[index];
+                    float value1 = index < 0 ? descriptor.defaultValue : ys[index];
                     double x1 = viewModel.TickToneToPoint(tick1, 0).X;
                     double y1 = defaultHeight - Bounds.Height * (value1 - descriptor.defaultValue) / (descriptor.max - descriptor.min);
-                    float tick2 = index == curve.xs.Count - 1 ? rTick : curve.xs[index + 1];
-                    float value2 = index == curve.xs.Count - 1 ? descriptor.defaultValue : curve.ys[index + 1];
+                    float tick2 = index == xs.Count - 1 ? rTick : xs[index + 1];
+                    float value2 = index == xs.Count - 1 ? descriptor.defaultValue : ys[index + 1];
                     double x2 = viewModel.TickToneToPoint(tick2, 0).X;
                     double y2 = defaultHeight - Bounds.Height * (value2 - descriptor.defaultValue) / (descriptor.max - descriptor.min);
-                    var pen = value1 == descriptor.defaultValue && value2 == descriptor.defaultValue ? lPen : lPen2;
+                    IPen pen;
+                    if (curveSelection.HasValue(descriptor.abbr)) {
+                        if (curveSelection.StartPoint.x <= tick1 && tick1 <= curveSelection.EndPoint.x
+                            && curveSelection.StartPoint.x <= tick2 && tick2 <= curveSelection.EndPoint.x) {
+                            pen = value1 == descriptor.defaultValue && value2 == descriptor.defaultValue ? lPenSelected : lPen2Selected;
+                        } else {
+                            pen = value1 == descriptor.defaultValue && value2 == descriptor.defaultValue ? lPen : lPen2;
+                        }
+                    } else {
+                        pen = value1 == descriptor.defaultValue && value2 == descriptor.defaultValue ? lPen : lPen2;
+                    }
                     context.DrawLine(pen, new Point(x1, y1), new Point(x2, y2));
                     //using (var state = context.PushTransform(Matrix.CreateTranslation(x1, y1))) {
                     //    context.DrawGeometry(brush, null, pointGeometry);

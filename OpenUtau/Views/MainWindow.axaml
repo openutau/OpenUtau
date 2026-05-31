@@ -8,9 +8,8 @@
         x:Class="OpenUtau.App.Views.MainWindow"
         Icon="/Assets/open-utau.ico"
         Title="{Binding Title}" MinWidth="300" MinHeight="200" Width="{Binding Width}" Height="{Binding Height}"
-        KeyDown="OnKeyDown" PointerPressed="OnPointerPressed" Closing="WindowClosing"
-        Focusable="True" DragDrop.AllowDrop="True"
-        TransparencyLevelHint="None">
+        Focusable="True" KeyDown="OnKeyDown" PointerPressed="OnPointerPressed" Closing="WindowClosing"
+        DragDrop.AllowDrop="True" TransparencyLevelHint="None">
   <Window.Styles>
     <Style Selector="Button,ToggleButton">
       <Setter Property="Focusable" Value="False"/>
@@ -46,14 +45,12 @@
               <MenuItem Header="{DynamicResource menu.file.exportustto}" Click="OnMenuExportUstTo"/>
               <MenuItem Header="{DynamicResource menu.file.exportmidi}" Click="OnMenuExportMidi"/>
               <MenuItem Header="{DynamicResource menu.file.exportds}" Click="OnMenuExportDsTo"/>
-              <MenuItem Header="{DynamicResource menu.file.exportds.v2}" Click="OnMenuExportDsV2To"/>
-              <MenuItem Header="{DynamicResource menu.file.exportds.v2withoutpitch}" Click="OnMenuExportDsV2WithoutPitchTo"/>
             </MenuItem>
             <MenuItem Header="{DynamicResource menu.file.openexportlocation}" Click="OnMenuOpenProjectLocation"/>
           </MenuItem>
           <MenuItem Header="{DynamicResource menu.edit}" IsEnabled="{Binding Page}">
-            <MenuItem Header="{DynamicResource menu.edit.undo}" InputGesture="Ctrl+Z" Command="{Binding Undo}"/>
-            <MenuItem Header="{DynamicResource menu.edit.redo}" InputGesture="Ctrl+Y" Command="{Binding Redo}"/>
+            <MenuItem Header="{Binding UndoText}" InputGesture="Ctrl+Z" Command="{Binding Undo}" IsEnabled="{Binding CanUndo}"/>
+            <MenuItem Header="{Binding RedoText}" InputGesture="Ctrl+Y" Command="{Binding Redo}" IsEnabled="{Binding CanRedo}"/>
           </MenuItem>
           <MenuItem Header="{DynamicResource menu.project}" IsEnabled="{Binding Page}">
             <MenuItem Header="{DynamicResource menu.project.expressions}" Click="OnMenuExpressionss"/>
@@ -75,8 +72,8 @@
             <MenuItem Header="{DynamicResource phoneticassistant.caption}" Click="OnMenuPhoneticAssistant"/>
             <MenuItem Header="{DynamicResource menu.tools.singers}" Click="OnMenuSingers"/>
             <MenuItem Header="{DynamicResource menu.tools.singer.install}" Click="OnMenuInstallSinger"/>
-            <MenuItem Header="{DynamicResource menu.tools.dependency.install}" Click="OnMenuInstallDependency"/>
             <MenuItem Header="{DynamicResource menu.tools.wavtoolresampler.install}" Click="OnMenuInstallWavtoolResampler"/>
+            <MenuItem Header="{DynamicResource menu.tools.packages}" Click="OnMenuPackageManager"/>
             <MenuItem Header="{DynamicResource menu.tools.prefs}" Click="OnMenuPreferences"/>
           </MenuItem>
           <MenuItem Header="{DynamicResource menu.help}">
@@ -88,7 +85,7 @@
         </Menu>
       <Carousel SelectedIndex="{Binding Page}" >
         <!--Welcome page-->
-        <Grid Margin="60,50,60,40" RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*">
+        <Grid Margin="60,50,60,40" RowDefinitions="Auto,Auto,Auto,*" ColumnDefinitions="*,*">
           <!--Startup warnings-->
           <StackPanel Grid.Row="0" Grid.ColumnSpan="2">
             <Button Click="OnWelcomeRecovery" Height="40" Content="{Binding RecoveryString}"
@@ -169,7 +166,7 @@
 
           <!-- Recent files -->
           <TextBlock Grid.Row="2" Grid.Column="0" Margin="0,24,0,8" Text="{DynamicResource welcome.recent}" FontSize="20"/>
-          <ListBox ItemsSource="{Binding RecentFiles}" Grid.Row="3" Grid.Column="0" Margin="0,0,15,0">
+          <ListBox ItemsSource="{Binding RecentFiles}" Grid.Row="3" Grid.Column="0" Margin="0,0,15,0" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
             <ListBox.Styles>
               <Style Selector="ListBoxItem">
                 <Setter Property="Height" Value="NaN" />
@@ -190,7 +187,7 @@
 
           <!-- Template files -->
           <TextBlock Grid.Row="2" Grid.Column="1" Margin="15,24,0,8" Text="{DynamicResource welcome.template}" FontSize="20"/>
-          <ListBox ItemsSource="{Binding TemplateFiles}" Grid.Row="3" Grid.Column="1" Margin="15,0,0,0">
+          <ListBox ItemsSource="{Binding TemplateFiles}" Grid.Row="3" Grid.Column="1" Margin="15,0,0,0" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
             <ListBox.Styles>
               <Style Selector="ListBoxItem">
                 <Setter Property="Height" Value="NaN" />
@@ -210,7 +207,18 @@
         </Grid>
       
         <!--Main page-->
-        <Grid RowDefinitions="24,24,1*,20,4" ColumnDefinitions="300,*,24" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+        <Grid ColumnDefinitions="300,*,24" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="24"/>
+            <RowDefinition Height="24"/>
+            <RowDefinition Height="*" MinHeight="0.01"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="3*"
+                           MinHeight="{Binding PianoRollMinHeight}"
+                           MaxHeight="{Binding PianoRollMaxHeight}"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="4"/>
+          </Grid.RowDefinitions>
           <Panel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="24">
             <Border Classes="playback" Width="72" HorizontalAlignment="Left" Margin="4,0">
               <Grid>
@@ -304,7 +312,7 @@
                               TrackHeight="{Binding TrackHeight}"
                               TrackOffset="{Binding TrackOffset}"
                               Items="{Binding Tracks}"
-							  PointerWheelChanged="MainPagePointerWheelChanged"/>
+                              PointerWheelChanged="MainPagePointerWheelChanged"/>
           <c:TrackBackground Grid.Row="2" Grid.Column="1" Margin="0" IsHitTestVisible="False"
                             Foreground="{DynamicResource TrackBackgroundAltBrush}"
                             DataContext="{Binding TracksViewModel}"
@@ -358,18 +366,26 @@
                           IsVisible="{Binding IsWavePart}"
                           Command="{Binding PartReplaceAudioCommand}"
                           CommandParameter="{Binding Part}"/>
-                <MenuItem Header="{DynamicResource context.part.rename}"
-                          IsVisible="{Binding IsVoicePart}"
-                          Command="{Binding PartRenameCommand}"
-                          CommandParameter="{Binding Part}"/>
                 <MenuItem Header="{DynamicResource context.part.transcribe}"
                           IsVisible="{Binding IsWavePart}"
                           Command="{Binding PartTranscribeCommand}"
+                          CommandParameter="{Binding Part}"/>
+                <MenuItem Header="{DynamicResource context.part.rename}"
+                          IsVisible="{Binding IsVoicePart}"
+                          Command="{Binding PartRenameCommand}"
                           CommandParameter="{Binding Part}"/>
                 <MenuItem Header="{DynamicResource context.part.merge}"
                           IsVisible="{Binding IsVoicePart}"
                           Command="{Binding PartMergeCommand}"
                           CommandParameter="{Binding Part}"/>
+                <MenuItem Header="{DynamicResource context.part.split}"
+                          IsVisible="{Binding IsVoicePart}"
+                          Command="{Binding PartSplitCommand}"
+                          CommandParameter="{Binding Part}"/>
+                <MenuItem Header="{DynamicResource context.part.applypitch}"
+                          IsVisible="{Binding IsVoicePart}"
+                          ItemsSource="{Binding PartApplyPitchMenuItems}"
+                          Classes="MenuItemWithSubMenu"/>
               </ContextMenu>
             </c:PartsCanvas.ContextMenu>
           </c:PartsCanvas>
@@ -383,8 +399,13 @@
           <Border Grid.Row="1" Grid.Column="2" Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0" Height="24" PointerWheelChanged="ViewScalerPointerWheelChanged">
             <c:ViewScaler Name="VScaler" DataContext="{Binding TracksViewModel}" Value="{Binding TrackHeight}" Min="{Binding TrackHeightMin}" Max="{Binding TrackHeightMax}"/>
           </Border>
-          <TextBlock Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" Height="20" Margin="4,4,4,0" Text="{Binding ProgressText}"/>
-          <ProgressBar Grid.Row="4" Grid.ColumnSpan="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Value="{Binding Progress}"/>
+          <GridSplitter Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Focusable="False" Cursor="SizeNorthSouth" IsVisible="{Binding ShowPianoRoll}"/>
+          <Canvas Grid.Row="4" Grid.ColumnSpan="3" IsVisible="{Binding ShowPianoRoll}">
+            <ContentControl Name="PianoRollContainer" Width="{Binding $parent[Canvas].Bounds.Width}" Height="{Binding $parent[Canvas].Bounds.Height}"/>
+          </Canvas>
+          <TextBlock Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" Height="20" Margin="4,4,4,0" Text="{Binding ProgressText}"/>
+          <ProgressBar Grid.Row="6" Grid.ColumnSpan="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Value="{Binding Progress}"/>
         </Grid>
       </Carousel>
     </Grid>

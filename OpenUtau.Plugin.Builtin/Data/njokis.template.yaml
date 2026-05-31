@@ -1,5 +1,6 @@
 %YAML 1.2
 ---
+version: 1.0
 symbols:
 #Con Pez
   - {symbol: z, type: fricative}
@@ -38,41 +39,23 @@ symbols:
   - {symbol: ks, type: stop}
 
 replacements:
-  - {from: [n, p], to: [m, p]}
-  - {from: [n, B], to: [m, b]}
-  - {from: [m, B], to: [m, b]}
-  - {from: [n, b], to: [m, b]}
-  - {from: [n, m], to: [m, m]}
-  - {from: [n, D], to: [n, d]}
-  - {from: [l, D], to: [l, d]}
-  - {from: [n, G], to: [n, g]}
-  - {from: [s, r], to: [s, rr]}
-  - {from: [x, r], to: [x, rr]}
-  - {from: [n, r], to: [n, rr]}
-  - {from: [m, r], to: [m, rr]}
-  - {from: [l, r], to: [l, rr]}
+  - {from: [n, p], to: [m, p], where: all}
+  - {from: [n, B], to: [m, b], where: all}
+  - {from: [m, B], to: [m, b], where: all}
+  - {from: [n, b], to: [m, b], where: all}
+  - {from: [n, m], to: [m, m], where: all}
+  - {from: [n, D], to: [n, d], where: all}
+  - {from: [l, D], to: [l, d], where: all}
+  - {from: [n, G], to: [n, g], where: all}
+  - {from: [s, r], to: [s, rr], where: all}
+  - {from: [x, r], to: [x, rr], where: all}
+  - {from: [n, r], to: [n, rr], where: all}
+  - {from: [m, r], to: [m, rr], where: all}
+  - {from: [l, r], to: [l, rr], where: all}
   - {from: [r, r], to: [rr]}
-  - {from: [a, b], to: [a, B]}
-  - {from: [e, b], to: [e, B]}
-  - {from: [i, b], to: [i, B]}
-  - {from: [o, b], to: [o, B]}
-  - {from: [u, b], to: [u, B]}
-  - {from: [I, b], to: [I, B]}
-  - {from: [U, b], to: [U, B]}
-  - {from: [a, g], to: [a, G]}
-  - {from: [e, g], to: [e, G]}
-  - {from: [i, g], to: [i, G]}
-  - {from: [o, g], to: [o, G]}
-  - {from: [u, g], to: [u, G]}
-  - {from: [I, g], to: [I, G]}
-  - {from: [U, g], to: [U, G]}
-  - {from: [a, d], to: [a, D]}
-  - {from: [e, d], to: [e, D]}
-  - {from: [i, d], to: [i, D]}
-  - {from: [o, d], to: [o, D]}
-  - {from: [u, d], to: [u, D]}
-  - {from: [I, d], to: [I, D]}
-  - {from: [U, d], to: [U, D]}
+  - {from: [vowel, b, vowel], to: [vowel, B, vowel], where: all}
+  - {from: [vowel, g, vowel], to: [vowel, G, vowel], where: all}
+  - {from: [vowel, d, vowel], to: [vowel, D, vowel], where: all}
 
 entries:
   - grapheme: openutau

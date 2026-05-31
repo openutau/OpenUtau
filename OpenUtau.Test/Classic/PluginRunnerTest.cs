@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using OpenUtau.Core;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
@@ -242,8 +243,8 @@ PreUtterance=
         [ClassData(typeof(ExecuteTestData))]
         public void ExecuteTest(ExecuteArgument given, Action<StreamWriter, string> when, Action<ReplaceNoteEventArgs> then, Action<PluginErrorEventArgs> error) {
             // When
-            var action = new Action<PluginRunner>((runner) => {
-                runner.Execute(given.Project, given.Part, given.First, given.Last, new PluginStub(when));
+            var action = new Action<PluginRunner>(async (runner) => {
+                await runner.Execute(given.Project, given.Part, given.First, given.Last, new PluginStub(when));
             });
 
             // Then (Assert in ClassData)
@@ -256,8 +257,8 @@ PreUtterance=
             var given = ExecuteTestData.BasicUProject();
 
             // When
-            var action = new Action<PluginRunner>((runner) => {
-                runner.Execute(given.Project, given.Part, given.First, given.Last, new PluginStub((writer, text) => {
+            var action = new Action<PluginRunner>(async (runner) => {
+                await runner.Execute(given.Project, given.Part, given.First, given.Last, new PluginStub((writer, text) => {
                     // return empty text (invoke error)
                 }));
             });
@@ -281,9 +282,9 @@ PreUtterance=
 
         public string Encoding => "shift_jis";
 
-        public void Run(string tempFile) {
+        public async Task Run(string tempFile) {
             System.Text.Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            var text = File.ReadAllText(tempFile, System.Text.Encoding.GetEncoding(Encoding));
+            var text = await File.ReadAllTextAsync(tempFile, System.Text.Encoding.GetEncoding(Encoding));
             File.Delete(tempFile);
             using (var writer = new StreamWriter(tempFile, false, System.Text.Encoding.GetEncoding(Encoding))) {
                 action.Invoke(writer, text);

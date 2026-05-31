@@ -184,8 +184,6 @@
   <system:String x:Key="menu.file.exit">Thoát ra</system:String>
   <system:String x:Key="menu.file.exportaudio">Xuất ra tệp nhạc</system:String>
   <system:String x:Key="menu.file.exportds">Xuất thành dự án DiffSinger</system:String>
-  <system:String x:Key="menu.file.exportds.v2">Xuất thành dự án DiffSinger (v2)</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">Xuất thành dự án DiffSinger (v2, không kèm luyến giọng)</system:String>
   <system:String x:Key="menu.file.exportmidi">Xuất thành MIDI</system:String>
   <system:String x:Key="menu.file.exportmixdown">Gộp thành một tệp nhạc</system:String>
   <system:String x:Key="menu.file.exportproject">Xuất thành dự án</system:String>

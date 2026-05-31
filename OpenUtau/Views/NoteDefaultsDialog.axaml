@@ -4,12 +4,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:OpenUtau.App.ViewModels"
         xmlns:c="using:OpenUtau.Controls"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="560"
         x:Class="OpenUtau.App.Views.NoteDefaultsDialog"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource pianoroll.menu.notedefaults}"
         WindowStartupLocation="CenterScreen"
-        MinWidth="600" MinHeight="530" Width="600" Height="530">
+        MinWidth="600" MinHeight="560" Width="600" Height="560">
   <Window.Resources>
     <vm:CultureNameConverter x:Key="cultureNameConverter"/>
   </Window.Resources>
@@ -52,6 +52,17 @@
                       <c:IntEditor Grid.Column="2" Value="{Binding CurrentPortamentoStart}" />
                       <Slider Grid.Column="4" Classes="fader" Value="{Binding CurrentPortamentoStart}" Minimum="-200" Maximum="200"
                       TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="true" />
+                  </Grid>
+                  <Grid ColumnDefinitions="173,20,*">
+                      <Label Content="{DynamicResource context.pitch.shape}"/>
+                      <ComboBox Grid.Column="2" ItemsSource="{Binding PortamentoPresets}"
+                        SelectedIndex="{Binding CurrentPitchShape}" HorizontalAlignment="Stretch">
+                        <ComboBoxItem Content="{DynamicResource context.pitch.easeinout}"/>
+                        <ComboBoxItem Content="{DynamicResource context.pitch.linear}"/>
+                        <ComboBoxItem Content="{DynamicResource context.pitch.easein}"/>
+                        <ComboBoxItem Content="{DynamicResource context.pitch.easeout}"/>
+                        <ComboBoxItem Content="{DynamicResource context.pitch.smooth}"/>
+                      </ComboBox>
                   </Grid>
               </StackPanel>
           </HeaderedContentControl>

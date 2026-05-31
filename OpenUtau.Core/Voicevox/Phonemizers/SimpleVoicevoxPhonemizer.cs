@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Voicevox;
@@ -24,16 +25,16 @@ namespace Voicevox {
                 if (lyricList.Length > 1) {
                     currentLyric = lyricList[1];
                 }
-                if (!VoicevoxUtils.IsSyllableVowelExtensionNote(notes[i].lyric)) {
-                    string val = "error";
-                    if (VoicevoxUtils.TryGetPau(notes[i].lyric, out string pau)) {
-                        val = pau;
-                    } else if (VoicevoxUtils.phoneme_List.kanas.ContainsKey(notes[i].lyric)) {
-                        val = currentLyric;
-                    } else if (VoicevoxUtils.dic.IsDic(notes[i].lyric)) {
-                        val = VoicevoxUtils.dic.Lyrictodic(notes[i].lyric);
+                if (!VoicevoxUtils.IsSyllableVowelExtensionNote(currentLyric)) {
+                    if (VoicevoxUtils.TryGetPau(currentLyric, out string pau)) {
+                        phonemes.Add(new Phoneme { phoneme = pau });
+                    } else if (VoicevoxUtils.phoneme_List.kanas.ContainsKey(currentLyric)) {
+                        phonemes.Add(new Phoneme { phoneme = currentLyric });
+                    } else if (VoicevoxUtils.dic.IsDic(currentLyric)) {
+                        phonemes.Add(new Phoneme { phoneme = VoicevoxUtils.dic.Lyrictodic(currentLyric) });
+                    } else {
+                        throw new Exception($"Unrecognized lyric \"{currentLyric}\"");
                     }
-                    phonemes.Add(new Phoneme { phoneme = val });
                 }
             }
             return new Result { phonemes = phonemes.ToArray() };

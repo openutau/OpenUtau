@@ -38,22 +38,23 @@ namespace OpenUtau.Classic {
             var extractionOptions = new ExtractionOptions {
                 Overwrite = true,
             };
-            using (var archive = ArchiveFactory.Open(path, readerOptions)) {
+            using (var archive = ArchiveFactory.OpenArchive(path, readerOptions)) {
                 var touches = new List<string>();
                 AdjustBasePath(archive, path, touches);
                 int total = archive.Entries.Count();
                 int count = 0;
                 bool hasCharacterYaml = archive.Entries.Any(e => Path.GetFileName(e.Key) == kCharacterYaml);
                 foreach (var entry in archive.Entries) {
-                    progress.Invoke(100.0 * ++count / total, entry.Key);
+                    string fixedKey = entry.Key!.Replace("\\", "/");
+                    progress.Invoke(100.0 * ++count / total, fixedKey);
                     if (entry.Key.Contains("..")) {
                         // Prevent zipSlip attack
                         continue;
                     }
-                    var filePath = Path.Combine(basePath, entry.Key);
+                    var filePath = Path.Combine(basePath, fixedKey);
                     Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-                    if (!entry.IsDirectory && entry.Key != kInstallTxt) {
-                        entry.WriteToFile(Path.Combine(basePath, entry.Key), extractionOptions);
+                    if (!entry.IsDirectory && fixedKey != kInstallTxt) {
+                        entry.WriteToFile(filePath, extractionOptions);
                         if (!hasCharacterYaml && Path.GetFileName(filePath) == kCharacterTxt) {
                             var config = new VoicebankConfig() {
                                 TextFileEncoding = textEncoding.WebName,

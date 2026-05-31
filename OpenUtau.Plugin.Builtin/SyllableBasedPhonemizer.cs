@@ -8,6 +8,7 @@ using System.IO;
 using Serilog;
 using System.Threading.Tasks;
 using static OpenUtau.Api.Phonemizer;
+using System.Collections;
 
 namespace OpenUtau.Plugin.Builtin {
     /// <summary>
@@ -117,6 +118,11 @@ namespace OpenUtau.Plugin.Builtin {
             /// </summary>
             public string[] cc;
             /// <summary>
+            /// The exact lyric/symbol of the tail (e.g., "R", "br", "-", etc.)
+            /// </summary>
+            public string tail;
+            public bool HasTail => !string.IsNullOrEmpty(tail);
+            /// <summary>
             /// last note position + duration, all phonemes must be less than this
             /// </summary>
             public int position;
@@ -161,13 +167,44 @@ namespace OpenUtau.Plugin.Builtin {
 
             var phonemes = new List<Phoneme>();
             foreach (var syllable in syllables) {
-                phonemes.AddRange(MakePhonemes(ProcessSyllable(syllable), syllable.duration, syllable.position, false));
+                var modifiedSyllable = ApplyBoundaryReplacements(syllable);
+                
+                if (tails.Contains(modifiedSyllable.v)) {
+                    var ending = new Ending {
+                        prevV = modifiedSyllable.prevV,
+                        cc = modifiedSyllable.cc,
+                        tail = modifiedSyllable.v,
+                        position = modifiedSyllable.position,
+                        duration = modifiedSyllable.duration,
+                        tone = modifiedSyllable.tone,
+                        attr = modifiedSyllable.attr
+                    };
+                    
+                    var endingPhonemes = ProcessEnding(ending);
+                    
+                    if (endingPhonemes != null) {
+                        phonemes.AddRange(MakePhonemes(endingPhonemes, modifiedSyllable.duration, modifiedSyllable.position, false));
+                    }
+                    continue; 
+                }
+                phonemes.AddRange(MakePhonemes(ProcessSyllable(modifiedSyllable), modifiedSyllable.duration, modifiedSyllable.position, false));
             }
+
             if (!nextNeighbour.HasValue) {
                 var tryEnding = MakeEnding(notes);
                 if (tryEnding.HasValue) {
                     var ending = tryEnding.Value;
-                    phonemes.AddRange(MakePhonemes(ProcessEnding(ending), ending.duration, ending.position, true));
+
+                    if (nextNeighbour.HasValue && tails.Contains(nextNeighbour.Value.lyric)) {
+                        ending.tail = nextNeighbour.Value.lyric;
+                    }
+                    
+                    var modifiedEnding = ApplyBoundaryReplacements(ending);
+                    var endingPhonemes = ProcessEnding(modifiedEnding);
+
+                    if (endingPhonemes != null) {
+                        phonemes.AddRange(MakePhonemes(endingPhonemes, modifiedEnding.duration, modifiedEnding.position, true));
+                    }
                 }
             }
 
@@ -219,11 +256,154 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         public override void SetSinger(USinger singer) {
-            this.singer = singer;
-            if (!hasDictionary) {
-                ReadDictionaryAndInit();
-            } else {
-                Init();
+            if (this.singer != singer) {
+                this.singer = singer;
+
+                if (this.singer == null || !this.singer.Loaded) {
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(YamlFileName)) {
+                    if (backupVowels != null) this.vowels = backupVowels;
+                    else this.vowels = GetVowels();
+
+                    if (backupConsonants != null) this.consonants = backupConsonants;
+                    else this.consonants = GetConsonants();
+                    
+                    if (backupDictionaryReplacements != null) {
+                        dictionaryReplacements.Clear();
+                        foreach (var kvp in backupDictionaryReplacements) {
+                            dictionaryReplacements[kvp.Key] = kvp.Value;
+                        }
+                    }
+                    if (!hasDictionary) {
+                        ReadDictionaryAndInit();
+                    } else {
+                        Init();
+                    }
+                    return; 
+                }
+
+                string file = null;
+                if (singer != null && singer.Found && singer.Loaded && !string.IsNullOrEmpty(singer.Location)) {
+                    file = Path.Combine(singer.Location, YamlFileName);
+                } else if (!string.IsNullOrEmpty(PluginDir)) {
+                    file = Path.Combine(PluginDir, YamlFileName);
+                }
+
+                if (!string.IsNullOrEmpty(file)) {
+                    bool shouldWriteTemplate = false;
+                    bool shouldBackupOldFile = false;
+
+                    if (File.Exists(file)) {
+                        if (YamlTemplate != null && !string.IsNullOrEmpty(YamlVersion)) {
+                            try {
+                                var checkData = Core.Yaml.DefaultDeserializer.Deserialize<YAMLData>(File.ReadAllText(file));
+                                string currentVersion = checkData?.version?.Trim() ?? "";
+
+                                if (string.IsNullOrEmpty(currentVersion) || currentVersion != YamlVersion) {
+                                    shouldWriteTemplate = true;
+                                    shouldBackupOldFile = true;
+                                }
+                            } catch (Exception ex) {
+                                Log.Error(ex, $"Failed to read version from '{file}'. Backing up and resetting to template...");
+                                shouldWriteTemplate = true;
+                                shouldBackupOldFile = true;
+                            }
+                        }
+                    } else if (YamlTemplate != null) {
+                        shouldWriteTemplate = true;
+                    }
+
+                    if (shouldBackupOldFile && File.Exists(file)) {
+                        try {
+                            string backupFile = Path.Combine(Path.GetDirectoryName(file), $"{Path.GetFileNameWithoutExtension(YamlFileName)}_backup{Path.GetExtension(YamlFileName)}");
+                            if (File.Exists(backupFile)) File.Delete(backupFile);
+                            File.Move(file, backupFile);
+                            Log.Information($"Old {YamlFileName} backed up to {backupFile}");
+                        } catch (Exception e) {
+                            Log.Error(e, $"Failed to back up {YamlFileName}");
+                        }
+                    }
+
+                    if (shouldWriteTemplate) {
+                        try {
+                            File.WriteAllBytes(file, YamlTemplate);
+                            Log.Information($"'{file}' created or updated to version {YamlVersion ?? "default"}");
+                        } catch (Exception e) {
+                            Log.Error(e, $"Failed to write template to {file}");
+                        }
+                    }
+
+                    if (File.Exists(file)) {
+                        try {
+                            var data = Core.Yaml.DefaultDeserializer.Deserialize<YAMLData>(File.ReadAllText(file));
+                            
+                            if (backupVowels == null) backupVowels = GetVowels() ?? Array.Empty<string>();
+                            if (backupConsonants == null) backupConsonants = GetConsonants() ?? Array.Empty<string>();
+
+                            var yamlVowels = data.symbols?.Where(s => s.type == "vowel" || s.type == "diphthong").Select(s => s.symbol).ToArray() ?? Array.Empty<string>();
+                            vowels = backupVowels.Concat(yamlVowels).Distinct().ToArray();
+
+                            tails = (tails ?? Array.Empty<string>()).Concat(data.symbols?.Where(s => s.type == "tail").Select(s => s.symbol) ?? Array.Empty<string>()).Distinct().ToArray();
+                            
+                            fricative = data.symbols?.Where(s => s.type == "fricative").Select(s => s.symbol).Distinct().ToArray() ?? Array.Empty<string>();
+                            aspirate = data.symbols?.Where(s => s.type == "aspirate").Select(s => s.symbol).Distinct().ToArray() ?? Array.Empty<string>();
+                            semivowel = data.symbols?.Where(s => s.type == "semivowel").Select(s => s.symbol).Distinct().ToArray() ?? Array.Empty<string>();
+                            liquid = data.symbols?.Where(s => s.type == "liquid").Select(s => s.symbol).Distinct().ToArray() ?? Array.Empty<string>();
+                            nasal = data.symbols?.Where(s => s.type == "nasal").Select(s => s.symbol).Distinct().ToArray() ?? Array.Empty<string>();
+                            stop = data.symbols?.Where(s => s.type == "stop").Select(s => s.symbol).Distinct().ToArray() ?? Array.Empty<string>();
+                            tap = data.symbols?.Where(s => s.type == "tap").Select(s => s.symbol).Distinct().ToArray() ?? Array.Empty<string>();
+                            affricate = data.symbols?.Where(s => s.type == "affricate").Select(s => s.symbol).Distinct().ToArray() ?? Array.Empty<string>();
+
+                            var yamlConsonants = fricative.Concat(aspirate).Concat(semivowel).Concat(liquid).Concat(nasal).Concat(stop).Concat(tap).Concat(affricate).ToArray();
+                            consonants = backupConsonants.Concat(yamlConsonants).Distinct().ToArray();
+
+                            PhonemeOverrides = data.timings?.ToDictionary(t => t.symbol, t => t.value) ?? new Dictionary<string, double>();
+                            if (backupDictionaryReplacements == null) {
+                                backupDictionaryReplacements = new Dictionary<string, string>(dictionaryReplacements);
+                            }
+                            dictionaryReplacements.Clear();
+                            foreach (var kvp in backupDictionaryReplacements) {
+                                dictionaryReplacements[kvp.Key] = kvp.Value;
+                            }
+
+                            mergingReplacements.Clear();
+                            splittingReplacements.Clear();
+
+                            if (data?.replacements != null && data.replacements.Any()) {
+                                foreach (var replacement in data.replacements) {
+                                    string ruleScope = string.IsNullOrEmpty(replacement.where) ? "inside" : replacement.where.ToLowerInvariant();
+                                    if (replacement.from is IEnumerable<object> fromList) {
+                                        string[] fromArray = fromList.Select(item => item.ToString()).ToArray();
+                                        if (replacement.to is string toString) mergingReplacements.Add(new Replacement { from = fromArray, to = toString, where = ruleScope });
+                                        else if (replacement.to is IEnumerable<object> toList) splittingReplacements.Add(new Replacement { from = fromArray, to = toList.Select(item => item.ToString()).ToArray(), where = ruleScope });
+                                    } else if (replacement.from is string fromString) {
+                                        if (replacement.to is string toString) dictionaryReplacements[fromString] = toString;
+                                        else if (replacement.to is IEnumerable<object> toList) splittingReplacements.Add(new Replacement { from = fromString, to = toList.Select(item => item.ToString()).ToArray(), where = ruleScope });
+                                    }
+                                }
+                            }
+
+                            if (data?.fallbacks != null) {
+                                yamlFallbacks.Clear();
+                                foreach (var df in data.fallbacks) {
+                                    if (!string.IsNullOrEmpty(df.from) && !string.IsNullOrEmpty(df.to)) {
+                                        yamlFallbacks[df.from] = df.to;
+                                    }
+                                }
+                            }
+                        } catch (Exception ex) {
+                            Log.Error($"Failed to parse {YamlFileName}: {ex.Message}");
+                        }
+                    }
+                }
+
+                if (!hasDictionary) {
+                    ReadDictionaryAndInit();
+                } else {
+                    Init();
+                }
             }
         }
 
@@ -295,6 +475,10 @@ namespace OpenUtau.Plugin.Builtin {
                 } else return lyrics.Split(" ");
             }
 
+            if (tails.Contains(note.lyric)) {
+                return new string[] { note.lyric };
+            }
+
             if (hasDictionary) {
                 if (!string.IsNullOrEmpty(note.phoneticHint)) {
                     return getSymbolsRaw(note.phoneticHint);
@@ -308,6 +492,15 @@ namespace OpenUtau.Plugin.Builtin {
                         subResult = HandleWordNotFound(note);
                         if (subResult == null) {
                             return null;
+                        }
+                    } else {
+                        for (int i = 0; i < subResult.Length; i++) {
+                            string phoneme = subResult[i];
+                            if (dictionaryReplacements.TryGetValue(phoneme, out string replaced)) {
+                                subResult[i] = replaced;
+                            } else if (dictionaryReplacements.TryGetValue(subResult[i], out string replacedExact)) {
+                                subResult[i] = replacedExact;
+                            }
                         }
                     }
                     result.AddRange(subResult);
@@ -323,7 +516,12 @@ namespace OpenUtau.Plugin.Builtin {
         /// you may leave it be and provide symbol replacements with this method.
         /// </summary>
         /// <returns></returns>
-        protected virtual Dictionary<string, string> GetDictionaryPhonemesReplacement() { return null; }
+        protected virtual Dictionary<string, string> GetDictionaryPhonemesReplacement() {
+            return dictionaryReplacements ?? new Dictionary<string, string>();
+        }
+        private string[] backupVowels = null;
+        private string[] backupConsonants = null;
+        private Dictionary<string, string> backupDictionaryReplacements = null;
 
         /// <summary>
         /// separates symbols to syllables, without an ending.
@@ -447,10 +645,11 @@ namespace OpenUtau.Plugin.Builtin {
             if (symbols.Length == 0) {
                 symbols = new string[] { "" };
             }
+
+            symbols = ApplyReplacements(symbols.ToList(), false).ToArray();
             symbols = ApplyExtensions(symbols, notes);
             List<int> vowelIds = ExtractVowels(symbols);
             if (vowelIds.Count == 0) {
-                // no syllables or all consonants, the last phoneme will be interpreted as vowel
                 vowelIds.Add(symbols.Length - 1);
             }
             if (notes.Length < vowelIds.Count) {
@@ -674,6 +873,297 @@ namespace OpenUtau.Plugin.Builtin {
             return true;
         }
 
+        protected virtual string YamlFileName => null;
+        protected virtual byte[] YamlTemplate => null;
+        protected virtual string YamlVersion => null;
+
+        protected string[] vowels = Array.Empty<string>();
+        protected string[] consonants = Array.Empty<string>();
+        protected string[] tails = "-,R".Split(',');
+        protected string[] affricate = Array.Empty<string>();
+        protected string[] fricative = Array.Empty<string>();
+        protected string[] aspirate = Array.Empty<string>();
+        protected string[] semivowel = Array.Empty<string>();
+        protected string[] liquid = Array.Empty<string>();
+        protected string[] nasal = Array.Empty<string>();
+        protected string[] stop = Array.Empty<string>();
+        protected string[] tap = Array.Empty<string>();
+
+        protected Dictionary<string, string> dictionaryReplacements = new Dictionary<string, string>();
+        protected Dictionary<string, double> PhonemeOverrides = new Dictionary<string, double>();
+        protected Dictionary<string, string> yamlFallbacks = new Dictionary<string, string>();
+        protected List<string> consExceptions = new List<string>();
+
+        public class YAMLData {
+            public string version { get; set; }
+            public SymbolData[] symbols { get; set; } = Array.Empty<SymbolData>();
+            public Replacement[] replacements { get; set; } = Array.Empty<Replacement>();
+            public Fallbacks[] fallbacks { get; set; } = Array.Empty<Fallbacks>();
+            public Timings[] timings { get; set; } = Array.Empty<Timings>();
+
+            public struct SymbolData { public string symbol { get; set; } public string type { get; set; } }
+            public struct Fallbacks { public string from { get; set; } public string to { get; set; } }
+            public struct Timings { public string symbol { get; set; } public double value { get; set; } }
+        }
+
+        public class Replacement {
+            public object from { get; set; }
+            public object to { get; set; }
+            public string where { get; set; } = "inside";
+
+            public List<string> FromList {
+                get {
+                    if (from is string s) return new List<string> { s };
+                    if (from is IEnumerable<object> list) return list.Select(x => x.ToString()).ToList();
+                    return new List<string>();
+                }
+            }
+
+            public List<string> ToList {
+                get {
+                    if (to is string s) return new List<string> { s };
+                    if (to is IEnumerable<object> list) return list.Select(x => x.ToString()).ToList();
+                    return new List<string>();
+                }
+            }
+        }
+
+        protected List<Replacement> mergingReplacements = new List<Replacement>();
+        protected List<Replacement> splittingReplacements = new List<Replacement>();
+
+        protected virtual bool IsGroupKeyword(string rulePhoneme) {
+            string baseGroup = rulePhoneme.Split(new[] { '!', '=', '+' })[0];
+            return new[] { "vowel", "vowels", "consonant", "consonants", 
+                           "affricate", "fricative", "aspirate", "semivowel", 
+                           "liquid", "nasal", "stop", "tap" }.Contains(baseGroup);
+        }
+
+        protected virtual bool IsGroupMatch(string rulePhoneme, string actualPhoneme) {
+            string baseGroup = rulePhoneme.Split(new[] { '!', '=', '+' })[0];
+            if (rulePhoneme.Contains("+")) {
+                string added = rulePhoneme.Substring(rulePhoneme.IndexOf('+') + 1).Split(new[] { '!', '=' })[0];
+                // If it matches another group name, or a literal letter, it passes
+                foreach (string inc in added.Split(',')) {
+                    if (IsGroupKeyword(inc) ? IsGroupMatch(inc, actualPhoneme) : inc == actualPhoneme) {
+                        return true;
+                    }
+                }
+            }
+
+            // BASE GROUP: If it wasn't an addition, it must belong to the base group.
+            bool inBaseGroup = false;
+            switch (baseGroup) {
+                case "vowel": case "vowels": inBaseGroup = GetVowels().Contains(actualPhoneme); break;
+                case "consonant": case "consonants": inBaseGroup = GetConsonants().Contains(actualPhoneme); break;
+                case "affricate": inBaseGroup = affricate.Contains(actualPhoneme); break;
+                case "fricative": inBaseGroup = fricative.Contains(actualPhoneme); break;
+                case "aspirate": inBaseGroup = aspirate.Contains(actualPhoneme); break;
+                case "semivowel": inBaseGroup = semivowel.Contains(actualPhoneme); break;
+                case "liquid": inBaseGroup = liquid.Contains(actualPhoneme); break;
+                case "nasal": inBaseGroup = nasal.Contains(actualPhoneme); break;
+                case "stop": inBaseGroup = stop.Contains(actualPhoneme); break;
+                case "tap": inBaseGroup = tap.Contains(actualPhoneme); break;
+            }
+
+            if (!inBaseGroup) return false;
+
+            // EXCLUSIONS (!): Reject if it's in the excluded list.
+            if (rulePhoneme.Contains("!")) {
+                string excluded = rulePhoneme.Substring(rulePhoneme.IndexOf('!') + 1).Split(new[] { '=', '+' })[0];
+                if (excluded.Split(',').Contains(actualPhoneme)) return false;
+            }
+
+            // RESTRICTIONS (=): Reject if an equals list exists, and the phoneme isn't in it.
+            if (rulePhoneme.Contains("=")) {
+                string restricted = rulePhoneme.Substring(rulePhoneme.IndexOf('=') + 1).Split(new[] { '!', '+' })[0];
+                if (!restricted.Split(',').Contains(actualPhoneme)) return false;
+            }
+
+            return true;
+        }
+
+        protected virtual List<string> ApplyReplacements(List<string> inputPhonemes, bool isBoundary) {
+            if (!mergingReplacements.Any() && !splittingReplacements.Any()) return inputPhonemes;
+
+            List<string> finalPhonemes = new List<string>();
+            int idx = 0;
+            
+            var validRules = mergingReplacements.Concat(splittingReplacements)
+                .Where(r => r.where == "all" || (!isBoundary && r.where == "inside") || (isBoundary && r.where == "boundary")).ToList();
+                
+            var validSplits = splittingReplacements
+                .Where(r => r.where == "all" || (!isBoundary && r.where == "inside") || (isBoundary && r.where == "boundary")).ToList();
+
+            while (idx < inputPhonemes.Count) {
+                bool replaced = false;
+                
+                foreach (var rule in validRules) {
+                    string[] fromArray = null;
+                    if (rule.from is IList fromList) {
+                        fromArray = fromList.Cast<object>().Select(x => x?.ToString()).ToArray();
+                    } else if (rule.from is string[] strArr) {
+                        fromArray = strArr;
+                    }
+
+                    if (fromArray != null && fromArray.Length > 0 && idx + fromArray.Length <= inputPhonemes.Count) {
+                        bool match = true;
+                        var captures = new Dictionary<string, Queue<string>>();
+                        
+                        for (int j = 0; j < fromArray.Length; j++) {
+                            string rulePh = fromArray[j];
+                            string actualPh = inputPhonemes[idx + j];
+                            
+                            if (IsGroupKeyword(rulePh)) {
+                                if (IsGroupMatch(rulePh, actualPh)) {
+                                    if (!captures.ContainsKey(rulePh)) captures[rulePh] = new Queue<string>();
+                                    captures[rulePh].Enqueue(actualPh);
+                                } else {
+                                    match = false; break;
+                                }
+                            } else if (rulePh != actualPh) {
+                                match = false; break;
+                            }
+                        }
+                        
+                        if (match) {
+                            string[] toArray = null;
+                            if (rule.to is IList toList) {
+                                toArray = toList.Cast<object>().Select(x => x?.ToString()).ToArray();
+                            } else if (rule.to is string[] strArr) {
+                                toArray = strArr;
+                            } else if (rule.to is string toStr) {
+                                toArray = new string[] { toStr };
+                            }
+
+                            if (toArray != null) {
+                                foreach (string toPh in toArray) {
+                                    finalPhonemes.Add(IsGroupKeyword(toPh) && captures.ContainsKey(toPh) && captures[toPh].Count > 0 ? captures[toPh].Dequeue() : toPh);
+                                }
+                            }
+                            
+                            idx += fromArray.Length;
+                            replaced = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!replaced && validSplits.Any()) {
+                    string currentPhoneme = inputPhonemes[idx];
+                    bool singleReplaced = false;
+                    foreach (var rule in validSplits) {
+                        if (rule.from is IList || rule.from is string[]) continue;
+
+                        string rulePh = rule.from?.ToString();
+                        if (rulePh == null) continue;
+
+                        if (IsGroupKeyword(rulePh) ? IsGroupMatch(rulePh, currentPhoneme) : rulePh == currentPhoneme) {
+                            
+                            string[] toArray = null;
+                            if (rule.to is IList toList) {
+                                toArray = toList.Cast<object>().Select(x => x?.ToString()).ToArray();
+                            } else if (rule.to is string[] strArr) {
+                                toArray = strArr;
+                            }
+
+                            if (toArray != null) {
+                                foreach(string toPh in toArray) {
+                                    finalPhonemes.Add(toPh == rulePh ? currentPhoneme : toPh);
+                                }
+                                singleReplaced = true;
+                                break;
+                            } else if (rule.to is string toStr) {
+                                finalPhonemes.Add(toStr == rulePh ? currentPhoneme : toStr);
+                                singleReplaced = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!singleReplaced) finalPhonemes.Add(inputPhonemes[idx]);
+                    idx++;
+                } else if (!replaced) {
+                    finalPhonemes.Add(inputPhonemes[idx]);
+                    idx++;
+                }
+            }
+            return finalPhonemes;
+        }
+
+        private Syllable ApplyBoundaryReplacements(Syllable syllable) {
+            if (!mergingReplacements.Any() && !splittingReplacements.Any()) return syllable;
+
+            List<string> currentPhonemes = new List<string>();
+            bool hasPrevV = !string.IsNullOrEmpty(syllable.prevV);
+            bool hasV = !string.IsNullOrEmpty(syllable.v);
+
+            if (hasPrevV) currentPhonemes.Add(syllable.prevV);
+            if (syllable.cc != null) currentPhonemes.AddRange(syllable.cc);
+            if (hasV) currentPhonemes.Add(syllable.v);
+
+            bool isBoundary = hasPrevV && syllable.position == 0;
+            List<string> finalPhonemes = ApplyReplacements(currentPhonemes, isBoundary);
+
+            string newPrevV = "";
+            string newV = "";
+            List<string> newCc = new List<string>();
+
+            if (finalPhonemes.Count > 0) {
+                if (hasPrevV) {
+                    newPrevV = finalPhonemes[0];
+                    finalPhonemes.RemoveAt(0);
+                }
+                if (hasV && finalPhonemes.Count > 0) {
+                    var vowelsList = GetVowels();
+                    int vIndex = finalPhonemes.Count - 1;
+                    
+                    for (int i = finalPhonemes.Count - 1; i >= 0; i--) {
+                        if (vowelsList.Contains(finalPhonemes[i])) {
+                            vIndex = i;
+                            break;
+                        }
+                    }
+                    newV = finalPhonemes[vIndex];
+                    for (int i = 0; i < vIndex; i++) {
+                        newCc.Add(finalPhonemes[i]);
+                    }
+                } else {
+                    newCc.AddRange(finalPhonemes);
+                }
+            }
+            
+            syllable.prevV = newPrevV;
+            syllable.cc = newCc.ToArray();
+            syllable.v = newV;
+            return syllable;
+        }
+
+        private Ending ApplyBoundaryReplacements(Ending ending) {
+            if (!mergingReplacements.Any() && !splittingReplacements.Any()) return ending;
+
+            List<string> currentPhonemes = new List<string>();
+            bool hasPrevV = !string.IsNullOrEmpty(ending.prevV);
+
+            if (hasPrevV) currentPhonemes.Add(ending.prevV);
+            if (ending.cc != null) currentPhonemes.AddRange(ending.cc);
+
+            List<string> finalPhonemes = ApplyReplacements(currentPhonemes, true);
+
+            string newPrevV = "";
+            List<string> newCc = new List<string>();
+
+            if (finalPhonemes.Count > 0) {
+                if (hasPrevV) {
+                    newPrevV = finalPhonemes[0];
+                    finalPhonemes.RemoveAt(0);
+                }
+                newCc.AddRange(finalPhonemes);
+            }
+            
+            ending.prevV = newPrevV;
+            ending.cc = newCc.ToArray();
+            return ending;
+        }
+
         #endregion
 
         #region private
@@ -704,16 +1194,28 @@ namespace OpenUtau.Plugin.Builtin {
         private void ReadDictionary(string dictionaryName) {
             try {
                 var phonemeSymbols = new Dictionary<string, bool>();
+                
                 foreach (var vowel in GetVowels()) {
-                    phonemeSymbols.Add(vowel, true);
+                    phonemeSymbols[vowel] = true; 
                 }
                 foreach (var consonant in GetConsonants()) {
-                    phonemeSymbols.Add(consonant, false);
+                    phonemeSymbols[consonant] = false;
                 }
+
+                var childDict = GetDictionaryPhonemesReplacement() ?? new Dictionary<string, string>();
+                var safeDict = new Dictionary<string, string>();
+                
+                foreach (var kvp in childDict) {
+                    safeDict[kvp.Key] = kvp.Value;
+                    safeDict[kvp.Key.ToUpperInvariant()] = kvp.Value; // Safely catches 'AA'
+                    safeDict[kvp.Key.ToLowerInvariant()] = kvp.Value; // Safely catches 'aa'
+                }
+
                 dictionaries[GetType()] = new G2pRemapper(
                     LoadBaseDictionary(),
                     phonemeSymbols,
-                    GetDictionaryPhonemesReplacement());
+                    safeDict); 
+
             } catch (Exception ex) {
                 Log.Error(ex, $"Failed to read dictionary {dictionaryName}");
             }

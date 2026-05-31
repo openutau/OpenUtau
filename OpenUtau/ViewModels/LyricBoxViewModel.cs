@@ -90,13 +90,14 @@ namespace OpenUtau.App.ViewModels {
                     return;
                 }
             }
-            DocManager.Inst.StartUndoGroup();
             if (IsAliasBox) {
+                DocManager.Inst.StartUndoGroup("command.phoneme.edit");
                 var phoneme = (NoteOrPhoneme as LyricBoxPhoneme)!.Unwrap();
                 var note = phoneme.Parent;
                 int index = phoneme.index;
                 DocManager.Inst.ExecuteCmd(new ChangePhonemeAliasCommand(Part, note.Extends ?? note, index, Text));
             } else {
+                DocManager.Inst.StartUndoGroup("command.note.lyric");
                 DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(Part, (NoteOrPhoneme as LyricBoxNote)!.Unwrap(), Text));
             }
             DocManager.Inst.EndUndoGroup();

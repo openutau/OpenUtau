@@ -184,8 +184,6 @@
   <system:String x:Key="menu.file.exit">結束</system:String>
   <system:String x:Key="menu.file.exportaudio">匯出音訊</system:String>
   <system:String x:Key="menu.file.exportds">匯出 DiffSinger 指令碼至</system:String>
-  <system:String x:Key="menu.file.exportds.v2">匯出 DiffSinger 指令碼至（v2）</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">匯出 DiffSinger 指令碼至（v2，不含音高曲線）</system:String>
   <system:String x:Key="menu.file.exportmidi">匯出 MIDI 檔案</system:String>
   <!--<system:String x:Key="menu.file.exportmixdown">Mixdown To Wav File</system:String>-->
   <system:String x:Key="menu.file.exportproject">匯出專案</system:String>

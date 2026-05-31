@@ -94,7 +94,7 @@ namespace OpenUtau.App.ViewModels {
             if (Renderers.CLASSIC != Track.RendererSettings.renderer) {
                 return;
             }
-            DocManager.Inst.StartUndoGroup();
+            DocManager.Inst.StartUndoGroup("command.track.setting");
             var settings = Track.RendererSettings.Clone();
             settings.resampler = Resampler?.ToString() ?? string.Empty;
             settings.wavtool = Wavtool?.ToString() ?? string.Empty;

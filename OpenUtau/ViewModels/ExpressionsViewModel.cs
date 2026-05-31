@@ -226,7 +226,7 @@ namespace OpenUtau.App.ViewModels {
                 if (flags.Count() > 0) {
                     throw new MessageCustomizableException("", $"<translate:errors.expression.flagunique>: {string.Join(", ", flags)}", new ArgumentException($"Flags must be unique: {string.Join(", ", flags)}"), false);
                 }
-                DocManager.Inst.StartUndoGroup();
+                DocManager.Inst.StartUndoGroup("command.track.exp");
                 DocManager.Inst.ExecuteCmd(new ConfigureExpressionsCommand(
                     DocManager.Inst.Project, 
                     expressionsSourceProject.Select(builder => builder.Build()).ToArray(),
@@ -235,7 +235,7 @@ namespace OpenUtau.App.ViewModels {
                 DocManager.Inst.EndUndoGroup();
                 return;
             }
-            DocManager.Inst.StartUndoGroup();
+            DocManager.Inst.StartUndoGroup("command.project.exp");
             DocManager.Inst.ExecuteCmd(new ConfigureExpressionsCommand(DocManager.Inst.Project, expressionsSourceProject.Select(builder => builder.Build()).ToArray()));
             DocManager.Inst.EndUndoGroup();
         }

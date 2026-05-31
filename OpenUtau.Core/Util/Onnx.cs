@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ML.OnnxRuntime;
 using OpenUtau.Core.Util;
+using Serilog;
 
 namespace OpenUtau.Core {
     public class GpuInfo {
@@ -12,6 +13,12 @@ namespace OpenUtau.Core {
         override public string ToString() {
             return $"[{deviceId}] {description}";
         }
+    }
+
+    public enum OnnxRunnerChoice {
+        Default,
+        CPU,
+        CPUForCoreML,
     }
 
     public class Onnx {
@@ -51,7 +58,9 @@ namespace OpenUtau.Core {
 
         public static List<GpuInfo> getGpuInfo() {
             if (OS.IsAndroid()) {
-                return new List<GpuInfo>();
+                return new List<GpuInfo>{new GpuInfo {
+                    deviceId = 0, // eliminate exception of taking OnnxGpuOptions[0]
+                }};
             }
             List<GpuInfo> gpuList = new List<GpuInfo>();
             var env = OrtEnv.Instance();
@@ -83,7 +92,7 @@ namespace OpenUtau.Core {
             return gpuList;
         }
 
-        private static SessionOptions getOnnxSessionOptions(){
+        private static SessionOptions getOnnxSessionOptions(bool coremlEnableOnSubgraphs = false) {
             SessionOptions options = new SessionOptions();
             List<string> runnerOptions = getRunnerOptions();
             string runner = Preferences.Default.OnnxRunner;
@@ -98,12 +107,20 @@ namespace OpenUtau.Core {
                     var d = devices[Preferences.Default.OnnxGpu];
                     options.AppendExecutionProvider(
                         OrtEnv.Instance(),
-                        new List<OrtEpDevice> { d } ,
-                        new Dictionary<string, string> {}
+                        new List<OrtEpDevice> { d },
+                        new Dictionary<string, string> { }
                      );
                     break;
                 case "CoreML":
-                    options.AppendExecutionProvider_CoreML(CoreMLFlags.COREML_FLAG_ENABLE_ON_SUBGRAPH);
+                    // Note: MLProgram format has stricter validation and may fail with complex DiffSinger models
+                    // that have topological sorting issues (e.g., variance_predictor with diffusion embeddings)
+                    // so we always use NeuralNetwork format (default) as MLProgram fails with complex models.
+                    options.AppendExecutionProvider("CoreML", new Dictionary<string, string> {
+                        { "MLComputeUnits", "ALL" },
+                        { "RequireStaticInputShapes", "1"},
+                        { "ModelFormat", "NeuralNetwork"},
+                        { "EnableOnSubgraphs", coremlEnableOnSubgraphs ? "1" : "0" }  // Disable subgraph processing to avoid complex control flow issues
+                    });
                     break;
                 case "NNAPI":
                     options.AppendExecutionProvider_Nnapi();
@@ -112,18 +129,36 @@ namespace OpenUtau.Core {
             return options;
         }
 
-        public static InferenceSession getInferenceSession(byte[] model, bool force_cpu = false) {
-            if (force_cpu) {
+        public static InferenceSession getInferenceSession(byte[] model, OnnxRunnerChoice runnerChoice = OnnxRunnerChoice.Default) {
+            if (runnerChoice == OnnxRunnerChoice.CPU ||
+                (runnerChoice == OnnxRunnerChoice.CPUForCoreML && Preferences.Default.OnnxRunner == "CoreML")) {
                 return new InferenceSession(model);
             } else {
+                // Try with CoreML subgraphs enabled first, fallback to default if it fails
+                if (OS.IsMacOS() && Preferences.Default.OnnxRunner == "CoreML") {
+                    try {
+                        return new InferenceSession(model, getOnnxSessionOptions(coremlEnableOnSubgraphs: true));
+                    } catch (Exception e) {
+                        Log.Warning(e, "Failed to create session with CoreML subgraphs enabled, falling back to default settings");
+                    }
+                }
                 return new InferenceSession(model, getOnnxSessionOptions());
             }
         }
 
-        public static InferenceSession getInferenceSession(string modelPath, bool force_cpu = false) {
-            if (force_cpu) {
+        public static InferenceSession getInferenceSession(string modelPath, OnnxRunnerChoice runnerChoice = OnnxRunnerChoice.Default) {
+            if (runnerChoice == OnnxRunnerChoice.CPU ||
+                (runnerChoice == OnnxRunnerChoice.CPUForCoreML && Preferences.Default.OnnxRunner == "CoreML")) {
                 return new InferenceSession(modelPath);
             } else {
+                // Try with CoreML subgraphs enabled first, fallback to default if it fails
+                if (OS.IsMacOS() && Preferences.Default.OnnxRunner == "CoreML") {
+                    try {
+                        return new InferenceSession(modelPath, getOnnxSessionOptions(coremlEnableOnSubgraphs: true));
+                    } catch (Exception e) {
+                        Log.Warning(e, "Failed to create session with CoreML subgraphs enabled, falling back to default settings");
+                    }
+                }
                 return new InferenceSession(modelPath, getOnnxSessionOptions());
             }
         }

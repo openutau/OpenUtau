@@ -92,30 +92,36 @@ namespace OpenUtau.App {
             if (Current == null) {
                 return;
             }
-            var light = (IResourceProvider)Current.Resources["themes-light"]!;
-            var dark = (IResourceProvider)Current.Resources["themes-dark"]!;
-            var custom = (IResourceProvider)Current.Resources["themes-custom"]!;
-            Current.Resources.MergedDictionaries.Remove(light);
-            Current.Resources.MergedDictionaries.Remove(dark);
-            Current.Resources.MergedDictionaries.Remove(custom);
-            if (Core.Util.Preferences.Default.Theme == 0) {
-                Current.Resources.MergedDictionaries.Add(light);
-                Current.RequestedThemeVariant = ThemeVariant.Light;
-            } 
-            if (Core.Util.Preferences.Default.Theme == 1) {
-                Current.Resources.MergedDictionaries.Add(dark);
-                Current.RequestedThemeVariant = ThemeVariant.Dark;
-            }
-            if (Core.Util.Preferences.Default.Theme == 2) {
-                Current.Resources.MergedDictionaries.Add(custom);
-                CustomTheme.ApplyTheme();
-                if (CustomTheme.Default.IsDarkMode == true) {
-                    Current.RequestedThemeVariant = ThemeVariant.Dark;
-                } else {
+            var light = (IResourceDictionary) Current.Resources["themes-light"]!;
+            var dark = (IResourceDictionary) Current.Resources["themes-dark"]!;
+            var custom = (IResourceDictionary) Current.Resources["themes-custom"]!;
+            switch (Core.Util.Preferences.Default.ThemeName) { 
+                case "Light":
+                    ApplyTheme(light);
                     Current.RequestedThemeVariant = ThemeVariant.Light;
-                }
+                    break;
+                case "Dark":
+                    ApplyTheme(dark);
+                    Current.RequestedThemeVariant = ThemeVariant.Dark;
+                    break;
+                default:
+                    ApplyTheme(custom);
+                    CustomTheme.ApplyTheme(Core.Util.Preferences.Default.ThemeName);
+                    if (CustomTheme.Default.IsDarkMode == true) {
+                        Current.RequestedThemeVariant = ThemeVariant.Dark;
+                    } else {
+                        Current.RequestedThemeVariant = ThemeVariant.Light;
+                    }
+                    break;
             }
             ThemeManager.LoadTheme();
+        }
+
+        private static void ApplyTheme(IResourceDictionary resDict) { 
+            var res = Current?.Resources;
+            foreach (var item in resDict) {
+                res![item.Key] = item.Value;
+            }
         }
     }
 }

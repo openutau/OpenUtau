@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Frequently Asked Questions
+    url: https://github.com/stakira/OpenUtau/wiki/FAQ
+    about: If your voicebank isn't making any sound, read the FAQ.
   - name: Discord Server
     url: https://discord.gg/UfpMnqMmEM
     about: Ask and answer questions here.

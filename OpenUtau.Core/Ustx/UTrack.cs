@@ -208,7 +208,7 @@ namespace OpenUtau.Core.Ustx {
         public void AfterLoad(UProject project) {
             if (Phonemizer == null || !string.IsNullOrEmpty(phonemizer)) {
                 try {
-                    var factory = DocManager.Inst.PhonemizerFactories.FirstOrDefault(factory => factory.type.FullName == phonemizer);
+                    var factory = PhonemizerFactory.Get(phonemizer);
                     Phonemizer = factory?.Create();
                     phonemizer = null;
                 } catch (Exception e) {
@@ -230,7 +230,7 @@ namespace OpenUtau.Core.Ustx {
             if (Singer != null && Singer.Found) {
                 if (string.IsNullOrEmpty(RendererSettings.renderer)) {
                     RendererSettings.renderer = Renderers.GetDefaultRenderer(Singer.SingerType);
-                };
+                }
             }
             TrackNo = project.tracks.IndexOf(this);
             if (!Solo && Mute) {

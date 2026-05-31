@@ -39,7 +39,7 @@ namespace OpenUtau.Core.Ustx {
         public string cacheDir = "UCache";
         [YamlMember(SerializeAs = typeof(string))]
         public Version ustxVersion;
-        public int resolution = 480;
+        [YamlIgnore] public int resolution => 480;
 
         [Obsolete("Since ustx v0.6")] public double bpm = 120;
         [Obsolete("Since ustx v0.6")] public int beatPerBar = 4;
@@ -87,18 +87,24 @@ namespace OpenUtau.Core.Ustx {
 
         public void MargeExpression(string oldAbbr, string newAbbr) {
             if (parts != null && parts.Count > 0) {
-                parts.Where(p => p is UVoicePart)
-                    .OfType<UVoicePart>()
-                    .ForEach(p => p.notes.ForEach(n => ConvertNoteExp(n, tracks[p.trackNo])));
+                foreach (UVoicePart p in parts.Where(p => p is UVoicePart).OfType<UVoicePart>()) {
+                    foreach (var n in p.notes) {
+                        ConvertNoteExp(n, tracks[p.trackNo]);
+                    }
+                }
             } else if (voiceParts != null && voiceParts.Count > 0) {
-                voiceParts.ForEach(p => p.notes.ForEach(n => ConvertNoteExp(n, tracks[p.trackNo])));
+                foreach (var p in voiceParts) {
+                    foreach (var n in p.notes) {
+                        ConvertNoteExp(n, tracks[p.trackNo]);
+                    }
+                }
             }
             expressions.Remove(oldAbbr);
 
             void ConvertNoteExp(UNote note, UTrack track) {
                 if (note.phonemeExpressions.Any(e => e.abbr == oldAbbr)) {
                     var toRemove = new List<UExpression>();
-                    note.phonemeExpressions.Where(e => e.abbr == oldAbbr).ForEach(oldExp => {
+                    foreach (var oldExp in note.phonemeExpressions.Where(e => e.abbr == oldAbbr)) {
                         if (!note.phonemeExpressions.Any(newExp => newExp.abbr == newAbbr && newExp.index == oldExp.index)) {
                             // When there is only old exp, convert it to new exp
                             oldExp.abbr = newAbbr;
@@ -109,7 +115,7 @@ namespace OpenUtau.Core.Ustx {
                             // When both old and new exp exist, remove the old one
                             toRemove.Add(oldExp);
                         }
-                    });
+                    }
                     toRemove.ForEach(exp => note.phonemeExpressions.Remove(exp));
                 }
             }
@@ -119,8 +125,9 @@ namespace OpenUtau.Core.Ustx {
             UNote note = UNote.Create();
             int start = NotePresets.Default.DefaultPortamento.PortamentoStart;
             int length = NotePresets.Default.DefaultPortamento.PortamentoLength;
-            note.pitch.AddPoint(new PitchPoint(start, 0));
-            note.pitch.AddPoint(new PitchPoint(start + length, 0));
+            var shape = NotePresets.Default.DefaultPitchShape;
+            note.pitch.AddPoint(new PitchPoint(start, 0, shape));
+            note.pitch.AddPoint(new PitchPoint(start + length, 0, shape));
             return note;
         }
 

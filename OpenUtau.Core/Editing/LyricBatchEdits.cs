@@ -14,7 +14,7 @@ namespace OpenUtau.Core.Editing {
                 return;
             }
             var lyrics = notes.Select(note => Transform(note.lyric)).ToArray();
-            docManager.StartUndoGroup(true);
+            docManager.StartUndoGroup("command.batch.lyric", true);
             docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, notes, lyrics));
             docManager.EndUndoGroup();
         }
@@ -130,7 +130,7 @@ namespace OpenUtau.Core.Editing {
             suffixes.Sort((a, b) => b.Length - a.Length);
 
             // Set lyric and color
-            docManager.StartUndoGroup(true);
+            docManager.StartUndoGroup("command.batch.lyric", true);
             foreach (var note in notes) {
                 foreach (var suffix in suffixes) {
                     if (note.lyric.Contains(suffix)) {
@@ -196,7 +196,7 @@ namespace OpenUtau.Core.Editing {
             }
             var startPos = selectedNotes.First().position;
             Queue<string> lyricsQueue = new Queue<string>();
-            docManager.StartUndoGroup(true);
+            docManager.StartUndoGroup("command.batch.lyric", true);
             foreach(var note in part.notes.Where(n => n.position >= startPos)){
                 lyricsQueue.Enqueue(note.lyric);
                 if(selectedNotes.Contains(note)){
