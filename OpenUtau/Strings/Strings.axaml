@@ -30,6 +30,7 @@
   <system:String x:Key="command.phoneme.edit">Edit phoneme</system:String>
   <system:String x:Key="command.phoneme.reset">Reset phoneme</system:String>
   <system:String x:Key="command.pitch.add">Add pitch point</system:String>
+  <system:String x:Key="command.pitch.autotunepitch">Auto Tune Pitch</system:String>
   <system:String x:Key="command.pitch.delete">Delete pitch point</system:String>
   <system:String x:Key="command.pitch.draw">Draw pitch</system:String>
   <system:String x:Key="command.pitch.edit">Edit pitch</system:String>
@@ -461,6 +462,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.menu.notes.addtaildash">Add tail "-"</system:String>
   <system:String x:Key="pianoroll.menu.notes.addtailrest">Add tail "R"</system:String>
   <system:String x:Key="pianoroll.menu.notes.autolegato">Auto Legato</system:String>
+  <system:String x:Key="pianoroll.menu.notes.autotunepitch">Auto Tune Pitch</system:String>
   <system:String x:Key="pianoroll.menu.notes.bakepitch">Convert PITD to pitch control points</system:String>
   <system:String x:Key="pianoroll.menu.notes.clear.vibratos">Clear vibratos</system:String>
   <system:String x:Key="pianoroll.menu.notes.commonnotecopy">Commonnote Copy</system:String>

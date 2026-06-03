@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using OpenUtau.Core.Ustx;
+using System.Threading.Tasks;
+using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime.Tensors;
 using OpenUtau.Core.Format;
 
 namespace OpenUtau.Core.Editing {
@@ -185,6 +189,169 @@ namespace OpenUtau.Core.Editing {
                 docManager.ExecuteCmd(new ResizeNoteCommand(part, notes[i], notes[i + 1].position - notes[i].position - notes[i].duration));
             }
             docManager.EndUndoGroup();
+        }
+    }
+
+    public class AutoTunePitch : BatchEdit {
+        public virtual string Name => name;
+
+        private string name;
+
+        private InferenceSession? session;
+
+        private bool loaded;
+
+        public AutoTunePitch() {
+            name = $"pianoroll.menu.notes.autotunepitch";
+        }
+
+        public async void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+
+            // Load pitch model
+            if (!loaded) {
+                var path = "";
+                if (project.tracks[part.trackNo].Singer.Loaded) {
+                    path = Path.Combine(project.tracks[part.trackNo].Singer.Location, "pitch.onnx");
+                }
+                if (String.IsNullOrEmpty(path) || !File.Exists(path)) {
+                    path = Path.Combine(PathManager.Inst.PluginsPath, "pitch.onnx");
+                }
+                if (File.Exists(path)) {
+                    var model = File.ReadAllBytes(path);
+                    session = Onnx.getInferenceSession(model);
+                } else {
+                    session = Onnx.getInferenceSession(Classic.Data.Resources.pitch);
+                }
+                loaded = true;
+            }
+
+            // Load pitch curve
+            var curve = part.curves.FirstOrDefault(c => c.abbr == Format.Ustx.PITD);
+            UExpressionDescriptor? descriptor;
+            if (project.expressions.TryGetValue(Format.Ustx.PITD, out descriptor)) {
+                if (curve == null) {
+                    curve = new UCurve(descriptor);
+                    part.curves.Add(curve);
+                }
+            }
+
+            // Separate selected notes on rest notes to create phrases
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            if (notes.Count == 0) return;
+            notes.Sort((a, b) => a.position.CompareTo(b.position));
+            var phrases = new List<List<UNote>>();
+            for (int i = 0; i < notes.Count; i++) {
+                if (i == 0 || notes[i - 1].End != notes[i].position)
+                    phrases.Add(new List<UNote>());
+                phrases.Last().Add(notes[i]);
+            }
+
+            docManager.StartUndoGroup("command.pitch.autotunepitch");
+            var progress = new Render.Progress(phrases.Count);
+            foreach (var phrase in phrases) {
+                string line = String.Join(' ', phrase.Select(x => x.lyric));
+                progress.Complete(1, "Rendering Pitch " + line);
+                var output = await Task.Run(() => {
+
+                    // Calculate phrase start and duration
+                    var start = phrase.First().PositionMs - 512 * 5;
+                    var count = (int)((phrase.Last().EndMs - start) / (5 * 1024) + 2) * 1024;
+
+                    // Initialize model input
+                    var input = new float[1, 6, count < 1024 ? 1024 : count];
+                    UNote? previousNote = null;
+                    for (int i = 0; i < count; i++) {
+                        var time = start + i * 5;
+                        var note = part.notes.FirstOrDefault(n => n.PositionMs <= time && time <= n.EndMs);
+                        input[0, 0, i] = note != null ? note.tone : -1;
+                        input[0, 1, i] = note != previousNote ? 1 : 0;
+                        input[0, 2, i] = note == null ? 1 : 0;
+                        if (note != null) {
+                            var duration = 16 * 5;
+                            var low = note.PositionMs + duration;
+                            var high = note.EndMs - duration;
+                            var alpha = (time - note.PositionMs) / note.DurationMs;
+                            input[0, 3, i] = low < time && time < high ? 1 : 0;
+                            input[0, 4, i] = (float)(alpha * note.duration / 5);
+                            input[0, 5, i] = (float)(alpha * 100);
+                        }
+                        previousNote = note;
+                    }
+
+                    // Run the model using the input
+                    var inputs = new List<NamedOnnxValue> { NamedOnnxValue.CreateFromTensor("input", input.ToTensor()) };
+                    var output = session!.Run(inputs).First().AsTensor<float>().ToArray();
+
+                    // Convert the model absolute pitch to relative pitch
+                    var commands = new List<int[]>();
+                    for (int i = 0; i < count; i++) {
+                        var time = start + i * 5;
+                        var valid = false;
+
+                        // Check if not on a rest
+                        foreach (UPhoneme phoneme in part.phonemes) {
+                            if (!phrase.Contains(phoneme.Parent)) continue;
+                            if (time < phoneme.PositionMs - phoneme.preutter) continue;
+                            if (time > phoneme.EndMs) continue;
+                            valid = true;
+                            break;
+                        }
+                        if (!valid) continue;
+
+                        // Find nearest note and sample the base pitch
+                        var note = part.notes.Aggregate((a, b) => Distance(a, time) < Distance(b, time) ? a : b);
+                        var x = project.timeAxis.MsPosToTickPos(time) - part.position;
+                        var pitch = note.tone * 100.0;
+                        pitch += note.pitch.Sample(project, part, note, x) ?? 0;
+                        if (note.Next != null && note.Next.position == note.End) {
+                            var delta = note.Next.pitch.Sample(project, part, note.Next, x);
+                            if (delta != null)
+                                pitch += delta.Value + note.Next.tone * 100 - note.tone * 100;
+                        }
+
+                        // Substract the absolute pitch by the base pitch to find relative pitch
+                        var y = (int)Math.Clamp(output[i] * 100 - pitch, descriptor.min, descriptor.max);
+                        commands.Add(new int[] { x, y });
+                    }
+
+                    if (commands.Count == 0)
+                        return null;
+
+                    commands.First()[1] = (int)descriptor.defaultValue;
+                    commands.Last()[1] = (int)descriptor.defaultValue;
+
+                    // Insert the pitch model output to the current curve without affecting the other
+                    var newCurve = curve.xs
+                        .Zip(curve.ys, (a, b) => new int[] { a, b })
+                        .Where((x) => x[0] < commands.First()[0] || commands.Last()[0] < x[0])
+                        .ToList();
+                    var offset = newCurve.FindIndex((x) => x[0] > commands.First()[0]);
+                    if (offset == -1) newCurve.AddRange(commands);
+                    else newCurve.InsertRange(offset, commands);
+                    var newXs = newCurve.Select((x) => x[0]).ToArray();
+                    var newYs = newCurve.Select((x) => x[1]).ToArray();
+                    return new Tuple<int[], int[]>(newXs, newYs);
+                });
+
+                // Apply the new pitch curve
+                if (output == null) continue;
+                docManager.ExecuteCmd(new MergedSetCurveCommand(
+                    project,
+                    part,
+                    Format.Ustx.PITD,
+                    curve.xs.ToArray(),
+                    curve.ys.ToArray(),
+                    output.Item1,
+                    output.Item2));
+            }
+            progress.Clear();
+            docManager.EndUndoGroup();
+        }
+
+        double Distance(UNote a, double time) {
+            var start = Math.Max(0, a.PositionMs - time);
+            var stop = Math.Max(0, time - a.EndMs);
+            return start + stop;
         }
     }
 

@@ -69,5 +69,15 @@ namespace OpenUtau.Core.Classic.Data {
                 return ((byte[])(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] pitch {
+            get {
+                object obj = ResourceManager.GetObject("pitch", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }
