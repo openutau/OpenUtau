@@ -94,9 +94,27 @@ namespace OpenUtau.App.Controls {
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
             base.OnPropertyChanged(change);
+            if (change.Property == KeyProperty || change.Property == PartProperty) {
+                InvalidateMeasure(); 
+            }
             InvalidateVisual();
         }
 
+        protected override Size MeasureOverride(Size availableSize) {
+            double requiredHeight = 0;
+            if (Part != null && !string.IsNullOrEmpty(Key)) {
+                var project = DocManager.Inst.Project;
+                if (project.tracks[Part.trackNo].TryGetExpDescriptor(project, Key, out var descriptor)) {
+                    if (descriptor.type == UExpressionType.Options) {
+                        requiredHeight = descriptor.options.Length * 24; 
+                    }
+                }
+            }
+            return new Size(
+                double.IsInfinity(availableSize.Width) ? 0 : availableSize.Width,
+                requiredHeight
+            );
+        }
         public override void Render(DrawingContext context) {
             base.Render(context);
             if (Part == null) {
@@ -118,7 +136,7 @@ namespace OpenUtau.App.Controls {
             double leftTick = TickOffset - 480;
             double rightTick = TickOffset + Bounds.Width / TickWidth + 480;
             double optionHeight = descriptor.type == UExpressionType.Options
-                ? Bounds.Height / descriptor.options.Length
+                ? Math.Max(Bounds.Height / descriptor.options.Length, 24.0)
                 : 0;
             if (descriptor.type == UExpressionType.Curve) {
                 var curve = Part.curves.FirstOrDefault(c => c.descriptor == descriptor);

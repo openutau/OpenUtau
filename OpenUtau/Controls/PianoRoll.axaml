@@ -659,18 +659,20 @@
                           Part="{Binding NotesViewModel.Part}"
                           Key="{Binding NotesViewModel.SecondaryKey}"
                           ShowRealCurve="False"/>
-      <c:ExpressionCanvas Grid.Row="5" Grid.Column="1"
-                          IsVisible="{Binding NotesViewModel.ShowExpressions}"
-                          Margin="0,24,0,0"
-                          Bounds="{Binding NotesViewModel.ExpBounds, Mode=OneWayToSource}"
-                          TickWidth="{Binding NotesViewModel.TickWidth}"
-                          TickOffset="{Binding NotesViewModel.TickOffset}"
-                          Part="{Binding NotesViewModel.Part}"
-                          Key="{Binding NotesViewModel.PrimaryKey}"
-                          ShowRealCurve="True"
-                          PointerPressed="ExpCanvasPointerPressed"
-                          PointerMoved="ExpCanvasPointerMoved"
-                          PointerReleased="ExpCanvasPointerReleased"/>
+      <ScrollViewer Name="ExpScrollViewer" Grid.Row="5" Grid.Column="1" Margin="0,24,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <c:ExpressionCanvas IsVisible="{Binding NotesViewModel.ShowExpressions}"
+                              Bounds="{Binding NotesViewModel.ExpBounds, Mode=OneWayToSource}"
+                              TickWidth="{Binding NotesViewModel.TickWidth}"
+                              TickOffset="{Binding NotesViewModel.TickOffset}"
+                              Part="{Binding NotesViewModel.Part}"
+                              Key="{Binding NotesViewModel.PrimaryKey}"
+                              ShowRealCurve="True"
+                              MinHeight="{Binding #ExpScrollViewer.Bounds.Height}"
+                              VerticalAlignment="Top"
+                              PointerPressed="ExpCanvasPointerPressed"
+                              PointerMoved="ExpCanvasPointerMoved"
+                              PointerReleased="ExpCanvasPointerReleased"/>
+      </ScrollViewer>
       <ListBox Grid.Row="5" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Classes="toolbox"
                SelectedIndex="{Binding CurveViewModel.CurveToolIndex}" IsVisible="{Binding NotesViewModel.ShowCurveToolbox, Mode=OneWay}">
         <ListBox.ItemsPanel>
