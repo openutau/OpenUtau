@@ -40,9 +40,9 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public double DurationMs => EndMs - PositionMs;
         [YamlIgnore] public double EndMs { get; set; }
         [YamlIgnore] public bool Selected { get; set; } = false;
-        [YamlIgnore] public UNote Prev { get; set; }
-        [YamlIgnore] public UNote Next { get; set; }
-        [YamlIgnore] public UNote Extends { get; set; }
+        [YamlIgnore] public UNote? Prev { get; set; }
+        [YamlIgnore] public UNote? Next { get; set; }
+        [YamlIgnore] public UNote? Extends { get; set; }
         [YamlIgnore] public int ExtendedDuration { get; set; }
         [YamlIgnore] public int ExtendedEnd => position + ExtendedDuration;
         [YamlIgnore] public int LeftBound => position;

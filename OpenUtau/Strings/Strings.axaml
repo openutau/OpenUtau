@@ -265,12 +265,10 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="lyricsreplace.replace">General lyrics replacement</system:String>
 
   <system:String x:Key="menu.edit">Edit</system:String>
-  <system:String x:Key="menu.edit.autoresizenotes">Auto-resize overlapping notes</system:String>
   <system:String x:Key="menu.edit.copy">Copy</system:String>
   <system:String x:Key="menu.edit.cut">Cut</system:String>
   <system:String x:Key="menu.edit.delete">Delete</system:String>
   <system:String x:Key="menu.edit.lockunselectednotes">Lock editing of unselected notes</system:String>
-  <system:String x:Key="menu.edit.lockunselectednotes.duration">Duration</system:String>
   <system:String x:Key="menu.edit.lockunselectednotes.expressions">Expressions</system:String>
   <system:String x:Key="menu.edit.lockunselectednotes.pitchpoints">Pitch Points</system:String>
   <system:String x:Key="menu.edit.lockunselectednotes.vibrato">Vibrato</system:String>

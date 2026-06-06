@@ -231,11 +231,6 @@ namespace OpenUtau.App.Controls {
         }
 
         // Edit menu
-        void OnMenuLockDuration(object sender, RoutedEventArgs args) {
-            Preferences.Default.LockUnselectedNotesDuration = !Preferences.Default.LockUnselectedNotesDuration;
-            Preferences.Save();
-            ViewModel.RaisePropertyChanged(nameof(ViewModel.LockDuration));
-        }
         void OnMenuLockPitchPoints(object sender, RoutedEventArgs args) {
             Preferences.Default.LockUnselectedNotesPitch = !Preferences.Default.LockUnselectedNotesPitch;
             Preferences.Save();
@@ -250,11 +245,6 @@ namespace OpenUtau.App.Controls {
             Preferences.Default.LockUnselectedNotesExpressions = !Preferences.Default.LockUnselectedNotesExpressions;
             Preferences.Save();
             ViewModel.RaisePropertyChanged(nameof(ViewModel.LockExpressions));
-        }
-        void OnMenuAutoResizeNotes(object sender, RoutedEventArgs args) {
-            Preferences.Default.AutoResizeNotes = !Preferences.Default.AutoResizeNotes;
-            Preferences.Save();
-            ViewModel.RaisePropertyChanged(nameof(ViewModel.AutoResizeNotes));
         }
 
         // View menu
