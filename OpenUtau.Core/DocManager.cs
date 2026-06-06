@@ -46,6 +46,8 @@ namespace OpenUtau.Core {
 
         public void Initialize(Thread mainThread, TaskScheduler mainScheduler) {
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler((sender, args) => {
+                var ex = args.ExceptionObject as Exception;
+                Log.Error(ex, "Unhandled exception");
                 CrashSave();
             });
             SearchAllPlugins();
