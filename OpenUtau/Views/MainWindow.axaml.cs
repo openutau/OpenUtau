@@ -1574,8 +1574,8 @@ namespace OpenUtau.App.Views {
             if (selectedParts.Any(p => p.trackNo != part.trackNo)) {
                 _ = MessageBox.Show(
                     this,
-                    ThemeManager.GetString("dialogs.merge.multitracks"),
-                    ThemeManager.GetString("dialogs.merge.caption"),
+                    ThemeManager.GetString("dialogs.mergeparts.multitracks"),
+                    ThemeManager.GetString("dialogs.mergeparts.caption"),
                     MessageBox.MessageBoxButtons.Ok);
                 return;
             }
@@ -1628,8 +1628,8 @@ namespace OpenUtau.App.Views {
             if (mergedPart.notes.Any(n => n.OverlapError)) {
                 var res = await MessageBox.Show(
                     this,
-                    ThemeManager.GetString("dialogs.merge.overlap"),
-                    ThemeManager.GetString("dialogs.merge.caption"),
+                    ThemeManager.GetString("dialogs.mergeparts.overlap"),
+                    ThemeManager.GetString("dialogs.mergeparts.caption"),
                     MessageBox.MessageBoxButtons.YesNo);
                 if (res == MessageBox.MessageBoxResult.No) { return; }
             }
