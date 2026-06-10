@@ -132,7 +132,8 @@ namespace OpenUtau.Core.G2p {
             }
             
             // end coda
-            if (IsVowel(phonemes[^2]) && IsGlide(phonemes[^1])) phonemes[^1] = phonemes[^1].ToUpperInvariant();
+            
+            if ((phonemes.Count >= 2) && IsVowel(phonemes[^2]) && IsGlide(phonemes[^1])) phonemes[^1] = phonemes[^1].ToUpperInvariant();
             
             string[] filteredPhonemes = phonemes.Where(x => validPhonemes.Contains(x)).ToArray();
 
