@@ -118,19 +118,17 @@ namespace OpenUtau.Core.G2p {
             }
             
             // glide+coda pass
-            if (phonemes.Count >= 3) {
-                for (int i = 1; i < phonemes.Count - 1; i++) {
-                    string prev = phonemes[i - 1];
-                    string curr = phonemes[i];
-                    string next = phonemes[i + 1];
-                    phonemes[i] = curr switch {
-                        "u" when IsConsonant(prev) && IsVowel(next) => "w",
-                        "i" when IsConsonant(prev) && IsVowel(next) => "y",
-                        "w" when IsVowel(prev) && IsConsonant(next) => "W",
-                        "y" when IsVowel(prev) && IsConsonant(next) => "Y",
-                        _ => phonemes[i]
-                    };
-                }
+            for (int i = 1; i < phonemes.Count - 1; i++) {
+                string prev = phonemes[i - 1];
+                string curr = phonemes[i];
+                string next = phonemes[i + 1];
+                phonemes[i] = curr switch {
+                    "u" when IsConsonant(prev) && IsVowel(next) => "w",
+                    "i" when IsConsonant(prev) && IsVowel(next) => "y",
+                    "w" when IsVowel(prev) && IsConsonant(next) => "W",
+                    "y" when IsVowel(prev) && IsConsonant(next) => "Y",
+                    _ => phonemes[i]
+                };
             }
             
             // end coda
