@@ -1594,11 +1594,11 @@ namespace OpenUtau.App.Views {
                 int newDuration = Math.Max(leftPart.End, rightPart.End) - newPosition;
                 int deltaPos = rightPart.position - leftPart.position;
                 UVoicePart shiftPart = new UVoicePart();
-                rightPart.notes.ForEach((note) => {
+                foreach (var note in rightPart.notes) {
                     UNote shiftNote = note.Clone();
                     shiftNote.position += deltaPos;
                     shiftPart.notes.Add(shiftNote);
-                });
+                }
                 foreach (var curve in rightPart.curves) {
                     UCurve shiftCurve = curve.Clone();
                     for (var i = 0; i < shiftCurve.xs.Count; i++) {

@@ -234,7 +234,7 @@ namespace OpenUtau.App.ViewModels {
                         if (descriptor.abbr == Ustx.CLR) {
                             if (track.VoiceColorExp != null && track.VoiceColorExp.options.Length > 0) {
                                 viewModel.Options.Clear();
-                                track.VoiceColorExp.options.ForEach(opt => viewModel.Options.Add(opt));
+                                Array.ForEach(track.VoiceColorExp.options, opt => viewModel.Options.Add(opt));
                             }
                         }
                         Expressions.Add(viewModel);
@@ -759,7 +759,9 @@ namespace OpenUtau.App.ViewModels {
                 Value = defaultValue;
             } else if (descriptor.type == UExpressionType.Options) {
                 IsOptions = true;
-                descriptor.options.ForEach(opt => Options.Add(opt));
+                foreach (var opt in descriptor.options) {
+                    Options.Add(opt);
+                }
                 SelectedOption = (int)defaultValue;
             }
 

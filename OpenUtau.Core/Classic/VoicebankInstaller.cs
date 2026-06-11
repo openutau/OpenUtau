@@ -38,7 +38,7 @@ namespace OpenUtau.Classic {
             var extractionOptions = new ExtractionOptions {
                 Overwrite = true,
             };
-            using (var archive = ArchiveFactory.Open(path, readerOptions)) {
+            using (var archive = ArchiveFactory.OpenArchive(path, readerOptions)) {
                 var touches = new List<string>();
                 AdjustBasePath(archive, path, touches);
                 int total = archive.Entries.Count();

@@ -238,7 +238,7 @@ namespace OpenUtau.Classic {
         private static void SetFlags(UProject project, UNote note, string flags) {
             var parser = new UstFlagParser();
             var list = parser.Parse(flags);
-            list.ForEach((flag) => {
+            foreach (var flag in list) {
                 if (flag.Key == "t") {
                     switch (tool2) {
                         case { } when tool2.StartsWith("resampler"):
@@ -259,7 +259,7 @@ namespace OpenUtau.Classic {
                 } else {
                     SetExpression(project, note, abbr, flag.Value);
                 }
-            });
+            }
         }
 
         private static string FindAbbrFromFlagKey(Dictionary<string, UExpressionDescriptor> expressions, UstFlag flag) {

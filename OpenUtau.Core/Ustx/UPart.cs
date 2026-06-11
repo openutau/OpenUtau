@@ -181,7 +181,9 @@ namespace OpenUtau.Core.Ustx {
                     var resp = phonemizerResponse;
                     if (resp.timestamp == notesTimestamp) {
                         phonemes.Clear();
-                        notes.ForEach(note => note.phonemizerExpressions.Clear());
+                        foreach (var note in notes) {
+                            note.phonemizerExpressions.Clear();
+                        }
 
                         for (int i = 0; i < resp.phonemes.Length; ++i) {
                             var indexes = new List<int>();

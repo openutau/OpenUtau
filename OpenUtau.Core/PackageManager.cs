@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using SharpCompress.Archives;
+using SharpCompress.Readers;
 using OpenUtau.Core.Util;
 
 namespace OpenUtau.Core {
@@ -195,7 +196,7 @@ namespace OpenUtau.Core {
         }
 
         public async Task InstallFromStreamAsync(Stream stream, string expectedId, string expectedVersion) {
-            using var archive = ArchiveFactory.Open(stream);
+            using var archive = ArchiveFactory.OpenArchive(stream, new ReaderOptions());
             DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, "Installing dependency"));
             var metadataEntry = archive.Entries.FirstOrDefault(e => e.Key == "oudep.yaml");
             if (metadataEntry == null) {

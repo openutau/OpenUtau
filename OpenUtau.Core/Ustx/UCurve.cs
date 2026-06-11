@@ -162,7 +162,7 @@ namespace OpenUtau.Core.Ustx {
         }
         public static List<UCurve> MergeCurves(params List<UCurve>[] merging) {
             var merged = new Dictionary<UExpressionDescriptor, UCurve>();
-            merging.ForEach(curves => {
+            foreach (var curves in merging) {
                 foreach (var curve in curves) {
                     if (curve.descriptor == null) continue;
                     if (!merged.TryGetValue(curve.descriptor, out var existing)) {
@@ -177,7 +177,7 @@ namespace OpenUtau.Core.Ustx {
                         existing.ys = zipped.Select(z => z.y).ToList();
                     }
                 }
-            });
+            }
             return merged.Values.ToList();
         }
     }

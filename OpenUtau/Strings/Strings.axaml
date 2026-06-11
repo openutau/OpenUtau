@@ -833,4 +833,18 @@ General
   <system:String x:Key="themeeditor.title">Theme Editor</system:String>
   <system:String x:Key="themeeditor.save">Save</system:String>
   <system:String x:Key="themeeditor.cancel">Cancel</system:String>
+
+  <!-- Mix Effects (post-processing) -->
+  <system:String x:Key="mixfx.caption">Track Polish</system:String>
+  <system:String x:Key="mixfx.enabled">Enable on this track</system:String>
+  <system:String x:Key="mixfx.preset">Preset</system:String>
+  <system:String x:Key="mixfx.recommended">Apply Default Settings</system:String>
+  <system:String x:Key="mixfx.recommended.tip">Vocal Air + Gentle compression + Small Room</system:String>
+  <system:String x:Key="mixfx.applyonexport">Apply when exporting mixdown</system:String>
+  <system:String x:Key="mixfx.library">Library</system:String>
+  <system:String x:Key="mixfx.library.placeholder">Select a saved preset...</system:String>
+  <system:String x:Key="mixfx.library.save">Save...</system:String>
+  <system:String x:Key="mixfx.library.delete">Delete</system:String>
+  <system:String x:Key="mixfx.library.default">Default</system:String>
+  <system:String x:Key="tracks.mixfx">Track Polish...</system:String>
 </ResourceDictionary>

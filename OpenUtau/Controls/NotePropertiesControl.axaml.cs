@@ -20,15 +20,15 @@ namespace OpenUtau.App.Controls {
             InitializeComponent();
             DataContext = ViewModel = new NotePropertiesViewModel();
 
-            this.GetLogicalDescendants().OfType<TextBox>().ForEach(box => {
-                box.AddHandler(GotFocusEvent, OnTextBoxGotFocus);
-                box.AddHandler(LostFocusEvent, OnTextBoxLostFocus);
-            });
-            this.GetLogicalDescendants().OfType<Slider>().ForEach(slider => {
-                slider.AddHandler(PointerPressedEvent, SliderPointerPressed, RoutingStrategies.Tunnel);
-                slider.AddHandler(PointerReleasedEvent, SliderPointerReleased, RoutingStrategies.Tunnel);
-                slider.AddHandler(PointerMovedEvent, SliderPointerMoved, RoutingStrategies.Tunnel);
-            });
+foreach (var box in this.GetLogicalDescendants().OfType<TextBox>()) {
+                  box.AddHandler(GotFocusEvent, OnTextBoxGotFocus);
+                  box.AddHandler(LostFocusEvent, OnTextBoxLostFocus);
+              }
+              foreach (var slider in this.GetLogicalDescendants().OfType<Slider>()) {
+                  slider.AddHandler(PointerPressedEvent, SliderPointerPressed, RoutingStrategies.Tunnel);
+                  slider.AddHandler(PointerReleasedEvent, SliderPointerReleased, RoutingStrategies.Tunnel);
+                  slider.AddHandler(PointerMovedEvent, SliderPointerMoved, RoutingStrategies.Tunnel);
+              }
           
             MessageBus.Current.Listen<PianorollRefreshEvent>()
                 .Subscribe(e => {

@@ -180,6 +180,11 @@ namespace OpenUtau.App.ViewModels {
             this.RaisePropertyChanged(nameof(Mute));
             JudgeMuted();
         }
+
+        public void ToggleApplyMixFx() {
+            // Legacy stub kept so any leftover XAML binding still resolves.
+            // The FX dialog (right-click → Track Polish) is the new entry point.
+        }
         public void ToggleMute(bool mute) {
             if (mute) {
                 Mute = true;
@@ -593,6 +598,13 @@ namespace OpenUtau.App.ViewModels {
         public void VoiceColorRemapping() {
             if (track.Singer != null && track.Singer.Found && track.VoiceColorExp != null) {
                 DocManager.Inst.ExecuteCmd(new VoiceColorRemappingNotification(track.TrackNo, false));
+            }
+        }
+
+        public void OpenMixFxDialog() {
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null) {
+                var dialog = new MixFxDialog(track);
+                dialog.ShowDialog(desktop.MainWindow);
             }
         }
     }
