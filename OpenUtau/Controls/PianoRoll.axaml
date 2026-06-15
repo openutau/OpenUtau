@@ -105,8 +105,7 @@
         </Button>
       </Grid >
       <Canvas Name="TimelineCanvas" Grid.Row="2" Grid.Column="1"
-              Background="#1EFF0050"
-              ClipToBounds="True"
+              Background="Transparent" ClipToBounds="True"
               PointerWheelChanged="TimelinePointerWheelChanged"
               PointerPressed="TimelinePointerPressed"
               PointerMoved="TimelinePointerMoved"
@@ -618,22 +617,19 @@
       </Border>
 
       <Border Grid.Row="2" Grid.RowSpan="2" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-              BorderThickness="3"
-              BorderBrush="#40808080"
-              ClipToBounds="True"
-              IsHitTestVisible="False">
+              BoxShadow="inset 0 0 5 1 #3F000000" ClipToBounds="True" IsHitTestVisible="False">
         <Grid>
           <Border Classes="tips" HorizontalAlignment="Center" VerticalAlignment="Center"
-                IsVisible="{Binding NotesViewModel.ShowTips}" BorderThickness="3" BorderBrush="#40808080">
+                IsVisible="{Binding NotesViewModel.ShowTips}" BoxShadow="0 0 5 1 #3F000000">
             <TextBlock Classes="tips" Grid.Column="0" Margin="10,5"
                        Text="{DynamicResource tip.notes.basics}"/>
           </Border>
           <Border Classes="tips" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0" Padding="4,4,4,2"
-                   IsVisible="{Binding NotesViewModel.ShowTips}" BorderThickness="3" BorderBrush="#40808080">
+                   IsVisible="{Binding NotesViewModel.ShowTips}" BoxShadow="0 0 5 1 #3F000000">
             <TextBlock Classes="tips" Text="{DynamicResource tip.notes.zoomx}"/>
           </Border>
           <Border Classes="tips" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="4,4,4,2"
-                   IsVisible="{Binding NotesViewModel.ShowTips}" BorderThickness="3" BorderBrush="#40808080">
+                   IsVisible="{Binding NotesViewModel.ShowTips}" BoxShadow="0 0 5 1 #3F000000">
             <TextBlock Classes="tips" Text="{DynamicResource tip.notes.zoomy}"/>
           </Border>
           <Border HorizontalAlignment="Center" VerticalAlignment="Center" Padding="10,5"
@@ -649,10 +645,10 @@
         </Border>
       </Grid>
       <Border Grid.Row="5" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-              IsVisible="{Binding NotesViewModel.ShowExpressions}" BorderThickness="3" BorderBrush="#40808080"
+              IsVisible="{Binding NotesViewModel.ShowExpressions}" BoxShadow="inset 0 0 5 1 #3F000000"
               ClipToBounds="True" IsHitTestVisible="False">
         <Border Classes="tips" HorizontalAlignment="Center" VerticalAlignment="Center"
-                IsVisible="{Binding NotesViewModel.ShowTips}" BorderThickness="3" BorderBrush="#40808080">
+                IsVisible="{Binding NotesViewModel.ShowTips}" BoxShadow="0 0 5 1 #3F000000">
           <TextBlock Classes="tips" Grid.Column="0" Margin="10,5"
                      Text="{DynamicResource tip.exps}"/>
         </Border>
