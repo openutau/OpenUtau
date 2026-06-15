@@ -284,7 +284,7 @@
                     LargeChange="{Binding ViewportTracks}"
                     SmallChange="{Binding SmallChangeY}" PointerWheelChanged="VScrollPointerWheelChanged"/>
           <Canvas Name="TimelineCanvas" Grid.Row="1" Grid.Column="1"
-                  Background="Transparent" ClipToBounds="True"
+                  Background="#1EFF0050" ClipToBounds="True"
                   PointerWheelChanged="TimelinePointerWheelChanged"
                   PointerPressed="TimelinePointerPressed"
                   PointerMoved="TimelinePointerMoved"
@@ -390,7 +390,7 @@
             </c:PartsCanvas.ContextMenu>
           </c:PartsCanvas>
           <Border Grid.Row="1" Grid.RowSpan="2" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Transparent"
-                  BoxShadow="inset 0 0 5 1 #3F000000" ClipToBounds="True" IsHitTestVisible="False">
+                  BorderThickness="3" BorderBrush="#40808080" ClipToBounds="True" IsHitTestVisible="False">
             <Border HorizontalAlignment="Center" VerticalAlignment="Center" Padding="10,5"
                     IsVisible="{Binding TracksViewModel.PlayPosWaitingRendering}" Background="{DynamicResource BackgroundBrushSemi}">
               <TextBlock Text="{DynamicResource progress.waitingrendering}" FontSize="15"/>
