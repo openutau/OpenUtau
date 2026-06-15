@@ -1,69 +1,59 @@
 ﻿using System;
 using System.IO;
-using Serilog;
 using NAudio.Wave;
 using SharpJaad.AAC;
-using SharpJaad.ADTS;
+using SharpJaad.MP4;
+using SharpJaad.MP4.API;
 
 namespace OpenUtau.Core.Format {
     public class AACWaveReader : WaveStream {
-        private readonly WaveFormat waveFormat = new(48000, 16, 2);
-        private readonly MemoryStream aacStream = new();
-        private readonly ADTSDemultiplexer adts;
-        private readonly Decoder decoder;
-        private byte[] wavData = [];
+        private readonly WaveFormat waveFormat;
+        private readonly byte[] wavData;
+        private long position;
 
         public AACWaveReader(string aacFile) {
-            using (FileStream fileStream = new FileStream(aacFile, FileMode.Open, FileAccess.Read)) {
-                fileStream.CopyTo(aacStream);
-            }
-            aacStream.Seek(0, SeekOrigin.Begin);
-            try {
-                adts = new ADTSDemultiplexer(aacStream);
-            } catch (IOException e) {
-                Log.Error("AAC decoder: no ADTS header found", e);
-                throw;
-            }
-            decoder = new Decoder(adts.GetDecoderSpecificInfo());
+            using var fileStream = File.OpenRead(aacFile);
+            var container = new MP4Container(fileStream);
+            var movie = container.GetMovie();
+            var tracks = movie.GetTracks(AudioTrack.AudioCodec.AAC);
+            if (tracks.Count == 0)
+                throw new Exception("M4A file does not contain an AAC audio track.");
+            var track = (AudioTrack)tracks[0];
+            waveFormat = new WaveFormat(track.GetSampleRate(), 16, track.GetChannelCount());
+            wavData = Decode(track);
         }
 
-        private byte[] Decode() {
-            SharpJaad.WAV.WaveFileWriter? wavWriter = null;
-            using var wavStream = new MemoryStream();
-            try {
-                byte[] b;
-                SampleBuffer buf = new();
-                while (true) {
-                    try {
-                        b = adts.ReadNextFrame();
-                    } catch (EndOfStreamException) {
-                        break;
-                    }
-                    decoder.DecodeFrame(b, buf);
-                }
-                wavWriter ??= new(wavStream, buf.SampleRate, buf.Channels, buf.BitsPerSample);
-                wavWriter.Write(buf.Data);
-                return wavStream.ToArray();
-            } finally {
-                wavWriter?.Close();
+        private static byte[] Decode(AudioTrack track) {
+            var decoder = new Decoder(track.GetDecoderSpecificInfo());
+            using var pcmStream = new MemoryStream();
+            while (track.HasMoreFrames()) {
+                var frame = track.ReadNextFrame();
+                // Fresh buffer per frame: SampleBuffer.BigEndian starts true,
+                // and SetData() doesn't reset it, so reusing one buffer across
+                // frames would skip the LE swap after the first frame.
+                var buf = new SampleBuffer();
+                decoder.DecodeFrame(frame.GetData(), buf);
+                buf.SetBigEndian(false);
+                pcmStream.Write(buf.Data, 0, buf.Data.Length);
             }
+            return pcmStream.ToArray();
         }
 
-        public override WaveFormat? WaveFormat => waveFormat;
-        public override long Length => wavData != null ? wavData.LongLength : 0L;
-        public override long Position { get; set; }
+        public override WaveFormat WaveFormat => waveFormat;
+        public override long Length => wavData.LongLength;
+        public override long Position {
+            get => position;
+            set => position = value;
+        }
+
         public override int Read(byte[] buffer, int offset, int count) {
-            wavData ??= Decode();
-            int n = (int)Math.Min(wavData.Length - Position, count);
-            Array.Copy(wavData, Position, buffer, offset, n);
-            Position += n;
+            int n = (int)Math.Min(wavData.Length - position, count);
+            Array.Copy(wavData, position, buffer, offset, n);
+            position += n;
             return n;
         }
 
         protected override void Dispose(bool disposing) {
-            if (disposing) {
-                aacStream.Dispose();
-            }
             base.Dispose(disposing);
         }
     }
