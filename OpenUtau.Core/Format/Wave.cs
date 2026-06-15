@@ -53,7 +53,11 @@ namespace OpenUtau.Core.Format {
 #if WINDOWS
                 return new MediaFoundationReader(filepath);
 #else
-                return new FFmpegWaveReader(filepath);
+                try {
+                    return new AACWaveReader(filepath);
+                } catch {
+                    return new FFmpegWaveReader(filepath);
+                }
 #endif
             }
             throw new Exception("Unsupported audio file format.");
