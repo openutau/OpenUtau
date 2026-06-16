@@ -257,6 +257,12 @@
             <TextBlock Text="{DynamicResource prefs.appearance.showportrait}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding ShowPortrait}"/>
           </Grid>
+          <Grid Margin="0,5,0,0" ColumnDefinitions="Auto,8,24,8,*">
+            <TextBlock Grid.Column="0" Text="Potrait size cap (window height %)" HorizontalAlignment="Left"/>
+            <TextBlock Grid.Column="2" Text="{Binding PortraitHeightCap}" HorizontalAlignment="Center" />
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding PortraitHeightCap}" Minimum="1" Maximum="100"
+                    IsEnabled="{Binding ShowPortrait}"/>
+          </Grid>
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.showicon}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding ShowIcon}"/>

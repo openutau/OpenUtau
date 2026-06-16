@@ -98,6 +98,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public int DegreeStyle { get; set; }
         [Reactive] public bool UseTrackColor { get; set; }
         [Reactive] public bool ShowPortrait { get; set; }
+        [Reactive] public int PortraitHeightCap { get; set; }
         [Reactive] public bool ShowIcon { get; set; }
         [Reactive] public bool ShowGhostNotes { get; set; }
         [Reactive] public bool ThemeEditable { get; set; }
