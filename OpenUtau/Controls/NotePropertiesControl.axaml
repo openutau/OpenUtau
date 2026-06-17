@@ -20,8 +20,8 @@
 
   <Grid>
     <TextBlock Text="{Binding Title}" Height="24" Padding="4" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-    <ScrollViewer Margin="0,48,0,0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible" AllowAutoHide="False">
-      <StackPanel Margin="0,0,4,0">
+    <ScrollViewer Margin="0,48,0,0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" AllowAutoHide="True">
+      <StackPanel Margin="0">
         <Expander Header="{DynamicResource noteproperty.basic}" HorizontalAlignment="Stretch" Margin="0,0,4,2">
           <StackPanel IsEnabled="{Binding IsNoteSelected}">
             <Grid ColumnDefinitions="143,*">

@@ -55,6 +55,18 @@ namespace OpenUtau.App.Controls {
             penTool.AddHandler(PointerPressedEvent, OnToolButtonPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
             drawPitchTool.AddHandler(PointerPressedEvent, OnToolButtonPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
             drawLinePitchTool.AddHandler(PointerPressedEvent, OnToolButtonPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
+            this.LayoutUpdated += PianoRollLayoutUpdated;
+        }
+
+        private void PianoRollLayoutUpdated(object? sender, EventArgs e) {
+            UpdatePortraitPosition();
+        }
+
+        private void UpdatePortraitPosition() {
+            if (PortraitImage.DesiredSize.Width == 0 || PortraitCanvas.Bounds.Width == 0) return;
+            // Position at top-right of row 3, with 100px margin from right
+            Canvas.SetTop(PortraitImage, 0);
+            Canvas.SetLeft(PortraitImage, PortraitCanvas.Bounds.Width - PortraitImage.DesiredSize.Width - 100);
         }
 
         public void InitializePianoRollWindowAsync() {

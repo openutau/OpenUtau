@@ -327,7 +327,7 @@
                             TickOffset="{Binding TracksViewModel.TickOffset}"
                             SnapDiv="{Binding TracksViewModel.SnapDiv}"
                             SnapTicks="{Binding TracksViewModel.SnapTicks}"
-                            ShowBarNumber="True"/>
+                            ShowBar="True"/>
           <c:PartsCanvas x:Name="partsCanvas" Grid.Row="2" Grid.Column="1" ClipToBounds="True" Background="Transparent"
                         DataContext="{Binding TracksViewModel}"
                         TickWidth="{Binding TickWidth}"

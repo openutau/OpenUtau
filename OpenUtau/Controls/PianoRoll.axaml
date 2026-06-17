@@ -116,6 +116,7 @@
               Fill="{DynamicResource NeutralAccentBrushSemi}"
               Data="M -6.5 0 L 6.5 0 L 6.5 3 L 0 9 L -6.5 3 Z"/>
       </Canvas>
+      <!-- Notes backgrounds -->
       <c:TrackBackground Grid.Row="3" Grid.Column="1" IsHitTestVisible="False"
                          Foreground="{DynamicResource TrackBackgroundAltBrush}"
                          DataContext="{Binding NotesViewModel}"
@@ -131,9 +132,27 @@
                         TickOffset="{Binding NotesViewModel.TickOffset}"
                         SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"
                         SnapTicks="{Binding NotesViewModel.SnapTicks}"
-                        ShowBarNumber="True"/>
-      <Image Grid.Row="3" Grid.RowSpan="3" Grid.Column="1" HorizontalAlignment="Right" Margin="0,0,100,0"
-             Source="{Binding NotesViewModel.Portrait}" OpacityMask="{Binding NotesViewModel.PortraitMask}" Stretch="None"/>
+                        ShowBar="True"/>
+      <!-- Notes backgrounds end -->
+      <!-- Expression backgrounds (to rendered below portrait) -->
+      <c:TrackBackground Grid.Row="5" Grid.Column="1" IsHitTestVisible="False"
+                         IsVisible="{Binding NotesViewModel.ShowExpressions}"
+                         Foreground="{DynamicResource TrackBackgroundAltBrush}"
+                         TrackHeight="{Binding NotesViewModel.ExpTrackHeight}"/>
+      <c:TickBackground Grid.Row="5" Grid.Column="1" IsHitTestVisible="False"
+                        IsVisible="{Binding NotesViewModel.ShowExpressions}"
+                        Foreground="{DynamicResource TickLineBrush}"
+                        Background="{DynamicResource TickLineBrushLow}"
+                        Resolution="{Binding PlaybackViewModel.Resolution}"
+                        TickWidth="{Binding NotesViewModel.TickWidth}"
+                        TickOrigin="{Binding NotesViewModel.TickOrigin}"
+                        TickOffset="{Binding NotesViewModel.TickOffset}"
+                        SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"
+                        ShowBar="False"/>
+      <!-- Expression backgrounds end -->
+      <Canvas Name="PortraitCanvas" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" IsHitTestVisible="False">
+        <Image Name="PortraitImage" Source="{Binding NotesViewModel.Portrait}" OpacityMask="{Binding NotesViewModel.PortraitMask}" Stretch="None"/>
+      </Canvas>
       <Border Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
               Margin="0,0,0,60" Height="60" IsHitTestVisible="False">
         <c:WaveformImage DataContext="{Binding NotesViewModel, Mode=OneWay}"
@@ -558,22 +577,8 @@
       <GridSplitter Grid.Row="4" Grid.ColumnSpan="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                     Background="{DynamicResource SystemControlBackgroundAltHighBrush}" IsVisible="{Binding NotesViewModel.ShowExpressions}"
                     Focusable="False" Cursor="SizeNorthSouth"/>
-      <c:TrackBackground Grid.Row="5" Grid.Column="1" IsHitTestVisible="False"
-                         IsVisible="{Binding NotesViewModel.ShowExpressions}"
-                         Foreground="{DynamicResource TrackBackgroundAltBrush}"
-                         TrackHeight="{Binding NotesViewModel.ExpTrackHeight}"/>
-      <c:TickBackground Grid.Row="5" Grid.Column="1" IsHitTestVisible="False"
-                        IsVisible="{Binding NotesViewModel.ShowExpressions}"
-                        Foreground="{DynamicResource TickLineBrush}"
-                        Background="{DynamicResource TickLineBrushLow}"
-                        Resolution="{Binding PlaybackViewModel.Resolution}"
-                        TickWidth="{Binding NotesViewModel.TickWidth}"
-                        TickOrigin="{Binding NotesViewModel.TickOrigin}"
-                        TickOffset="{Binding NotesViewModel.TickOffset}"
-                        SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"/>
       <c:ExpressionCanvas Grid.Row="5" Grid.Column="1" Opacity="{Binding NotesViewModel.ExpShadowOpacity}"
                           IsVisible="{Binding NotesViewModel.ShowExpressions}"
-                          Margin="0,24,0,0"
                           TickWidth="{Binding NotesViewModel.TickWidth}"
                           TickOffset="{Binding NotesViewModel.TickOffset}"
                           Part="{Binding NotesViewModel.Part}"
@@ -581,7 +586,6 @@
                           ShowRealCurve="False"/>
       <c:ExpressionCanvas Grid.Row="5" Grid.Column="1"
                           IsVisible="{Binding NotesViewModel.ShowExpressions}"
-                          Margin="0,24,0,0"
                           Bounds="{Binding NotesViewModel.ExpBounds, Mode=OneWayToSource}"
                           TickWidth="{Binding NotesViewModel.TickWidth}"
                           TickOffset="{Binding NotesViewModel.TickOffset}"

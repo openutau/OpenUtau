@@ -41,11 +41,11 @@ namespace OpenUtau.App.Controls {
                 nameof(SnapTicks),
                 o => o.SnapTicks,
                 (o, v) => o.SnapTicks = v);
-        public static readonly DirectProperty<TickBackground, bool> ShowBarNumberProperty =
+        public static readonly DirectProperty<TickBackground, bool> ShowBarProperty =
             AvaloniaProperty.RegisterDirect<TickBackground, bool>(
-                nameof(ShowBarNumber),
-                o => o.ShowBarNumber,
-                (o, v) => o.ShowBarNumber = v);
+                nameof(ShowBar),
+                o => o.ShowBar,
+                (o, v) => o.ShowBar = v);
 
         public int Resolution {
             get => _resolution;
@@ -72,9 +72,9 @@ namespace OpenUtau.App.Controls {
             get => _snapTicks;
             set => SetAndRaise(SnapTicksProperty, ref _snapTicks, value);
         }
-        public bool ShowBarNumber {
-            get => _showBarNumber;
-            set => SetAndRaise(ShowBarNumberProperty, ref _showBarNumber, value);
+        public bool ShowBar {
+            get => _showBar;
+            set => SetAndRaise(ShowBarProperty, ref _showBar, value);
         }
 
         private int _resolution = 480;
@@ -83,7 +83,7 @@ namespace OpenUtau.App.Controls {
         private int _tickOrigin;
         private int _snapDiv;
         private ObservableCollection<int>? _snapTicks;
-        private bool _showBarNumber;
+        private bool _showBar = true;
 
         private Pen penBar;
         private Pen penBeatUnit;
@@ -116,7 +116,8 @@ namespace OpenUtau.App.Controls {
                 change.Property == TickOriginProperty ||
                 change.Property == TickWidthProperty ||
                 change.Property == TickOffsetProperty ||
-                change.Property == SnapDivProperty) {
+                change.Property == SnapDivProperty ||
+                change.Property == ShowBarProperty) {
                 InvalidateVisual();
             }
         }
@@ -143,14 +144,15 @@ namespace OpenUtau.App.Controls {
             SnapTicks?.Clear();
             while (barTick <= rightTick) {
                 SnapTicks?.Add(barTick);
-                // Bar lines and numbers.
                 double x = Math.Round(barTick * TickWidth - pixelOffset) + 0.5;
                 double y = -0.5;
-                var textLayout = TextLayoutCache.Get((bar + 1).ToString(), ThemeManager.BarNumberBrush, 10);
-                using (var state = context.PushTransform(Matrix.CreateTranslation(x + 3, 10))) {
-                    textLayout.Draw(context, new Point());
+                if (ShowBar) {
+                    var textLayout = TextLayoutCache.Get((bar + 1).ToString(), ThemeManager.BarNumberBrush, 10);
+                    using (var state = context.PushTransform(Matrix.CreateTranslation(x + 3, 10))) {
+                        textLayout.Draw(context, new Point());
+                    }
+                    context.DrawLine(penBar, new Point(x, y), new Point(x, Bounds.Height + 0.5f));
                 }
-                context.DrawLine(penBar, new Point(x, y), new Point(x, Bounds.Height + 0.5f));
                 // Lines between bars.
                 var timeSig = project.timeAxis.TimeSignatureAtBar(bar);
                 int nextBarTick = project.timeAxis.BarBeatToTickPos(bar + 1, 0);
@@ -171,7 +173,7 @@ namespace OpenUtau.App.Controls {
                         project.timeAxis.TickPosToBarBeat(tick, out int snapBar, out int snapBeat, out int snapRemainingTicks);
                         var pen = snapRemainingTicks != 0 ? penDanshed : penBeatUnit;
                         x = Math.Round(tick * TickWidth - pixelOffset) + 0.5;
-                        y = 24;
+                        y = ShowBar ? 24 : 0;
                         context.DrawLine(pen, new Point(x, y), new Point(x, Bounds.Height + 0.5f));
                     }
                 }
@@ -180,22 +182,24 @@ namespace OpenUtau.App.Controls {
             }
             SnapTicks?.Add(barTick);
 
-            foreach (var tempo in project.tempos) {
-                double x = Math.Round(tempo.position * TickWidth - pixelOffset) + 0.5;
-                context.DrawLine(penDanshed, new Point(x, 0), new Point(x, 24));
-                var textLayout = TextLayoutCache.Get(tempo.bpm.ToString("#0.00"), ThemeManager.BarNumberBrush, 10);
-                using (var state = context.PushTransform(Matrix.CreateTranslation(x + 3, 0))) {
-                    textLayout.Draw(context, new Point());
+            if (ShowBar) {
+                foreach (var tempo in project.tempos) {
+                    double x = Math.Round(tempo.position * TickWidth - pixelOffset) + 0.5;
+                    context.DrawLine(penDanshed, new Point(x, 0), new Point(x, 24));
+                    var textLayout = TextLayoutCache.Get(tempo.bpm.ToString("#0.00"), ThemeManager.BarNumberBrush, 10);
+                    using (var state = context.PushTransform(Matrix.CreateTranslation(x + 3, 0))) {
+                        textLayout.Draw(context, new Point());
+                    }
                 }
-            }
 
-            foreach (var timeSig in project.timeSignatures) {
-                int tick = project.timeAxis.BarBeatToTickPos(timeSig.barPosition, 0);
-                var barTextLayout = TextLayoutCache.Get((timeSig.barPosition + 1).ToString(), ThemeManager.BarNumberBrush, 10);
-                double x = Math.Round(tick * TickWidth - pixelOffset) + 0.5 + barTextLayout.Width + 4;
-                var textLayout = TextLayoutCache.Get($"{timeSig.beatPerBar}/{timeSig.beatUnit}", ThemeManager.BarNumberBrush, 10);
-                using (var state = context.PushTransform(Matrix.CreateTranslation(x + 3, 10))) {
-                    textLayout.Draw(context, new Point());
+                foreach (var timeSig in project.timeSignatures) {
+                    int tick = project.timeAxis.BarBeatToTickPos(timeSig.barPosition, 0);
+                    var barTextLayout = TextLayoutCache.Get((timeSig.barPosition + 1).ToString(), ThemeManager.BarNumberBrush, 10);
+                    double x = Math.Round(tick * TickWidth - pixelOffset) + 0.5 + barTextLayout.Width + 4;
+                    var textLayout = TextLayoutCache.Get($"{timeSig.beatPerBar}/{timeSig.beatUnit}", ThemeManager.BarNumberBrush, 10);
+                    using (var state = context.PushTransform(Matrix.CreateTranslation(x + 3, 10))) {
+                        textLayout.Draw(context, new Point());
+                    }
                 }
             }
         }
