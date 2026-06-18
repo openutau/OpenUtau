@@ -43,9 +43,9 @@ namespace OpenUtau.App.ViewModels {
                 string? targetId = PhonemizerOverride;
                 bool isDefault = string.IsNullOrEmpty(targetId);
                 if (isDefault) {
-                    if (Part == null) return "Default";
+                    if (Part == null || Part.trackNo >= DocManager.Inst.Project.tracks.Count) return "Default";
                     var track = DocManager.Inst.Project.tracks[Part.trackNo];
-                    string trackId = track.Phonemizer.GetType().FullName ?? "";
+                    string trackId = track.Phonemizer.GetType().FullName ?? string.Empty;
                     return $"Default ({GetPhonemizerDisplayName(trackId)})";
                 }
                 var factory = OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f => 
