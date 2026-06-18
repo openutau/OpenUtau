@@ -652,7 +652,7 @@ namespace OpenUtau.Core {
 
     public class ClearPhonemeTimingCommand : NoteCommand {
         readonly UNote note;
-        readonly Tuple<int, int?, float?, float?>[] oldValues;
+        readonly Tuple<int, int?, float?, float?, float?, float?>[] oldValues;
         public override ValidateOptions ValidateOptions => new ValidateOptions {
             SkipTiming = true,
             Part = Part,
@@ -661,7 +661,7 @@ namespace OpenUtau.Core {
         public ClearPhonemeTimingCommand(UVoicePart part, UNote note) : base(part, note) {
             this.note = note;
             oldValues = note.phonemeOverrides
-                .Select(o => Tuple.Create(o.index, o.offset, o.preutterDelta, o.overlapDelta))
+                .Select(o => Tuple.Create(o.index, o.offset, o.preutterDelta, o.overlapDelta, o.attackTimeDelta, o.releaseTimeDelta))
                 .ToArray();
         }
 
@@ -670,6 +670,8 @@ namespace OpenUtau.Core {
                 o.offset = null;
                 o.preutterDelta = null;
                 o.overlapDelta = null;
+                o.attackTimeDelta = null;
+                o.releaseTimeDelta = null;
             }
         }
         public override void Unexecute() {
@@ -678,6 +680,8 @@ namespace OpenUtau.Core {
                 o.offset = t.Item2;
                 o.preutterDelta = t.Item3;
                 o.overlapDelta = t.Item4;
+                o.attackTimeDelta = t.Item5;
+                o.releaseTimeDelta = t.Item6;
             }
         }
         public override string ToString() => "Clear phoneme timing";
