@@ -386,6 +386,7 @@ namespace OpenUtau.App.ViewModels {
                     return result;
                 }
                 // p4 Overlap
+                if (phoneme.Next == null || phoneme.Next.position != phoneme.End) continue;
                 int p4Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[4].X) - viewModel.Part.position;
                 double p4x = viewModel.TickToneToPoint(p4Tick, 0).X;
                 point = new Point(p4x, 60 - phoneme.envelope.data[4].Y * 0.24 - 1);

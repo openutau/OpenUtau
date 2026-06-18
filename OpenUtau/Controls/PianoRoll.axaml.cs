@@ -1258,8 +1258,7 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             var hitInfo = ViewModel.NotesViewModel.HitTest.HitTestPhoneme(point.Position);
-            var adjacent = hitInfo.phoneme != null && hitInfo.phoneme.Next != null && hitInfo.phoneme.Next.adjacent;
-            if (hitInfo.hitPosition || hitInfo.hitPreutter || (hitInfo.hitOverlap && adjacent) || hitInfo.hitAttackTime || hitInfo.hitReleaseTime) {
+            if (hitInfo.hitPosition || hitInfo.hitPreutter || hitInfo.hitOverlap || hitInfo.hitAttackTime || hitInfo.hitReleaseTime) {
                 Cursor = ViewConstants.cursorSizeWE;
                 ViewModel.MouseoverPhoneme(null);
                 return;
