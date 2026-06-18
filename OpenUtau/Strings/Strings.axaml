@@ -242,15 +242,8 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="languages.zh">Chinese</system:String>
   <system:String x:Key="languages.zh-yue">Cantonese</system:String>
 
-  <system:String x:Key="lyrics.apply">Apply</system:String>
-  <system:String x:Key="lyrics.applyselected">Apply only to selected notes</system:String>
-  <system:String x:Key="lyrics.cancel">Cancel</system:String>
-  <system:String x:Key="lyrics.caption">Edit Lyrics</system:String>
-  <system:String x:Key="lyrics.livepreview">Live preview</system:String>
-  <system:String x:Key="lyrics.nonote">There is no note!</system:String>
-  <system:String x:Key="lyrics.reset">Reset</system:String>
-  <system:String x:Key="lyrics.selectnotes">Select some notes first!</system:String>
   <system:String x:Key="lyrics.separators">Separators</system:String>
+  <system:String x:Key="lyrics.skipsymbols">Skip symbols such as "R" or "-"</system:String>
 
   <system:String x:Key="lyricsreplace.after">After :</system:String>
   <system:String x:Key="lyricsreplace.before">Before :</system:String>

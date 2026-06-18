@@ -1,100 +1,95 @@
 ﻿using System;
 using System.Linq;
+using System.Reactive.Linq;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
+using SharpCompress;
 
 namespace OpenUtau.App.ViewModels {
-    class LyricsViewModel : ViewModelBase {
-        [Reactive] public string? Text { get; set; } = string.Empty;
+    public class LyricsViewModel : ViewModelBase {
+        [Reactive] public string Text { get; set; } = string.Empty;
         [Reactive] public int CurrentCount { get; set; }
         [Reactive] public int TotalCount { get; set; }
-        [Reactive] public bool LivePreview { get; set; } = Preferences.Default.LyricLivePreview;
-        [Reactive] public bool ApplySelection { get; set; } = Preferences.Default.LyricApplySelectionOnly;
+        [Reactive] public bool SkipSymbols { get; set; } = true;
 
-        private UVoicePart? part;
-        private UNote[]? notes;
-        private UNote[]? selection;
-        private string[]? startLyrics;
+        public bool IsFocused { get; set; } = false;
 
-        public LyricsViewModel() {
-            this.WhenAnyValue(x => x.LivePreview,
-                x => x.Text)
-                .Subscribe(t => {
-                    Preview(t.Item1);
-                });
-            this.WhenAnyValue(x => x.ApplySelection)
+        private NotesViewModel notesViewModel;
+        private UNote[] notes = [];
+        private UNote[] selection = [];
+
+        public LyricsViewModel(NotesViewModel notesVm) {
+            notesViewModel = notesVm;
+
+            this.WhenAnyValue(x => x.SkipSymbols)
                 .Subscribe(a => {
-                    UpdateTotalCount();
-                    Preview(LivePreview);
+                    FilterNotes();
                 });
+
+            MessageBus.Current.Listen<NotesSelectionEvent>()
+                .Subscribe(e => {
+                    if (e.tempSelectedNotes.Length > 0) {
+                        selection = [];
+                    } else {
+                        selection = e.selectedNotes.ToArray();
+                    }
+                    FilterNotes();
+                });
+            selection = notesViewModel.Selection.ToArray();
+            FilterNotes();
         }
 
-        public void Start(UVoicePart part, UNote[] notes, UNote[] selection) {
-            this.part = part;
-            this.notes = notes;
-            this.selection = selection;
-            if (selection.Length < 1) {
-                ApplySelection = false;
+        private void FilterNotes() {
+            if (IsFocused) {
+                DocManager.Inst.EndUndoGroup();
+                IsFocused = false;
             }
-
-            UpdateTotalCount();
-            CurrentCount = TotalCount;
-            Text = SplitLyrics.Join(startLyrics!);
-            DocManager.Inst.StartUndoGroup("command.note.lyric");
+            if (notesViewModel == null || notesViewModel.Part == null) {
+                notes = [];
+                Text = string.Empty;
+                TotalCount = 0;
+                CurrentCount = 0;
+            } else if (selection.Length == 0) {
+                notes = [];
+                CurrentCount = SplitLyrics.Split(Text).Count;
+                if (TotalCount == 0) return;
+                Text = string.Empty;
+                TotalCount = 0;
+                CurrentCount = 0;
+            } else {
+                if (SkipSymbols) {
+                    notes = selection.Where(n => n.lyric != "R" && n.lyric != "-" && n.lyric != "+~").ToArray();
+                } else {
+                    notes = selection.ToArray();
+                }
+                Text = SplitLyrics.Join(notes.Select(n => n.lyric));
+                TotalCount = notes.Length;
+                CurrentCount = SplitLyrics.Split(Text).Count;
+            }
         }
 
-        private void Preview(bool update) {
-            var notes = ApplySelection ? selection : this.notes;
-            if (startLyrics == null || notes == null || part == null) {
-                return;
-            }
-            DocManager.Inst.RollBackUndoGroup();
+        public void ApplyLyrics() {
             var lyrics = SplitLyrics.Split(Text);
             CurrentCount = lyrics.Count;
-            if (update) {
-                for (int i = 0; i < lyrics.Count && i < notes.Length; ++i) {
-                    if (notes[i].lyric != lyrics[i]) {
-                        DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(part, notes[i], lyrics[i]));
-                    }
-                }
-            }
-        }
 
-        private void UpdateTotalCount() {
-            if (ApplySelection) {
-                TotalCount = selection?.Length ?? 0;
-                startLyrics = selection?.Select(n => n.lyric).ToArray();
-            } else {
-                TotalCount = notes?.Length ?? 0;
-                startLyrics = notes?.Select(n => n.lyric).ToArray();
-            }
-        }
-
-        public void Reset() {
-            if (startLyrics == null) {
+            if (notesViewModel == null || notesViewModel.Part == null || !IsFocused || notes.Length == 0 || lyrics.Count == 0) {
                 return;
             }
-            DocManager.Inst.RollBackUndoGroup();
-            Text = SplitLyrics.Join(startLyrics);
+
+            int count = Math.Min(lyrics.Count, notes.Length);
+            DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(notesViewModel.Part, notes.Take(count).ToArray(), lyrics.Take(count).ToArray()));
         }
 
-        public void Cancel() {
-            DocManager.Inst.RollBackUndoGroup();
-            DocManager.Inst.EndUndoGroup();
-            Preferences.Default.LyricLivePreview = LivePreview;
-            Preferences.Default.LyricApplySelectionOnly = ApplySelection;
-            Preferences.Save();
-        }
-
-        public void Finish() {
-            Preview(true);
-            DocManager.Inst.EndUndoGroup();
-            Preferences.Default.LyricLivePreview = LivePreview;
-            Preferences.Default.LyricApplySelectionOnly = ApplySelection;
-            Preferences.Save();
+        public string? GetFirstLyric() {
+            var split = SplitLyrics.Split(Text);
+            if (string.IsNullOrWhiteSpace(split.FirstOrDefault())) return null;
+            var lyric = split[0];
+            split.RemoveAt(0);
+            Text = SplitLyrics.Join(split);
+            return lyric;
         }
     }
 }

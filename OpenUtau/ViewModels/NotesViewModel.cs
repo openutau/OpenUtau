@@ -101,6 +101,7 @@ namespace OpenUtau.App.ViewModels {
         private readonly ObservableAsPropertyHelper<double> smallChangeY;
 
         public readonly NoteSelectionViewModel Selection = new NoteSelectionViewModel();
+        public readonly LyricsViewModel LyricsViewModel;
 
         internal NotesViewModelHitTest HitTest;
         private int _lastNoteLength = 480;
@@ -110,6 +111,8 @@ namespace OpenUtau.App.ViewModels {
         private int userKey => Project.key;
 
         public NotesViewModel() {
+            LyricsViewModel = new LyricsViewModel(this);
+
             SnapDivs = new List<MenuItemViewModel>();
             SetSnapUnitCommand = ReactiveCommand.Create<int>(div => {
                 userSnapDiv = div;
@@ -208,6 +211,10 @@ namespace OpenUtau.App.ViewModels {
                             Command = SetKeyCommand,
                             CommandParameter = index,
                         }));
+                });
+            this.WhenAnyValue(x => x.LyricsViewModel.Text)
+                .Subscribe(text => {
+                    LyricsViewModel.ApplyLyrics();
                 });
 
             ShowTips = Preferences.Default.ShowTips;

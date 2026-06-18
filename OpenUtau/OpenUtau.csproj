@@ -99,6 +99,9 @@
     <None Include="..\runtimes\linux-arm64\native\**" CopyToOutputDirectory="PreserveNewest" LinkBase="." />
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="Controls\LyricsPanel.axaml.cs">
+      <DependentUpon>LyricsPanel.axaml</DependentUpon>
+    </Compile>
     <Compile Update="Controls\NotePropertyExpression.axaml.cs">
       <DependentUpon>NotePropertyExpression.axaml</DependentUpon>
     </Compile>

@@ -551,10 +551,14 @@
         </Border>
       </Grid>
       <StackPanel Grid.Row="3" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                  Margin="12,12,12,70" Orientation="Horizontal">
+                  Margin="12,12,12,70">
         <Border>
           <c:SearchBar Name="SearchBar"/>
         </Border>
+      </StackPanel>
+      <StackPanel Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                  Margin="12,12,12,70">
+          <c:LyricsPanel Name="LyricsPanel" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
       </StackPanel>
       <Rectangle Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
                  Margin="0,0,0,60" Height="6" Opacity="0.15" IsVisible="{Binding NotesViewModel.ShowPhoneme}">
