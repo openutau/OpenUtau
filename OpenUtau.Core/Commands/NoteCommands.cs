@@ -542,7 +542,7 @@ namespace OpenUtau.Core {
             }
             max = Math.Max(0, max);
             double min = -phoneme.autoPreutter;
-            newDelta = (float)Math.Clamp(delta, min, max);
+            newDelta = (float)Math.Max(Math.Min(delta, max), min);
         }
         public override void Execute() {
             var o = note.GetPhonemeOverride(index);
@@ -574,7 +574,7 @@ namespace OpenUtau.Core {
             double overlap = phoneme.preutter - phoneme.autoOverlap;
             double max = phoneme.envelope.data[3].X + overlap;
             double min = -phoneme.Prev?.DurationMs + 5 + overlap ?? 0;
-            newDelta = (float)Math.Clamp(delta, min, max);
+            newDelta = (float)Math.Max(Math.Min(delta, max), min);
         }
         public override void Execute() {
             var o = note.GetPhonemeOverride(index);
@@ -605,7 +605,7 @@ namespace OpenUtau.Core {
 
             double max = phoneme.autoPreutter - phoneme.GetFadeIn() + phoneme.envelope.data[3].X;
             double min = -phoneme.GetFadeIn() + 5;
-            newDelta = (float)Math.Clamp(delta, min, max);
+            newDelta = (float)Math.Max(Math.Min(delta, max), min);
         }
         public override void Execute() {
             var o = note.GetPhonemeOverride(index);
@@ -637,7 +637,7 @@ namespace OpenUtau.Core {
             var p3x = phoneme.envelope.data[4].X - phoneme.GetFadeOut();
             double max = p3x - phoneme.envelope.data[2].X;
             double min = -phoneme.GetFadeOut() + 5;
-            newDelta = (float)Math.Clamp(delta, min, max);
+            newDelta = (float)Math.Max(Math.Min(delta, max), min);
         }
         public override void Execute() {
             var o = note.GetPhonemeOverride(index);
