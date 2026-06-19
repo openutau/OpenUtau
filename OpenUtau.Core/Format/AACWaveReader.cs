@@ -24,6 +24,8 @@ namespace OpenUtau.Core.Format {
             if (track.GetProtection() != null)
                 throw new Exception("M4A file is DRM-protected and cannot be decoded.");
             var (data, sampleRate, channels, bitsPerSample) = Decode(track);
+            if (data.Length == 0)
+                throw new Exception("M4A file produced no audio data; all frames failed to decode.");
             waveFormat = new WaveFormat(
                 sampleRate > 0 ? sampleRate : track.GetSampleRate(),
                 bitsPerSample > 0 ? bitsPerSample : 16,
