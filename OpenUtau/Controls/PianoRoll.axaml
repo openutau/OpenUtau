@@ -323,7 +323,7 @@
                 </MenuItem>
               </MenuItem>
               <MenuItem Header="{DynamicResource prefs.playback.autoscroll}">
-                <MenuItem Header="{DynamicResource prefs.off}" Click="OnMenuPlaybackAutoScroll" Tag="0">
+                <MenuItem Header="{DynamicResource prefs.playback.autoscrollmode.off}" Click="OnMenuPlaybackAutoScroll" Tag="0">
                   <MenuItem.Icon>
                     <CheckBox IsChecked="{Binding PlaybackAutoScroll0}" />
                   </MenuItem.Icon>

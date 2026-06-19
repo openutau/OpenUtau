@@ -150,8 +150,8 @@
       </StackPanel>
     </ScrollViewer>
     <Grid Grid.Row="1" HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*" Margin="10,0,10,0">
-      <Button Grid.Column="0" Content="{DynamicResource themeeditor.cancel}" HorizontalAlignment="Stretch" Click="OnCancel" />
-      <Button Grid.Column="2" Content="{DynamicResource themeeditor.save}" HorizontalAlignment="Stretch" Click="OnSave"/>
+      <Button Grid.Column="0" Content="{DynamicResource button.cancel}" HorizontalAlignment="Stretch" Click="OnCancel" />
+      <Button Grid.Column="2" Content="{DynamicResource button.save}" HorizontalAlignment="Stretch" Click="OnSave"/>
     </Grid>
   </Grid>
 </Window>

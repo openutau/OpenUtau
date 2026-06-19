@@ -1,6 +1,19 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  
+  <system:String x:Key="button.apply">Apply</system:String>
+  <system:String x:Key="button.cancel">Cancel</system:String>
+  <system:String x:Key="button.no">No</system:String>
+  <system:String x:Key="button.off">Off</system:String>
+  <system:String x:Key="button.ok">Ok</system:String>
+  <system:String x:Key="button.on">On</system:String>
+  <system:String x:Key="button.open">Open</system:String>
+  <system:String x:Key="button.remove">Remove</system:String>
+  <system:String x:Key="button.reset">Reset</system:String>
+  <system:String x:Key="button.save">Save</system:String>
+  <system:String x:Key="button.select">Select</system:String>
+  <system:String x:Key="button.yes">Yes</system:String>
 
   <system:String x:Key="command.batch.lyric">Lyrics batch edit</system:String>
   <system:String x:Key="command.batch.note">Notes batch edit</system:String>
@@ -110,11 +123,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="dialogs.exportds.variance">Variance expressions</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">Enable DiffSinger Tensor Cache in Preferences to export variance curves.</system:String>
   <system:String x:Key="dialogs.exportds.notrendered">Please render all parts before exporting.</system:String>
-  <system:String x:Key="dialogs.messagebox.cancel">Cancel</system:String>
   <system:String x:Key="dialogs.messagebox.copy">Copy error to clipboard</system:String>
-  <system:String x:Key="dialogs.messagebox.no">No</system:String>
-  <system:String x:Key="dialogs.messagebox.ok">Ok</system:String>
-  <system:String x:Key="dialogs.messagebox.yes">Yes</system:String>
   <system:String x:Key="dialogs.noresampler.caption">No resampler</system:String>
   <system:String x:Key="dialogs.noresampler.message">No resampler! Put your favourite resampler exe or dll in the Resamplers folder and choose it in Preferences!</system:String>
   <system:String x:Key="dialogs.recovery">Previously, OpenUtau terminated abnormally. Click here to recover.</system:String>
@@ -202,7 +211,6 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="exesetup.wavtool">Install as wavtool</system:String>
 
   <system:String x:Key="exps.abbr">Abbreviation</system:String>
-  <system:String x:Key="exps.apply">Apply</system:String>
   <system:String x:Key="exps.caption">Expressions</system:String>
   <system:String x:Key="exps.defaultvalue">Default</system:String>
   <system:String x:Key="exps.flag">Resampler Flag</system:String>
@@ -242,13 +250,10 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="languages.zh">Chinese</system:String>
   <system:String x:Key="languages.zh-yue">Cantonese</system:String>
 
-  <system:String x:Key="lyrics.apply">Apply</system:String>
   <system:String x:Key="lyrics.applyselected">Apply only to selected notes</system:String>
-  <system:String x:Key="lyrics.cancel">Cancel</system:String>
   <system:String x:Key="lyrics.caption">Edit Lyrics</system:String>
   <system:String x:Key="lyrics.livepreview">Live preview</system:String>
   <system:String x:Key="lyrics.nonote">There is no note!</system:String>
-  <system:String x:Key="lyrics.reset">Reset</system:String>
   <system:String x:Key="lyrics.selectnotes">Select some notes first!</system:String>
   <system:String x:Key="lyrics.separators">Separators</system:String>
 
@@ -352,9 +357,7 @@ Syntax: prefix,suffix</system:String>
   <system:String x:Key="notedefaults.portamento.start">Start</system:String>
   <system:String x:Key="notedefaults.preset">Preset</system:String>
   <system:String x:Key="notedefaults.preset.namenew">New Preset Name</system:String>
-  <system:String x:Key="notedefaults.preset.remove">Remove</system:String>
   <system:String x:Key="notedefaults.preset.remove.tooltip">Removes last applied preset.</system:String>
-  <system:String x:Key="notedefaults.preset.save">Save</system:String>
   <system:String x:Key="notedefaults.preset.save.tooltip">Save current settings to a new preset.</system:String>
   <system:String x:Key="notedefaults.reset">Reset All Settings</system:String>
   <system:String x:Key="notedefaults.reset.tooltip">Reset every setting to default values.
@@ -372,9 +375,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="notedefaults.vibrato.vollink">Volume Link</system:String>
 
   <system:String x:Key="noteproperty">Note Properties</system:String>
-  <system:String x:Key="noteproperty.apply">Apply</system:String>
   <system:String x:Key="noteproperty.basic">Basic</system:String>
-  <system:String x:Key="noteproperty.cancel">Cancel</system:String>
   <system:String x:Key="noteproperty.set">Set</system:String>
   <system:String x:Key="noteproperty.setlongnote">Set only on long notes</system:String>
   <system:String x:Key="noteproperty.tone">Tone</system:String>
@@ -592,8 +593,6 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.editing">Editing</system:String>
   <system:String x:Key="prefs.general">General</system:String>
   <system:String x:Key="prefs.note.restart">Note: please restart OpenUtau after changing this item.</system:String>
-  <system:String x:Key="prefs.off">Off</system:String>
-  <system:String x:Key="prefs.on">On</system:String>
   <system:String x:Key="prefs.otoeditor">Oto Editor</system:String>
   <system:String x:Key="prefs.otoeditor.select">Default Oto Editor</system:String>
   <system:String x:Key="prefs.otoeditor.setparampath">setParam Path</system:String>
@@ -602,13 +601,11 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.paths.addlsinger.install">Install to Additional Singer Path</system:String>
   <system:String x:Key="prefs.paths.detect">Detect</system:String>
   <system:String x:Key="prefs.paths.loaddeepfolders">Load all depth folders</system:String>
-  <system:String x:Key="prefs.paths.open">Open</system:String>
-  <system:String x:Key="prefs.paths.reset">Reset</system:String>
-  <system:String x:Key="prefs.paths.select">Select</system:String>
   <system:String x:Key="prefs.paths.singer">Singer Path</system:String>
   <system:String x:Key="prefs.playback">Playback</system:String>
   <system:String x:Key="prefs.playback.autoscroll">Auto-Scroll</system:String>
   <system:String x:Key="prefs.playback.autoscrollmode">Auto-Scroll Mode</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode.off">Off</system:String>
   <system:String x:Key="prefs.playback.autoscrollmode.pagescroll">Page Scroll</system:String>
   <system:String x:Key="prefs.playback.autoscrollmode.stationarycursor">Stationary Cursor</system:String>
   <system:String x:Key="prefs.playback.backend">Audio Backend</system:String>
@@ -720,7 +717,6 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singers.setimage">Set Icon</system:String>
   <system:String x:Key="singers.setportrait">Set Portrait</system:String>
   <system:String x:Key="singers.setsingertype">Set Singer Type</system:String>
-  <system:String x:Key="singers.subbanks.cancel">Cancel</system:String>
   <system:String x:Key="singers.subbanks.clear">Clear</system:String>
   <system:String x:Key="singers.subbanks.color">Color</system:String>
   <system:String x:Key="singers.subbanks.color.add">Add Color</system:String>
@@ -729,8 +725,6 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singers.subbanks.edit">Edit Subbanks</system:String>
   <system:String x:Key="singers.subbanks.export">Export prefix.map</system:String>
   <system:String x:Key="singers.subbanks.import">Import prefix.map</system:String>
-  <system:String x:Key="singers.subbanks.reset">Reset</system:String>
-  <system:String x:Key="singers.subbanks.save">Save</system:String>
   <system:String x:Key="singers.subbanks.selectall">Select All</system:String>
   <system:String x:Key="singers.subbanks.set">Set</system:String>
   <system:String x:Key="singers.subbanks.tone">Tone</system:String>
@@ -750,6 +744,8 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singersetup.textfileencoding">Text File Encoding</system:String>
   <system:String x:Key="singersetup.textfileencoding.prompt">Choose an encoding that make file contents look right.</system:String>
   <system:String x:Key="singersetup.title">Singer Setup</system:String>
+
+  <system:String x:Key="themeeditor.title">Theme Editor</system:String>
 
   <system:String x:Key="tip.aliasbox">Override Alias</system:String>
   <system:String x:Key="tip.exps">Numerical,Options Type
@@ -830,10 +826,6 @@ General
   <system:String x:Key="welcome.recent">Recent</system:String>
   <system:String x:Key="welcome.start">Start</system:String>
   <system:String x:Key="welcome.template">Template</system:String>
-
-  <system:String x:Key="themeeditor.title">Theme Editor</system:String>
-  <system:String x:Key="themeeditor.save">Save</system:String>
-  <system:String x:Key="themeeditor.cancel">Cancel</system:String>
 
   <!-- Mix Effects (post-processing) -->
   <system:String x:Key="mixfx.caption">Track Polish</system:String>
