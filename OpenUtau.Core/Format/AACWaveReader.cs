@@ -21,6 +21,8 @@ namespace OpenUtau.Core.Format {
             if (tracks.Count > 1)
                 Serilog.Log.Warning($"M4A file has {tracks.Count} AAC tracks; using the first one.");
             var track = (AudioTrack)tracks[0];
+            if (track.GetProtection() != null)
+                throw new Exception("M4A file is DRM-protected and cannot be decoded.");
             var (data, sampleRate, channels, bitsPerSample) = Decode(track);
             waveFormat = new WaveFormat(
                 sampleRate > 0 ? sampleRate : track.GetSampleRate(),
