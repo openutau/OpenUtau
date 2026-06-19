@@ -74,7 +74,7 @@ namespace OpenUtau.Core.Format {
         }
 
         public override int Read(byte[] buffer, int offset, int count) {
-            int n = (int)Math.Min(wavData.Length - position, count);
+            int n = (int)Math.Max(0, Math.Min(wavData.Length - position, count));
             Array.Copy(wavData, position, buffer, offset, n);
             position += n;
             return n;
