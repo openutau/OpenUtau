@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -53,12 +53,7 @@ namespace OpenUtau.Core.Format {
 #if WINDOWS
                 return new MediaFoundationReader(filepath);
 #else
-                try {
-                    return new AACWaveReader(filepath);
-                } catch (Exception e) {
-                    Serilog.Log.Error(e, $"AAC decoder constructor error: {e.Message}, falling back to FFmpeg");
-                    return new FFmpegWaveReader(filepath);
-                }
+                return new AACWaveReader(filepath);
 #endif
             }
             throw new Exception("Unsupported audio file format.");
