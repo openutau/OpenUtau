@@ -35,7 +35,6 @@ namespace OpenUtau.App.Views {
 
         private PianoRollDetachedWindow? pianoRollWindow;
         private PianoRoll? pianoRoll;
-        private bool openPianoRollWindow;
 
         private PartEditState? partEditState;
         private readonly DispatcherTimer timer;
@@ -404,6 +403,29 @@ namespace OpenUtau.App.Views {
 
         async void OnMenuExportDsTo(object sender, RoutedEventArgs e) {
             var project = DocManager.Inst.Project;
+            bool allRendered = project.parts
+                .OfType<UVoicePart>()
+                .All(part => part.renderPhrases.Count > 0 &&
+                    part.renderPhrases.All(phrase => {
+                        var hashStr = $"{phrase.hash:x16}";
+                        return Directory.EnumerateFiles(
+                            PathManager.Inst.CachePath, $"*{hashStr}*.wav").Any();
+                    }));
+            if (!allRendered) {
+                await MessageBox.Show(
+                    this,
+                    ThemeManager.GetString("dialogs.exportds.notrendered"),
+                    ThemeManager.GetString("errors.caption"),
+                    MessageBox.MessageBoxButtons.Ok);
+                return;
+            }
+            var vm = new DsScriptExportViewModel();
+            var dialog = new DsScriptExportDialog { DataContext = vm };
+            await dialog.ShowDialog(this);
+            if (!dialog.Confirmed) {
+                return;
+            }
+            var options = vm.BuildOptions();
             var file = await FilePicker.SaveFileAboutProject(
                 this, "menu.file.exportds", FilePicker.DS);
             if (!string.IsNullOrEmpty(file)) {
@@ -411,39 +433,7 @@ namespace OpenUtau.App.Views {
                     var part = project.parts[i];
                     if (part is UVoicePart voicePart) {
                         var savePath = PathManager.Inst.GetPartSavePath(file, voicePart.DisplayName, i)[..^4] + ".ds";
-                        DiffSingerScript.SavePart(project, voicePart, savePath);
-                        DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"{savePath}."));
-                    }
-                }
-            }
-        }
-
-        async void OnMenuExportDsV2To(object sender, RoutedEventArgs e) {
-            var project = DocManager.Inst.Project;
-            var file = await FilePicker.SaveFileAboutProject(
-                this, "menu.file.exportds.v2", FilePicker.DS);
-            if (!string.IsNullOrEmpty(file)) {
-                for (var i = 0; i < project.parts.Count; i++) {
-                    var part = project.parts[i];
-                    if (part is UVoicePart voicePart) {
-                        var savePath = PathManager.Inst.GetPartSavePath(file, voicePart.DisplayName, i)[..^4] + ".ds";
-                        DiffSingerScript.SavePart(project, voicePart, savePath, true);
-                        DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"{savePath}."));
-                    }
-                }
-            }
-        }
-
-        async void OnMenuExportDsV2WithoutPitchTo(object sender, RoutedEventArgs e) {
-            var project = DocManager.Inst.Project;
-            var file = await FilePicker.SaveFileAboutProject(
-                this, "menu.file.exportds.v2withoutpitch", FilePicker.DS);
-            if (!string.IsNullOrEmpty(file)) {
-                for (var i = 0; i < project.parts.Count; i++) {
-                    var part = project.parts[i];
-                    if (part is UVoicePart voicePart) {
-                        var savePath = PathManager.Inst.GetPartSavePath(file, voicePart.DisplayName, i)[..^4] + ".ds";
-                        DiffSingerScript.SavePart(project, voicePart, savePath, true, false);
+                        DiffSingerScript.SavePart(project, voicePart, savePath, options);
                         DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"{savePath}."));
                     }
                 }
@@ -1174,26 +1164,19 @@ namespace OpenUtau.App.Views {
         }
 
         public void PartsCanvasPointerReleased(object sender, PointerReleasedEventArgs args) {
-            if (partEditState != null) {
-                if (partEditState.MouseButton != args.InitialPressMouseButton) {
-                    return;
-                }
-                var control = (Control)sender;
-                var point = args.GetCurrentPoint(control);
-                partEditState.Update(point.Pointer, point.Position);
-                partEditState.End(point.Pointer, point.Position);
-                partEditState = null;
-                Cursor = null;
+            if (partEditState?.MouseButton != args.InitialPressMouseButton) {
+                return;
             }
-            if (openPianoRollWindow) {
-                pianoRollWindow?.Show();
-                pianoRollWindow?.Activate();
-                openPianoRollWindow = false;
-            }
+            var control = (Control)sender;
+            var point = args.GetCurrentPoint(control);
+            partEditState.Update(point.Pointer, point.Position);
+            partEditState.End(point.Pointer, point.Position);
+            partEditState = null;
+            Cursor = null;
         }
 
         public async void PartsCanvasDoubleTapped(object sender, TappedEventArgs args) {
-            if (!(sender is Canvas canvas)) {
+            if (sender is not Canvas canvas) {
                 return;
             }
             var control = canvas.InputHitTest(args.GetPosition(canvas));
@@ -1209,11 +1192,9 @@ namespace OpenUtau.App.Views {
                     };
 
                     if (Preferences.Default.DetachPianoRoll) {
-                        viewModel!.ShowPianoRoll = false;
+                        viewModel.ShowPianoRoll = false;
                         pianoRollWindow = new(pianoRoll);
-                        pianoRollWindow.Show();
                     } else {
-                        viewModel!.ShowPianoRoll = true;
                         PianoRollContainer.Content = pianoRoll;
                     }
 
@@ -1224,11 +1205,12 @@ namespace OpenUtau.App.Views {
 
                     pianoRoll.ViewModel.PlaybackViewModel = viewModel.PlaybackViewModel;
                 }
-                // Workaround for new window losing focus.
                 if (pianoRollWindow != null) {
-                    openPianoRollWindow = true;
+                    pianoRollWindow.Show();
+                    pianoRollWindow.Activate();
                 } else {
                     viewModel.ShowPianoRoll = true;
+                    pianoRoll.Focus();
                 }
                 int tick = viewModel.TracksViewModel.PointToTick(args.GetPosition(canvas));
                 DocManager.Inst.ExecuteCmd(new LoadPartNotification(partControl.part, DocManager.Inst.Project, tick));
@@ -1244,11 +1226,11 @@ namespace OpenUtau.App.Views {
                 pianoRollWindow?.ForceClose();
                 pianoRollWindow = null;
                 PianoRollContainer.Content = pianoRoll;
-                viewModel!.ShowPianoRoll = true;
+                viewModel.ShowPianoRoll = true;
                 Preferences.Default.DetachPianoRoll = false;
             } else {
                 PianoRollContainer.Content = null;
-                viewModel!.ShowPianoRoll = false;
+                viewModel.ShowPianoRoll = false;
                 if (pianoRollWindow == null) {
                     pianoRollWindow = new(pianoRoll);
                     pianoRollWindow.Show();
@@ -1612,11 +1594,11 @@ namespace OpenUtau.App.Views {
                 int newDuration = Math.Max(leftPart.End, rightPart.End) - newPosition;
                 int deltaPos = rightPart.position - leftPart.position;
                 UVoicePart shiftPart = new UVoicePart();
-                rightPart.notes.ForEach((note) => {
+                foreach (var note in rightPart.notes) {
                     UNote shiftNote = note.Clone();
                     shiftNote.position += deltaPos;
                     shiftPart.notes.Add(shiftNote);
-                });
+                }
                 foreach (var curve in rightPart.curves) {
                     UCurve shiftCurve = curve.Clone();
                     for (var i = 0; i < shiftCurve.xs.Count; i++) {

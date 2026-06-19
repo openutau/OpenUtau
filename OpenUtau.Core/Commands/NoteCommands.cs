@@ -26,18 +26,19 @@ namespace OpenUtau.Core {
         readonly int OldPartDuration;
         public AddNoteCommand(UVoicePart part, UNote note) : base(part, note) {
             OldPartDuration = part.Duration;
-            DocManager.Inst.Project.timeAxis.TickPosToBarBeat(note.End - 1, out int bar, out int beat, out int remainingTicks);
-            int minDurTick = DocManager.Inst.Project.timeAxis.BarBeatToTickPos(bar + 2, 0) - part.position;
+            int minDurTick = part.GetMinDurTickForNoteEdit(DocManager.Inst.Project, note.End);
             if (part.Duration < minDurTick) {
                 NewPartDuration = minDurTick;
             }
         }
         public AddNoteCommand(UVoicePart part, List<UNote> notes) : base(part, notes) {
             OldPartDuration = part.Duration;
-            DocManager.Inst.Project.timeAxis.TickPosToBarBeat((Notes.LastOrDefault()?.End ?? 1) - 1, out int bar, out int beat, out int remainingTicks);
-            int minDurTick = DocManager.Inst.Project.timeAxis.BarBeatToTickPos(bar + 2, 0) - part.position;
-            if (part.Duration < minDurTick) {
-                NewPartDuration = minDurTick;
+            var note = notes.LastOrDefault();
+            if (note != null) {
+                int minDurTick = part.GetMinDurTickForNoteEdit(DocManager.Inst.Project, note.End);
+                if (part.Duration < minDurTick) {
+                    NewPartDuration = minDurTick;
+                }
             }
         }
         public override string ToString() { return "Add note"; }
@@ -83,13 +84,28 @@ namespace OpenUtau.Core {
 
     public class MoveNoteCommand : NoteCommand {
         readonly int DeltaPos, DeltaNoteNum;
+        readonly int NewPartDuration;
+        readonly int OldPartDuration;
         public MoveNoteCommand(UVoicePart part, UNote note, int deltaPos, int deltaNoteNum) : base(part, note) {
             DeltaPos = deltaPos;
             DeltaNoteNum = deltaNoteNum;
+            OldPartDuration = part.Duration;
+            int minDurTick = part.GetMinDurTickForNoteEdit(DocManager.Inst.Project, note.End + deltaPos);
+            if (part.Duration < minDurTick) {
+                NewPartDuration = minDurTick;
+            }
         }
         public MoveNoteCommand(UVoicePart part, List<UNote> notes, int deltaPos, int deltaNoteNum) : base(part, notes) {
             DeltaPos = deltaPos;
             DeltaNoteNum = deltaNoteNum;
+            OldPartDuration = part.Duration;
+            var note = notes.LastOrDefault();
+            if (note != null) {
+                int minDurTick = part.GetMinDurTickForNoteEdit(DocManager.Inst.Project, note.End + deltaPos);
+                if (part.Duration < minDurTick) {
+                    NewPartDuration = minDurTick;
+                }
+            }
         }
         public override string ToString() { return $"Move {Notes.Count()} notes"; }
         public override void Execute() {
@@ -99,6 +115,9 @@ namespace OpenUtau.Core {
                     note.position += DeltaPos;
                     note.tone += DeltaNoteNum;
                     Part.notes.Add(note);
+                }
+                if (NewPartDuration > 0) {
+                    Part.Duration = NewPartDuration;
                 }
             }
         }
@@ -110,6 +129,7 @@ namespace OpenUtau.Core {
                     note.tone -= DeltaNoteNum;
                     Part.notes.Add(note);
                 }
+                Part.Duration = OldPartDuration;
             }
         }
     }
@@ -121,8 +141,7 @@ namespace OpenUtau.Core {
         public ResizeNoteCommand(UVoicePart part, UNote note, int deltaDur) : base(part, note) {
             DeltaDur = deltaDur;
             OldPartDuration = part.Duration;
-            DocManager.Inst.Project.timeAxis.TickPosToBarBeat(note.End + deltaDur - 1, out int bar, out int beat, out int remainingTicks);
-            int minDurTick = DocManager.Inst.Project.timeAxis.BarBeatToTickPos(bar + 2, 0) - part.position;
+            int minDurTick = part.GetMinDurTickForNoteEdit(DocManager.Inst.Project, note.End + deltaDur);
             if (part.Duration < minDurTick) {
                 NewPartDuration = minDurTick;
             }
@@ -130,10 +149,12 @@ namespace OpenUtau.Core {
         public ResizeNoteCommand(UVoicePart part, List<UNote> notes, int deltaDur) : base(part, notes) {
             DeltaDur = deltaDur;
             OldPartDuration = part.Duration;
-            DocManager.Inst.Project.timeAxis.TickPosToBarBeat((Notes.LastOrDefault()?.End ?? 1) + deltaDur - 1, out int bar, out int beat, out int remainingTicks);
-            int minDurTick = DocManager.Inst.Project.timeAxis.BarBeatToTickPos(bar + 2, 0) - part.position;
-            if (part.Duration < minDurTick) {
-                NewPartDuration = minDurTick;
+            var note = notes.LastOrDefault();
+            if (note != null) {
+                int minDurTick = part.GetMinDurTickForNoteEdit(DocManager.Inst.Project, note.End + deltaDur);
+                if (part.Duration < minDurTick) {
+                    NewPartDuration = minDurTick;
+                }
             }
         }
         public override string ToString() { return $"Change {Notes.Count()} notes duration"; }
@@ -501,12 +522,27 @@ namespace OpenUtau.Core {
             Part = Part,
             SkipPhonemizer = true,
         };
-        public PhonemePreutterCommand(UVoicePart part, UNote note, int index, float delta) : base(part, note) {
+        public PhonemePreutterCommand(UVoicePart part, UNote note, int index, UPhoneme phoneme, float delta) : base(part, note) {
             this.note = note;
             this.index = index;
             var o = this.note.GetPhonemeOverride(index);
             oldDelta = o.preutterDelta ?? 0;
-            newDelta = delta;
+
+            double max = phoneme.maxOtoPreutter - phoneme.autoPreutter;
+            if (phoneme.Prev != null) {
+                if (phoneme.adjacent) {
+                    if (phoneme.Prev.preutter < 5) {
+                        max = Math.Min(max, phoneme.Prev.DurationMs + phoneme.Prev.preutter - 5 - phoneme.autoPreutter);
+                    } else {
+                        max = Math.Min(max, phoneme.Prev.DurationMs - phoneme.autoPreutter);
+                    }
+                } else {
+                    max = Math.Min(max, phoneme.PositionMs - phoneme.Prev.EndMs - phoneme.autoPreutter);
+                }
+            }
+            max = Math.Max(0, max);
+            double min = -phoneme.autoPreutter;
+            newDelta = (float)Math.Clamp(delta, min, max);
         }
         public override void Execute() {
             var o = note.GetPhonemeOverride(index);
@@ -529,12 +565,16 @@ namespace OpenUtau.Core {
             Part = Part,
             SkipPhonemizer = true,
         };
-        public PhonemeOverlapCommand(UVoicePart part, UNote note, int index, float delta) : base(part, note) {
+        public PhonemeOverlapCommand(UVoicePart part, UNote note, int index, UPhoneme phoneme, float delta) : base(part, note) {
             this.note = note;
             this.index = index;
             var o = this.note.GetPhonemeOverride(index);
             oldDelta = o.overlapDelta ?? 0;
-            newDelta = delta;
+
+            double overlap = phoneme.preutter - phoneme.autoOverlap;
+            double max = phoneme.envelope.data[3].X + overlap;
+            double min = -phoneme.Prev?.DurationMs + 5 + overlap ?? 0;
+            newDelta = (float)Math.Clamp(delta, min, max);
         }
         public override void Execute() {
             var o = note.GetPhonemeOverride(index);
@@ -545,6 +585,69 @@ namespace OpenUtau.Core {
             o.overlapDelta = oldDelta == 0 ? null : (float?)oldDelta;
         }
         public override string ToString() => "Set phoneme overlap";
+    }
+
+    public class PhonemeAttackTimeCommand : NoteCommand {
+        readonly UNote note;
+        readonly int index;
+        readonly float oldDelta;
+        readonly float newDelta;
+        public override ValidateOptions ValidateOptions => new ValidateOptions {
+            SkipTiming = true,
+            Part = Part,
+            SkipPhonemizer = true,
+        };
+        public PhonemeAttackTimeCommand(UVoicePart part, UNote note, int index, UPhoneme phoneme, float delta) : base(part, note) {
+            this.note = note;
+            this.index = index;
+            var o = this.note.GetPhonemeOverride(index);
+            oldDelta = o.attackTimeDelta ?? 0;
+
+            double max = phoneme.autoPreutter - phoneme.GetFadeIn() + phoneme.envelope.data[3].X;
+            double min = -phoneme.GetFadeIn() + 5;
+            newDelta = (float)Math.Clamp(delta, min, max);
+        }
+        public override void Execute() {
+            var o = note.GetPhonemeOverride(index);
+            o.attackTimeDelta = newDelta == 0 ? null : (float?)newDelta;
+        }
+        public override void Unexecute() {
+            var o = note.GetPhonemeOverride(index);
+            o.attackTimeDelta = oldDelta == 0 ? null : (float?)oldDelta;
+        }
+        public override string ToString() => "Set phoneme attack time";
+    }
+
+    public class PhonemeReleaseTimeCommand : NoteCommand {
+        readonly UNote note;
+        readonly int index;
+        readonly float oldDelta;
+        readonly float newDelta;
+        public override ValidateOptions ValidateOptions => new ValidateOptions {
+            SkipTiming = true,
+            Part = Part,
+            SkipPhonemizer = true,
+        };
+        public PhonemeReleaseTimeCommand(UVoicePart part, UNote note, int index, UPhoneme phoneme, float delta) : base(part, note) {
+            this.note = note;
+            this.index = index;
+            var o = this.note.GetPhonemeOverride(index);
+            oldDelta = o.releaseTimeDelta ?? 0;
+
+            var p3x = phoneme.envelope.data[4].X - phoneme.GetFadeOut();
+            double max = p3x - phoneme.envelope.data[2].X;
+            double min = -phoneme.GetFadeOut() + 5;
+            newDelta = (float)Math.Clamp(delta, min, max);
+        }
+        public override void Execute() {
+            var o = note.GetPhonemeOverride(index);
+            o.releaseTimeDelta = newDelta == 0 ? null : (float?)newDelta;
+        }
+        public override void Unexecute() {
+            var o = note.GetPhonemeOverride(index);
+            o.releaseTimeDelta = oldDelta == 0 ? null : (float?)oldDelta;
+        }
+        public override string ToString() => "Set phoneme release time";
     }
 
     public class ClearPhonemeTimingCommand : NoteCommand {

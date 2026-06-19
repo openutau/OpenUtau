@@ -46,6 +46,8 @@ namespace OpenUtau.App.ViewModels {
         public bool hitPosition;
         public bool hitPreutter;
         public bool hitOverlap;
+        public bool hitAttackTime;
+        public bool hitReleaseTime;
         public Point point;
     }
 
@@ -353,6 +355,7 @@ namespace OpenUtau.App.ViewModels {
                 if (leftBound >= rightTick || rightBound <= leftTick || note.Error || note.OverlapError) {
                     continue;
                 }
+                // p0 Preutter
                 int p0Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[0].X) - viewModel.Part.position;
                 double p0x = viewModel.TickToneToPoint(p0Tick, 0).X;
                 var point = new Point(p0x, 60 - phoneme.envelope.data[0].Y * 0.24 - 1);
@@ -362,20 +365,65 @@ namespace OpenUtau.App.ViewModels {
                     result.hitPreutter = true;
                     return result;
                 }
+                // p1 AttackTime
                 int p1Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[1].X) - viewModel.Part.position;
                 double p1x = viewModel.TickToneToPoint(p1Tick, 0).X;
                 point = new Point(p1x, 60 - phoneme.envelope.data[1].Y * 0.24);
                 if (WithIn(point, mousePos, 3)) {
                     result.phoneme = phoneme;
                     result.hit = true;
+                    result.hitAttackTime = true;
+                    return result;
+                }
+                // p3 ReleaseTime
+                int p3Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[3].X) - viewModel.Part.position;
+                double p3x = viewModel.TickToneToPoint(p3Tick, 0).X;
+                point = new Point(p3x, 60 - phoneme.envelope.data[3].Y * 0.24);
+                if (WithIn(point, mousePos, 3)) {
+                    result.phoneme = phoneme;
+                    result.hit = true;
+                    result.hitReleaseTime = true;
+                    return result;
+                }
+                // p4 Overlap
+                int p4Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[4].X) - viewModel.Part.position;
+                double p4x = viewModel.TickToneToPoint(p4Tick, 0).X;
+                point = new Point(p4x, 60 - phoneme.envelope.data[4].Y * 0.24 - 1);
+                if (WithIn(point, mousePos, 3)) {
+                    result.phoneme = phoneme;
+                    result.hit = true;
                     result.hitOverlap = true;
                     return result;
                 }
-                point = viewModel.TickToneToPoint(phoneme.position, 0);
+            }
+            foreach (var phoneme in viewModel.Part.phonemes) {
+                double leftBound = timeAxis.MsPosToTickPos(phoneme.PositionMs - phoneme.preutter) - viewModel.Part.position;
+                double rightBound = phoneme.End;
+                var note = phoneme.Parent;
+                if (leftBound >= rightTick || rightBound <= leftTick || note.Error || note.OverlapError) {
+                    continue;
+                }
+                // Position
+                var point = viewModel.TickToneToPoint(phoneme.position, 0);
                 if (Math.Abs(point.X - mousePos.X) < 3) {
                     result.phoneme = phoneme;
                     result.hit = true;
                     result.hitPosition = true;
+                    return result;
+                }
+            }
+            foreach (var phoneme in viewModel.Part.phonemes) {
+                var note = phoneme.Parent;
+                if (note.Error || note.OverlapError) {
+                    continue;
+                }
+                var left = timeAxis.MsPosToTickPos(phoneme.PositionMs - phoneme.preutter + (phoneme.overlap / 2)) - viewModel.Part.position;
+                var leftPoint = viewModel.TickToneToPoint(left, 0).X;
+                var right = timeAxis.MsPosToTickPos(phoneme.EndMs - phoneme.tailIntrude + (phoneme.tailOverlap /2)) - viewModel.Part.position;
+                var rightPoint = viewModel.TickToneToPoint(right, 0).X;
+                if (leftPoint <= mousePos.X && mousePos.X <= rightPoint && mousePos.Y >= 36) {
+                    result.phoneme = phoneme;
+                    result.hit = true;
                     return result;
                 }
             }

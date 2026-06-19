@@ -287,9 +287,10 @@ namespace OpenUtau.App.ViewModels {
                         else
                         {
                             string currentFolder = Path.Join(OtherSinger.Location, folder.Name);
-                            Directory.EnumerateFiles(currentFolder, "oto.ini", SearchOption.AllDirectories)
-                                .Select(d => Path.GetDirectoryName(d)!)
-                                .ForEach(d => AddFolder(d, Path.Join(thisSinger.Location, folder.NewName, Path.GetRelativePath(currentFolder, d))));
+                            foreach (var d in Directory.EnumerateFiles(currentFolder, "oto.ini", SearchOption.AllDirectories)
+                                .Select(d => Path.GetDirectoryName(d)!)) {
+                                AddFolder(d, Path.Join(thisSinger.Location, folder.NewName, Path.GetRelativePath(currentFolder, d)));
+                            }
                         }
                     }
                     var totalFiles = otosToConvert.Count + filesToCopy.Count;

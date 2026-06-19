@@ -32,10 +32,8 @@
     <Setter Property="Background" Value="{DynamicResource SelectedTrackAccentLightBrushSemi}"/>
   </Style>
 
-  <Style Selector="ListBox.toolbox">
+  <Style Selector="ListBox.toolbar">
     <Setter Property="FontSize" Value="12"/>
-    <Setter Property="Padding" Value="2"/>
-    <Setter Property="Margin" Value="1"/>
     <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
   </Style>
 
@@ -43,28 +41,35 @@
     <Setter Property="Background" Value="{DynamicResource SelectedTrackAccentLightBrushSemi}"/>
   </Style>
 
-  <Style Selector="ListBoxItem.toolbox">
+  <Style Selector="ListBoxItem.toolbar">
     <Setter Property="BorderThickness" Value="0"/>
     <Setter Property="MinHeight" Value="20"/>
     <Setter Property="Height" Value="20"/>
     <Setter Property="Width" Value="20"/>
     <Setter Property="Padding" Value="1"/>
     <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
+    <Setter Property="ContextFlyout" Value="{Binding $self.(FlyoutBase.AttachedFlyout)}" />
 
-    <Style Selector="^:pointerover /template/ ContentPresenter">
+    <Style Selector="^:pointerover /template/ Border#PART_LayoutRoot">
         <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}"/>
     </Style>
-    <Style Selector="^:pressed /template/ ContentPresenter">
+    <Style Selector="^:pressed /template/ Border#PART_LayoutRoot">
         <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
     </Style>
-    <Style Selector="^:selected /template/ ContentPresenter">
+    <Style Selector="^:selected /template/ Border#PART_LayoutRoot">
         <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi}"/>
     </Style>
-    <Style Selector="^:selected:pointerover /template/ ContentPresenter">
+    <Style Selector="^:selected:pointerover /template/ Border#PART_LayoutRoot">
         <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}"/>
     </Style>
-    <Style Selector="^:selected:pressed /template/ ContentPresenter">
+    <Style Selector="^:selected:pressed /template/ Border#PART_LayoutRoot">
         <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
+    </Style>
+    <Style Selector="^.hasSubTool /template/ Path#PART_SubToolArrow">
+        <Setter Property="Opacity" Value="0.7" />
+    </Style>
+    <Style Selector="^.hasSubTool:pointerover /template/ Path#PART_SubToolArrow">
+        <Setter Property="Opacity" Value="1.0" />
     </Style>
     <Style Selector="^ Path.filled">
         <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
@@ -77,6 +82,69 @@
         <Setter Property="StrokeThickness" Value="1"/>
         <Setter Property="Stroke" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
     </Style>
+
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_LayoutRoot"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Grid Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Path Name="PART_ToolIcon" Classes="filled">
+              <Path.RenderTransform>
+                <TransformGroup>
+                  <ScaleTransform ScaleX=".55" ScaleY=".55" />
+                  <TranslateTransform X="-2" Y="-2"/>
+                </TransformGroup>
+              </Path.RenderTransform>
+            </Path>
+            <Path Name="PART_SubToolArrow" 
+                Data="M 0,4 L 4,4 L 4,0 Z" 
+                Classes="filled"
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Bottom"
+                Margin="0,0,-1,-1"
+                Opacity="0">
+             <Path.RenderTransform>
+                 <ScaleTransform ScaleX="0.8" ScaleY="0.8"/>
+             </Path.RenderTransform>
+          </Path>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^ FlyoutPresenter">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="MinWidth" Value="0" />
+    </Style>
+  </Style>
+
+  <Style Selector="ListBoxItem.cursorTool /template/ Path#PART_ToolIcon">
+    <Setter Property="Data" Value="M10.07,14.27C10.57,14.03 11.16,14.25 11.4,14.75L13.7,19.74L15.5,18.89L13.19,13.91C12.95,13.41 13.17,12.81 13.67,12.58L13.95,12.5L16.25,12.05L8,5.12V15.9L9.82,14.43L10.07,14.27M13.64,21.97C13.14,22.21 12.54,22 12.31,21.5L10.13,16.76L7.62,18.78C7.45,18.92 7.24,19 7,19A1,1 0 0,1 6,18V3A1,1 0 0,1 7,2C7.24,2 7.47,2.09 7.64,2.23L7.65,2.22L19.14,11.86C19.57,12.22 19.62,12.85 19.27,13.27C19.12,13.45 18.91,13.57 18.7,13.61L15.54,14.23L17.74,18.96C18,19.46 17.76,20.05 17.26,20.28L13.64,21.97Z" />
+  </Style>
+  <Style Selector="ListBoxItem.penTool /template/ Path#PART_ToolIcon">
+    <Setter Property="Data" Value="M14.06,9L15,9.94L5.92,19H5V18.08L14.06,9M17.66,3C17.41,3 17.15,3.1 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18.17,3.09 17.92,3 17.66,3M14.06,6.19L3,17.25V21H6.75L17.81,9.94L14.06,6.19Z" />
+  </Style>
+  <Style Selector="ListBoxItem.penPlusTool /template/ Path#PART_ToolIcon">
+    <Setter Property="Data" Value="M14.1,9L15,9.9L5.9,19H5V18.1L14.1,9M17.7,3C17.5,3 17.2,3.1 17,3.3L15.2,5.1L18.9,8.9L20.7,7C21.1,6.6 21.1,6 20.7,5.6L18.4,3.3C18.2,3.1 17.9,3 17.7,3M14.1,6.2L3,17.2V21H6.8L17.8,9.9L14.1,6.2M7,2V5H10V7H7V10H5V7H2V5H5V2H7Z" />
+  </Style>
+  <Style Selector="ListBoxItem.eraserTool /template/ Path#PART_ToolIcon">
+    <Setter Property="Data" Value="M16.24,3.56L21.19,8.5C21.97,9.29 21.97,10.55 21.19,11.34L12,20.53C10.44,22.09 7.91,22.09 6.34,20.53L2.81,17C2.03,16.21 2.03,14.95 2.81,14.16L13.41,3.56C14.2,2.78 15.46,2.78 16.24,3.56M4.22,15.58L7.76,19.11C8.54,19.9 9.8,19.9 10.59,19.11L14.12,15.58L9.17,10.63L4.22,15.58Z" />
+  </Style>
+  <Style Selector="ListBoxItem.drawPitchTool /template/ Path#PART_ToolIcon">
+    <Setter Property="Data" Value="M9.75 20.85C11.53 20.15 11.14 18.22 10.24 17C9.35 15.75 8.12 14.89 6.88 14.06C6 13.5 5.19 12.8 4.54 12C4.26 11.67 3.69 11.06 4.27 10.94C4.86 10.82 5.88 11.4 6.4 11.62C7.31 12 8.21 12.44 9.05 12.96L10.06 11.26C8.5 10.23 6.5 9.32 4.64 9.05C3.58 8.89 2.46 9.11 2.1 10.26C1.78 11.25 2.29 12.25 2.87 13.03C4.24 14.86 6.37 15.74 7.96 17.32C8.3 17.65 8.71 18.04 8.91 18.5C9.12 18.94 9.07 18.97 8.6 18.97C7.36 18.97 5.81 18 4.8 17.36L3.79 19.06C5.32 20 7.88 21.47 9.75 20.85M20.84 5.25C21.06 5.03 21.06 4.67 20.84 4.46L19.54 3.16C19.33 2.95 18.97 2.95 18.76 3.16L17.74 4.18L19.82 6.26M11 10.92V13H13.08L19.23 6.85L17.15 4.77L11 10.92Z" />
+  </Style>
+  <Style Selector="ListBoxItem.overwritePitchTool /template/ Path#PART_ToolIcon">
+    <Setter Property="Data" Value="M 19.540126 3.1598821 C 19.330126 2.9498825 18.969979 2.9502481 18.759981 3.1602475 L 17.740128 4.1801 L 19.820028 6.2599998 L 20.840246 5.2500134 C 21.060246 5.0300138 21.060246 4.6700018 20.840246 4.4600022 L 19.540126 3.1598821 Z  M 17.149995 4.7702332 L 11.000186 10.920042 L 11.000186 12.999942 L 13.080086 12.999942 L 19.229895 6.8501331 L 17.149995 4.7702332 Z  M 19.879589 13.222841 L 17.879714 13.222475 L 17.879714 16.222471 L 14.879718 16.222471 L 14.879718 18.222712 L 17.879714 18.222712 L 17.879714 21.222708 L 19.879955 21.222708 L 19.879955 18.222712 L 22.879951 18.222712 L 22.879585 16.222837 L 19.879589 16.222837 L 19.879589 13.222841 Z  M 10.059992 11.260237 C 8.4999952 10.230239 6.499898 9.3198861 4.6399018 9.0498865 C 3.5799038 8.8898869 2.4599531 9.1097532 2.0999539 10.259751 C 1.7799545 11.249749 2.2898688 12.249906 2.8698676 13.029906 C 4.2398648 14.859902 6.369998 15.739794 7.9599948 17.31979 C 8.2999942 17.64979 8.7100549 18.040057 8.9100545 18.500057 C 9.1200541 18.940055 9.0701879 18.969971 8.6001889 18.969971 C 7.3601913 18.969971 5.8099483 17.999985 4.7999503 17.359985 L 3.7899638 19.059861 C 5.3199608 19.999859 7.8801301 21.469991 9.7501265 20.849993 C 11.530123 20.149993 11.139771 18.220057 10.239773 17.000059 C 9.349774 15.750061 8.1202131 14.889988 6.8802155 14.05999 C 6.0002173 13.49999 5.1901443 12.79982 4.5401455 11.999822 C 4.2601461 11.669822 3.6901105 11.059774 4.2701093 10.939774 C 4.8601081 10.819776 5.880071 11.399798 6.40007 11.619798 C 7.3100682 11.999798 8.2100072 12.440113 9.0500056 12.960113 L 10.059992 11.260237 Z" />
+  </Style>
+  <Style Selector="ListBoxItem.drawLinePitchTool /template/ Path#PART_ToolIcon">
+    <Setter Property="Data" Value="m 1.9654432,15.883124 a 0.74547489,0.74547489 0 0 0 -0.00284,1.052361 l 4.9071522,4.946703 a 0.74547489,0.74547489 0 0 0 1.0555507,0.0035 L 22.513776,7.3542255 a 0.74547489,0.74547489 0 0 0 0.0024,-1.053823 L 17.585453,1.3481852 a 0.74547489,0.74547489 0 0 0 -1.05524,-0.00189 L 13.795097,4.077798 a 0.74547489,0.74547489 0 0 0 -0.01235,0.00583 l -2.970023,2.9664092 a 0.74547489,0.74547489 0 0 0 -0.0019,0.00148 L 7.8078572,10.05092 a 0.74547489,0.74547489 0 0 0 -4.549e-4,7.9e-5 l -2.9880739,2.98446 a 0.74547489,0.74547489 0 0 0 5.6e-5,3.19e-4 0.74547489,0.74547489 0 0 0 -8.034e-4,2.32e-4 z  m 1.5792305,0.530266 1.8022733,-1.799373 1.4875429,1.472969 9.4e-5,9.4e-5 a 0.74547489,0.74547489 0 0 0 1.0491324,-1.059188 l -1.879e-4,-1.87e-4 -0.00182,-0.0019 -1.4792147,-1.465706 1.9335572,-1.930656 1.5071022,1.492572 A 0.74547489,0.74547489 0 0 0 10.89214,12.062682 l -1.5009923,-1.48671 1.9421273,-1.9392277 1.470447,1.4883567 0.0033,0 2.85e-4,2.87e-4 A 0.74547489,0.74547489 0 0 0 13.868294,9.0814325 L 13.868009,9.0811469 12.38859,7.5827533 14.310718,5.6635241 15.799339,7.1434007 A 0.74547489,0.74547489 0 0 0 16.85022,6.0859614 l -1.480921,-1.472178 1.687093,-1.6841938 3.878195,3.89507 L 7.4011867,20.301022 Z" />
+  </Style>
+  <Style Selector="ListBoxItem.overwriteLinePitchTool /template/ Path#PART_ToolIcon">
+    <Setter Property="Data" Value="m 19.9854,15.8242 -1.9957,-0.0048 0.0066,2.9938 -2.9938,-0.0066 0.0044,1.9961 2.9938,0.0066 0.0066,2.9938 1.9961,0.0044 -0.0066,-2.9938 2.9938,0.0066 -0.0048,-1.9957 -2.9938,-0.0066 z  m -20.1824,0.2031 c -0.2894,0.2888 -0.2896,0.7584 -0.0004,1.0501 l 4.908,4.9474 c 0.2904,0.293 0.7624,0.2956 1.0533,0.0059 L 20.2879,7.5636 c 0.2902,-0.2891 0.2902,-0.7598 -0,-1.0516 l -4.9315,-4.9529 c -0.2908,-0.2923 -0.7625,-0.2943 -1.053,-0.0043 l -2.723,2.7194 c -0.0041,0.0019 -0.0082,0.0038 -0.0123,0.0058 L 8.6111,7.2333 c -0.0006,0.0005 -0.0013,0.001 -0.0019,0.0015 l -2.9897,2.9861 -0.0005,0.0001 -2.9749,2.9713 0.0001,0.0003 -0.0008,0.0002 z  m 1.5771,0.5327 1.7943,-1.7914 1.4877,1.4732 0.0001,0.0001 c 0.706,0.6815 1.7326,-0.355 1.0445,-1.0545 l -0.0002,-0.0002 -0.0018,-0.0019 -1.4794,-1.466 1.925,-1.9221 1.5073,1.4928 c 0.7061,0.6814 1.7325,-0.3552 1.0443,-1.0547 l -1.5012,-1.487 1.9335,-1.9306 1.4707,1.4885 0.0033,0 0.0003,0.0003 c 0.6955,0.63 1.6751,-0.3338 1.0563,-1.0393 l -0.0003,-0.0003 -1.4797,-1.4986 1.9136,-1.9107 1.4888,1.4801 c 0.7049,0.6818 1.7323,-0.3521 1.0462,-1.0528 L 13.1524,4.8127 14.832,3.136 18.7108,7.0316 5.2372,20.4482 Z" />
+  </Style>
+  <Style Selector="ListBoxItem.knifeTool /template/ Path#PART_ToolIcon">
+    <Setter Property="Data" Value="M7.22,11.91C6.89,12.24 6.71,12.65 6.66,13.08L12.17,15.44L20.66,6.96C21.44,6.17 21.44,4.91 20.66,4.13L19.24,2.71C18.46,1.93 17.2,1.93 16.41,2.71L7.22,11.91M5,16V21.75L10.81,16.53L5.81,14.53L5,16M17.12,4.83C17.5,4.44 18.15,4.44 18.54,4.83C18.93,5.23 18.93,5.86 18.54,6.25C18.15,6.64 17.5,6.64 17.12,6.25C16.73,5.86 16.73,5.23 17.12,4.83Z" />
   </Style>
 
   <Style Selector="Slider.fader">

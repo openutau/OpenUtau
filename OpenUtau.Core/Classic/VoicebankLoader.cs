@@ -417,7 +417,9 @@ namespace OpenUtau.Classic {
                 string path = Path.Combine(dir, group.Key);
                 if (!File.Exists(path)) {
                     if (NFDFiles.TryGetValue(group.Key.Normalize(), out string NFDFile)) {
-                        group.ForEach(oto => oto.Wav = NFDFile);
+                        foreach (var oto in group) {
+                            oto.Wav = NFDFile;
+                        }
                     } else {
                         Log.Error($"Sound file missing. {path}");
                         foreach (Oto oto in group) {

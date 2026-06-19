@@ -72,7 +72,7 @@ namespace OpenUtau.Core.DiffSinger {
                 }
             } else {
                 avatarData = null;
-                Log.Error("Avatar can't be found");
+                Log.Information("Avatar not found");
             }
 
             subbanks.Clear();
@@ -81,42 +81,54 @@ namespace OpenUtau.Core.DiffSinger {
 
             //Load diffsinger config of a voicebank
             string configPath = Path.Combine(Location, "dsconfig.yaml");
+            bool dsConfigLoaded = false;
             if(configPath != null && File.Exists(configPath)){
                 try {
                     dsConfig = Core.Yaml.DefaultDeserializer.Deserialize<DsConfig>(
                         File.ReadAllText(configPath, Encoding.UTF8));
+                    dsConfigLoaded = true;
                 } catch (Exception e) {
                     Log.Error(e, $"Failed to load dsconfig.yaml for {Name} from {configPath}");
+                    errors.Add($"Failed to load dsconfig.yaml: {e.Message}");
                     dsConfig = new DsConfig();
                 }
             } else {
                 Log.Error($"dsconfig.yaml not found for {Name} at {configPath}");
+                errors.Add($"dsconfig.yaml not found at {configPath}");
                 dsConfig = new DsConfig();
             }
 
-            //Load phoneme list
-            string phonemesPath = Path.Combine(Location, dsConfig.phonemes);
-            if(phonemesPath != null && File.Exists(phonemesPath)){
-                try {
-                    phonemeTokens = DiffSingerUtils.LoadPhonemes(phonemesPath);
-                    phonemes = phonemeTokens.Keys.ToList();
-                } catch (Exception e){
-                    Log.Error(e, $"Failed to load phoneme list for {Name} from {phonemesPath}");
-                }
-            } else {
-                Log.Error($"phonemes file not found for {Name} at {phonemesPath}");
-            }
-
-            //Load language Id if needed
-            if(dsConfig.use_lang_id){
-                if(dsConfig.languages == null){
-                    Log.Error("\"languages\" field is not specified in dsconfig.yaml");
-                } else {
-                var langIdPath = Path.Join(Location, dsConfig.languages);
+            if(dsConfigLoaded) {
+                //Load phoneme tokens for acoustic model (render-time tokenization)
+                string phonemesPath = Path.Combine(Location, dsConfig.phonemes);
+                if(phonemesPath != null && File.Exists(phonemesPath)){
                     try {
-                        languageIds = DiffSingerUtils.LoadLanguageIds(langIdPath);
-                    } catch (Exception e) {
-                        Log.Error(e, $"failed to load language id from {langIdPath}");
+                        phonemeTokens = DiffSingerUtils.LoadPhonemes(phonemesPath);
+                        phonemes = phonemeTokens.Keys.ToList();
+                    } catch (Exception e){
+                        Log.Error(e, $"Failed to load phoneme tokens for {Name} from {phonemesPath}");
+                        errors.Add($"Failed to load phoneme tokens: {e.Message}");
+                        phonemeTokens = new Dictionary<string, int>();
+                    }
+                } else {
+                    Log.Error($"phonemes file not found for {Name} at {phonemesPath}");
+                    errors.Add($"Phonemes file not found at {phonemesPath}");
+                    phonemeTokens = new Dictionary<string, int>();
+                }
+
+                //Load language Id if needed
+                if(dsConfig.use_lang_id){
+                    if(dsConfig.languages == null){
+                        Log.Error("\"languages\" field is not specified in dsconfig.yaml");
+                        errors.Add("\"languages\" field is not specified in dsconfig.yaml but use_lang_id is true");
+                    } else {
+                        var langIdPath = Path.Join(Location, dsConfig.languages);
+                        try {
+                            languageIds = DiffSingerUtils.LoadLanguageIds(langIdPath);
+                        } catch (Exception e) {
+                            Log.Error(e, $"failed to load language id from {langIdPath}");
+                            errors.Add($"Failed to load language IDs: {e.Message}");
+                        }
                     }
                 }
             }
@@ -137,13 +149,11 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         public override bool TryGetOto(string phoneme, out UOto oto) {
-            var parts = phoneme.Split();
-            if (parts.All(p => phonemes.Contains(p))) {
-                oto = UOto.OfDummy(phoneme);
-                return true;
-            }
-            oto = null;
-            return false;
+            // We always return true here just not to let OTO get in our way.
+            // Phonemizer and acoustic model work independently and both can report missing phonemes by their own,
+            // so do other submodules.
+            oto = UOto.OfDummy(phoneme);
+            return true;
         }
 
         public override IEnumerable<UOto> GetSuggestions(string text) {
@@ -178,7 +188,7 @@ namespace OpenUtau.Core.DiffSinger {
                     vocoder = new DsVocoder(Path.Join(Location, "dsvocoder"));
                     return vocoder;
                 }
-                vocoder = new DsVocoder(dsConfig.vocoder);
+                vocoder = new DsVocoder(Path.Combine(PathManager.Inst.DependencyPath, dsConfig.vocoder));
             }
             return vocoder;
         }
@@ -209,6 +219,11 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         public int PhonemeTokenize(string phoneme){
+            if(phonemeTokens == null || phonemeTokens.Count == 0){
+                throw new Exception(
+                    $"Phoneme vocabulary is not loaded for singer \"{Name}\". " +
+                    "Please check that dsconfig.yaml and the phonemes file are valid.");
+            }
             bool success = phonemeTokens.TryGetValue(phoneme, out int token);
             if(!success){
                 throw new Exception($"Phoneme \"{phoneme}\" isn't supported by acoustic model. Please check {Path.Combine(Location, dsConfig.phonemes)}");

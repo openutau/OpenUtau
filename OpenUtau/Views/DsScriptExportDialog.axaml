@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="380" d:DesignHeight="260"
+        x:Class="OpenUtau.App.Views.DsScriptExportDialog"
+        Icon="/Assets/open-utau.ico"
+        Title="{DynamicResource dialogs.exportds.caption}"
+        WindowStartupLocation="CenterOwner"
+        SizeToContent="Height" Width="380" CanResize="False">
+  <Window.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+    </Style>
+  </Window.Styles>
+  <Border Margin="{Binding $parent.WindowDecorationMargin}">
+    <StackPanel Margin="12" Spacing="8">
+
+      <!-- Curves -->
+      <TextBlock Text="{DynamicResource dialogs.exportds.curves}"
+                 FontWeight="SemiBold"/>
+      <Grid ColumnDefinitions="Auto,Auto">
+        <CheckBox Grid.Column="0" IsChecked="{Binding ExportPitch}" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="1" Text="{DynamicResource dialogs.exportds.pitch}" Margin="6,0,0,0"/>
+      </Grid>
+      <Grid ColumnDefinitions="Auto,Auto">
+        <CheckBox Grid.Column="0" IsChecked="{Binding ExportVariance}" IsEnabled="{Binding TensorCacheEnabled}" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="1" Text="{DynamicResource dialogs.exportds.variance}" Margin="6,0,0,0"/>
+      </Grid>
+      <TextBlock Text="{DynamicResource dialogs.exportds.variance.hint}"
+                 FontSize="12"
+                 Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                 TextWrapping="Wrap"
+                 IsVisible="{Binding !TensorCacheEnabled}"/>
+
+      <!-- OK / Cancel -->
+      <Grid ColumnDefinitions="*,8,*" Margin="0,4,0,0">
+        <Button Grid.Column="0" Content="{DynamicResource dialogs.messagebox.ok}"
+                HorizontalAlignment="Stretch"
+                Click="OnOkClicked"/>
+        <Button Grid.Column="2" Content="{DynamicResource dialogs.messagebox.cancel}"
+                HorizontalAlignment="Stretch"
+                Click="OnCancelClicked"/>
+      </Grid>
+    </StackPanel>
+  </Border>
+</Window>

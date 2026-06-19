@@ -1,6 +1,7 @@
 ﻿using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using OpenUtau.App.Controls;
 using OpenUtau.Core.Util;
 
@@ -20,6 +21,12 @@ namespace OpenUtau.App.Views {
                 Position = new PixelPoint(x, y);
             }
             WindowState = (WindowState)Preferences.Default.PianorollWindowSize.State;
+        }
+
+        public void WindowGotFocus(object sender, GotFocusEventArgs e) {
+            if (e.Source is PianoRollDetachedWindow) {
+                pianoRoll.Focus();
+            }
         }
 
         public void WindowClosing(object? sender, WindowClosingEventArgs e) {

@@ -21,6 +21,8 @@ namespace OpenUtau.Core.Ustx {
         public UPitch pitch;
         public UVibrato vibrato;
         public int tuning;
+        [YamlMember(Alias = "phonemizer", ApplyNamingConventions = false)]
+        public string? PhonemizerOverride { get; set; } = null;
 
         public List<UExpression> phonemeExpressions = new List<UExpression>();
         public List<UPhonemeOverride> phonemeOverrides = new List<UPhonemeOverride>();
@@ -38,9 +40,9 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public double DurationMs => EndMs - PositionMs;
         [YamlIgnore] public double EndMs { get; set; }
         [YamlIgnore] public bool Selected { get; set; } = false;
-        [YamlIgnore] public UNote Prev { get; set; }
-        [YamlIgnore] public UNote Next { get; set; }
-        [YamlIgnore] public UNote Extends { get; set; }
+        [YamlIgnore] public UNote? Prev { get; set; }
+        [YamlIgnore] public UNote? Next { get; set; }
+        [YamlIgnore] public UNote? Extends { get; set; }
         [YamlIgnore] public int ExtendedDuration { get; set; }
         [YamlIgnore] public int ExtendedEnd => position + ExtendedDuration;
         [YamlIgnore] public int LeftBound => position;
@@ -257,13 +259,31 @@ namespace OpenUtau.Core.Ustx {
                 pitch = pitch.Clone(),
                 vibrato = vibrato.Clone(),
                 tuning = tuning,
+                PhonemizerOverride = PhonemizerOverride,
                 phonemeExpressions = phonemeExpressions.Select(exp => exp.Clone()).ToList(),
                 phonemeOverrides = phonemeOverrides.Select(o => o.Clone()).ToList(),
                 phonemeIndexes = (int[])phonemeIndexes.Clone()
             };
         }
     }
+    public class ChangeNotePhonemizerCommand : NoteCommand {
+        public readonly string? newOverride;
+        public readonly string? oldOverride;
+        public readonly UNote _note;
 
+        public ChangeNotePhonemizerCommand(UVoicePart part, UNote note, string? newOverride) : base(part, note) {
+            this._note = note;
+            this.newOverride = newOverride;
+            this.oldOverride = note.PhonemizerOverride;
+        }
+        public override string ToString() => "Change note phonemizer";
+        public override void Execute() {
+            _note.PhonemizerOverride = newOverride;
+        }
+        public override void Unexecute() {
+            _note.PhonemizerOverride = oldOverride;
+        }
+    }
     public class UVibrato {
         // Vibrato percentage of note length.
         float _length;

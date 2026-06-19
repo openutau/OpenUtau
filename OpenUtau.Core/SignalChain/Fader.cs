@@ -3,7 +3,7 @@
 namespace OpenUtau.Core.SignalChain {
     public class Fader : ISignalSource {
         private readonly ISignalSource source;
-        private float pan = 1;
+        private float pan = 0;
         private float scale = 1;
         private float scaleTarget = 1;
         private float[] scaleBuffer;

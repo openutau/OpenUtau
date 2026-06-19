@@ -54,6 +54,7 @@ namespace OpenUtau.App.ViewModels {
             get => audioOutputDevice;
             set => this.RaiseAndSetIfChanged(ref audioOutputDevice, value);
         }
+        [Reactive] public bool UseSystemDefaultDevice { get; set; }
         [Reactive] public int PreferPortAudio { get; set; }
         [Reactive] public int LockStartTime { get; set; }
         [Reactive] public int PlaybackAutoScroll { get; set; }
@@ -137,6 +138,7 @@ namespace OpenUtau.App.ViewModels {
                     AudioOutputDevice = device;
                 }
             }
+            UseSystemDefaultDevice = Preferences.Default.UseSystemDefaultAudioDevice;
             PreferPortAudio = Preferences.Default.PreferPortAudio ? 1 : 0;
             PlaybackAutoScroll = Preferences.Default.PlaybackAutoScroll;
             PlayPosMarkerMargin = Preferences.Default.PlayPosMarkerMargin;
@@ -175,7 +177,6 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
-            PenPlusDefault = Preferences.Default.PenPlusDefault;
             DegreeStyle = Preferences.Default.DegreeStyle;
             UseTrackColor = Preferences.Default.UseTrackColor;
             ShowPortrait = Preferences.Default.ShowPortrait;
@@ -193,10 +194,18 @@ namespace OpenUtau.App.ViewModels {
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
                 .Subscribe(_ => this.RaisePropertyChanged(nameof(IsThemeEditorOpen)));
             
+            this.WhenAnyValue(vm => vm.UseSystemDefaultDevice)
+                .Subscribe(useDefault => {
+                    Preferences.Default.UseSystemDefaultAudioDevice = useDefault;
+                    Preferences.Save();
+                });
             this.WhenAnyValue(vm => vm.AudioOutputDevice)
                 .WhereNotNull()
                 .SubscribeOn(RxApp.MainThreadScheduler)
                 .Subscribe(device => {
+                    if (UseSystemDefaultDevice) {
+                        return;
+                    }
                     if (PlaybackManager.Inst.AudioOutput != null) {
                         try {
                             PlaybackManager.Inst.AudioOutput.SelectDevice(device.guid, device.deviceNumber);
@@ -238,11 +247,6 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.PreRender)
                 .Subscribe(preRender => {
                     Preferences.Default.PreRender = preRender;
-                    Preferences.Save();
-                });
-            this.WhenAnyValue(vm => vm.PenPlusDefault)
-                .Subscribe(penPlusDefault => {
-                    Preferences.Default.PenPlusDefault = penPlusDefault;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.Language)

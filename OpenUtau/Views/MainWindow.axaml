@@ -45,8 +45,6 @@
               <MenuItem Header="{DynamicResource menu.file.exportustto}" Click="OnMenuExportUstTo"/>
               <MenuItem Header="{DynamicResource menu.file.exportmidi}" Click="OnMenuExportMidi"/>
               <MenuItem Header="{DynamicResource menu.file.exportds}" Click="OnMenuExportDsTo"/>
-              <MenuItem Header="{DynamicResource menu.file.exportds.v2}" Click="OnMenuExportDsV2To"/>
-              <MenuItem Header="{DynamicResource menu.file.exportds.v2withoutpitch}" Click="OnMenuExportDsV2WithoutPitchTo"/>
             </MenuItem>
             <MenuItem Header="{DynamicResource menu.file.openexportlocation}" Click="OnMenuOpenProjectLocation"/>
           </MenuItem>
@@ -213,7 +211,7 @@
           <Grid.RowDefinitions>
             <RowDefinition Height="24"/>
             <RowDefinition Height="24"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="*" MinHeight="0.01"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="3*"
                            MinHeight="{Binding PianoRollMinHeight}"
@@ -329,7 +327,7 @@
                             TickOffset="{Binding TracksViewModel.TickOffset}"
                             SnapDiv="{Binding TracksViewModel.SnapDiv}"
                             SnapTicks="{Binding TracksViewModel.SnapTicks}"
-                            ShowBarNumber="True"/>
+                            ShowBar="True"/>
           <c:PartsCanvas x:Name="partsCanvas" Grid.Row="2" Grid.Column="1" ClipToBounds="True" Background="Transparent"
                         DataContext="{Binding TracksViewModel}"
                         TickWidth="{Binding TickWidth}"
@@ -403,7 +401,9 @@
           </Border>
           <GridSplitter Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                         Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Focusable="False" Cursor="SizeNorthSouth" IsVisible="{Binding ShowPianoRoll}"/>
-          <ContentControl Name="PianoRollContainer" Grid.Row="4" Grid.ColumnSpan="3" Margin="0,-5" Padding="0,5"/>
+          <Canvas Grid.Row="4" Grid.ColumnSpan="3" IsVisible="{Binding ShowPianoRoll}">
+            <ContentControl Name="PianoRollContainer" Width="{Binding $parent[Canvas].Bounds.Width}" Height="{Binding $parent[Canvas].Bounds.Height}"/>
+          </Canvas>
           <TextBlock Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" Height="20" Margin="4,4,4,0" Text="{Binding ProgressText}"/>
           <ProgressBar Grid.Row="6" Grid.ColumnSpan="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Value="{Binding Progress}"/>
         </Grid>

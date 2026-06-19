@@ -1,8 +1,8 @@
 %YAML 1.2
 ---
-version: 1.1
+version: 1.2
 symbols:
-#CZsampa standard vowels
+  #CZsampa standard vowels
   - {symbol: '@', type: vowel}
   - {symbol: a, type: vowel}
   - {symbol: i, type: vowel}
@@ -17,10 +17,13 @@ symbols:
   - {symbol: 3, type: vowel}
   - {symbol: 6, type: vowel}
   - {symbol: 8, type: vowel}
+  - {symbol: 8n, type: vowel}
+  - {symbol: 9l, type: vowel}
+  - {symbol: Ang, type: vowel}
   - {symbol: Q, type: vowel}
   - {symbol: h, type: aspirate}
   - {symbol: j, type: affricate}
-#Arpasing
+  #Arpasing
   - {symbol: aa, type: vowel}
   - {symbol: ae, type: vowel}
   - {symbol: ah, type: vowel}
@@ -76,15 +79,24 @@ replacements:
   - {from: [h, E], to: [hh, E]}
   - {from: [h, y], to: [hh, y]}
   - {from: [i, ng], to: [1, ng]}
+  - {from: [a, ng], to: [9, ng]}
   - {from: [9, r], to: [0, r]}
   - {from: [e, r], to: [A, r]}
+  - {from: [i, r], to: [E, r]}
   - {from: ['@', m], to: ['&', m]}
   - {from: ['@', n], to: ['&', n]}
-  - {from: ['@', ng], to: [A, ng]}
+  - {from: ['@', ng], to: [Ang]}
+  - {from: [8, n], to: [8n]}
+  - {from: [9, l], to: [9l]}
   - {from: [O, l], to: [0, l]}
 
-fallbacks: 
+fallbacks:
   - {from: h, to: hh}
+
+vcvowels:
+  Ang: ng
+  8n: n
+  9l: l
 
 entries:
   - grapheme: openutau

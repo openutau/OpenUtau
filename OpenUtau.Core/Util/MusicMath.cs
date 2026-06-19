@@ -245,9 +245,8 @@ namespace OpenUtau.Core {
         }
 
         public static (float, float) PanToChannelVolumes(float pan) {
-            float volumeLeft = (Math.Max(pan, 0) - 100) / 100;
-            float volumeRight = (Math.Min(pan, 0) + 100) / -100;
-            return (volumeLeft, volumeRight);
+            float angle = (Math.Clamp(pan, -100f, 100f) + 100f) / 200f * (float)(Math.PI / 2);
+            return ((float)Math.Cos(angle), (float)Math.Sin(angle));
         }
     }
 }

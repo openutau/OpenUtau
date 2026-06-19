@@ -52,6 +52,11 @@ namespace OpenUtau.App.Controls {
                 nameof(ShowVibrato),
                 o => o.ShowVibrato,
                 (o, v) => o.ShowVibrato = v);
+        public static readonly DirectProperty<NotesCanvas, bool> ShowPhonemizerTagsProperty =
+            AvaloniaProperty.RegisterDirect<NotesCanvas, bool>(
+                nameof(ShowPhonemizerTags),
+                o => o.ShowPhonemizerTags,
+                (o, v) => o.ShowPhonemizerTags = v);
 
         public double TickWidth {
             get => tickWidth;
@@ -85,6 +90,10 @@ namespace OpenUtau.App.Controls {
             get => showVibrato;
             private set => SetAndRaise(ShowVibratoProperty, ref showVibrato, value);
         }
+        public bool ShowPhonemizerTags {
+            get => showPhonemizerTags;
+            private set => SetAndRaise(ShowPhonemizerTagsProperty, ref showPhonemizerTags, value);
+        }
 
         private double tickWidth;
         private double trackHeight;
@@ -94,6 +103,7 @@ namespace OpenUtau.App.Controls {
         private bool showPitch = true;
         private bool showFinalPitch = true;
         private bool showVibrato = true;
+        private bool showPhonemizerTags = true;
         private PolylineGeometry polylineGeometry = new PolylineGeometry();
         private Points points = new Points();
 
@@ -215,6 +225,75 @@ namespace OpenUtau.App.Controls {
             context.DrawRectangle(brush, null, new Rect(leftTop, rightBottom), 2, 2);
             if (TrackHeight < 10 || note.lyric.Length == 0) {
                 return;
+            }
+            if (ShowPhonemizerTags && TrackHeight >= 20) {
+                string currentOver = note.PhonemizerOverride ?? "";
+                bool isCurrentDefault = string.IsNullOrEmpty(currentOver) || currentOver.Equals("Default", StringComparison.OrdinalIgnoreCase);
+                string currentPh = isCurrentDefault ? "Default" : currentOver;
+                string prevPh = "Default"; 
+                if (note.Prev != null) {
+                    string prevOver = note.Prev.PhonemizerOverride ?? "";
+                    bool isPrevDefault = string.IsNullOrEmpty(prevOver) || prevOver.Equals("Default", StringComparison.OrdinalIgnoreCase);
+                    prevPh = isPrevDefault ? "Default" : prevOver;
+                }
+                bool isContinuation = note.lyric.StartsWith("+");
+                bool isTransition = !isContinuation && ((note.Prev == null && !isCurrentDefault) || (note.Prev != null && currentPh != prevPh));
+                
+                if (isTransition) {
+                    var badgeBrush = selectedNotes.Contains(note)
+                        ? (note.Error ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush2)
+                        : (note.Error ? ThemeManager.AccentBrush1Semi : ThemeManager.AccentBrush1);
+
+                    if (isCurrentDefault) {
+                        // Due to the limitation, we'll display a dot to inndicate
+                        // the transition to default phonemizer instead of showing language tag
+                        double boxWidth = 16; 
+                        double boxHeight = 16;
+                        double dotRadius = 3;
+                        Avalonia.Rect boxRect = new Avalonia.Rect(
+                            leftTop.X + 2, 
+                            leftTop.Y - boxHeight - 4, 
+                            boxWidth, 
+                            boxHeight
+                        );
+                        Avalonia.Point center = new Avalonia.Point(
+                            boxRect.X + boxWidth / 2, 
+                            boxRect.Y + boxHeight / 2
+                        );
+                        context.DrawRectangle(badgeBrush, null, boxRect, 3, 3);
+                        context.DrawEllipse(Brushes.White, null, center, dotRadius, dotRadius);
+                        
+                    } else {
+                        var factory = OpenUtau.Api.PhonemizerFactory.Get(currentPh) ?? OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f => f.name == currentPh || (currentPh.Length > 0 && f.name.EndsWith(currentPh)));
+                        string displayLang = factory?.language ?? "";
+                        if (string.IsNullOrEmpty(displayLang) && !string.IsNullOrEmpty(factory?.tag)) {
+                            displayLang = factory.tag.Split(' ')[0]; 
+                        }
+                        if (string.IsNullOrEmpty(displayLang)) {
+                            string rawName = currentPh.Split('.').Last().Replace("Phonemizer", "");
+                            displayLang = System.Text.RegularExpressions.Regex.Replace(rawName, "([A-Z])", " $1").Trim();
+                            if (displayLang.Length > 5) {
+                                displayLang = displayLang.Substring(0, 5);
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(displayLang)) {
+                            var langLayout = TextLayoutCache.Get(displayLang, Avalonia.Media.Brushes.White, 10);
+                            double paddingX = 3;
+                            double paddingY = 1.5;
+                            Avalonia.Rect badgeRect = new Avalonia.Rect(
+                                leftTop.X + 2, 
+                                leftTop.Y - langLayout.Height - (paddingY * 2) - 4, 
+                                langLayout.Width + (paddingX * 2), 
+                                langLayout.Height + (paddingY * 2)
+                            );
+                            context.DrawRectangle(badgeBrush, null, badgeRect, 3, 3);
+                            Avalonia.Point textPos = new Avalonia.Point(badgeRect.X + paddingX, badgeRect.Y + paddingY);
+                            using (var state = context.PushTransform(Avalonia.Matrix.CreateTranslation(textPos.X, textPos.Y))) {
+                                langLayout?.Draw(context, new Avalonia.Point());
+                            }
+                        }
+                    }
+                }
             }
             string displayLyric = note.lyric;
             int txtsize = 12;
