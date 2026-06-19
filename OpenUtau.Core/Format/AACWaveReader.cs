@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using NAudio.Wave;
 using SharpJaad.AAC;
@@ -34,7 +34,12 @@ namespace OpenUtau.Core.Format {
 
         private static (byte[] data, int sampleRate, int channels, int bitsPerSample) Decode(AudioTrack track) {
             var decoderSpecificInfo = track.GetDecoderSpecificInfo() ?? throw new Exception("M4A audio track is missing decoder configuration (unsupported codec variant).");
-            var decoder = new Decoder(decoderSpecificInfo);
+            Decoder decoder;
+            try {
+                decoder = new Decoder(decoderSpecificInfo);
+            } catch (AACException e) {
+                throw new Exception($"Unsupported AAC profile in M4A file: {e.Message}");
+            }
             using var pcmStream = new MemoryStream();
             int sampleRate = 0, channels = 0, bitsPerSample = 0;
             while (track.HasMoreFrames()) {
