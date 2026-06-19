@@ -61,9 +61,11 @@ namespace OpenUtau.Core.Format {
                 if (buf.Data.Length == 0) continue;
                 buf.SetBigEndian(false);
                 pcmStream.Write(buf.Data, 0, buf.Data.Length);
-                sampleRate = buf.SampleRate;
-                channels = buf.Channels;
-                bitsPerSample = buf.BitsPerSample;
+                if (sampleRate == 0 || channels == 0 || bitsPerSample == 0) {
+                    sampleRate = buf.SampleRate;
+                    channels = buf.Channels;
+                    bitsPerSample = buf.BitsPerSample;
+                }
             }
             return (pcmStream.ToArray(), sampleRate, channels, bitsPerSample);
         }
