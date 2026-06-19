@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using NAudio.Wave;
 using SharpJaad.AAC;
@@ -18,6 +18,8 @@ namespace OpenUtau.Core.Format {
             var tracks = movie.GetTracks(AudioTrack.AudioCodec.AAC);
             if (tracks.Count == 0)
                 throw new Exception("M4A file does not contain an AAC audio track.");
+            if (tracks.Count > 1)
+                Serilog.Log.Warning($"M4A file has {tracks.Count} AAC tracks; using the first one.");
             var track = (AudioTrack)tracks[0];
             var (data, sampleRate, channels, bitsPerSample) = Decode(track);
             waveFormat = new WaveFormat(
