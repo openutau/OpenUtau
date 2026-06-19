@@ -84,8 +84,5 @@ namespace OpenUtau.Core.Format {
             return n;
         }
 
-        protected override void Dispose(bool disposing) {
-            base.Dispose(disposing);
-        }
     }
 }
