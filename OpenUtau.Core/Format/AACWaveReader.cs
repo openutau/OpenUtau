@@ -41,6 +41,8 @@ namespace OpenUtau.Core.Format {
                 decoder = new Decoder(decoderSpecificInfo);
             } catch (AACException e) {
                 throw new Exception($"Unsupported AAC profile in M4A file: {e.Message}");
+            } catch (Exception e) {
+                throw new Exception($"Failed to initialize AAC decoder: {e.Message}", e);
             }
             using var pcmStream = new MemoryStream();
             int sampleRate = 0, channels = 0, bitsPerSample = 0;
