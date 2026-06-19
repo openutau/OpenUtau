@@ -55,7 +55,8 @@ namespace OpenUtau.Core.Format {
 #else
                 try {
                     return new AACWaveReader(filepath);
-                } catch {
+                } catch (Exception e) {
+                    Serilog.Log.Error(e, $"AAC decoder constructor error: {e.Message}, falling back to FFmpeg");
                     return new FFmpegWaveReader(filepath);
                 }
 #endif

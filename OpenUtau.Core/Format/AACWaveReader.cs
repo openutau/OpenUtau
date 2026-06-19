@@ -32,7 +32,12 @@ namespace OpenUtau.Core.Format {
                 // and SetData() doesn't reset it, so reusing one buffer across
                 // frames would skip the LE swap after the first frame.
                 var buf = new SampleBuffer();
-                decoder.DecodeFrame(frame.GetData(), buf);
+                try {
+                    decoder.DecodeFrame(frame.GetData(), buf);
+                } catch (AACException e) {
+                    // Ignoring the error just kind of works for some reason
+                    Serilog.Log.Error($"AACException on DecodeFrame caught (continuing): {e.Message}");
+                }
                 buf.SetBigEndian(false);
                 pcmStream.Write(buf.Data, 0, buf.Data.Length);
             }
