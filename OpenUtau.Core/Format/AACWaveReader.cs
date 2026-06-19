@@ -19,13 +19,19 @@ namespace OpenUtau.Core.Format {
             if (tracks.Count == 0)
                 throw new Exception("M4A file does not contain an AAC audio track.");
             var track = (AudioTrack)tracks[0];
-            waveFormat = new WaveFormat(track.GetSampleRate(), 16, track.GetChannelCount());
-            wavData = Decode(track);
+            var (data, sampleRate, channels, bitsPerSample) = Decode(track);
+            waveFormat = new WaveFormat(
+                sampleRate > 0 ? sampleRate : track.GetSampleRate(),
+                bitsPerSample > 0 ? bitsPerSample : 16,
+                channels > 0 ? channels : track.GetChannelCount()
+            );
+            wavData = data;
         }
 
-        private static byte[] Decode(AudioTrack track) {
+        private static (byte[] data, int sampleRate, int channels, int bitsPerSample) Decode(AudioTrack track) {
             var decoder = new Decoder(track.GetDecoderSpecificInfo());
             using var pcmStream = new MemoryStream();
+            int sampleRate = 0, channels = 0, bitsPerSample = 0;
             while (track.HasMoreFrames()) {
                 var frame = track.ReadNextFrame();
                 // Fresh buffer per frame: SampleBuffer.BigEndian starts true,
@@ -35,13 +41,17 @@ namespace OpenUtau.Core.Format {
                 try {
                     decoder.DecodeFrame(frame.GetData(), buf);
                 } catch (AACException e) {
-                    // Ignoring the error just kind of works for some reason
                     Serilog.Log.Error($"AACException on DecodeFrame caught (continuing): {e.Message}");
+                    continue;
                 }
+                if (buf.Data.Length == 0) continue;
                 buf.SetBigEndian(false);
                 pcmStream.Write(buf.Data, 0, buf.Data.Length);
+                sampleRate = buf.SampleRate;
+                channels = buf.Channels;
+                bitsPerSample = buf.BitsPerSample;
             }
-            return pcmStream.ToArray();
+            return (pcmStream.ToArray(), sampleRate, channels, bitsPerSample);
         }
 
         public override WaveFormat WaveFormat => waveFormat;
