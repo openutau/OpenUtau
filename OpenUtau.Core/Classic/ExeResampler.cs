@@ -102,10 +102,15 @@ namespace OpenUtau.Classic {
             string ArgParam = FormattableString.Invariant(
                 $"\"{args.inputTemp}\" \"{tmpFile}\" {MusicMath.GetToneName(args.tone)} {args.velocity} \"{args.GetFlagsString()}\" {args.offset} {args.durRequired} {args.consonant} {args.cutoff} {args.volume} {args.modulation} !{args.tempo} {Base64.Base64EncodeInt12(args.pitches)}");
             logger.Information($" > [thread-{threadId}] {FilePath} {ArgParam}");
+            string resamplerOutput;
             if (useWine) {
-                ProcessRunner.Run(winePath, $"{FilePath} {ArgParam}", logger);
+                resamplerOutput = ProcessRunner.Run(winePath, $"{FilePath} {ArgParam}", logger);
             } else {
-                ProcessRunner.Run(FilePath, ArgParam, logger);
+                resamplerOutput = ProcessRunner.Run(FilePath, ArgParam, logger);
+            }
+            // check if the file has been created
+            if (!File.Exists(tmpFile)) {
+                throw new Exception($"Resampler failed to create output file: {tmpFile}.\nResampler output:\n{resamplerOutput}\nErrors like this are often caused by a misconfigured oto.ini. Consider generating a singer error report.");
             }
             return tmpFile;
         }

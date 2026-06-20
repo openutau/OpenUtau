@@ -7,11 +7,12 @@ using Serilog;
 namespace OpenUtau.Core.Util {
     public static class ProcessRunner {
         public static bool DebugSwitch { get; set; }
-        public static void Run(string file, string args, ILogger logger, string workDir = null, int timeoutMs = 60000) {
+        public static string Run(string file, string args, ILogger logger, string workDir = null, int timeoutMs = 60000) {
             if (!File.Exists(file)) {
                 throw new FileNotFoundException($"Executable {file} not found.");
             }
             var threadId = Thread.CurrentThread.ManagedThreadId;
+            var output = "";
             using (var proc = new Process()) {
                 proc.StartInfo = new ProcessStartInfo(file, args) {
                     Environment = {{"LANG", "ja_JP.utf8"}},
@@ -25,12 +26,14 @@ namespace OpenUtau.Core.Util {
                     proc.OutputDataReceived += (o, e) => {
                         if (!string.IsNullOrEmpty(e.Data)) {
                             logger.Information($"ProcessRunner >>> [thread-{threadId}] {e.Data}");
+                            output += $"{e.Data}\n";
                         }
                     };
                 }
                 proc.ErrorDataReceived += (o, e) => {
                     if (!string.IsNullOrEmpty(e.Data)) {
                         logger.Error($"ProcessRunner >>> [thread-{threadId}] {e.Data}");
+                        output += $"{e.Data}\n";
                     }
                 };
                 proc.Start();
@@ -42,17 +45,20 @@ namespace OpenUtau.Core.Util {
                     proc.WaitForExit();
                 } else {
                     if (proc.WaitForExit(timeoutMs)) {
-                        return;
+                        output += $"Exit code {proc.ExitCode}";
+                        return output;
                     }
                     logger.Warning($"ProcessRunner >>> [thread-{threadId}] Timeout, killing...");
                     try {
                         proc.Kill();
                         logger.Warning($"ProcessRunner >>> [thread-{threadId}] Killed.");
+                        output += "Killed due to timeout.";
                     } catch (Exception e) {
                         logger.Error(e, $"ProcessRunner >>> [thread-{threadId}] Failed to kill");
                     }
                 }
             }
+            return output;
         }
     }
 }
