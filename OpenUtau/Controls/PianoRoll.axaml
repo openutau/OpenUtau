@@ -22,7 +22,7 @@
         <RowDefinition Height="150" 
                        MinHeight="{Binding NotesViewModel.ExpHeightMin}"
                        MaxHeight="{Binding NotesViewModel.ExpHeightMax}"/>
-        <RowDefinition Height="4"/>
+        <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="60"/>
@@ -378,48 +378,45 @@
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
                 <ListBox.Items>
-                  <ListBoxItem Classes="toolbar cursorTool" ToolTip.Tip="{DynamicResource pianoroll.tool.selectionv2}"/>
-                  <ListBoxItem Classes="toolbar hasSubTool" ToolTip.Tip="{DynamicResource pianoroll.tool.penv2}"
-                               Name="penTool" PointerReleased="OnToolButtonPointerReleased">
+                  <ListBoxItem Classes="toolbar cursorTool" ToolTip.Tip="{Binding SelectionToolTip}"/>
+                  <ListBoxItem Classes="toolbar hasSubTool" Name="penTool" PointerReleased="OnToolButtonPointerReleased">
                       <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="Bottom" ShowMode="Transient">
                             <Border BorderThickness="0">
                                 <ListBox SelectedIndex="{Binding PenToolIndex}" Background="Transparent" PointerReleased="PenToolListBox_PointerReleased">
-                                    <ListBoxItem Classes="toolbar penTool" ToolTip.Tip="{DynamicResource pianoroll.tool.penv2}"/>
-                                    <ListBoxItem Classes="toolbar penPlusTool" ToolTip.Tip="{DynamicResource pianoroll.tool.penplus}"/>
+                                    <ListBoxItem Classes="toolbar penTool" ToolTip.Tip="{Binding PenToolTip}"/>
+                                    <ListBoxItem Classes="toolbar penPlusTool" ToolTip.Tip="{Binding PenPlusToolTip}"/>
                                 </ListBox>
                             </Border>
                         </Flyout>
                     </FlyoutBase.AttachedFlyout>
                   </ListBoxItem>
-                  <ListBoxItem Classes="toolbar eraserTool" ToolTip.Tip="{DynamicResource pianoroll.tool.eraser}"/>
-                  <ListBoxItem Classes="toolbar hasSubTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawpitch}"
-                               Name="drawPitchTool" PointerReleased="OnToolButtonPointerReleased">
+                  <ListBoxItem Classes="toolbar eraserTool" ToolTip.Tip="{Binding EraserToolTip}"/>
+                  <ListBoxItem Classes="toolbar hasSubTool" Name="drawPitchTool" PointerReleased="OnToolButtonPointerReleased">
                       <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="Bottom" ShowMode="Transient">
                             <Border BorderThickness="0">
                                 <ListBox SelectedIndex="{Binding DrawPitchToolIndex}" Background="Transparent" PointerReleased="DrawPitchToolListBox_PointerReleased">
-                                    <ListBoxItem Classes="toolbar drawPitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawpitch}"/>
-                                    <ListBoxItem Classes="toolbar overwritePitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.overwritepitch}"/>
+                                    <ListBoxItem Classes="toolbar drawPitchTool" ToolTip.Tip="{Binding DrawPitchToolTip}"/>
+                                    <ListBoxItem Classes="toolbar overwritePitchTool" ToolTip.Tip="{Binding OverwritePitchToolTip}"/>
                                 </ListBox>
                             </Border>
                         </Flyout>
                     </FlyoutBase.AttachedFlyout>
                   </ListBoxItem>
-                  <ListBoxItem Classes="toolbar hasSubTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawlinepitch}"
-                               Name="drawLinePitchTool" PointerReleased="OnToolButtonPointerReleased">
+                  <ListBoxItem Classes="toolbar hasSubTool" Name="drawLinePitchTool" PointerReleased="OnToolButtonPointerReleased">
                       <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="Bottom" ShowMode="Transient">
                             <Border BorderThickness="0">
                                 <ListBox SelectedIndex="{Binding DrawLinePitchToolIndex}" Background="Transparent" PointerReleased="DrawLinePitchToolListBox_PointerReleased">
-                                    <ListBoxItem Classes="toolbar drawLinePitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawlinepitch}"/>
-                                    <ListBoxItem Classes="toolbar overwriteLinePitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.overwritelinepitch}"/>
+                                    <ListBoxItem Classes="toolbar drawLinePitchTool" ToolTip.Tip="{Binding DrawLinePitchToolTip}"/>
+                                    <ListBoxItem Classes="toolbar overwriteLinePitchTool" ToolTip.Tip="{Binding OverwriteLinePitchToolTip}"/>
                                 </ListBox>
                             </Border>
                         </Flyout>
                     </FlyoutBase.AttachedFlyout>
                   </ListBoxItem>
-                  <ListBoxItem Classes="toolbar knifeTool" ToolTip.Tip="{DynamicResource pianoroll.tool.knife}"/>
+                  <ListBoxItem Classes="toolbar knifeTool" ToolTip.Tip="{Binding KnifeToolTip}"/>
                 </ListBox.Items>
             </ListBox>
             <Border Width="12"/>
@@ -603,10 +600,10 @@
             </ItemsPanelTemplate>
         </ListBox.ItemsPanel>
         <ListBox.Items>
-          <ListBoxItem Classes="toolbar cursorTool"/>
-          <ListBoxItem Classes="toolbar penTool"/>
+          <ListBoxItem Classes="toolbar cursorTool" ToolTip.Tip="{Binding CurveSelectionToolTip}"/>
+          <ListBoxItem Classes="toolbar penTool" ToolTip.Tip="{Binding CurvePenToolTip}"/>
           <!-- CurveLineTool -->
-          <ListBoxItem Classes="toolbar eraserTool"/>
+          <ListBoxItem Classes="toolbar eraserTool" ToolTip.Tip="{Binding CurveEraserToolTip}"/>
         </ListBox.Items>
       </ListBox>
       <TextBlock Classes="tips" Grid.Row="5" Grid.Column="1"
@@ -669,7 +666,10 @@
           <TextBlock Name="ValueTipText" Margin="2"/>
         </Border>
       </Canvas>
-      <ProgressBar Grid.Row="6" Grid.ColumnSpan="4" Value="{Binding Progress}" IsVisible="{Binding PianoRollDetached}"/>
+      <StackPanel Grid.Row="6" Grid.ColumnSpan="4">
+        <TextBlock Height="20" Margin="4,4,4,0" Text="{Binding StatusBarText}"/>
+        <ProgressBar Value="{Binding Progress}" IsVisible="{Binding PianoRollDetached}" Height="4"/>
+      </StackPanel>
     </Grid>
   </Border>
 </UserControl>

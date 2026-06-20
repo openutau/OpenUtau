@@ -397,16 +397,19 @@ namespace OpenUtau.App.Controls {
             penTool.Classes.Remove("penTool");
             penTool.Classes.Remove("penPlusTool");
             penTool.Classes.Add(ViewModel.EditTool.PenToolVariation == 1 ? "penPlusTool" : "penTool");
+            ToolTip.SetTip(penTool, ViewModel.EditTool.PenToolVariation == 1 ? ViewModel.PenPlusToolTip : ViewModel.PenToolTip);
         }
         void SetDrawPitchToolIcon() {
             drawPitchTool.Classes.Remove("drawPitchTool");
             drawPitchTool.Classes.Remove("overwritePitchTool");
             drawPitchTool.Classes.Add(ViewModel.EditTool.DrawPitchToolVariation == 1 ? "overwritePitchTool" : "drawPitchTool");
+            ToolTip.SetTip(drawPitchTool, ViewModel.EditTool.DrawPitchToolVariation == 1 ? ViewModel.OverwritePitchToolTip : ViewModel.DrawPitchToolTip);
         }
         void SetDrawLinePitchToolIcon() {
             drawLinePitchTool.Classes.Remove("drawLinePitchTool");
             drawLinePitchTool.Classes.Remove("overwriteLinePitchTool");
             drawLinePitchTool.Classes.Add(ViewModel.EditTool.DrawLinePitchToolVariation == 1 ? "overwriteLinePitchTool" : "drawLinePitchTool");
+            ToolTip.SetTip(drawLinePitchTool, ViewModel.EditTool.DrawLinePitchToolVariation == 1 ? ViewModel.OverwriteLinePitchToolTip : ViewModel.DrawLinePitchToolTip);
         }
 
         void SearchNote() {
@@ -601,6 +604,9 @@ namespace OpenUtau.App.Controls {
                 var element = (TrackBackground)sender;
                 keyboardPlayState.Update(args.Pointer, args.GetPosition(element));
             }
+            Cursor = null;
+            ViewModel.SetStatusBarText("Keyboard");
+            args.Handled = true;
         }
 
         public void KeyboardPointerReleased(object sender, PointerReleasedEventArgs args) {
@@ -657,6 +663,9 @@ namespace OpenUtau.App.Controls {
                 int tick = left + ViewModel.NotesViewModel.Part?.position ?? 0;
                 ViewModel.PlaybackViewModel?.MovePlayPos(tick);
             }
+            Cursor = null;
+            ViewModel.SetStatusBarText("Timeline");
+            args.Handled = true;
         }
 
         public void TimelinePointerReleased(object sender, PointerReleasedEventArgs args) {
@@ -937,6 +946,7 @@ namespace OpenUtau.App.Controls {
         public void NotesCanvasPointerMoved(object sender, PointerEventArgs args) {
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
+            ViewModel.SetStatusBarText("NotesCanvas");
             args.Handled = true;
             if (ValueTipCanvas != null) {
                 valueTipPointerPosition = args.GetCurrentPoint(ValueTipCanvas!).Position;
@@ -1114,6 +1124,7 @@ namespace OpenUtau.App.Controls {
         public void ExpCanvasPointerMoved(object sender, PointerEventArgs args) {
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
+            ViewModel.SetStatusBarText("ExpCanvas");
             args.Handled = true;
             if (ValueTipCanvas != null) {
                 valueTipPointerPosition = args.GetCurrentPoint(ValueTipCanvas!).Position;
@@ -1238,6 +1249,7 @@ namespace OpenUtau.App.Controls {
         }
 
         public void PhonemeCanvasPointerMoved(object sender, PointerEventArgs args) {
+            ViewModel.SetStatusBarText("PhonemeCanvas");
             args.Handled = true;
             if (ViewModel?.NotesViewModel?.Part == null) {
                 return;
@@ -1285,6 +1297,7 @@ namespace OpenUtau.App.Controls {
 
         public void BackgroundPointerMoved(object sender, PointerEventArgs args) {
             Cursor = null;
+            ViewModel.SetStatusBarText("Background");
             args.Handled = true;
         }
 
