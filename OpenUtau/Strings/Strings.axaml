@@ -512,35 +512,34 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.phonemizer">View Phonemizer Tags</system:String>
   <system:String x:Key="pianoroll.toggle.tips">View Tips (T)</system:String>
   <system:String x:Key="pianoroll.toggle.tone">Toggle Note Tone (Y)</system:String>
+  <system:String x:Key="pianoroll.toggle.overwritepitch">Toggle Overwrite Pitch Mode</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">View Vibrato (U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">View Waveform (W)</system:String>
   <system:String x:Key="pianoroll.toggle.expressions">View Expressions (L)</system:String>
-  <system:String x:Key="pianoroll.tool.drawlinepitch">Line Draw Pitch Tool (5)
-    Left click to draw (draw straight line)
-    Right click to reset
-    Hold Ctrl to select
-    Hold Alt to smoothen</system:String>
-  <system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (4)
+  <system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (Shift + 1)
     Left click to draw
     Right click to reset
-    Hold Ctrl to select
-    Hold Alt to smoothen</system:String>
+    Hold Ctrl to select</system:String>
   <system:String x:Key="pianoroll.tool.eraser">Eraser Tool (3)</system:String>
-  <system:String x:Key="pianoroll.tool.knife">Knife Tool (5)</system:String>
-  <system:String x:Key="pianoroll.tool.overwritepitch">Overwrite Pitch Tool (4)
-    Left click to draw (overwrites vibrato or mod+)
+  <system:String x:Key="pianoroll.tool.knife">Knife Tool (4)</system:String>
+  <system:String x:Key="pianoroll.tool.pitchline">Pitch Line Tool (Shift + 2)
+    Left click to draw straight line
     Right click to reset
-    Hold Ctrl to select
-    Hold Alt to smoothen</system:String>
-  <system:String x:Key="pianoroll.tool.overwritelinepitch">Overwrite Line Pitch Tool (5)
-    Left click to draw 
-    (draw straight line overwrites the vibrato or mod+)
-    Hold Ctrl to draw sine curve
-    Hold Alt + Shift to tune S-curve
-    Hold Alt to draw S-curve
+    Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.pitchscurve">Pitch S-Curve Tool (Shift + 3)
+    Drag to draw S-curve, release to enter adjusting mode
+    Move mouse to tune S-curve strength, click to apply
     Right click to reset
-    Hold Ctrl to select
-    Hold Alt to smoothen</system:String>
+    Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.pitchesinewave">Pitch Sine Wave Tool (Shift + 4)
+    Drag to draw sine wave, release to enter adjusting mode
+    Move mouse to adjust wavelength and amplitude, click to apply
+    Right click to reset
+    Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.pitchsmoothen">Pitch Smoothen Tool (Shift + 5)
+    Left click to smoothen pitch
+    Right click to reset
+    Hold Ctrl to select</system:String>
   <system:String x:Key="pianoroll.tool.penplus">Pen Plus Tool (Ctrl + 2)
     Left click to draw
     Right click to delete
