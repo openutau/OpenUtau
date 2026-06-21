@@ -74,7 +74,12 @@ namespace OpenUtau.App.Views {
             timer = new DispatcherTimer(
                 TimeSpan.FromMilliseconds(15),
                 DispatcherPriority.Normal,
-                (sender, args) => PlaybackManager.Inst.UpdatePlayPos());
+                (sender, args) => {
+                    PlaybackManager.Inst.UpdatePlayPos();
+                    var pvm = viewModel.PlaybackViewModel;
+                    pvm.RaisePropertyChanged(nameof(pvm.IsPlaying));
+                    pvm.RaisePropertyChanged(nameof(pvm.ShowPlayPosHighlight));
+                });
             timer.Start();
 
             autosaveTimer = new DispatcherTimer(

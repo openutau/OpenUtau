@@ -198,12 +198,14 @@
                    Height="{Binding $parent.Bounds.Height, Mode=OneWay}"
                    Canvas.Left="{Binding NotesViewModel.PlayPosHighlightX, Mode=OneWay}"
                    Canvas.Top="0" ZIndex="-10"
+                   IsVisible="{Binding PlaybackViewModel.ShowPlayPosHighlight}"
                    Fill="{DynamicResource NeutralAccentBrushSemi2}"/>
         <Rectangle Name="PlayPosLine"
                    Canvas.Left="{Binding NotesViewModel.PlayPosX}"
                    Canvas.Top="0" Width="1"
                    Height="{Binding $parent.Bounds.Height, Mode=OneWay}"
                    ZIndex="99" IsHitTestVisible="False"
+                   IsVisible="{Binding PlaybackViewModel.IsPlaying}"
                    Fill="{DynamicResource AccentBrush2}"/>
         <Rectangle Name="SelectionBox" StrokeThickness="2"
                    Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"
