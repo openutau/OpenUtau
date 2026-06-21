@@ -68,7 +68,10 @@ namespace OpenUtau.App.Views {
             timer = new DispatcherTimer(
                 TimeSpan.FromMilliseconds(15),
                 DispatcherPriority.Normal,
-                (sender, args) => PlaybackManager.Inst.UpdatePlayPos());
+                (sender, args) => {
+                    PlaybackManager.Inst.UpdatePlayPos();
+                    pianoRoll?.ViewModel?.NotesViewModel?.SmoothScrollStep();
+                });
             timer.Start();
 
             autosaveTimer = new DispatcherTimer(

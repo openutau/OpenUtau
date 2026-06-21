@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -94,6 +94,14 @@ namespace OpenUtau.App.ViewModels {
 
         // See the comments on TracksViewModel.playPosXToTickOffset
         private double playPosXToTickOffset => Bounds.Width != 0 ? ViewportTicks / Bounds.Width : 0;
+
+        // Smooth scroll for Stationary Cursor (PlaybackAutoScroll == 1): lerp toward target instead of jumping.
+        private const double SmoothScrollLerpFactor = 0.25;
+        private const double SmoothScrollSnapThreshold = 0.5;
+        /// <summary>Target TickOffset for smooth stationary-cursor scroll; null when not in use.</summary>
+        private double? smoothScrollTargetTickOffset;
+        /// <summary>True while SmoothScrollStep is updating TickOffset, so we don't treat that as user scroll.</summary>
+        private bool _inSmoothScrollStep;
 
         private readonly ObservableAsPropertyHelper<double> viewportTicks;
         private readonly ObservableAsPropertyHelper<double> viewportTracks;
@@ -267,6 +275,16 @@ namespace OpenUtau.App.ViewModels {
                 Preferences.Default.ShowNoteParams = showNoteParams;
                 Preferences.Save();
             });
+// When user scrolls (scrollbar, zoom, pan), sync smooth-scroll target so we don't pull the view back.
+            this.WhenAnyValue(x => x.TickOffset)
+                .Skip(1)
+                .Subscribe(_ => {
+                    if (!_inSmoothScrollStep && Preferences.Default.PlaybackAutoScroll == 1) {
+                        smoothScrollTargetTickOffset = TickOffset;
+                    }
+                });
+            this.WhenAnyValue(x => x.Part)
+                .Subscribe(_ => smoothScrollTargetTickOffset = null);
 
             TickWidth = ViewConstants.PianoRollTickWidthDefault;
             TrackHeight = ViewConstants.NoteHeightDefault;
@@ -1152,7 +1170,31 @@ namespace OpenUtau.App.ViewModels {
 
         private void AutoScroll(double positionX) {
             double scrollDelta = GetScrollValueDelta(positionX);
-            TickOffset = Math.Clamp(TickOffset + scrollDelta, 0, HScrollBarMax);
+            if (Preferences.Default.PlaybackAutoScroll == 1) {
+                smoothScrollTargetTickOffset = Math.Clamp(TickOffset + scrollDelta, 0, HScrollBarMax);
+            } else {
+                smoothScrollTargetTickOffset = null;
+                TickOffset = Math.Clamp(TickOffset + scrollDelta, 0, HScrollBarMax);
+            }
+        }
+
+        /// <summary>Called periodically (e.g. from main window timer) to lerp TickOffset toward smoothScrollTargetTickOffset for stationary cursor.</summary>
+        public void SmoothScrollStep() {
+            if (Part == null || Preferences.Default.PlaybackAutoScroll != 1 || !smoothScrollTargetTickOffset.HasValue) {
+                return;
+            }
+            double target = Math.Clamp(smoothScrollTargetTickOffset.Value, 0, HScrollBarMax);
+            double diff = target - TickOffset;
+            _inSmoothScrollStep = true;
+            try {
+                if (Math.Abs(diff) < SmoothScrollSnapThreshold) {
+                    TickOffset = target;
+                } else {
+                    TickOffset = Math.Clamp(TickOffset + diff * SmoothScrollLerpFactor, 0, HScrollBarMax);
+                }
+            } finally {
+                _inSmoothScrollStep = false;
+            }
         }
 
         private double GetScrollValueDelta(double positionX) {
