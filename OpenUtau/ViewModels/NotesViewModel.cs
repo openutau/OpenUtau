@@ -984,9 +984,21 @@ namespace OpenUtau.App.ViewModels {
             }
             tick -= Part?.position ?? 0;
             PlayPosX = TickToneToPoint(tick, 0).X;
-            TickToLineTick(tick, out int left, out int right);
-            PlayPosHighlightX = TickToneToPoint(left, 0).X;
-            PlayPosHighlightWidth = (right - left) * TickWidth;
+            UpdateHighlight();
+        }
+
+        private void UpdateHighlight() {
+            if (DocManager.Inst.rangeEndTick > DocManager.Inst.rangeStartTick) {
+                int partPos = Part?.position ?? 0;
+                int left = DocManager.Inst.rangeStartTick - partPos;
+                int right = DocManager.Inst.rangeEndTick - partPos;
+                PlayPosHighlightX = TickToneToPoint(left, 0).X;
+                PlayPosHighlightWidth = (right - left) * TickWidth;
+            } else {
+                TickToLineTick((int)(PlayPosX / TickWidth + TickOffset), out int left, out int right);
+                PlayPosHighlightX = TickToneToPoint(left, 0).X;
+                PlayPosHighlightWidth = (right - left) * TickWidth;
+            }
         }
 
         private void FocusNote(UNote note) {
@@ -1063,6 +1075,8 @@ namespace OpenUtau.App.ViewModels {
                     if (!setPlayPosTick.pause || Preferences.Default.LockStartTime == 1) {
                         MaybeAutoScroll(PlayPosX);
                     }
+                } else if (cmd is SetRangeSelectionNotification) {
+                    UpdateHighlight();
                 } else if (cmd is FocusNoteNotification focusNote) {
                     if (focusNote.part == Part) {
                         FocusNote(focusNote.note);

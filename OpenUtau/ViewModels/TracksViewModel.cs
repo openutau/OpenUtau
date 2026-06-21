@@ -422,9 +422,20 @@ namespace OpenUtau.App.ViewModels {
                 return;
             }
             PlayPosX = TickTrackToPoint(tick, 0).X;
-            TickToLineTick(tick, out int left, out int right);
-            PlayPosHighlightX = TickTrackToPoint(left, 0).X;
-            PlayPosHighlightWidth = (right - left) * TickWidth;
+            UpdateHighlight();
+        }
+
+        private void UpdateHighlight() {
+            if (DocManager.Inst.rangeEndTick > DocManager.Inst.rangeStartTick) {
+                int left = DocManager.Inst.rangeStartTick;
+                int right = DocManager.Inst.rangeEndTick;
+                PlayPosHighlightX = TickTrackToPoint(left, 0).X;
+                PlayPosHighlightWidth = (right - left) * TickWidth;
+            } else {
+                TickToLineTick((int)(PlayPosX / TickWidth + TickOffset), out int left, out int right);
+                PlayPosHighlightX = TickTrackToPoint(left, 0).X;
+                PlayPosHighlightWidth = (right - left) * TickWidth;
+            }
         }
 
         public void OnNext(UCommand cmd, bool isUndo) {
@@ -491,6 +502,8 @@ namespace OpenUtau.App.ViewModels {
                     if (!setPlayPosTick.pause || Preferences.Default.LockStartTime == 1) {
                         MaybeAutoScroll();
                     }
+                } else if (cmd is SetRangeSelectionNotification) {
+                    UpdateHighlight();
                 } else if (cmd is LoadPartNotification loadPartNotif) {
                     if (SelectedParts.Count != 1 || SelectedParts.First() != loadPartNotif.part) {
                         DeselectParts();

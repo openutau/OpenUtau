@@ -109,7 +109,8 @@
               PointerWheelChanged="TimelinePointerWheelChanged"
               PointerPressed="TimelinePointerPressed"
               PointerMoved="TimelinePointerMoved"
-              PointerReleased="TimelinePointerReleased">
+              PointerReleased="TimelinePointerReleased"
+              DoubleTapped="TimelineDoubleTapped">
         <Path Name="PlayPos"
               Canvas.Left="{Binding NotesViewModel.PlayPosX}"
               Canvas.Top="0" ZIndex="100" IsHitTestVisible="False"
@@ -198,6 +199,12 @@
                    Canvas.Left="{Binding NotesViewModel.PlayPosHighlightX, Mode=OneWay}"
                    Canvas.Top="0" ZIndex="-10"
                    Fill="{DynamicResource NeutralAccentBrushSemi2}"/>
+        <Rectangle Name="PlayPosLine"
+                   Canvas.Left="{Binding NotesViewModel.PlayPosX}"
+                   Canvas.Top="0" Width="1"
+                   Height="{Binding $parent.Bounds.Height, Mode=OneWay}"
+                   ZIndex="99" IsHitTestVisible="False"
+                   Fill="{DynamicResource AccentBrush2}"/>
         <Rectangle Name="SelectionBox" StrokeThickness="2"
                    Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"
                    Fill="{DynamicResource TickLineBrushLow}" ZIndex="1000"
