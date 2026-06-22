@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using NAudio.Wave;
 using OpenUtau.Core;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Util;
-using OpenUtau.Core.Ustx;
 using Serilog;
 
 namespace OpenUtau.Classic {
@@ -110,7 +108,9 @@ namespace OpenUtau.Classic {
             }
             // check if the file has been created
             if (!File.Exists(tmpFile)) {
-                throw new Exception($"Resampler failed to create output file: {tmpFile}.\nResampler output:\n{resamplerOutput}\nErrors like this are often caused by a misconfigured oto.ini. Consider generating a singer error report.");
+                throw new Core.Render.ResamplerFailedException(
+                    $" > [thread-{threadId}]\n{resamplerOutput}"
+                );
             }
             return tmpFile;
         }
