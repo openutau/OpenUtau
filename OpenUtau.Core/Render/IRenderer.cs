@@ -7,6 +7,9 @@ using OpenUtau.Core.Ustx;
 namespace OpenUtau.Core.Render {
     public class NoResamplerException : Exception { }
     public class NoWavtoolException : Exception { }
+    public class ResamplerFailedException : Exception {
+        public ResamplerFailedException(string message) : base(message) {}
+    }
 
     /// <summary>
     /// Render result of a phrase.

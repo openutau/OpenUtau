@@ -189,6 +189,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.install.cpp">Try installing the latest Visual C++ Redistributable. https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170</system:String>
   <system:String x:Key="errors.lyrics.regex">Character not allowed in regular expression</system:String>
   <system:String x:Key="errors.lyrics.regexpreview">- regular expression error -</system:String>
+  <system:String x:Key="errors.resampler.failed.message">Resampler failed to create output file(s). Resampler errors like this are often caused by oto.ini configuration issues. Consider generating a singer error report to check for such issues.</system:String>
 
   <system:String x:Key="exesetup.installing">Installing "{0}"...</system:String>
   <system:String x:Key="exesetup.linux">To use exe resamplers or wavtools on Linux:

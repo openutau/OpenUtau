@@ -120,6 +120,9 @@ namespace OpenUtau.Core.Render {
                     } else if (innerEx.Any(e => e is DllNotFoundException)) {
                         DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
                             new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>: <translate:errors.install.cpp>", flatEx)));
+                    } else if (innerEx.Any(e => e is ResamplerFailedException)) {
+                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
+                            new MessageCustomizableException("Failed to render.", "<translate:errors.resampler.failed.message>", flatEx)));
                     } else {
                         DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
                             new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>", flatEx)));
