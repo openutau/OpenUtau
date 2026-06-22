@@ -150,10 +150,10 @@ namespace OpenUtau.App.ViewModels {
                 });
             this.WhenAnyValue(x => x.MixFxEnabled)
                 .Subscribe(enabled => {
-                    if (track.MixFx == null) {
-                        track.MixFx = new UMixFx { Enabled = enabled };
-                    } else {
+                    if (track.MixFx != null) {
                         track.MixFx.Enabled = enabled;
+                    } else if (enabled) {
+                        track.MixFx = new UMixFx { Enabled = true };
                     }
                 });
             this.WhenAnyValue(x => x.IsSelected)
