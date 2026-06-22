@@ -31,6 +31,12 @@ namespace OpenUtau.App.ViewModels {
             this.allmute = allmute;
         }
     }
+    public class MixFxChangedNotification {
+        public readonly int trackNo;
+        public MixFxChangedNotification(int trackNo) {
+            this.trackNo = trackNo;
+        }
+    }
     public class TrackSelectionEvent {
         public readonly UTrack[] selectedTracks;
         public TrackSelectionEvent(UTrack[] selectedTracks) {

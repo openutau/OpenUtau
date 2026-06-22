@@ -12,6 +12,30 @@
     <Style Selector="ToggleButton">
       <Setter Property="Background" Value="Transparent"/>
     </Style>
+    <Style Selector="Button.fxButton">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}" />
+      </Style>
+      <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}" />
+      </Style>
+    </Style>
+    <Style Selector="Button.fxButton.fxOn">
+      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}" />
+      </Style>
+      <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}" />
+      </Style>
+    </Style>
     <Style Selector="Slider.fader">
       <Setter Property="Foreground" Value="{Binding TrackColor.AccentColor}"/>
       
@@ -207,8 +231,14 @@
             </ContextMenu>
           </ToggleButton.ContextMenu>
         </ToggleButton>
+        <Button Grid.Row="3" Grid.Column="3" Classes="toolbar fxButton" Margin="1" Height="17"
+                      HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.mixfx}"
+                      Classes.fxOn="{Binding MixFxEnabled}"
+                      Command="{Binding OpenMixFxDialog}">
+          <TextBlock Text="fx" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </Button>
         <Separator Background="Transparent" Height="17" Margin="1" IsVisible="{Binding IsRendererVisible}"/>
-        <Button Grid.Row="3" Grid.Column="3" Margin="1" Padding="0" Height="17" Background="Transparent"
+        <Button Grid.Row="4" Grid.Column="3" Margin="1" Padding="0" Height="17" Background="Transparent"
                       HorizontalAlignment="Stretch" Click="TrackSettingsButtonClicked" IsVisible="{Binding IsRendererVisible}"
                       ToolTip.Tip="{DynamicResource tracks.tracksettings}">
           <Path Classes="clear" Width="24" Height="24"
