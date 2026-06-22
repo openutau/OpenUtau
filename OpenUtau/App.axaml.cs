@@ -82,8 +82,10 @@ namespace OpenUtau.App {
             }
         }
 
-        static void InitializeTheme() {
+        static async void InitializeTheme() {
             Log.Information("Initializing theme.");
+            CustomTheme.ListThemes();
+            await OudepLoaderRegistry.LoadAllAsync();
             SetTheme();
             Log.Information("Initialized theme.");
         }

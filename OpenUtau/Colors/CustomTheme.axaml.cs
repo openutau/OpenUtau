@@ -11,7 +11,18 @@ using Serilog;
 namespace OpenUtau.Colors;
 public class CustomTheme {
     public static Dictionary<string, string> Themes = [];
+    static HashSet<string> LocalThemes = [];
+    static HashSet<string> PackageThemes = [];
     public static ThemeYaml Default;
+
+    public static bool IsPackageTheme(string themeName) => PackageThemes.Contains(themeName);
+
+    public static void MarkPackageTheme(string themeName) => PackageThemes.Add(themeName);
+
+    internal static void ClearPackageThemes() {
+        foreach (var key in PackageThemes) Themes.Remove(key);
+        PackageThemes.Clear();
+    }
 
     static CustomTheme() {
         Default = new ThemeYaml();
@@ -33,7 +44,8 @@ public class CustomTheme {
     }
 
     public static void ListThemes() {
-        Themes.Clear();
+        foreach (var key in LocalThemes) Themes.Remove(key);
+        LocalThemes.Clear();
         Directory.CreateDirectory(PathManager.Inst.ThemesPath);
         foreach (var item in Directory.EnumerateFiles(PathManager.Inst.ThemesPath, "*.yaml")) {
             try {
@@ -45,6 +57,7 @@ public class CustomTheme {
                     dupIter++;
                 }
                 Themes.Add(themeName, item);
+                LocalThemes.Add(themeName);
             } catch (Exception e) {
                 Log.Error(e, $"Failed to parse yaml in {item}");
             }
