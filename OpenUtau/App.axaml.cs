@@ -84,8 +84,12 @@ namespace OpenUtau.App {
 
         static async void InitializeTheme() {
             Log.Information("Initializing theme.");
-            CustomTheme.ListThemes();
-            await OudepLoaderRegistry.LoadAllAsync();
+            try {
+                CustomTheme.ListThemes();
+                await OudepLoaderRegistry.LoadAllAsync();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to load themes from packages.");
+            }
             SetTheme();
             Log.Information("Initialized theme.");
         }
