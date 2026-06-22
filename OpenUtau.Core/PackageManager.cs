@@ -209,6 +209,17 @@ namespace OpenUtau.Core {
 
         private static readonly IComparer<string> VersionComparer = new VersionStringComparer();
 
+        private static bool IsValidPackageName(string id) {
+            if (id.Contains("..") || Path.IsPathRooted(id)) return false;
+            return !Path.GetInvalidFileNameChars().Any(c => id.Contains(c));
+        }
+
+        private static bool IsValidRelativePath(string path) {
+            if (string.IsNullOrEmpty(path)) return false;
+            if (path.Contains("..") || Path.IsPathRooted(path)) return false;
+            return !Path.GetInvalidPathChars().Any(c => path.Contains(c));
+        }
+
         public static string GetLatestVersionString(RegistryVersion[] versions) {
             if (versions == null || versions.Length == 0) return string.Empty;
             return versions.OrderByDescending(v => v.version, VersionComparer).First().version;
@@ -295,6 +306,9 @@ namespace OpenUtau.Core {
             if (string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(metadata.name)) {
                 id = metadata.name;
             }
+            if (string.IsNullOrEmpty(id) || !IsValidPackageName(id)) {
+                throw new ArgumentException("Invalid package id");
+            }
 
             // Validate entrypoints if present
             if (metadata.entrypoints != null && metadata.entrypoints.Length > 0) {
@@ -302,11 +316,8 @@ namespace OpenUtau.Core {
                     if (string.IsNullOrEmpty(ep.loader)) {
                         throw new ArgumentException($"Entrypoint is missing 'loader' field: {ep.path}");
                     }
-                    if (string.IsNullOrEmpty(ep.path)) {
-                        throw new ArgumentException($"Entrypoint is missing 'path' field for loader '{ep.loader}'");
-                    }
-                    if (ep.path.Contains("..")) {
-                        throw new ArgumentException($"Entrypoint path contains '..': {ep.path}");
+                    if (string.IsNullOrEmpty(ep.path) || !IsValidRelativePath(ep.path)) {
+                        throw new ArgumentException($"Invalid entrypoint path: {ep.path}");
                     }
                 }
             } else if (string.IsNullOrEmpty(metadata.@class)) {
@@ -323,15 +334,17 @@ namespace OpenUtau.Core {
                     Log.Error(e, $"Failed to remove old dependency folder {basePath}");
                 }
                 foreach (var entry in archive.Entries) {
-                    if (string.IsNullOrEmpty(entry.Key) || entry.Key.Contains("..")) {
-                        // Prevent zipSlip attack
+                    if (string.IsNullOrEmpty(entry.Key) || !IsValidRelativePath(entry.Key)) {
                         continue;
                     }
-                    var filePath = Path.Combine(basePath, entry.Key);
+                    var filePath = Path.GetFullPath(Path.Combine(basePath, entry.Key));
+                    if (!filePath.StartsWith(Path.GetFullPath(basePath), StringComparison.OrdinalIgnoreCase)) {
+                        continue;
+                    }
                     var dir = Path.GetDirectoryName(filePath);
                     if (!entry.IsDirectory && !string.IsNullOrEmpty(dir)) {
                         Directory.CreateDirectory(dir);
-                        entry.WriteToFile(Path.Combine(basePath, entry.Key));
+                        entry.WriteToFile(filePath);
                     }
                 }
             });
