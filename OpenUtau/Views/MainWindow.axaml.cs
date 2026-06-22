@@ -37,6 +37,12 @@ namespace OpenUtau.App.Views {
         private PianoRoll? pianoRoll;
 
         private PartEditState? partEditState;
+
+        // Time range selection state
+        private bool isSelectingRange;
+        private Point rangeSelectStartPoint = default;
+        private const double RangeSelectThreshold = 5; // pixels
+
         private readonly DispatcherTimer timer;
         private readonly DispatcherTimer autosaveTimer;
         private bool forceClose;
@@ -68,7 +74,12 @@ namespace OpenUtau.App.Views {
             timer = new DispatcherTimer(
                 TimeSpan.FromMilliseconds(15),
                 DispatcherPriority.Normal,
-                (sender, args) => PlaybackManager.Inst.UpdatePlayPos());
+                (sender, args) => {
+                    PlaybackManager.Inst.UpdatePlayPos();
+                    var pvm = viewModel.PlaybackViewModel;
+                    pvm.RaisePropertyChanged(nameof(pvm.IsPlaying));
+                    pvm.RaisePropertyChanged(nameof(pvm.ShowPlayPosHighlight));
+                });
             timer.Start();
 
             autosaveTimer = new DispatcherTimer(
@@ -1018,8 +1029,9 @@ namespace OpenUtau.App.Views {
                 viewModel.TracksViewModel.PointToLineTick(point.Position, out int left, out int right);
                 viewModel.PlaybackViewModel.MovePlayPos(left);
             } else if (point.Properties.IsRightButtonPressed) {
-                int tick = viewModel.TracksViewModel.PointToTick(point.Position);
-                viewModel.RefreshTimelineContextMenu(tick);
+                isSelectingRange = true;
+                rangeSelectStartPoint = point.Position;
+                viewModel.RefreshTimelineContextMenu(viewModel.TracksViewModel.PointToTick(point.Position));
             }
         }
 
@@ -1029,12 +1041,39 @@ namespace OpenUtau.App.Views {
             if (point.Properties.IsLeftButtonPressed) {
                 viewModel.TracksViewModel.PointToLineTick(point.Position, out int left, out int right);
                 viewModel.PlaybackViewModel.MovePlayPos(left);
+            } else if (point.Properties.IsRightButtonPressed && isSelectingRange) {
+                double dx = Math.Abs(point.Position.X - rangeSelectStartPoint.X);
+                if (dx >= RangeSelectThreshold) {
+                    UpdateRangeSelection(point.Position);
+                }
             }
             Cursor = null;
         }
 
         public void TimelinePointerReleased(object sender, PointerReleasedEventArgs args) {
+            if (isSelectingRange && args.InitialPressMouseButton == MouseButton.Right) {
+                isSelectingRange = false;
+                var control = (Control)sender;
+                var point = args.GetCurrentPoint(control);
+                double dx = Math.Abs(point.Position.X - rangeSelectStartPoint.X);
+                if (dx >= RangeSelectThreshold) {
+                    UpdateRangeSelection(point.Position);
+                }
+            }
             args.Pointer.Capture(null);
+        }
+
+        public void TimelineDoubleTapped(object sender, TappedEventArgs args) {
+            DocManager.Inst.ExecuteCmd(new SetRangeSelectionNotification(0, 0));
+        }
+
+        private void UpdateRangeSelection(Point currentPoint) {
+            var tracksVm = viewModel.TracksViewModel;
+            tracksVm.PointToLineTick(rangeSelectStartPoint, out int startLeft, out int startRight);
+            tracksVm.PointToLineTick(currentPoint, out int endLeft, out int endRight);
+            int left = Math.Min(startLeft, endLeft);
+            int right = Math.Max(startRight, endRight);
+            DocManager.Inst.ExecuteCmd(new SetRangeSelectionNotification(left, right));
         }
 
         public void PartsCanvasPointerPressed(object sender, PointerPressedEventArgs args) {

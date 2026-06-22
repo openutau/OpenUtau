@@ -113,6 +113,20 @@ namespace OpenUtau.Core {
         public override string ToString() => $"Set play position to tick {playPosTick}";
     }
 
+    /// <summary>
+    /// Notification for both views to sync time range selection.
+    /// </summary>
+    public class SetRangeSelectionNotification : UNotification {
+        public readonly int startTick;
+        public readonly int endTick;
+        public override bool Silent => true;
+        public SetRangeSelectionNotification(int startTick, int endTick) {
+            this.startTick = startTick;
+            this.endTick = endTick;
+        }
+        public override string ToString() => $"Set range selection {startTick}-{endTick}";
+    }
+
     // Notification for playback manager to change play position
     public class SeekPlayPosTickNotification : UNotification {
         public int playPosTick;

@@ -44,6 +44,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool IsSingerVisible { get; set; }
         [Reactive] public bool IsPhonemizerVisible { get; set; }
         [Reactive] public bool IsRendererVisible { get; set; }
+        [Reactive] public bool MixFxEnabled { get; set; }
         [Reactive] public IBrush HeaderBorderBrush { get; set; } = ThemeManager.NeutralAccentBrushSemi;
 
         public ViewModelActivator Activator { get; }
@@ -123,6 +124,7 @@ namespace OpenUtau.App.ViewModels {
             Mute = track.Mute;
             Muted = track.Muted;
             Solo = track.Solo;
+            MixFxEnabled = track.MixFx?.Enabled ?? false;
             this.WhenAnyValue(x => x.Volume)
                 .Subscribe(volume => {
                     track.Volume = volume;
@@ -145,6 +147,14 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(x => x.Solo)
                 .Subscribe(solo => {
                     track.Solo = solo;
+                });
+            this.WhenAnyValue(x => x.MixFxEnabled)
+                .Subscribe(enabled => {
+                    if (track.MixFx != null) {
+                        track.MixFx.Enabled = enabled;
+                    } else if (enabled) {
+                        track.MixFx = new UMixFx { Enabled = true };
+                    }
                 });
             this.WhenAnyValue(x => x.IsSelected)
                 .Subscribe(_ => RefreshSelectionStyle());
@@ -181,10 +191,6 @@ namespace OpenUtau.App.ViewModels {
             JudgeMuted();
         }
 
-        public void ToggleApplyMixFx() {
-            // Legacy stub kept so any leftover XAML binding still resolves.
-            // The FX dialog (right-click → Track Polish) is the new entry point.
-        }
         public void ToggleMute(bool mute) {
             if (mute) {
                 Mute = true;
@@ -491,6 +497,8 @@ namespace OpenUtau.App.ViewModels {
             this.RaisePropertyChanged(nameof(Mute));
             this.RaisePropertyChanged(nameof(Muted));
             this.RaisePropertyChanged(nameof(Solo));
+            MixFxEnabled = track.MixFx?.Enabled ?? false;
+            this.RaisePropertyChanged(nameof(MixFxEnabled));
             this.RaisePropertyChanged(nameof(Volume));
             this.RaisePropertyChanged(nameof(Pan));
             RefreshAvatar();

@@ -31,6 +31,8 @@ namespace OpenUtau.Core {
         private TaskScheduler mainScheduler;
 
         public int playPosTick = 0;
+        public int rangeStartTick = 0;
+        public int rangeEndTick = 0;
 
         public TaskScheduler MainScheduler => mainScheduler;
         public Action<Action> PostOnUIThread { get; set; }
@@ -216,8 +218,13 @@ namespace OpenUtau.Core {
                     autosavedPoint = null;
                     Project = notification.project;
                     playPosTick = 0;
+                    rangeStartTick = 0;
+                    rangeEndTick = 0;
                 } else if (cmd is SetPlayPosTickNotification setPlayPosTickNotif) {
                     playPosTick = setPlayPosTickNotif.playPosTick;
+                } else if (cmd is SetRangeSelectionNotification setRange) {
+                    rangeStartTick = setRange.startTick;
+                    rangeEndTick = setRange.endTick;
                 } else if (cmd is SingersChangedNotification) {
                     SingerManager.Inst.SearchAllSingers();
                 } else if (cmd is ValidateProjectNotification) {

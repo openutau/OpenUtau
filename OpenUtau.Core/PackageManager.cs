@@ -39,15 +39,27 @@ namespace OpenUtau.Core {
         }
     }
 
+    public class OudepEntrypoint {
+        /// <summary>
+        /// Loader type that determines how this entry point is processed.
+        /// E.g. "ThemeLoader", "DllLoader".
+        /// </summary>
+        public string loader = string.Empty;
+
+        /// <summary>
+        /// Path local to the package root pointing to the entry point file.
+        /// </summary>
+        public string path = string.Empty;
+    }
+
     public class OudepMetadata {
         public string id = string.Empty;
         [Obsolete] public string? name = null;
         public string version = string.Empty;
         public string description = string.Empty;
-        public string @class = string.Empty;
+        [Obsolete] public string @class = string.Empty;
+        public OudepEntrypoint[] entrypoints = [];
     }
-
-
 
     public class PackageManager : SingletonBase<PackageManager> {
         public const string OudepExt = ".oudep";
@@ -75,6 +87,74 @@ namespace OpenUtau.Core {
             }
 
             return list.Where(s => s.tags != null && s.tags.Contains("oudep")).ToList();
+        }
+
+        public class InstalledEntrypoint {
+            public OudepMetadata Package { get; set; } = null!;
+            public OudepEntrypoint Entrypoint { get; set; } = null!;
+            public string PackagePath { get; set; } = string.Empty;
+            public string EntrypointPath => Path.Combine(PackagePath, Entrypoint.path);
+        }
+
+        public async Task<List<InstalledEntrypoint>> GetInstalledEntrypointsAsync() {
+            var list = new List<InstalledEntrypoint>();
+            var depPath = PathManager.Inst.DependencyPath;
+            if (!Directory.Exists(depPath)) {
+                return list;
+            }
+            return await Task.Run(() => {
+                var dirs = Directory.GetDirectories(depPath);
+                foreach (var dir in dirs) {
+                    OudepMetadata? metadata = null;
+                    try {
+                        var yamlPath = Path.Combine(dir, "oudep.yaml");
+                        using var reader = new StreamReader(yamlPath, Encoding.UTF8);
+                        metadata = Core.Yaml.DefaultDeserializer.Deserialize<OudepMetadata>(reader) ?? new OudepMetadata();
+                        if (string.IsNullOrEmpty(metadata.id)) {
+                            metadata.id = Path.GetFileName(dir);
+                        }
+                        if (string.IsNullOrEmpty(metadata.version)) {
+                            metadata.version = string.Empty;
+                        }
+                    } catch (Exception e) {
+                        Log.Error(e, "Failed to read oudep.yaml in {dir}", dir);
+                        continue;
+                    }
+
+                    // Collect entry points from the entrypoints array
+                    if (metadata.entrypoints != null) {
+                        foreach (var ep in metadata.entrypoints) {
+                            try {
+                                if (string.IsNullOrEmpty(ep.loader) || string.IsNullOrEmpty(ep.path)) {
+                                    Log.Warning("Skipping entrypoint in package {id} with empty loader or path", metadata.id);
+                                    continue;
+                                }
+                                list.Add(new InstalledEntrypoint {
+                                    Package = metadata,
+                                    Entrypoint = ep,
+                                    PackagePath = dir,
+                                });
+                            } catch (Exception e) {
+                                Log.Error(e, "Failed to load entrypoint '{path}' in package {id}", ep.path, metadata.id);
+                            }
+                        }
+                    }
+
+                    // Fallback: if no entrypoints defined but @class is set, treat the package root as a single entry point
+                    if ((metadata.entrypoints == null || metadata.entrypoints.Length == 0) && !string.IsNullOrEmpty(metadata.@class)) {
+                        try {
+                            list.Add(new InstalledEntrypoint {
+                                Package = metadata,
+                                Entrypoint = new OudepEntrypoint { loader = metadata.@class, path = string.Empty },
+                                PackagePath = dir,
+                            });
+                        } catch (Exception e) {
+                            Log.Error(e, "Failed to load fallback @class entrypoint in package {id}", metadata.id);
+                        }
+                    }
+                }
+                return list;
+            });
         }
 
         public async Task<List<OudepMetadata>> GetInstalledAsync() {
@@ -128,6 +208,17 @@ namespace OpenUtau.Core {
         }
 
         private static readonly IComparer<string> VersionComparer = new VersionStringComparer();
+
+        private static bool IsValidPackageName(string id) {
+            if (id.Contains("..") || Path.IsPathRooted(id)) return false;
+            return !Path.GetInvalidFileNameChars().Any(c => id.Contains(c));
+        }
+
+        private static bool IsValidRelativePath(string path) {
+            if (string.IsNullOrEmpty(path)) return false;
+            if (path.Contains("..") || Path.IsPathRooted(path)) return false;
+            return !Path.GetInvalidPathChars().Any(c => path.Contains(c));
+        }
 
         public static string GetLatestVersionString(RegistryVersion[] versions) {
             if (versions == null || versions.Length == 0) return string.Empty;
@@ -215,6 +306,24 @@ namespace OpenUtau.Core {
             if (string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(metadata.name)) {
                 id = metadata.name;
             }
+            if (string.IsNullOrEmpty(id) || !IsValidPackageName(id)) {
+                throw new ArgumentException("Invalid package id");
+            }
+
+            // Validate entrypoints if present
+            if (metadata.entrypoints != null && metadata.entrypoints.Length > 0) {
+                foreach (var ep in metadata.entrypoints) {
+                    if (string.IsNullOrEmpty(ep.loader)) {
+                        throw new ArgumentException($"Entrypoint is missing 'loader' field: {ep.path}");
+                    }
+                    if (string.IsNullOrEmpty(ep.path) || !IsValidRelativePath(ep.path)) {
+                        throw new ArgumentException($"Invalid entrypoint path: {ep.path}");
+                    }
+                }
+            } else if (string.IsNullOrEmpty(metadata.@class)) {
+                throw new ArgumentException("Missing entrypoints and @class in oudep.yaml");
+            }
+
             await Task.Run(() => {
                 var basePath = Path.Combine(PathManager.Inst.DependencyPath, id);
                 try {
@@ -225,15 +334,17 @@ namespace OpenUtau.Core {
                     Log.Error(e, $"Failed to remove old dependency folder {basePath}");
                 }
                 foreach (var entry in archive.Entries) {
-                    if (string.IsNullOrEmpty(entry.Key) || entry.Key.Contains("..")) {
-                        // Prevent zipSlip attack
+                    if (string.IsNullOrEmpty(entry.Key) || !IsValidRelativePath(entry.Key)) {
                         continue;
                     }
-                    var filePath = Path.Combine(basePath, entry.Key);
+                    var filePath = Path.GetFullPath(Path.Combine(basePath, entry.Key));
+                    if (!filePath.StartsWith(Path.GetFullPath(basePath), StringComparison.OrdinalIgnoreCase)) {
+                        continue;
+                    }
                     var dir = Path.GetDirectoryName(filePath);
                     if (!entry.IsDirectory && !string.IsNullOrEmpty(dir)) {
                         Directory.CreateDirectory(dir);
-                        entry.WriteToFile(Path.Combine(basePath, entry.Key));
+                        entry.WriteToFile(filePath);
                     }
                 }
             });

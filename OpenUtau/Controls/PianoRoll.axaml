@@ -109,7 +109,8 @@
               PointerWheelChanged="TimelinePointerWheelChanged"
               PointerPressed="TimelinePointerPressed"
               PointerMoved="TimelinePointerMoved"
-              PointerReleased="TimelinePointerReleased">
+              PointerReleased="TimelinePointerReleased"
+              DoubleTapped="TimelineDoubleTapped">
         <Path Name="PlayPos"
               Canvas.Left="{Binding NotesViewModel.PlayPosX}"
               Canvas.Top="0" ZIndex="100" IsHitTestVisible="False"
@@ -197,11 +198,24 @@
                    Height="{Binding $parent.Bounds.Height, Mode=OneWay}"
                    Canvas.Left="{Binding NotesViewModel.PlayPosHighlightX, Mode=OneWay}"
                    Canvas.Top="0" ZIndex="-10"
+                   IsVisible="{Binding PlaybackViewModel.ShowPlayPosHighlight}"
                    Fill="{DynamicResource NeutralAccentBrushSemi2}"/>
+        <Rectangle Name="PlayPosLine"
+                   Canvas.Left="{Binding NotesViewModel.PlayPosX}"
+                   Canvas.Top="0" Width="1"
+                   Height="{Binding $parent.Bounds.Height, Mode=OneWay}"
+                   ZIndex="99" IsHitTestVisible="False"
+                   IsVisible="{Binding PlaybackViewModel.IsPlaying}"
+                   Fill="{DynamicResource AccentBrush2}"/>
         <Rectangle Name="SelectionBox" StrokeThickness="2"
                    Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"
                    Fill="{DynamicResource TickLineBrushLow}" ZIndex="1000"
                    IsHitTestVisible="False" IsVisible="False"/>
+        <Polyline Name="PitchPreviewLine" StrokeThickness="2"
+                   Stroke="{DynamicResource AccentBrush1}"
+                   StrokeDashArray="4,2"
+                   IsHitTestVisible="False" IsVisible="False"
+                   ZIndex="999"/>
       </Canvas>
       <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Margin="2"
             HorizontalAlignment="Stretch" VerticalAlignment="Top">
@@ -323,7 +337,7 @@
                 </MenuItem>
               </MenuItem>
               <MenuItem Header="{DynamicResource prefs.playback.autoscroll}">
-                <MenuItem Header="{DynamicResource prefs.off}" Click="OnMenuPlaybackAutoScroll" Tag="0">
+                <MenuItem Header="{DynamicResource prefs.playback.autoscrollmode.off}" Click="OnMenuPlaybackAutoScroll" Tag="0">
                   <MenuItem.Icon>
                     <CheckBox IsChecked="{Binding PlaybackAutoScroll0}" />
                   </MenuItem.Icon>
@@ -393,35 +407,27 @@
                     </FlyoutBase.AttachedFlyout>
                   </ListBoxItem>
                   <ListBoxItem Classes="toolbar eraserTool" ToolTip.Tip="{DynamicResource pianoroll.tool.eraser}"/>
-                  <ListBoxItem Classes="toolbar hasSubTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawpitch}"
-                               Name="drawPitchTool" PointerReleased="OnToolButtonPointerReleased">
-                      <FlyoutBase.AttachedFlyout>
-                        <Flyout Placement="Bottom" ShowMode="Transient">
-                            <Border BorderThickness="0">
-                                <ListBox SelectedIndex="{Binding DrawPitchToolIndex}" Background="Transparent" PointerReleased="DrawPitchToolListBox_PointerReleased">
-                                    <ListBoxItem Classes="toolbar drawPitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawpitch}"/>
-                                    <ListBoxItem Classes="toolbar overwritePitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.overwritepitch}"/>
-                                </ListBox>
-                            </Border>
-                        </Flyout>
-                    </FlyoutBase.AttachedFlyout>
-                  </ListBoxItem>
-                  <ListBoxItem Classes="toolbar hasSubTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawlinepitch}"
-                               Name="drawLinePitchTool" PointerReleased="OnToolButtonPointerReleased">
-                      <FlyoutBase.AttachedFlyout>
-                        <Flyout Placement="Bottom" ShowMode="Transient">
-                            <Border BorderThickness="0">
-                                <ListBox SelectedIndex="{Binding DrawLinePitchToolIndex}" Background="Transparent" PointerReleased="DrawLinePitchToolListBox_PointerReleased">
-                                    <ListBoxItem Classes="toolbar drawLinePitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawlinepitch}"/>
-                                    <ListBoxItem Classes="toolbar overwriteLinePitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.overwritelinepitch}"/>
-                                </ListBox>
-                            </Border>
-                        </Flyout>
-                    </FlyoutBase.AttachedFlyout>
-                  </ListBoxItem>
                   <ListBoxItem Classes="toolbar knifeTool" ToolTip.Tip="{DynamicResource pianoroll.tool.knife}"/>
+                  <ListBoxItem Classes="toolbar drawPitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawpitch}"/>
+                  <ListBoxItem Classes="toolbar pitchLineTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchline}"/>
+                  <ListBoxItem Classes="toolbar pitchSCurveTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchscurve}"/>
+                  <ListBoxItem Classes="toolbar pitchSineWaveTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchesinewave}"/>
+                  <ListBoxItem Classes="toolbar pitchSmoothenTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchsmoothen}"/>
                 </ListBox.Items>
             </ListBox>
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding PitchOverwrite}"
+                    ToolTip.Tip="{DynamicResource pianoroll.toggle.overwritepitch}">
+              <Grid Width="18" Height="18">
+                <Path Classes="filled" Data="M 19.540126 3.1598821 C 19.330126 2.9498825 18.969979 2.9502481 18.759981 3.1602475 L 17.740128 4.1801 L 19.820028 6.2599998 L 20.840246 5.2500134 C 21.060246 5.0300138 21.060246 4.6700018 20.840246 4.4600022 L 19.540126 3.1598821 Z  M 17.149995 4.7702332 L 11.000186 10.920042 L 11.000186 12.999942 L 13.080086 12.999942 L 19.229895 6.8501331 L 17.149995 4.7702332 Z  M 19.879589 13.222841 L 17.879714 13.222475 L 17.879714 16.222471 L 14.879718 16.222471 L 14.879718 18.222712 L 17.879714 18.222712 L 17.879714 21.222708 L 19.879955 21.222708 L 19.879955 18.222712 L 22.879951 18.222712 L 22.879585 16.222837 L 19.879589 16.222837 L 19.879589 13.222841 Z  M 10.059992 11.260237 C 8.4999952 10.230239 6.499898 9.3198861 4.6399018 9.0498865 C 3.5799038 8.8898869 2.4599531 9.1097532 2.0999539 10.259751 C 1.7799545 11.249749 2.2898688 12.249906 2.8698676 13.029906 C 4.2398648 14.859902 6.369998 15.739794 7.9599948 17.31979 C 8.2999942 17.64979 8.7100549 18.040057 8.9100545 18.500057 C 9.1200541 18.940055 9.0701879 18.969971 8.6001889 18.969971 C 7.3601913 18.969971 5.8099483 17.999985 4.7999503 17.359985 L 3.7899638 19.059861 C 5.3199608 19.999859 7.8801301 21.469991 9.7501265 20.849993 C 11.530123 20.149993 11.139771 18.220057 10.239773 17.000059 C 9.349774 15.750061 8.1202131 14.889988 6.8802155 14.05999 C 6.0002173 13.49999 5.1901443 12.79982 4.5401455 11.999822 C 4.2601461 11.669822 3.6901105 11.059774 4.2701093 10.939774 C 4.8601081 10.819776 5.880071 11.399798 6.40007 11.619798 C 7.3100682 11.999798 8.2100072 12.440113 9.0500056 12.960113 L 10.059992 11.260237 Z" >
+                  <Path.RenderTransform>
+                    <TransformGroup>
+                      <ScaleTransform ScaleX=".67" ScaleY=".67" />
+                      <TranslateTransform X="-2" Y="-2"/>
+                    </TransformGroup>
+                  </Path.RenderTransform>
+                </Path>
+              </Grid>
+            </ToggleButton>
             <Border Width="12"/>
 
             <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowVibrato}"

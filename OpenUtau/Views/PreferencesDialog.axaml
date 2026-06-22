@@ -34,8 +34,8 @@
       <Setter Property="Margin" Value="4,0"/>
     </Style>
     <Style Selector="ToggleSwitch">
-      <Setter Property="OnContent" Value="{DynamicResource prefs.on}"/>
-      <Setter Property="OffContent" Value="{DynamicResource prefs.off}"/>
+      <Setter Property="OnContent" Value="{DynamicResource button.on}"/>
+      <Setter Property="OffContent" Value="{DynamicResource button.off}"/>
       <Setter Property="HorizontalAlignment" Value="Right"/>
     </Style>
   </Window.Styles>
@@ -113,7 +113,7 @@
           </ComboBox>
           <TextBlock Text="{DynamicResource prefs.playback.autoscroll}" Margin="0,10,0,0"/>
           <ComboBox  SelectedIndex="{Binding PlaybackAutoScroll}">
-            <ComboBoxItem Content="{DynamicResource prefs.off}"/>
+            <ComboBoxItem Content="{DynamicResource prefs.playback.autoscrollmode.off}"/>
             <ComboBoxItem Content="{DynamicResource prefs.playback.autoscrollmode.stationarycursor}"/>
             <ComboBoxItem Content="{DynamicResource prefs.playback.autoscrollmode.pagescroll}"/>
           </ComboBox>
@@ -136,17 +136,17 @@
           <TextBlock Text="{DynamicResource prefs.paths.singer}"/>
           <Grid ColumnDefinitions="*,10,Auto" Margin="4,0,0,10" HorizontalAlignment="Stretch">
             <TextBlock TextWrapping="Wrap" FontSize="11" Text="{Binding SingerPath}"/>
-            <Button Content="{DynamicResource prefs.paths.open}" Grid.Column="2" Click="OpenSingersFolder"/>
+            <Button Content="{DynamicResource button.open}" Grid.Column="2" Click="OpenSingersFolder"/>
           </Grid>
           <TextBlock Text="{DynamicResource prefs.paths.addlsinger}"/>
           <Grid ColumnDefinitions="*,10,Auto" Margin="4,0,0,0" HorizontalAlignment="Stretch">
             <TextBlock TextWrapping="Wrap" FontSize="11" Text="{Binding AdditionalSingersPath}"/>
-            <Button Content="{DynamicResource prefs.paths.open}" Grid.Column="2" Click="OpenAddlSingersFolder"/>
+            <Button Content="{DynamicResource button.open}" Grid.Column="2" Click="OpenAddlSingersFolder"/>
           </Grid>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*,10,*">
-            <Button Grid.Column="0" Content="{DynamicResource prefs.paths.reset}"
+            <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetAddlSingersPath"/>
-            <Button Grid.Column="2" Content="{DynamicResource prefs.paths.select}"
+            <Button Grid.Column="2" Content="{DynamicResource button.select}"
                     HorizontalAlignment="Stretch" Click="SelectAddlSingersPath"/>
             <Button Grid.Column="4" Content="{DynamicResource singers.refresh}"
                     HorizontalAlignment="Stretch" Click="ReloadSingers"/>
@@ -281,18 +281,18 @@
           <TextBlock HorizontalAlignment="Stretch" Margin="4"
                       TextWrapping="Wrap" FontSize="11" Text="{Binding VLabelerPath}"/>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*">
-            <Button Grid.Column="0" Content="{DynamicResource prefs.paths.reset}"
+            <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetVLabelerPath"/>
-            <Button Grid.Column="2" Content="{DynamicResource prefs.paths.select}"
+            <Button Grid.Column="2" Content="{DynamicResource button.select}"
                     HorizontalAlignment="Stretch" Click="SelectVLabelerPath"/>
           </Grid>
           <TextBlock Text="{DynamicResource prefs.otoeditor.setparampath}" Margin="0,10,0,0"/>
           <TextBlock HorizontalAlignment="Stretch" Margin="4"
                       TextWrapping="Wrap" FontSize="11" Text="{Binding SetParamPath}"/>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*">
-            <Button Grid.Column="0" Content="{DynamicResource prefs.paths.reset}"
+            <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetSetParamPath"/>
-            <Button Grid.Column="2" Content="{DynamicResource prefs.paths.select}"
+            <Button Grid.Column="2" Content="{DynamicResource button.select}"
                     HorizontalAlignment="Stretch" Click="SelectSetParamPath"/>
           </Grid>
         </StackPanel>
@@ -345,9 +345,9 @@
                       IsVisible="{OnPlatform Windows=False, Default=True}" />
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*,10,*"
                 IsVisible="{OnPlatform Windows=False, Default=True}">
-            <Button Grid.Column="0" Content="{DynamicResource prefs.paths.reset}"
+            <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetWinePath"/>
-            <Button Grid.Column="2" Content="{DynamicResource prefs.paths.select}"
+            <Button Grid.Column="2" Content="{DynamicResource button.select}"
                     HorizontalAlignment="Stretch" Click="SelectWinePath"/>
             <Button Grid.Column="4" Content="{DynamicResource prefs.paths.detect}"
                     HorizontalAlignment="Stretch" Click="DetectWinePath"/>

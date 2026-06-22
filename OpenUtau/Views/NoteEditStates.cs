@@ -1306,13 +1306,17 @@ namespace OpenUtau.App.Views {
     class DrawPitchState : NoteEditState {
         protected override bool ShowValueTip => false;
         protected override string? commandNameKey => "command.pitch.draw";
+        private readonly bool overwrite;
         double? lastPitch;
         Point lastPoint;
 
         public DrawPitchState(
             Control control,
             PianoRollViewModel vm,
-            IValueTip valueTip) : base(control, vm, valueTip) { }
+            IValueTip valueTip,
+            bool overwrite = false) : base(control, vm, valueTip) {
+            this.overwrite = overwrite;
+        }
         public override void Begin(IPointer pointer, Point point) {
             base.Begin(pointer, point);
             lastPoint = point;
@@ -1322,7 +1326,9 @@ namespace OpenUtau.App.Views {
             var samplePoint = vm.NotesViewModel.TickToneToPoint(
                 (int)Math.Round(tick / 5.0) * 5,
                 vm.NotesViewModel.PointToToneDouble(point));
-            double? pitch = vm.NotesViewModel.HitTest.SamplePitch(samplePoint);
+            double? pitch = overwrite
+                ? vm.NotesViewModel.HitTest.SampleOverwritePitch(samplePoint)
+                : vm.NotesViewModel.HitTest.SamplePitch(samplePoint);
             if (pitch == null || vm.NotesViewModel.Part == null) {
                 return;
             }
@@ -1340,273 +1346,426 @@ namespace OpenUtau.App.Views {
         }
     }
 
-    class DrawLinePitchState : NoteEditState {
-        protected override bool ShowValueTip => false;
-        protected override string? commandNameKey => "command.pitch.draw";
-        double? firstPitch;
-        Point firstPoint;
-        double? lastPitch;
-        Point lastPoint;
-
-        public DrawLinePitchState(
-            Control control,
-            PianoRollViewModel vm,
-            IValueTip valueTip) : base(control, vm, valueTip) { }
-        public override void Begin(IPointer pointer, Point point) {
-            base.Begin(pointer, point);
-            int tick = vm.NotesViewModel.PointToTick(point);
-            var samplePoint = vm.NotesViewModel.TickToneToPoint(
-                (int)Math.Round(tick / 5.0) * 5,
-                vm.NotesViewModel.PointToToneDouble(point));
-            firstPitch = vm.NotesViewModel.HitTest.SamplePitch(samplePoint);
-            firstPoint = point;
-            lastPoint = point;
-        }
-        public override void Update(IPointer pointer, Point point) {
-            int tick = vm.NotesViewModel.PointToTick(point);
-            var samplePoint = vm.NotesViewModel.TickToneToPoint(
-                (int)Math.Round(tick / 5.0) * 5,
-                vm.NotesViewModel.PointToToneDouble(point));
-            double? pitch = vm.NotesViewModel.HitTest.SamplePitch(samplePoint);
-            if (pitch == null || vm.NotesViewModel.Part == null) {
-                return;
-            }
-            double tone = vm.NotesViewModel.PointToToneDouble(point);
-            DocManager.Inst.ExecuteCmd(new SetCurveCommand(
-                vm.NotesViewModel.Project,
-                vm.NotesViewModel.Part,
-                Core.Format.Ustx.PITD,
-                vm.NotesViewModel.PointToTick(lastPitch == null ? point : lastPoint),
-                (int)Math.Round(tone * 100 - (lastPitch ?? pitch.Value)),
-                vm.NotesViewModel.PointToTick(firstPoint),
-                (int)Math.Round(tone * 100 - (firstPitch == null ? pitch.Value : firstPitch.Value))
-                ));
-            lastPitch = pitch;
-            lastPoint = point;
-        }
-    }
-    class OverwriteAdaptivePitchState : NoteEditState {
+    class PitchCurveState : NoteEditState {
         protected override bool ShowValueTip => true;
         protected override string? commandNameKey => "command.pitch.draw";
+        protected const int step = 5;
+        public enum CurveMode { Line, Sine, SCurve }
+
+        enum Phase { Drawing, Adjusting }
+
+        private readonly CurveMode mode;
+        private readonly bool overwrite;
+        private readonly Polyline previewLine;
+
+        private Phase phase = Phase.Drawing;
+        private bool curveApplied = false;
         private Point firstPoint;
-        private Point lastPoint;
+        private Point endPoint;
         private Point prevPoint;
+
+        // Curve parameters
         private double spacingTicks;
         private double amplitudeCents;
         private double scurveStrength;
-        private const int step = 5;
 
-        private enum Mode { Line, Sine, SCurve }
+        public CurveMode Mode => mode;
+        public bool IsInAdjustingPhase => phase == Phase.Adjusting;
 
-        public OverwriteAdaptivePitchState(
+        public PitchCurveState(
             Control control,
             PianoRollViewModel vm,
-            IValueTip valueTip) : base(control, vm, valueTip) { }
-        public override void Begin(IPointer pointer, Point point) {
-            base.Begin(pointer, point);
-            firstPoint = point;
-            lastPoint = point;
-            prevPoint = point;
-            var notesVm = vm.NotesViewModel;
-            spacingTicks = Math.Max(step, notesVm.Project.resolution / 8);
-            amplitudeCents = 50; // 0.5 tone
-            scurveStrength = 2.0;
+            IValueTip valueTip,
+            Polyline previewLine,
+            CurveMode mode,
+            bool overwrite) : base(control, vm, valueTip) {
+            this.mode = mode;
+            this.overwrite = overwrite;
+            this.previewLine = previewLine;
         }
+
+        public override void Begin(IPointer pointer, Point point) {
+            pointer.Capture(control);
+            firstPoint = point;
+            endPoint = point;
+            prevPoint = point;
+            phase = Phase.Drawing;
+            InitDefaultParams();
+            DocManager.Inst.StartUndoGroup(commandNameKey);
+            valueTip.ShowValueTip();
+            ShowPreview();
+        }
+
         public override void Update(IPointer pointer, Point point) {
             var notesVm = vm.NotesViewModel;
             if (notesVm.Part == null) {
-                base.Update(pointer, point);
                 prevPoint = point;
-                lastPoint = point;
                 return;
             }
 
-            Mode mode = altHeld || altShiftHeld ? Mode.SCurve
-                : ctrlHeld ? Mode.Sine
-                : Mode.Line;
+            if (phase == Phase.Drawing) {
+                UpdateDrawingParams(point);
+                if (mode == CurveMode.Line) {
+                    endPoint = point;
+                }
+                UpdatePreview(firstPoint, point);
+            } else { // Phase.Adjusting
+                UpdateAdjustingParams(point);
+                UpdatePreview(firstPoint, endPoint);
+            }
+            prevPoint = point;
+        }
 
+        public override void End(IPointer pointer, Point point) {
+            if (!curveApplied) {
+                if (IsSignificantDrag(firstPoint, endPoint)) {
+                    ApplyCurve();
+                }
+                curveApplied = true;
+            }
+            HidePreview();
+            pointer.Capture(null);
+            DocManager.Inst.EndUndoGroup();
+            valueTip.HideValueTip();
+        }
+
+        /// <summary>
+        /// Called by PianoRoll on first mouse-up for S-curve/Sine to enter adjusting phase.
+        /// Returns false if the drag was not significant (click without drag), signaling cancellation.
+        /// </summary>
+        public bool TransitionToAdjusting(Point point) {
+            if (!IsSignificantDrag(firstPoint, point)) {
+                // Click without drag — cancel the edit
+                Cancel(null);
+                return false;
+            }
+            endPoint = point;
+            phase = Phase.Adjusting;
+            UpdatePreview(firstPoint, endPoint);
+            return true;
+        }
+
+        private bool IsSignificantDrag(Point a, Point b) {
+            double dx = a.X - b.X;
+            double dy = a.Y - b.Y;
+            return dx * dx + dy * dy > 25; // minimum 5px drag
+        }
+
+        /// <summary>Called by PianoRoll to apply the curve edit.</summary>
+        public void Apply() {
+            ApplyCurve();
+            curveApplied = true;
+        }
+
+        /// <summary>Called by PianoRoll to hide the preview after finalization.</summary>
+        public void HidePreview() {
+            previewLine.IsVisible = false;
+            previewLine.Points.Clear();
+        }
+
+        /// <summary>Called by PianoRoll to cancel the edit (e.g. right-click during adjusting).</summary>
+        public void Cancel(IPointer? pointer) {
+            HidePreview();
+            pointer?.Capture(null);
+            DocManager.Inst.EndUndoGroup();
+            valueTip.HideValueTip();
+        }
+
+        private void ShowPreview() {
+            previewLine.IsVisible = true;
+        }
+
+        private void InitDefaultParams() {
+            spacingTicks = 120;
+            amplitudeCents = 100; // 1 tone
+            scurveStrength = 2.0;
+        }
+
+        private void UpdateDrawingParams(Point point) {
+            var notesVm = vm.NotesViewModel;
             switch (mode) {
-                case Mode.Sine: {
+                case CurveMode.Sine:
+                    valueTip.UpdateValueTip($"\u03BB:{spacingTicks:0} ticks, amp:{amplitudeCents / 100:0.00}tone");
+                    break;
+                case CurveMode.SCurve:
+                    valueTip.UpdateValueTip($"S:{scurveStrength:0.00}");
+                    break;
+                case CurveMode.Line:
+                default:
+                    valueTip.UpdateValueTip("line");
+                    break;
+            }
+        }
 
-                        if (ctrlHeld) {
-                            int currentTick = notesVm.PointToTick(point);
-                            int prevTick = notesVm.PointToTick(prevPoint);
-                            double currentTone = notesVm.PointToToneDouble(point);
-                            double prevTone = notesVm.PointToToneDouble(prevPoint);
-                            spacingTicks = Math.Max(step, spacingTicks + (currentTick - prevTick));
-                            amplitudeCents = Math.Clamp(amplitudeCents + (currentTone - prevTone) * 100, 0, 1200);
-                        }
-                        valueTip.UpdateValueTip($"λ:{spacingTicks:0} ticks, amp:{amplitudeCents / 100:0.00}tone");
+        private void UpdateAdjustingParams(Point point) {
+            var notesVm = vm.NotesViewModel;
+            double dx = point.X - prevPoint.X;
+            double dy = point.Y - prevPoint.Y;
+            switch (mode) {
+                case CurveMode.Sine: {
+                        int startTick = notesVm.PointToTick(firstPoint);
+                        int endTick = notesVm.PointToTick(endPoint);
+                        if (startTick > endTick) (startTick, endTick) = (endTick, startTick);
+                        int maxSpacing = Math.Max(step, endTick - startTick);
+                        // Horizontal: adjust wavelength, Vertical: adjust amplitude
+                        spacingTicks = Math.Clamp(spacingTicks + dx, step, maxSpacing);
+                        amplitudeCents = Math.Clamp(amplitudeCents - dy * 2, 0, 1200);
+                        valueTip.UpdateValueTip($"\u03BB:{spacingTicks:0} ticks, amp:{amplitudeCents / 100:0.00}tone");
                         break;
                     }
-                case Mode.SCurve: {
-                        if (altShiftHeld) {
-                            double currentTone = notesVm.PointToToneDouble(point);
-                            double prevTone = notesVm.PointToToneDouble(prevPoint);
-                            double delta = currentTone - prevTone;
-                            scurveStrength = Math.Clamp(scurveStrength + delta * 0.5, 1.0, 8.0);
-                        }
+                case CurveMode.SCurve: {
+                        // Both directions adjust S-curve strength
+                        scurveStrength = Math.Clamp(scurveStrength - dy * 0.05, 1.0, 8.0);
                         valueTip.UpdateValueTip($"S:{scurveStrength:0.00}");
-                        if (altHeld) {
-                            lastPoint = point;
-                        }
-                        break;
-                    }
-                case Mode.Line:
-                default: {
-                        lastPoint = point;
-                        valueTip.UpdateValueTip("line");
                         break;
                     }
             }
+        }
+
+        private void UpdatePreview(Point start, Point end) {
+            var notesVm = vm.NotesViewModel;
+            if (notesVm.Part == null) return;
+
+            var pts = new Points();
+            foreach (var (tick, tone) in ComputeSamples(start, end, 1)) {
+                pts.Add(notesVm.TickToneToPoint(tick, tone - 0.5));
+            }
+            previewLine.Points = pts;
+        }
+
+        private void ApplyCurve() {
+            var notesVm = vm.NotesViewModel;
+            if (notesVm.Part == null) return;
 
             int startTick = notesVm.PointToTick(firstPoint);
-            int endTick = notesVm.PointToTick(lastPoint);
-            double startTone = notesVm.PointToToneDouble(firstPoint);
-            double endTone = notesVm.PointToToneDouble(lastPoint);
+            int endTick = notesVm.PointToTick(endPoint);
 
             if (startTick == endTick) {
-                prevPoint = point;
-                base.Update(pointer, point);
+                ApplySinglePoint(notesVm, endPoint, endPoint);
                 return;
             }
             if (startTick > endTick) {
-                Swap(ref startTick, ref endTick);
-                Swap(ref startTone, ref endTone);
+                (startTick, endTick) = (endTick, startTick);
+                (firstPoint, endPoint) = (endPoint, firstPoint);
             }
-
-            if (mode == Mode.Sine) {
+            if (mode == CurveMode.Sine) {
                 spacingTicks = Math.Min(Math.Max(step, spacingTicks), Math.Max(step, endTick - startTick));
             }
 
-            int firstSampleTick = (int)Math.Round(startTick / 5.0) * 5;
-            int lastSampleTick = (int)Math.Round(endTick / 5.0) * 5;
-            if (firstSampleTick < startTick) firstSampleTick += step;
-            if (lastSampleTick > endTick) lastSampleTick -= step;
+            var curveSamples = new List<(int x, int y)>();
+            foreach (var (tick, tone) in ComputeSamples(firstPoint, endPoint, step)) {
+                var sp = notesVm.TickToneToPoint(tick, tone);
+                double? basePitch = overwrite
+                    ? notesVm.HitTest.SampleOverwritePitch(sp)
+                    : notesVm.HitTest.SamplePitch(sp);
+                if (basePitch == null) continue;
+                curveSamples.Add((tick, (int)Math.Round(tone * 100 - basePitch.Value)));
+            }
+            if (curveSamples.Count == 0) return;
+
+            // Compute boundary anchor points to avoid interpolation from far-away points
+            var (startAnchor, endAnchor) = ComputeBoundaryAnchors(notesVm, startTick, endTick, curveSamples);
+
+            var part = notesVm.Part!;
+            var project = notesVm.Project;
+            if (overwrite) {
+                var curve = part.curves.FirstOrDefault(c => c.abbr == Core.Format.Ustx.PITD);
+                var oldXs = curve != null ? curve.xs.ToArray() : Array.Empty<int>();
+                var oldYs = curve != null ? curve.ys.ToArray() : Array.Empty<int>();
+                var newXs = new List<int>();
+                var newYs = new List<int>();
+                for (int i = 0; i < oldXs.Length; i++) {
+                    if (oldXs[i] < startTick) { newXs.Add(oldXs[i]); newYs.Add(oldYs[i]); }
+                }
+                // Insert start boundary anchor if there's a gap
+                if (startAnchor.HasValue) {
+                    var (ax, ay) = startAnchor.Value;
+                    if (newXs.Count == 0 || newXs[newXs.Count - 1] < ax) {
+                        newXs.Add(ax); newYs.Add(ay);
+                    }
+                }
+                foreach (var (x, y) in curveSamples) { newXs.Add(x); newYs.Add(y); }
+                // Insert end boundary anchor if there's a gap
+                if (endAnchor.HasValue) {
+                    var (ax, ay) = endAnchor.Value;
+                    newXs.Add(ax); newYs.Add(ay);
+                }
+                for (int i = 0; i < oldXs.Length; i++) {
+                    if (oldXs[i] > endTick) { newXs.Add(oldXs[i]); newYs.Add(oldYs[i]); }
+                }
+                DocManager.Inst.ExecuteCmd(new MergedSetCurveCommand(project, part, Core.Format.Ustx.PITD, oldXs, oldYs, newXs.ToArray(), newYs.ToArray()));
+            } else {
+                // Insert start boundary anchor if there's a gap
+                if (startAnchor.HasValue) {
+                    var (ax, ay) = startAnchor.Value;
+                    DocManager.Inst.ExecuteCmd(new SetCurveCommand(project, part, Core.Format.Ustx.PITD, ax, ay, ax, ay));
+                }
+                foreach (var (x, y) in curveSamples)
+                    DocManager.Inst.ExecuteCmd(new SetCurveCommand(project, part, Core.Format.Ustx.PITD, x, y, x, y));
+                // Insert end boundary anchor if there's a gap
+                if (endAnchor.HasValue) {
+                    var (ax, ay) = endAnchor.Value;
+                    DocManager.Inst.ExecuteCmd(new SetCurveCommand(project, part, Core.Format.Ustx.PITD, ax, ay, ax, ay));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Computes anchor points at the curve boundaries to prevent interpolation
+        /// from far-away existing points. Returns (tick, deviation) or null if no anchor needed.
+        /// </summary>
+        private ((int x, int y)? startAnchor, (int x, int y)? endAnchor) ComputeBoundaryAnchors(
+                NotesViewModel notesVm, int startTick, int endTick, List<(int x, int y)> samples) {
+            var curve = notesVm.Part?.curves.FirstOrDefault(c => c.abbr == Core.Format.Ustx.PITD);
+            int[] oldXs = curve != null ? curve.xs.ToArray() : Array.Empty<int>();
+            int[] oldYs = curve != null ? curve.ys.ToArray() : Array.Empty<int>();
+
+            (int x, int y)? startAnchor = null;
+            (int x, int y)? endAnchor = null;
+
+            int firstSampleTick = samples[0].x;
+            int lastSampleTick = samples[samples.Count - 1].x;
+
+            // Find nearest existing point before the curve start
+            int nearestBeforeStart = -1;
+            for (int i = 0; i < oldXs.Length; i++) {
+                if (oldXs[i] < firstSampleTick) nearestBeforeStart = i;
+                else break;
+            }
+
+            // Find nearest existing point after the curve end
+            int nearestAfterEnd = -1;
+            for (int i = oldXs.Length - 1; i >= 0; i--) {
+                if (oldXs[i] > lastSampleTick) nearestAfterEnd = i;
+                else break;
+            }
+
+            // Compute anchor at start boundary: one step before first sample
+            int anchorStartTick = firstSampleTick - step;
+            if (nearestBeforeStart >= 0) {
+                // There's an existing point before - use its value at the anchor position
+                if (oldXs[nearestBeforeStart] <= anchorStartTick) {
+                    // Existing point is at or before anchor - use its deviation value
+                    startAnchor = (anchorStartTick, oldYs[nearestBeforeStart]);
+                }
+                // If existing point is between anchor and first sample, no anchor needed
+                // (the existing point will serve as the bridge)
+            } else {
+                // No existing point before - anchor at zero deviation
+                startAnchor = (anchorStartTick, 0);
+            }
+
+            // Compute anchor at end boundary: one step after last sample
+            int anchorEndTick = lastSampleTick + step;
+            if (nearestAfterEnd >= 0) {
+                // There's an existing point after - use its value at the anchor position
+                if (oldXs[nearestAfterEnd] >= anchorEndTick) {
+                    // Existing point is at or after anchor - use its deviation value
+                    endAnchor = (anchorEndTick, oldYs[nearestAfterEnd]);
+                }
+                // If existing point is between last sample and anchor, no anchor needed
+            } else {
+                // No existing point after - anchor at zero deviation
+                endAnchor = (anchorEndTick, 0);
+            }
+
+            return (startAnchor, endAnchor);
+        }
+
+        private void ApplySinglePoint(NotesViewModel notesVm, Point point, Point lastPoint) {
+            var part = notesVm.Part;
+            if (part == null) return;
+            int tick = notesVm.PointToTick(point);
+            var sp = notesVm.TickToneToPoint((int)Math.Round(tick / (double)step) * step, notesVm.PointToToneDouble(point));
+            double? pitch = overwrite
+                ? notesVm.HitTest.SampleOverwritePitch(sp)
+                : notesVm.HitTest.SamplePitch(sp);
+            if (pitch == null) return;
+            double tone = notesVm.PointToToneDouble(point);
+            int y = (int)Math.Round(tone * 100 - pitch.Value);
+            if (overwrite) {
+                var curve = part.curves.FirstOrDefault(c => c.abbr == Core.Format.Ustx.PITD);
+                var oldXs = curve != null ? curve.xs.ToArray() : Array.Empty<int>();
+                var oldYs = curve != null ? curve.ys.ToArray() : Array.Empty<int>();
+                var newXs = new List<int>();
+                var newYs = new List<int>();
+                for (int i = 0; i < oldXs.Length; i++) {
+                    if (oldXs[i] != tick) { newXs.Add(oldXs[i]); newYs.Add(oldYs[i]); }
+                }
+                newXs.Add(tick);
+                newYs.Add(y);
+                DocManager.Inst.ExecuteCmd(new MergedSetCurveCommand(
+                    notesVm.Project, part, Core.Format.Ustx.PITD,
+                    oldXs, oldYs, newXs.ToArray(), newYs.ToArray()));
+            } else {
+                DocManager.Inst.ExecuteCmd(new SetCurveCommand(
+                    notesVm.Project, part, Core.Format.Ustx.PITD,
+                    notesVm.PointToTick(point), y,
+                    notesVm.PointToTick(lastPoint), y));
+            }
+        }
+
+        /// <summary>
+        /// Computes samples along the curve from start to end point, snapping to step boundaries.
+        /// Returns (tick, tone) pairs. Handles tick swapping internally.
+        /// </summary>
+        private IEnumerable<(int tick, double tone)> ComputeSamples(Point start, Point end, int sampleStep) {
+            var notesVm = vm.NotesViewModel;
+            int startTick = notesVm.PointToTick(start);
+            int endTick = notesVm.PointToTick(end);
+            double startTone = notesVm.PointToToneDouble(start);
+            double endTone = notesVm.PointToToneDouble(end);
+
+            if (startTick == endTick) {
+                yield return (startTick, notesVm.PointToToneDouble(end));
+                yield break;
+            }
+            if (startTick > endTick) {
+                (startTick, endTick) = (endTick, startTick);
+                (startTone, endTone) = (endTone, startTone);
+            }
+
+            int firstSample = (int)Math.Round(startTick / (double)step) * step;
+            int lastSample = (int)Math.Round(endTick / (double)step) * step;
+            if (firstSample < startTick) firstSample += step;
+            if (lastSample > endTick) lastSample -= step;
 
             double total = endTick - startTick;
-            var samples = new List<(int x, int y)>();
+            int effectiveSpacing = mode == CurveMode.Sine
+                ? Math.Min(Math.Max(step, (int)spacingTicks), Math.Max(step, (int)total))
+                : 0;
 
-            for (int x = firstSampleTick; x <= lastSampleTick; x += step) {
+            for (int x = firstSample; x <= lastSample; x += sampleStep) {
                 double t = (x - startTick) / total;
-                double tone;
-                switch (mode) {
-                    case Mode.Sine: {
-                            double centerTone = startTone + (endTone - startTone) * t;
-                            double fadeTicks = Math.Max(step, Math.Min(total * 0.1, spacingTicks));
-                            double fadeIn = Math.Clamp((x - startTick) / fadeTicks, 0, 1);
-                            double fadeOut = Math.Clamp((endTick - x) / fadeTicks, 0, 1);
-                            double envelope = Math.Min(fadeIn, fadeOut);
-                            double phase = 2 * Math.PI * (x - startTick) / spacingTicks;
-                            tone = (centerTone * 100 + Math.Sin(phase) * amplitudeCents * envelope) / 100.0;
-                            break;
-                        }
-                    case Mode.SCurve: {
-                            double a = Math.Pow(t, scurveStrength);
-                            double b = Math.Pow(1 - t, scurveStrength);
-                            double s = a / (a + b); // adjustable smoothstep
-                            tone = startTone + (endTone - startTone) * s;
-                            break;
-                        }
-                    case Mode.Line:
-                    default: {
-                            tone = startTone + (endTone - startTone) * t;
-                            break;
-                        }
-                }
-
-                var sp = notesVm.TickToneToPoint(x, tone);
-                double? basePitch = notesVm.HitTest.SampleOverwritePitch(sp);
-                if (basePitch == null) continue;
-                int y = (int)Math.Round(tone * 100 - basePitch.Value);
-                samples.Add((x, y));
+                double tone = ComputeTone(startTone, endTone, t, x, (int)total, startTick, effectiveSpacing);
+                yield return (x, tone);
             }
+        }
 
-            if (samples.Count == 0) {
-                prevPoint = point;
-                base.Update(pointer, point);
-                return;
+        private double ComputeTone(double startTone, double endTone, double t, int tick, int totalTicks, int sineStartTick = 0, int? spacingOverride = null) {
+            switch (mode) {
+                case CurveMode.Sine:
+                    double center = startTone + (endTone - startTone) * t;
+                    double sp = spacingOverride ?? spacingTicks;
+                    double fadeTicks = Math.Max(step, Math.Min(totalTicks * 0.1, sp));
+                    double fadeIn = Math.Clamp((tick - sineStartTick) / fadeTicks, 0, 1);
+                    double fadeOut = Math.Clamp((sineStartTick + totalTicks - tick) / fadeTicks, 0, 1);
+                    double envelope = Math.Min(fadeIn, fadeOut);
+                    double phase = 2 * Math.PI * (tick - sineStartTick) / sp;
+                    return center + Math.Sin(phase) * amplitudeCents / 100.0 * envelope;
+                case CurveMode.SCurve:
+                    double a = Math.Pow(t, scurveStrength);
+                    double b = Math.Pow(1 - t, scurveStrength);
+                    return startTone + (endTone - startTone) * (a / (a + b));
+                default:
+                    return startTone + (endTone - startTone) * t;
             }
-
-            var part = notesVm.Part;
-            var project = notesVm.Project;
-            var curve = part.curves.FirstOrDefault(c => c.abbr == Core.Format.Ustx.PITD);
-
-            var oldXs = new int[0];
-            var oldYs = new int[0];
-            if (curve != null) {
-                oldXs = curve.xs.ToArray();
-                oldYs = curve.ys.ToArray();
-            }
-            var newXs = new List<int>(oldXs.Length + samples.Count);
-            var newYs = new List<int>(oldYs.Length + samples.Count);
-
-            for (int i = 0; i < oldXs.Length; i++) {
-                if (oldXs[i] < startTick) {
-                    newXs.Add(oldXs[i]);
-                    newYs.Add(oldYs[i]);
-                }
-            }
-            foreach (var (x, y) in samples) {
-                newXs.Add(x);
-                newYs.Add(y);
-            }
-            for (int i = 0; i < oldXs.Length; i++) {
-                if (oldXs[i] > endTick) {
-                    newXs.Add(oldXs[i]);
-                    newYs.Add(oldYs[i]);
-                }
-            }
-
-            DocManager.Inst.ExecuteCmd(new MergedSetCurveCommand(
-                project, part, Core.Format.Ustx.PITD,
-                oldXs, oldYs,
-                newXs.ToArray(), newYs.ToArray()));
-
-            prevPoint = point;
-            base.Update(pointer, point);
         }
     }
-    class OverwritePitchState : NoteEditState {
-        protected override bool ShowValueTip => false;
-        protected override string? commandNameKey => "command.pitch.draw";
-        double? lastPitch;
-        Point lastPoint;
-
-        public OverwritePitchState(
-            Control control,
-            PianoRollViewModel vm,
-            IValueTip valueTip) : base(control, vm, valueTip) { }
-        public override void Begin(IPointer pointer, Point point) {
-            base.Begin(pointer, point);
-            lastPoint = point;
-        }
-        public override void Update(IPointer pointer, Point point) {
-            int tick = vm.NotesViewModel.PointToTick(point);
-            var samplePoint = vm.NotesViewModel.TickToneToPoint(
-                (int)Math.Round(tick / 5.0) * 5,
-                vm.NotesViewModel.PointToToneDouble(point));
-            double? pitch = vm.NotesViewModel.HitTest.SampleOverwritePitch(samplePoint);
-            if (pitch == null || vm.NotesViewModel.Part == null) {
-                return;
-            }
-            double tone = vm.NotesViewModel.PointToToneDouble(point);
-            DocManager.Inst.ExecuteCmd(new SetCurveCommand(
-                vm.NotesViewModel.Project,
-                vm.NotesViewModel.Part,
-                Core.Format.Ustx.PITD,
-                vm.NotesViewModel.PointToTick(point),
-                (int)Math.Round(tone * 100 - pitch.Value),
-                vm.NotesViewModel.PointToTick(lastPitch == null ? point : lastPoint),
-                (int)Math.Round(tone * 100 - (lastPitch ?? pitch.Value))));
-            lastPitch = pitch;
-            lastPoint = point;
-        }
-    }
-
     class SmoothenPitchState : NoteEditState {
         protected override bool ShowValueTip => false;
         protected override string? commandNameKey => "command.pitch.edit";
+        private readonly bool overwrite;
         int brushRadius = 10;
         int kernelRadius = 3;
         double kernelWeight = 1.0 / (2 * 3 + 1);
@@ -1614,13 +1773,18 @@ namespace OpenUtau.App.Views {
         public SmoothenPitchState(
             Control control,
             PianoRollViewModel vm,
-            IValueTip valueTip) : base(control, vm, valueTip) { }
+            IValueTip valueTip,
+            bool overwrite = false) : base(control, vm, valueTip) {
+            this.overwrite = overwrite;
+        }
         public override void Begin(IPointer pointer, Point point) {
             base.Begin(pointer, point);
         }
         private double GetPitch(int tick, UCurve? curve = null) {
             var point = vm.NotesViewModel.TickToneToPoint(tick, 0);
-            var pitch = vm.NotesViewModel.HitTest.SamplePitch(point);
+            var pitch = overwrite
+                ? vm.NotesViewModel.HitTest.SampleOverwritePitch(point)
+                : vm.NotesViewModel.HitTest.SamplePitch(point);
             if (pitch == null) return 0;
             if (curve == null) return pitch.Value;
             return pitch.Value + curve.Sample(tick);

@@ -2,16 +2,20 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using OpenUtau.App.ViewModels;
+using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
+using ReactiveUI;
 
 namespace OpenUtau.App.Views {
     public partial class MixFxDialog : Window {
         readonly MixFxViewModel viewModel;
+        readonly UTrack? track;
 
         public MixFxDialog() : this(null) { }
 
         public MixFxDialog(UTrack? track) {
             InitializeComponent();
+            this.track = track;
             DataContext = viewModel = new MixFxViewModel(track);
             viewModel.AskForName = PromptForNameAsync;
         }
@@ -32,6 +36,9 @@ namespace OpenUtau.App.Views {
 
         void OnOkClicked(object sender, RoutedEventArgs e) {
             viewModel.Apply();
+            if (track != null) {
+                MessageBus.Current.SendMessage(new MixFxChangedNotification(track.TrackNo));
+            }
             Close();
         }
 
