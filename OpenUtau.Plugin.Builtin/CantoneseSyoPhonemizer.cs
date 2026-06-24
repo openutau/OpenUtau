@@ -1,59 +1,115 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using OpenUtau.Api;
+using OpenUtau.Core;
+using OpenUtau.Core.G2p;
 using OpenUtau.Core.Ustx;
 using Pinyin;
+using Serilog;
 
 namespace OpenUtau.Plugin.Builtin {
     /// <summary>
     /// Cantonese phonemizer for Syo-style banks.
     /// Supports both full jyutping syllables as well as syllable fallbacks without a final consonant or falling diphthong.
     /// Supports hanzi and jyutping input.
+    /// Supports custom dictionary loading from YAML files.
     /// </summary>
     [Phonemizer("Cantonese Syo-Style Phonemizer", "ZH-YUE SYO", "Lotte V", language: "ZH-YUE")]
     public class CantoneseSyoPhonemizer : Phonemizer {
 
         /// <summary>
-        ///  The consonant table.
+        /// The default consonant table.
         /// </summary>
-        static readonly string consonants = "b,p,m,f,d,t,n,l,g,k,ng,h,gw,kw,w,z,c,s,j";
+        static readonly string defaultConsonants = "b,p,m,f,d,t,n,l,g,k,ng,h,gw,kw,w,z,c,s,j";
 
         /// <summary>
-        /// The vowel split table.
+        /// The default vowel split table.
         /// </summary>
-        static readonly string vowels = "aap=aa p,aat=aa t,aak=aa k,aam=aa m,aan=aa n,aang=aa ng,aai=aa i,aau=aa u,ap=a p,at=a t,ak=a k,am=a m,an=a n,ang=a ng,ai=a i,au=a u,op=o p,ot=o t,ok=o k,om=o m,on=o n,ong=o ng,oi=o i,ou=o u,oet=oe t,oek=oe k,oeng=oe ng,oei=oe i,eot=eo t,eon=eo n,eoi=eo i,ep=e p,et=e t,ek=e k,em=e m,en=e n,eng=e ng,ei=e i,eu=e u,up=u p,ut=u t,uk=uu k,um=um,un=u n,ung=uu ng,ui=u i,yut=yu t,yun=yu n,ip=i p,it=i t,ik=ii k,im=i m,in=i n,ing=ii ng,iu=i u";
+        static readonly string defaultVowels = "aap=aa p,aat=aa t,aak=aa k,aam=aa m,aan=aa n,aang=aa ng,aai=aa i,aau=aa u,ap=a p,at=a t,ak=a k,am=a m,an=a n,ang=a ng,ai=a i,au=a u,op=o p,ot=o t,ok=o k,om=o m,on=o n,ong=o ng,oi=o i,ou=o u,oet=oe t,oek=oe k,oeng=oe ng,oei=oe i,eot=eo t,eon=eo n,eoi=eo i,ep=e p,et=e t,ek=e k,em=e m,en=e n,eng=e ng,ei=e i,eu=e u,up=u p,ut=u t,uk=uu k,um=um,un=u n,ung=uu ng,ui=u i,yut=yu t,yun=yu n,ip=i p,it=i t,ik=ii k,im=i m,in=i n,ing=ii ng,iu=i u";
 
         /// <summary>
-        /// Check for vowel substitutes.
+        /// Default vowel substitutes.
         /// </summary>
-        static readonly string[] substitution = new string[] {
+        static readonly string[] defaultSubstitution = new string[] {
             "aap,aat,aak,aam,aan,aang,aai,aau=aa", "ap,at,ak,am,an,ang,ai,au=a", "op,ot,ok,om,on,ong,oi,ou=o", "oet,oek,oen,oeng,oei=oe", "eot,eon,eoi=eo","ep,et,ek,em,en,eng,ei,eu=e", "uk,ung=uu", "up,ut,um,un,ui=u", "yut,yun=yu","ik,ing=ii", "ip,it,im,in,iu=i"
         };
 
         /// <summary>
-        /// Check for substitutes for finals.
+        /// Default substitutes for finals.
         /// </summary>
-        static readonly string[] finalSub = new string[] {
+        static readonly string[] defaultFinalSub = new string[] {
             "ii ng=i ng", "ii k=i k", "uu k=u k", "uu ng=u ng", "oe t=eo t", "oe i=eo i"
         };
 
-        static HashSet<string> cSet;
-        static Dictionary<string, string> vDict;
-        static readonly Dictionary<string, string> substituteLookup;
-        static readonly Dictionary<string, string> finalSubLookup;
+        private HashSet<string> cSet;
+        private Dictionary<string, string> vDict;
+        private Dictionary<string, string> substituteLookup;
+        private Dictionary<string, string> finalSubLookup;
+        private IG2p customG2p;
 
-        static CantoneseSyoPhonemizer() {
-            cSet = new HashSet<string>(consonants.Split(','));
-            vDict = vowels.Split(',')
+        private USinger singer;
+
+        /// <summary>
+        /// Loads custom dictionary from YAML file.
+        /// Priority order:
+        /// 1. Singer folder (OpenUtau/Singers/{singer}/zhyue.yaml)
+        /// 2. Plugin folder (OpenUtau/Plugins/zhyue.yaml)
+        /// 3. Built-in rules (if no custom dictionary found)
+        /// </summary>
+        private void LoadCustomDictionary() {
+            var g2ps = new List<IG2p>();
+
+            // Try to load from singer folder first
+            if (singer != null && !string.IsNullOrEmpty(singer.Location)) {
+                string singerDictPath = Path.Combine(singer.Location, "zhyue.yaml");
+                if (File.Exists(singerDictPath)) {
+                    try {
+                        g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(singerDictPath)).Build());
+                        Log.Information($"Loaded custom Cantonese dictionary from singer folder: {singerDictPath}");
+                    } catch (Exception e) {
+                        Log.Error(e, $"Failed to load custom Cantonese dictionary from {singerDictPath}");
+                    }
+                }
+            }
+            
+            // Try to load from plugin folder
+            string pluginDictPath = Path.Combine(PathManager.Inst.PluginsPath, "zhyue.yaml");
+            if (File.Exists(pluginDictPath)) {
+                try {
+                    g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(pluginDictPath)).Build());
+                    Log.Information($"Loaded custom Cantonese dictionary from plugin folder: {pluginDictPath}");
+                } catch (Exception e) {
+                    Log.Error(e, $"Failed to load custom Cantonese dictionary from {pluginDictPath}");
+                }
+            }
+
+            // If custom dictionaries were loaded, wrap them in a G2pFallbacks
+            if (g2ps.Count > 0) {
+                customG2p = new G2pFallbacks(g2ps.ToArray());
+                Log.Information("Using custom dictionary for Cantonese phonemizer");
+            } else {
+                // Load built-in rules
+                LoadBuiltInRules();
+                Log.Information("Using built-in rules for Cantonese phonemizer");
+            }
+        }
+
+        /// <summary>
+        /// Loads built-in rules (original hardcoded rules).
+        /// </summary>
+        private void LoadBuiltInRules() {
+            cSet = new HashSet<string>(defaultConsonants.Split(','));
+            vDict = defaultVowels.Split(',')
                 .Select(s => s.Split('='))
                 .ToDictionary(a => a[0], a => a[1]);
-            substituteLookup = substitution.ToList()
+            substituteLookup = defaultSubstitution.ToList()
                 .SelectMany(line => {
                     var parts = line.Split('=');
                     return parts[0].Split(',').Select(orig => (orig, parts[1]));
                 })
                 .ToDictionary(t => t.Item1, t => t.Item2);
-            finalSubLookup = finalSub.ToList()
+            finalSubLookup = defaultFinalSub.ToList()
                 .SelectMany(line => {
                     var parts = line.Split('=');
                     return parts[0].Split(',').Select(orig => (orig, parts[1]));
@@ -61,10 +117,10 @@ namespace OpenUtau.Plugin.Builtin {
                 .ToDictionary(t => t.Item1, t => t.Item2);
         }
 
-        private USinger singer;
-
-        // Simply stores the singer in a field.
-        public override void SetSinger(USinger singer) => this.singer = singer;
+        public override void SetSinger(USinger singer) {
+            this.singer = singer;
+            LoadCustomDictionary();
+        }
 
         /// <summary>
         /// Converts hanzi notes to jyutping phonemes.
@@ -73,12 +129,82 @@ namespace OpenUtau.Plugin.Builtin {
         public override void SetUp(Note[][] groups, UProject project, UTrack track) {
             JyutpingConversion.RomanizeNotes(groups);
         }
+
         public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevNeighbours) {
+            var note = notes[0];
+            var lyric = note.lyric;
+            
+            // First check custom dictionary if loaded
+            if (customG2p != null) {
+                var customPhonemes = customG2p.Query(lyric);
+                if (customPhonemes != null && customPhonemes.Length > 0) {
+                    return ProcessWithCustomPhonemes(note, customPhonemes, prevNeighbour, nextNeighbour);
+                }
+            }
+            
+            // Otherwise use default logic
+            return ProcessWithDefaultRules(note, prevNeighbour, nextNeighbour);
+        }
+
+        /// <summary>
+        /// Processes note using custom phonemes from dictionary.
+        /// </summary>
+        private Result ProcessWithCustomPhonemes(Note note, string[] phonemes, Note? prevNeighbour, Note? nextNeighbour) {
+            var totalDuration = note.duration;
+            
+            // If only one phoneme, return simple result
+            if (phonemes.Length == 1) {
+                return MakeSimpleResult(phonemes[0]);
+            }
+            
+            // For multiple phonemes, split the duration
+            var resultPhonemes = new List<Phoneme>();
+            int remainingDuration = totalDuration;
+            
+            for (int i = 0; i < phonemes.Length; i++) {
+                int position = totalDuration - remainingDuration;
+                int length = CalculatePhonemeLength(i, phonemes.Length, totalDuration);
+                
+                var phoneme = new Phoneme {
+                    phoneme = phonemes[i],
+                    position = position
+                };
+                
+                resultPhonemes.Add(phoneme);
+                remainingDuration -= length;
+            }
+            
+            return new Result {
+                phonemes = resultPhonemes.ToArray()
+            };
+        }
+
+        /// <summary>
+        /// Calculates appropriate length for each phoneme based on position and total duration.
+        /// </summary>
+        private int CalculatePhonemeLength(int index, int totalPhonemes, int totalDuration) {
+            // Default logic: last phoneme gets 120 ticks or half duration, whichever is smaller
+            if (index == totalPhonemes - 1) {
+                int lastLength = 120;
+                if (lastLength > totalDuration / 2) {
+                    lastLength = totalDuration / 2;
+                }
+                return lastLength;
+            }
+            
+            // For other phonemes, distribute remaining duration evenly
+            int remainingPhonemes = totalPhonemes - index;
+            return totalDuration / remainingPhonemes;
+        }
+
+        /// <summary>
+        /// Original processing logic with default rules.
+        /// </summary>
+        private Result ProcessWithDefaultRules(Note note, Note? prevNeighbour, Note? nextNeighbour) {
             // The overall logic is:
             // 1. Remove consonant: "jyut" -> "yut".
             // 2. Lookup the trailing sound in vowel table: "yut" -> "yu t".
             // 3. Split the total duration and returns "jyut"/"jyu" and "yu t".
-            var note = notes[0];
             var lyric = note.lyric;
             string consonant = string.Empty;
             string vowel = string.Empty;
@@ -111,7 +237,7 @@ namespace OpenUtau.Plugin.Builtin {
 
             string fin = $"{vowel} -";
             // We will need to split the total duration for phonemes, so we compute it here.
-            int totalDuration = notes.Sum(n => n.duration);
+            int totalDuration = note.duration;
             // Lookup the vowel split table. For example, "yut" will match "yu t".
             if (vDict.TryGetValue(vowel, out var phoneme1) && !string.IsNullOrEmpty(phoneme1)) {
                 // Now phoneme0="jyu" and phoneme1="yu t",
@@ -263,7 +389,16 @@ namespace OpenUtau.Plugin.Builtin {
                     }
                 },
             };
+        }
 
+        private Result MakeSimpleResult(string phoneme) {
+            return new Result {
+                phonemes = new Phoneme[] {
+                    new Phoneme() {
+                        phoneme = phoneme,
+                    }
+                },
+            };
         }
 
         /// <summary>
