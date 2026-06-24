@@ -51,8 +51,8 @@ namespace OpenUtau.Plugins {
         [Trait("Category", "General")]
         public void NonExistentAliasTest() {
             RunPhonemizeTest("ja_vcv_integration",
-                [Note("あ"), Note("しぁ", "cvvc"), Note("さ"), Note("ぬぃ", "vcv"), Note("な", "vcv")],
-                ["- あ", "しぁ", "a さ", "a ぬぃ_VCV_D4", "i な_VCV_D4"]);
+                [Note("あ", "cvvc"), Note("しぁ", "cvvc"), Note("さ"), Note("ぬぃ", "vcv"), Note("な", "vcv")],
+                ["- あ_CVVC_C4", "しぁ", "a さ", "a ぬぃ_VCV_D4", "i な_VCV_D4"]);
         }
 
         // CV
