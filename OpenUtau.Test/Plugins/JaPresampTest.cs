@@ -40,6 +40,20 @@ namespace OpenUtau.Plugins {
                 [Note("ri"), Note("p"), Note("re"), Note("i"), Note("s")],
                 ["り", "i p", "p", "れ", "e い", "i s"]);
         }
+        [Fact]
+        [Trait("Category", "General")]
+        public void PhoneticHintTest() {
+            RunPhonemizeTest("ja_vcv_integration",
+                [Note("あ", "cvvc"), Note("", "cvvc", "C4", "か"), Note("さ"), Note("し", "vcv", "C4", "- た"), Note("な", "vcv"), Note("R")],
+                ["- あ_CVVC_C4", "か_CVVC_C4", "a さ", "- た_VCV_D4", "a な_VCV_D4", "a R"]);
+        }
+        [Fact]
+        [Trait("Category", "General")]
+        public void NonExistentAliasTest() {
+            RunPhonemizeTest("ja_vcv_integration",
+                [Note("あ"), Note("しぁ", "cvvc"), Note("さ"), Note("ぬぃ", "vcv"), Note("な", "vcv")],
+                ["- あ", "しぁ", "a さ", "a ぬぃ_VCV_D4", "i な_VCV_D4"]);
+        }
 
         // CV
         [Fact]
@@ -201,15 +215,8 @@ namespace OpenUtau.Plugins {
         [Trait("Category", "VCV")]
         public void VcvDirectSpecification() {
             RunPhonemizeTest("ja_vcv_integration",
-                [Note("あ"), Note("i か"), Note("i さ"), Note("i た"), Note("i な"), Note("u R")],
-                ["- あ", "i か", "i さ", "i た", "i な", "u R"]);
-        }
-        [Fact]
-        [Trait("Category", "VCV")]
-        public void VcvHintTest() {
-            RunPhonemizeTest("ja_vcv_integration",
-                [Note("あ", "cvvc"), Note("", "cvvc", "C4", "か"), Note("さ"), Note("し", "vcv", "C4", "- た"), Note("な", "vcv"), Note("R")],
-                ["- あ_CVVC_C4", "か_CVVC_C4", "a さ", "- た_VCV_D4", "a な_VCV_D4", "a R"]);
+                [Note("あ"), Note("i か"), Note("i さ"), Note("i た"), Note("- な"), Note("u R")],
+                ["- あ", "i か", "i さ", "i た", "- な", "u R"]);
         }
         [Fact]
         [Trait("Category", "VCV")]
@@ -224,8 +231,8 @@ namespace OpenUtau.Plugins {
         [Trait("Category", "X-SAMPA")]
         public void CvvcXsampaTest() {
             RunPhonemizeTest("ja_presamp",
-                [Note("あ", "波"), Note("あ", "波"), Note("っ", "波"), Note("ひゃ", "波"), Note("さ", "波"), Note("ちゃ", "波"), Note("にゃ", "波")],
-                ["- あ波_D4", "a あ波_D4", "a C波_D4", "ひゃ波_D4", "a s波_D4", "さ波_D4", "a tS波_D4", "ちゃ波_D4", "a J波_D4", "にゃ波_D4"]);
+                [Note("あ"), Note("あ"), Note("っ"), Note("ひゃ"), Note("さ"), Note("ちゃ"), Note("にゃ")],
+                ["- あ_XS", "a あ_XS", "a C_XS", "ひゃ_XS", "a s_XS", "さ_XS", "a tS_XS", "ちゃ_XS", "a J_XS", "にゃ_XS"]);
         }
     }
 }
