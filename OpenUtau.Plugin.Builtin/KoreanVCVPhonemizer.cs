@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -44,8 +44,9 @@ namespace OpenUtau.Plugin.Builtin
 		/// Apply Korean sandhi rules to Hangeul lyrics.
 		/// </summary>
 		public override void SetUp(Note[][] groups, UProject project, UTrack track) {
-			// variate lyrics 
-			RomanizeNotes(groups, false);
+            base.SetUp(groups, project, track);
+            // variate lyrics 
+            RomanizeNotes(groups, false);
 		}
 
 		/// <summary>
@@ -138,14 +139,14 @@ namespace OpenUtau.Plugin.Builtin
 			int? alt1;
 
 			PhonemeAttributes attr = note.phonemeAttributes.FirstOrDefault(a => a.index == 0);
-			color = attr.voiceColor;
-			shift = attr.toneShift;
-			alt = attr.alternate;
+			color = attr.voiceColor ?? GetParentVoiceColor();
+			shift = attr.toneShift ?? GetParentToneShift();
+			alt = attr.alternate ?? GetParentAlternate();
 
 			PhonemeAttributes attr1 = note.phonemeAttributes.FirstOrDefault(a => a.index == 1);
-			color1 = attr1.voiceColor;
-			shift1 = attr1.toneShift;
-			alt1 = attr1.alternate;
+			color1 = attr1.voiceColor ?? GetParentVoiceColor();
+			shift1 = attr1.toneShift ?? GetParentToneShift();
+			alt1 = attr1.alternate ?? GetParentAlternate();
 
 			string[] currIMF;
 			string currPhoneme;

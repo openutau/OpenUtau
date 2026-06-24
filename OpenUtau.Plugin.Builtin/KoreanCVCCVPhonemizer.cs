@@ -213,6 +213,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// Apply Korean sandhi rules to Hangeul lyrics.
         /// </summary>
         public override void SetUp(Note[][] groups, UProject project, UTrack track) {
+            base.SetUp(groups, project, track);
             // variate lyrics 
             KoreanPhonemizerUtil.RomanizeNotes(groups, false);
         }
