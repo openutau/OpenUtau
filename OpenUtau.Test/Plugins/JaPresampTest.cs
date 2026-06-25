@@ -54,6 +54,50 @@ namespace OpenUtau.Plugins {
                 [Note("あ", "cvvc"), Note("しぁ", "cvvc"), Note("さ"), Note("ぬぃ", "vcv"), Note("な", "vcv")],
                 ["- あ_CVVC_C4", "しぁ", "a さ", "a ぬぃ_VCV_D4", "i な_VCV_D4"]);
         }
+        [Fact]
+        [Trait("Category", "General")]
+        public void ToneShiftAltTest() {
+            RunPhonemizeTest("ja_vcv_integration", [
+                new NoteParams { lyric = "あ", hint = "", tone = "G4",
+                    phonemes = new PhonemeParams[] {
+                        new PhonemeParams {
+                            color = "vcv",
+                            shift = - 1,
+                            alt = 0
+                        }
+                    }
+                },
+                new NoteParams { lyric = "か", hint = "", tone = "G4",
+                    phonemes = new PhonemeParams[] {
+                        new PhonemeParams {
+                            color = "vcv",
+                            shift = - 1,
+                            alt = 0
+                        }
+                    }
+                },
+                Note("さ", "vcv", "G4"),
+                new NoteParams { lyric = "た", hint = "", tone = "G4",
+                    phonemes = new PhonemeParams[] {
+                        new PhonemeParams {
+                            color = "vcv",
+                            shift = 0,
+                            alt = 2 // fallback
+                        }
+                    }
+                },
+                new NoteParams {
+                    lyric = "ん", hint = "", tone = "G4",
+                    phonemes = new PhonemeParams[] {
+                        new PhonemeParams {
+                            color = "vcv",
+                            shift = 0,
+                            alt = 2
+                        }
+                    }
+                }],
+                ["- あ_VCV_D4", "a か_VCV_D4", "a さ_VCV_G4", "a た_VCV_G4", "a ん2_VCV_G4"]);
+        }
 
         // CV
         [Fact]
