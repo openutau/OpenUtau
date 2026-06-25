@@ -477,9 +477,7 @@ namespace OpenUtau.Plugin.Builtin {
                         }
                     }
                     // Map alias (apply shift + color)
-                    if (singer.TryGetMappedOto(currPhoneme + alt, note.tone + shift, color, out var otoAlt)) {
-                        currPhoneme = otoAlt.Alias;
-                    } else if (singer.TryGetMappedOto(currPhoneme, note.tone + shift, color, out var oto)) {
+                    if (singer.TryGetMappedOto(currPhoneme + alt, note.tone + shift, color, out var oto)) {
                         currPhoneme = oto.Alias;
                     }
 
@@ -679,9 +677,7 @@ namespace OpenUtau.Plugin.Builtin {
                         if (substituteLookup.TryGetValue(consonant ?? string.Empty, out con)) {
                             vcPhonemes[1] = $"{prevConnect} {con}";
                         }
-                        if (singer.TryGetMappedOto(currPhoneme + alt1, note.tone + shift1, color1, out var otoAlt)) {
-                            currPhoneme = otoAlt.Alias;
-                        } else if (singer.TryGetMappedOto(currPhoneme, note.tone + shift1, color1, out var oto0)) {
+                        if (singer.TryGetMappedOto(currPhoneme + alt1, note.tone + shift1, color1, out var oto0)) {
                             currPhoneme = oto0.Alias;
                         }
                         string secondPhoneme = (currIMF[1][0] == 'w' || currIMF[1][0] == 'y') ? currIMF[1].Remove(0, 1) : currIMF[1];
@@ -743,19 +739,13 @@ namespace OpenUtau.Plugin.Builtin {
                             int noteLength = 0;
                             for (int i = 0; i < notes.Length; i++) noteLength += notes[i].duration;
                             int secondPosition = Math.Max(noteLength - (nextNeighbour == null ? 120 : 180), noteLength / 2);
-                            if (singer.TryGetMappedOto(currPhoneme + alt1, note.tone + shift1, color1, out var otoAlt0)) {
-                                currPhoneme = otoAlt0.Alias;
-                            } else if (singer.TryGetMappedOto(currPhoneme, note.tone + shift1, color1, out var oto0)) {
+                            if (singer.TryGetMappedOto(currPhoneme + alt1, note.tone + shift1, color1, out oto0)) {
                                 currPhoneme = oto0.Alias;
                             }
-                            if (singer.TryGetMappedOto(vcPhoneme ?? vcPhonemes[1] ?? string.Empty + alt, prevNeighbour.Value.tone + shift, color, out var otoVcAlt)) {
-                                vcPhoneme = otoVcAlt.Alias;
-                            } else if (singer.TryGetMappedOto(vcPhoneme ?? vcPhonemes[1] ?? string.Empty, prevNeighbour.Value.tone + shift, color, out var otoVc)) {
+                            if (singer.TryGetMappedOto(vcPhoneme ?? vcPhonemes[1] ?? string.Empty + alt, prevNeighbour.Value.tone + shift, color, out var otoVc)) {
                                 vcPhoneme = otoVc.Alias;
                             }
-                            if (singer.TryGetMappedOto(secondPhoneme + alt2, note.tone + shift2, color2, out var otoAlt3)) {
-                                secondPhoneme = otoAlt3.Alias;
-                            } else if (singer.TryGetMappedOto(secondPhoneme, note.tone + shift2, color2, out var oto3)) {
+                            if (singer.TryGetMappedOto(secondPhoneme + alt2, note.tone + shift2, color2, out var oto3)) {
                                 secondPhoneme = oto3.Alias;
                             }
                             if (singer.TryGetMappedOto(vcPhoneme, note.tone + shift, color, out _)
@@ -804,9 +794,7 @@ namespace OpenUtau.Plugin.Builtin {
             if (string.IsNullOrEmpty(currIMF[2])) {
 
                 // Map alias (apply shift + color)
-                if (singer.TryGetMappedOto(currPhoneme + alt, note.tone + shift, color, out var otoAlt)) {
-                    currPhoneme = otoAlt.Alias;
-                } else if (singer.TryGetMappedOto(currPhoneme, note.tone + shift, color, out var oto)) {
+                if (singer.TryGetMappedOto(currPhoneme + alt, note.tone + shift, color, out var oto)) {
                     currPhoneme = oto.Alias;
                 }
                 return new Result {
@@ -875,14 +863,10 @@ namespace OpenUtau.Plugin.Builtin {
                 for (int i = 0; i < notes.Length; i++) noteLength += notes[i].duration;
                 int secondPosition = Math.Max(noteLength - (nextNeighbour == null ? 120 : 180), noteLength / 2);
                 // Map alias (apply shift + color)
-                if (singer.TryGetMappedOto(currPhoneme + alt, note.tone + shift, color, out var otoAlt)) {
-                    currPhoneme = otoAlt.Alias;
-                } else if (singer.TryGetMappedOto(currPhoneme, note.tone + shift, color, out var oto)) {
+                if (singer.TryGetMappedOto(currPhoneme + alt, note.tone + shift, color, out var oto)) {
                     currPhoneme = oto.Alias;
                 }
-                if (singer.TryGetMappedOto(secondPhoneme + alt1, note.tone + shift1, color1, out var otoalt)) {
-                    secondPhoneme = otoalt.Alias;
-                } else if (singer.TryGetMappedOto(secondPhoneme, note.tone + shift1, color1, out var oto)) {
+                if (singer.TryGetMappedOto(secondPhoneme + alt1, note.tone + shift1, color1, out oto)) {
                     secondPhoneme = oto.Alias;
                 }
                 // Return Result
