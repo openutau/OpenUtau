@@ -1,0 +1,23 @@
+%YAML 1.2
+---
+version: "1.0"
+settings:
+  use_rentan: true # If true, phonemizer tries to use Rentan. true일 경우, 음소화기가 최대한 연단음을 사용하려고 시도합니다.
+  eui_fallback: ㅔ # If there's no 'eui' phoneme, use this as a fallback. 'ㅢ' 음소가 없을 경우, 이 음소를 대체로 사용합니다.
+  use_shi_phoneme: true # If true, phonemizer tries to use '시' phoneme as 'shi'. true일 경우, 음소화기가 '시'의 음소를 최대한 'shi'로 사용하려고 시도합니다.
+  use_ax_batchim_phoneme: true # If true, phonemizer tries to use 'aX(e.g 'an')' batchim phoneme. true일 경우, 음소화기가 'aX'(예: 'an') 받침 음소를 사용하려고 시도합니다.
+  use_ax_batchim_phoneme_only : false # If true, phonemizer tries to use 'aX(e.g 'an')' batchim only. true일 경우, 음소화기가 'aX'(예: 'an') 받침만 사용하려고 시도합니다.
+  use_capital_batchim: true # If true, phonemizer tries to use batchim phoneme with capital letter, like 'a N'. true일 경우, 음소화기가 받침 음소를 최대한 대문자로 (예:'a N')사용하려고 시도합니다.
+  use_capital_batchim_only : false # If true, phonemizer tries to use capital batchim only. true일 경우, 음소화기가 대문자 받침만 사용하려고 시도합니다.
+  attach_empty_phoneme_after_batchims: false # If true, phonemizer tries to add space phoneme after batchims. true일 경우, 음소화기가 받침 뒤에 공백 음소를 추가하려고 시도합니다.
+  use_batchim_c: true # If true, phonemizer tries to use 'C-only batchim(e.g 'n')'. notice: If there's non-C-only batchim, phonemizer will not use C-only batchim. true일 경우, 음소화기가 'C로만 이루어진 단독음식 받침(예: 'a n'이 아닌 'n')'을 사용하려 시도합니다. 주의: a x 이나 aX 형식의 받침이 있을 경우, 음소화기는 a x이나 aX 형식의 받침을 사용하고 단독음식 받침을 사용하지 않습니다.
+  use_batchim_c_only: false # If true, phonemizer tries to use 'C-only batchim(e.g 'n')'. If there's not C-only batchim, phonemizer will try to use non-C-only batchim. true일 경우, 음소화기가 'C로만 이루어진 단독음식 받침(예: 'n')'을 최우선적으로 사용합니다. 만일 C로만 이루어진 단독음식 받침이 없을 경우, 음소화기는 a x이나 aX 형식의 받침을 사용하려고 시도합니다.
+batchim_connections:
+# example: If the previous batchim is ㄹ and the current consonant is ㄹ, use current consonant's phoneme(ㄹ) as 'l'.
+# 예시: 만일 이전 받침이 ㄹ이고 현재 자음이 ㄹ일 경우, 현재 자음의 음소(ㄹ)를 'l'로 사용합니다.
+  - if_prev_batchim_is: ㄹ
+    if_current_consonant: ㄹ
+    use_current_consonant_phoneme_as: l
+  - if_prev_batchim_is: ㅇ
+    if_current_consonant: ㅇ
+    use_current_consonant_phoneme_as: ng

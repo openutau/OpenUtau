@@ -15,7 +15,9 @@ using Serilog;
 namespace OpenUtau.Integrations {
     internal class VLabelerClient : Core.Util.SingletonBase<VLabelerClient> {
         class HeartbeatRequest {
+#pragma warning disable CS0414
             public string type = "Heartbeat";
+#pragma warning restore CS0414
             public long sentAt = Epoch();
         }
 
@@ -48,6 +50,7 @@ namespace OpenUtau.Integrations {
 
         class NewProjectArgs {
 #pragma warning disable 0649
+#pragma warning disable CS0414
             public string labelerName = "utau-singer.default";
             public string? sampleDirectory;
             public string? cacheDirectory;
@@ -58,10 +61,14 @@ namespace OpenUtau.Integrations {
             public string encoding = Encoding.UTF8.WebName;
             public bool autoExport;
 #pragma warning restore 0649
+#pragma warning restore CS0414
+
         }
 
         class OpenOrCreateRequest {
+#pragma warning disable CS0414
             public string type = "OpenOrCreate";
+#pragma warning restore CS0414
             public string projectFile = string.Empty;
             public GotoEntryByName? gotoEntryByName;
             public NewProjectArgs newProjectArgs = new NewProjectArgs();

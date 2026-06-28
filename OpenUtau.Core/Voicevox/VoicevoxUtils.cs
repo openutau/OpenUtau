@@ -82,13 +82,13 @@ namespace OpenUtau.Core.Voicevox {
         public Dictionary<string, string> paus = new Dictionary<string, string>();
         public Phoneme_list() {
             var kanaGroups = new List<string[]> {
-                "あ ば びゃ ちゃ だ でゃ ふぁ が ぐゎ ぎゃ は ひゃ じゃ か くゎ きゃ ま みゃ な にゃ ぱ ぴゃ ら りゃ さ しゃ た つぁ てゃ ゔぁ わ や ざ".Split(),
-                "い び  ち ぢ でぃ ふぃ ぎ   ひ  じ き   み  に  ぴ  り  すぃ し てぃ つぃ  ゔぃ うぃ  ずぃ".Split(),
-                "う ぶ びゅ ちゅ どぅ でゅ ふ ぐ  ぎゅ  ひゅ じゅ く  きゅ む みゅ ぬ にゅ ぷ ぴゅ る りゅ す しゅ つ つ てゅ ゔ  ゆ ず".Split(),
-                "え べ びぇ ちぇ で でぇ ふぇ げ  ぎぇ へ ひぇ じぇ け  きぇ め みぇ ね にぇ ぺ ぴぇ れ りぇ せ しぇ て つぇ  ゔぇ うぇ いぇ ぜ".Split(),
-                "お ぼ びょ ちょ ど でょ ふぉ ご  ぎょ ほ ひょ じょ こ  きょ も みょ の にょ ぽ ぴょ ろ りょ そ しょ と つぉ てょ ゔぉ を よ ぞ".Split(),
-                "ん ン".Split(),
-                "っ ッ".Split()
+                "あ ぁ ば びゃ ゔゃ ちゃ だ   でゃ ふぁ が ぐゎ ぐぁ ぎゃ は ひゃ じゃ ぢゃ か くゎ くぁ きゃ ま みゃ な にゃ ぱ ぴゃ ら りゃ さ   しゃ た   つぁ てゃ ゔぁ わ   ゎ や  ゃ ざ".Split(),
+                "い ぃ び びぃ      ち   でぃ      ふぃ ぎ ぐぃ      ぎぃ ひ      じ   ぢ   き くぃ      きぃ み みぃ に      ぴ ぴぃ り りぃ すぃ し   てぃ つぃ      ゔぃ うぃ           ずぃ".Split(),
+                "う ぅ ぶ びゅ ゔゅ ちゅ どぅ でゅ ふ   ぐ ぐぅ      ぎゅ    ひゅ じゅ ぢゅ く くぅ      きゅ む みゅ ぬ にゅ ぷ ぴゅ る りゅ す   しゅ とぅ つ   てゅ ゔ   うぅ    ゆ  ゅ ず".Split(),
+                "え ぇ べ びぇ      ちぇ で   でぇ ふぇ げ ぐぇ      ぎぇ へ ひぇ じぇ ぢぇ け くぇ      きぇ め みぇ ね にぇ ぺ ぴぇ れ りぇ せ   しぇ て   つぇ てぇ ゔぇ うぇ    いぇ   ぜ".Split(),
+                "お ぉ ぼ びょ ゔょ ちょ ど   でょ ふぉ ご ぐぉ      ぎょ ほ ひょ じょ ぢょ こ くぉ      きょ も みょ の にょ ぽ ぴょ ろ りょ そ   しょ と   つぉ てょ ゔぉ うぉ を よ  ょ ぞ".Split(),
+                "ん".Split(),
+                "っ".Split()
             };
 
             foreach (var group in kanaGroups) {
@@ -247,7 +247,7 @@ namespace OpenUtau.Core.Voicevox {
                 });
 
             } catch (Exception e) {
-                Log.Error($"VoicevoxQueryNotes setup error.");
+                Log.Error(e, $"VoicevoxQueryNotes setup error: {e.Message}");
             }
             return vqMain;
         }
@@ -300,18 +300,27 @@ namespace OpenUtau.Core.Voicevox {
                 //Fill head and tail
                 Array.Fill(result, convert(curve[0]), 0, headFrames);
                 Array.Fill(result, convert(curve[^1]), length - tailFrames, tailFrames);
-            } catch (Exception e) {
-                Log.Error($"SampleCurve:{e}");
+            } catch (IndexOutOfRangeException e) {
+                Log.Error($"SampleCurve (IndexOutOfRangeException): {e}");
+            } catch (ArgumentException e) {
+                Log.Error($"SampleCurve (ArgumentException): {e}");
             }
             return result;
+        }
+
+        public static bool IsDicKana(string s) {
+            return phoneme_List.kanas.ContainsKey(s);
+        }
+
+        public static bool IsDicPau(string s) {
+            return phoneme_List.paus.ContainsKey(s);
         }
 
         public static bool IsVowel(string s) {
             return phoneme_List.vowels.Contains(s);
         }
-
-        public static bool IsPau(string s) {
-            return phoneme_List.paus.ContainsKey(s);
+        public static bool IsConsonant(string s) {
+            return phoneme_List.consonants.Contains(s);
         }
 
         public static bool TryGetPau(string s, out string str) {

@@ -104,6 +104,9 @@ namespace OpenUtau.Core.Format
                     ufNote.tickOff - ufNote.tickOn
                 );
                 note.lyric = ufNote.lyric;
+                if (note.lyric == "-") {
+                    note.lyric = "+~";
+                }
                 part.notes.Add(note);
             }
             part.Duration = ufTrack.notes[^1].tickOff;

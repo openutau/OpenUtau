@@ -5,37 +5,36 @@
         mc:Ignorable="d" MinWidth="200" MinHeight="200" Width="300" Height="350"
         x:Class="OpenUtau.App.Views.LyricsReplaceDialog"  WindowStartupLocation="CenterOwner"
         Icon="/Assets/open-utau.ico"
-        Title="{StaticResource lyricsreplace.replace}">
+        Title="{DynamicResource lyricsreplace.replace}">
   <Window.Styles>
     <StyleInclude Source="/Styles/PianoRollStyles.axaml"/>
   </Window.Styles>
   <Grid Margin="10" RowDefinitions="auto,10,Auto,10,Auto,10,*,10,Auto">
     <StackPanel Orientation="Horizontal" Grid.Row="0">
-      <TextBlock Text="{StaticResource lyricsreplace.before}" />
+      <TextBlock Text="{DynamicResource lyricsreplace.before}" />
       <TextBox Text="{Binding OldValue}" MinWidth="200" Margin="10,0"
-               Watermark="{StaticResource lyricsreplace.regex}"/>
+               Watermark="{DynamicResource lyricsreplace.regex}"/>
     </StackPanel>
 
     <StackPanel Orientation="Horizontal" Grid.Row="2">
-      <TextBlock Text="{StaticResource lyricsreplace.after}" />
+      <TextBlock Text="{DynamicResource lyricsreplace.after}" />
       <TextBox Text="{Binding NewValue}" MinWidth="200" Margin="10,0" />
     </StackPanel>
 
     <StackPanel Grid.Row="4">
-      <TextBlock Text="{StaticResource lyricsreplace.preview}" />
+      <TextBlock Text="{DynamicResource lyricsreplace.preview}" />
       <TextBlock Text="{Binding Preview}" Margin="5" MinHeight="15" />
     </StackPanel>
 
     <StackPanel Grid.Row="6">
-      <TextBlock Text="{StaticResource lyricsreplace.presets}" />
+      <TextBlock Text="{DynamicResource lyricsreplace.presets}" />
       <ListBox ItemsSource="{Binding PresetList}"
                SelectedItem="{Binding SelectedPreset}"
                SelectionMode="Single" Margin="5" />
     </StackPanel>
 
     <StackPanel Grid.Row="8" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
-      <!-- <Button Content="{StaticResource lyrics.cancel}" Margin="0" Click="OnCancel"/>-->
-      <Button Content="{StaticResource lyrics.apply}" Margin="0" MinWidth="50" Click="OnFinish"/>
+      <Button Content="{DynamicResource button.apply}" Margin="0" MinWidth="50" Click="OnFinish"/>
     </StackPanel>
   </Grid>
 </Window>

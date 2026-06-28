@@ -110,7 +110,6 @@ symbols:
   - {symbol: '@n', type: vowel}
   - {symbol: '@N', type: vowel}
   - {symbol: '@', type: vowel}
-  - {symbol: y, type: vowel}
   - {symbol: 'I\', type: vowel}
   - {symbol: M, type: vowel}
   - {symbol: 'U\', type: vowel}

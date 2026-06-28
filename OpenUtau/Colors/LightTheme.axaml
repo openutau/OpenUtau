@@ -33,6 +33,8 @@
   <Color x:Key="FinalPitchColor">#C0C0C0</Color>
   <Color x:Key="TrackBackgroundAltColor">#F0F0F0</Color>
 
+  <Color x:Key="WarningColor">#FFF4CE</Color>
+
   <!--Keyboard Background-->
   <Color x:Key="WhiteKeyColorLeft">Transparent</Color>
   <Color x:Key="WhiteKeyColorRight">Transparent</Color>

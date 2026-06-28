@@ -8,7 +8,6 @@ using OpenUtau.Classic;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using Serilog;
-using static OpenUtau.Api.Phonemizer;
 
 /*
  * This source code is partially based on the VOICEVOX engine.

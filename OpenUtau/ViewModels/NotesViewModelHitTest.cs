@@ -46,6 +46,8 @@ namespace OpenUtau.App.ViewModels {
         public bool hitPosition;
         public bool hitPreutter;
         public bool hitOverlap;
+        public bool hitAttackTime;
+        public bool hitReleaseTime;
         public Point point;
     }
 
@@ -74,12 +76,12 @@ namespace OpenUtau.App.ViewModels {
                 }
                 result.note = note;
                 result.hitX = true;
-                var tone = viewModel.PointToTone(point);
-                if (tone != note.tone) {
+                var tone = viewModel.PointToToneDouble(point);
+                if (tone > note.AdjustedTone + 0.5 || tone < note.AdjustedTone - 0.5) {
                     continue;
                 }
                 result.hitBody = true;
-                double x1 = viewModel.TickToneToPoint(note.position, note.tone).X;
+                double x1 = viewModel.TickToneToPoint(note.position, note.AdjustedTone).X;
                 double x2 = viewModel.TickToneToPoint(note.End, tone).X;
                 var hitLeftResizeArea = point.X >= x1 && point.X < x1 + ViewConstants.ResizeMargin;
                 var hitRightResizeArea = point.X <= x2 && point.X > x2 - ViewConstants.ResizeMargin;
@@ -156,11 +158,13 @@ namespace OpenUtau.App.ViewModels {
                     continue;
                 }
                 double lastX = 0, lastY = 0;
+                double x_1 = 0, y_1 = 0;
                 PitchPointShape lastShape = PitchPointShape.l;
+                var timeAxis = viewModel.Project.timeAxis;
                 for (int i = 0; i < note.pitch.data.Count; i++) {
                     var pit = note.pitch.data[i];
-                    int posTick = viewModel.Project.timeAxis.MsPosToTickPos(note.PositionMs + pit.X) - viewModel.Part.position;
-                    double tone = note.tone + pit.Y / 10;
+                    int posTick = timeAxis.MsPosToTickPos(note.PositionMs + pit.X) - viewModel.Part.position;
+                    double tone = note.AdjustedTone + pit.Y / 10;
                     var pitPoint = viewModel.TickToneToPoint(posTick, tone);
                     double x = pitPoint.X;
                     double y = pitPoint.Y + viewModel.TrackHeight / 2;
@@ -172,18 +176,50 @@ namespace OpenUtau.App.ViewModels {
                         };
                     else if (point.X < x && i > 0 && point.X > lastX) {
                         // Hit test curve
-                        double castY = MusicMath.InterpolateShape(lastX, x, lastY, y, point.X, lastShape) - point.Y;
-                        if (y >= lastY) {
-                            if (point.Y - y > 3 || lastY - point.Y > 3) break;
+                        double castY;
+                        CubicSplineSegment? curve = null;
+                        if (note.pitch.data.Count > 2 && note.pitch.data[i - 1].shape == PitchPointShape.sp) {
+                            double x2 = x, y2 = y;
+                            if (i == 1) {
+                                if (note.pitch.data[0].X > 0) {
+                                    var pitPoint_1 = viewModel.TickToneToPoint(note.position, note.AdjustedTone);
+                                    x2 = pitPoint_1.X;
+                                } else {
+                                    x_1 = lastX;
+                                }
+                                y_1 = lastY;
+                            }
+                            if (i < note.pitch.data.Count - 1) {
+                                var pit2 = note.pitch.data[i + 1];
+                                int posTick2 = timeAxis.MsPosToTickPos(note.PositionMs + pit2.X) - viewModel.Part.position;
+                                double tone2 = note.AdjustedTone + pit2.Y / 10;
+                                var pitPoint2 = viewModel.TickToneToPoint(posTick2, tone2);
+                                x2 = pitPoint2.X;
+                                y2 = pitPoint2.Y + viewModel.TrackHeight / 2;
+                            } else if (note.pitch.data[i].X < note.DurationMs) {
+                                var pitPoint2 = viewModel.TickToneToPoint(note.End, note.AdjustedTone);
+                                x2 = pitPoint2.X;
+                                y2 = pitPoint2.Y + viewModel.TrackHeight / 2;
+                            }
+                            curve = new CubicSplineSegment(
+                                        x_1, y_1,
+                                        lastX, lastY,
+                                        x, y,
+                                        x2, y2);
+                            castY = curve.GetY(point.X) - point.Y;
                         } else {
-                            if (y - point.Y > 3 || point.Y - lastY > 3) break;
+                            if (y >= lastY) {
+                                if (point.Y - y > 3 || lastY - point.Y > 3) break;
+                            } else {
+                                if (y - point.Y > 3 || point.Y - lastY > 3) break;
+                            }
+                            castY = MusicMath.InterpolateShape(lastX, x, lastY, y, point.X, lastShape) - point.Y;
                         }
-                        double castX = MusicMath.InterpolateShapeX(lastX, x, lastY, y, point.Y, lastShape) - point.X;
+                        double castX = (curve?.GetX(point.Y) ?? MusicMath.InterpolateShapeX(lastX, x, lastY, y, point.Y, lastShape)) - point.X;
                         double dis = double.IsNaN(castX) ? Math.Abs(castY) : Math.Cos(Math.Atan2(Math.Abs(castY), Math.Abs(castX))) * Math.Abs(castY);
                         if (dis < 3) {
-                            var timeAxis = viewModel.Project.timeAxis;
                             double msX = timeAxis.TickPosToMsPos(viewModel.PointToTick(point) + viewModel.Part.position) - note.PositionMs;
-                            double decCentY = (viewModel.PointToToneDouble(point) - note.tone) * 10;
+                            double decCentY = (viewModel.PointToToneDouble(point) - note.AdjustedTone) * 10;
                             return new PitchPointHitInfo() {
                                 Note = note,
                                 Index = i - 1,
@@ -193,6 +229,8 @@ namespace OpenUtau.App.ViewModels {
                             };
                         } else break;
                     }
+                    x_1 = lastX;
+                    y_1 = lastY;
                     lastX = x;
                     lastY = y;
                     lastShape = pit.shape;
@@ -213,12 +251,12 @@ namespace OpenUtau.App.ViewModels {
             if (note == null) {
                 return null;
             }
-            double pitch = note.tone * 100;
+            double pitch = note.AdjustedTone * 100;
             pitch += note.pitch.Sample(viewModel.Project, viewModel.Part, note, tick) ?? 0;
             if (note.Next != null && note.Next.position == note.End) {
                 double? delta = note.Next.pitch.Sample(viewModel.Project, viewModel.Part, note.Next, tick);
                 if (delta != null) {
-                    pitch += delta.Value + note.Next.tone * 100 - note.tone * 100;
+                    pitch += delta.Value + note.Next.AdjustedTone * 100 - note.AdjustedTone * 100;
                 }
             }
             return pitch;
@@ -317,6 +355,7 @@ namespace OpenUtau.App.ViewModels {
                 if (leftBound >= rightTick || rightBound <= leftTick || note.Error || note.OverlapError) {
                     continue;
                 }
+                // p0 Preutter
                 int p0Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[0].X) - viewModel.Part.position;
                 double p0x = viewModel.TickToneToPoint(p0Tick, 0).X;
                 var point = new Point(p0x, 60 - phoneme.envelope.data[0].Y * 0.24 - 1);
@@ -326,20 +365,65 @@ namespace OpenUtau.App.ViewModels {
                     result.hitPreutter = true;
                     return result;
                 }
+                // p1 AttackTime
                 int p1Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[1].X) - viewModel.Part.position;
                 double p1x = viewModel.TickToneToPoint(p1Tick, 0).X;
                 point = new Point(p1x, 60 - phoneme.envelope.data[1].Y * 0.24);
                 if (WithIn(point, mousePos, 3)) {
                     result.phoneme = phoneme;
                     result.hit = true;
+                    result.hitAttackTime = true;
+                    return result;
+                }
+                // p3 ReleaseTime
+                int p3Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[3].X) - viewModel.Part.position;
+                double p3x = viewModel.TickToneToPoint(p3Tick, 0).X;
+                point = new Point(p3x, 60 - phoneme.envelope.data[3].Y * 0.24);
+                if (WithIn(point, mousePos, 3)) {
+                    result.phoneme = phoneme;
+                    result.hit = true;
+                    result.hitReleaseTime = true;
+                    return result;
+                }
+                // p4 Overlap
+                int p4Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[4].X) - viewModel.Part.position;
+                double p4x = viewModel.TickToneToPoint(p4Tick, 0).X;
+                point = new Point(p4x, 60 - phoneme.envelope.data[4].Y * 0.24 - 1);
+                if (WithIn(point, mousePos, 3)) {
+                    result.phoneme = phoneme;
+                    result.hit = true;
                     result.hitOverlap = true;
                     return result;
                 }
-                point = viewModel.TickToneToPoint(phoneme.position, 0);
+            }
+            foreach (var phoneme in viewModel.Part.phonemes) {
+                double leftBound = timeAxis.MsPosToTickPos(phoneme.PositionMs - phoneme.preutter) - viewModel.Part.position;
+                double rightBound = phoneme.End;
+                var note = phoneme.Parent;
+                if (leftBound >= rightTick || rightBound <= leftTick || note.Error || note.OverlapError) {
+                    continue;
+                }
+                // Position
+                var point = viewModel.TickToneToPoint(phoneme.position, 0);
                 if (Math.Abs(point.X - mousePos.X) < 3) {
                     result.phoneme = phoneme;
                     result.hit = true;
                     result.hitPosition = true;
+                    return result;
+                }
+            }
+            foreach (var phoneme in viewModel.Part.phonemes) {
+                var note = phoneme.Parent;
+                if (note.Error || note.OverlapError) {
+                    continue;
+                }
+                var left = timeAxis.MsPosToTickPos(phoneme.PositionMs - phoneme.preutter + (phoneme.overlap / 2)) - viewModel.Part.position;
+                var leftPoint = viewModel.TickToneToPoint(left, 0).X;
+                var right = timeAxis.MsPosToTickPos(phoneme.EndMs - phoneme.tailIntrude + (phoneme.tailOverlap /2)) - viewModel.Part.position;
+                var rightPoint = viewModel.TickToneToPoint(right, 0).X;
+                if (leftPoint <= mousePos.X && mousePos.X <= rightPoint && mousePos.Y >= 36) {
+                    result.phoneme = phoneme;
+                    result.hit = true;
                     return result;
                 }
             }

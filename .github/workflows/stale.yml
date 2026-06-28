@@ -23,6 +23,7 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         days-before-issue-stale: 60
         stale-issue-label: 'no-issue-activity'
+        exempt-issue-labels: 'feature-request'
         stale-issue-message: > 
           This issue is stale because it has been open for 60 days with no activity.
           It will be closed if no further activity occurs. Thank you.

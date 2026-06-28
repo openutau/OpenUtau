@@ -113,6 +113,20 @@ namespace OpenUtau.Core {
         public override string ToString() => $"Set play position to tick {playPosTick}";
     }
 
+    /// <summary>
+    /// Notification for both views to sync time range selection.
+    /// </summary>
+    public class SetRangeSelectionNotification : UNotification {
+        public readonly int startTick;
+        public readonly int endTick;
+        public override bool Silent => true;
+        public SetRangeSelectionNotification(int startTick, int endTick) {
+            this.startTick = startTick;
+            this.endTick = endTick;
+        }
+        public override string ToString() => $"Set range selection {startTick}-{endTick}";
+    }
+
     // Notification for playback manager to change play position
     public class SeekPlayPosTickNotification : UNotification {
         public int playPosTick;
@@ -185,6 +199,11 @@ namespace OpenUtau.Core {
     public class VoiceColorRemappingNotification : UNotification {
         public int TrackNo;
         public bool Validate;
+        /// <summary>
+        /// Remap when the singer's voice color changes. Or use when the user intentionally wants to remap.
+        /// </summary>
+        /// <param name="trackNo">Track number for remapping the singer. When -1, checks whether remapping is required for all tracks.</param>
+        /// <param name="validate">When verifying if the color lineup has changed, set to true; when forcing remapping even if no changes occur, set to false.</param>
         public VoiceColorRemappingNotification(int trackNo, bool validate) {
             TrackNo = trackNo;
             Validate = validate;

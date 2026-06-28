@@ -94,7 +94,6 @@ namespace OpenUtau.Classic {
                     writer.WriteLine($"@alias={alias}");
                 }
             }
-            writer.WriteLine("Envelope=5,0,0,100,100,100,100,%,35");
             WritePitch(writer);
             WriteVibrato(writer);
         }

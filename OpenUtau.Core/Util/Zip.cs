@@ -3,18 +3,19 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using SharpCompress.Archives;
+using SharpCompress.Readers;
 
 namespace OpenUtau.Core.Util {
     public static class Zip {
         public static string[] ExtractText(byte[] data, string key) {
             using var stream = new MemoryStream(data);
-            using var archive = ArchiveFactory.Open(stream);
+            using var archive = ArchiveFactory.OpenArchive(stream, new ReaderOptions());
             return ExtractText(archive, key);
         }
 
         public static string[] ExtractText(string path, string key) {
             using var stream = File.OpenRead(path);
-            using var archive = ArchiveFactory.Open(stream);
+            using var archive = ArchiveFactory.OpenArchive(stream, new ReaderOptions());
             return ExtractText(archive, key);
         }
 
@@ -34,13 +35,13 @@ namespace OpenUtau.Core.Util {
 
         public static byte[] ExtractBytes(byte[] data, string key) {
             using var stream = new MemoryStream(data);
-            using var archive = ArchiveFactory.Open(stream);
+            using var archive = ArchiveFactory.OpenArchive(stream, new ReaderOptions());
             return ExtractBytes(archive, key);
         }
 
         public static byte[] ExtractBytes(string path, string key) {
             using var stream = File.OpenRead(path);
-            using var archive = ArchiveFactory.Open(stream);
+            using var archive = ArchiveFactory.OpenArchive(stream, new ReaderOptions());
             return ExtractBytes(archive, key);
         }
 

@@ -115,5 +115,8 @@ namespace OpenUtau.Classic {
             string frqExt = ext.Replace('.', '_') + ".frq";
             return noExt + frqExt;
         }
+        public static string GetMrqFile(string source) {
+            return Path.Combine(Path.GetDirectoryName(source), "desc.mrq");
+        }
     }
 }

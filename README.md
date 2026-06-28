@@ -13,7 +13,7 @@ OpenUtau is a free, open-source editor made for the UTAU community.
 [![Download](https://img.shields.io/static/v1?style=for-the-badge&logo=github&label=download&message=windows-x64&labelColor=FF347C&color=4ea6ea)](https://github.com/stakira/OpenUtau/releases/latest/download/OpenUtau-win-x64.zip)</br>
 [![Download](https://img.shields.io/static/v1?style=for-the-badge&logo=github&label=download&message=windows-x86&labelColor=FF347C&color=4ea6ea)](https://github.com/stakira/OpenUtau/releases/latest/download/OpenUtau-win-x86.zip)</br>
 [![Download](https://img.shields.io/static/v1?style=for-the-badge&logo=github&label=download&message=macos-x64&labelColor=FF347C&color=4ea6ea)](https://github.com/stakira/OpenUtau/releases/latest/download/OpenUtau-osx-x64.dmg)</br>
-[![Download](https://img.shields.io/static/v1?style=for-the-badge&logo=github&label=download&message=linux-x64&labelColor=FF347C&color=4ea6ea)](https://github.com/stakira/OpenUtau/releases/latest/download/OpenUtau-linux-x64.tar.gz)
+[![Download](https://img.shields.io/static/v1?style=for-the-badge&logo=github&label=download&message=linux-x64&labelColor=FF347C&color=4ea6ea)](https://github.com/stakira/OpenUtau/releases/latest/download/OpenUtau-linux-x64.zip)
 
 It is **strongly recommended** that you read these Github wiki pages before using the software.
 - [Getting-Started](https://github.com/stakira/OpenUtau/wiki/Getting-Started)
@@ -75,7 +75,7 @@ See the [Getting-Started Wiki page](https://github.com/stakira/OpenUtau/wiki/Get
   - Unlike UTAU, there is no need to change your system locale to use OpenUtau.
 - Smooth preview/rendering experience.
   - Pre-rendering allows OpenUtau to render vocals before playback, saving time during editing and tuning.
-- Supports ENUNU AI singers. See the ![ENUNU wiki page](https://github.com/stakira/OpenUtau/wiki/Status-of-ENUNU-NNSVS-Support) for more info.
+- Supports ENUNU AI singers. See the [ENUNU wiki page](https://github.com/stakira/OpenUtau/wiki/ENUNU-NNSVS-Support) for more info.
 - Easy-to-use plugin system.
 - Versatile resampling engine interface.
   - Compatible with most UTAU resamplers.

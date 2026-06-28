@@ -124,11 +124,20 @@
   <data name="g2p-de" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>g2p-de.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="g2p-de-marzipan" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>g2p-de-marzipan.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="g2p-es" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>g2p-es.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="g2p-fil" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>g2p-fil.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="g2p-fr" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>g2p-fr.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="g2p-fr-millefeuille" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>g2p-fr-millefeuille.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="g2p-it" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>g2p-it.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>

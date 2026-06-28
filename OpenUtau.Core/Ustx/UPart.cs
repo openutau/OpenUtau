@@ -50,6 +50,7 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public List<RenderPhrase> renderPhrases = new List<RenderPhrase>();
 
         [YamlIgnore] private PhonemizerResponse phonemizerResponse;
+        [YamlIgnore] private Dictionary<string, Phonemizer> overridePhonemizers = new Dictionary<string, Phonemizer>();
         [YamlIgnore] private long notesTimestamp;
         [YamlIgnore] private long phonemesTimestamp;
 
@@ -65,6 +66,10 @@ namespace OpenUtau.Core.Ustx {
             int endTicks = position + (notes.LastOrDefault()?.End ?? 1);
             project.timeAxis.TickPosToBarBeat(endTicks, out int bar, out int beat, out int remainingTicks);
             return project.timeAxis.BarBeatToTickPos(bar, beat + 1) - position;
+        }
+        public int GetMinDurTickForNoteEdit(UProject project, int noteEnd) {
+            project.timeAxis.TickPosToBarBeat(position + noteEnd - 1, out int bar, out int beat, out int remainingTicks);
+            return project.timeAxis.BarBeatToTickPos(bar + 2, 0) - position;
         }
         
         public override int GetMaxPosiTick(UProject project) {
@@ -116,6 +121,10 @@ namespace OpenUtau.Core.Ustx {
             if (!options.SkipPhonemizer) {
                 var noteIndexes = new List<int>();
                 var groups = new List<Phonemizer.Note[]>();
+                
+                var trackPhonemizers = new List<Phonemizer> { track.Phonemizer };
+                var notePhonemizerIndices = new List<int>();
+
                 int noteIndex = 0;
                 foreach (var note in notes) {
                     if (note.OverlapError || note.Extends != null) {
@@ -130,15 +139,42 @@ namespace OpenUtau.Core.Ustx {
                     }
                     groups.Add(group.Select(e => e.ToPhonemizerNote(track, this)).ToArray());
                     noteIndexes.Add(noteIndex);
+
+                    int pIndex = 0;
+                    if (!string.IsNullOrEmpty(note.PhonemizerOverride)) {
+                        pIndex = trackPhonemizers.FindIndex(p => p != null && p.Name == note.PhonemizerOverride);
+                        if (pIndex == -1) {
+                            if (!overridePhonemizers.TryGetValue(note.PhonemizerOverride, out var newPhonemizer)) {
+                                var factory = PhonemizerFactory.GetAll().FirstOrDefault(f => f.name == note.PhonemizerOverride);
+                                newPhonemizer = factory?.Create();
+                                if (newPhonemizer != null) {
+                                    overridePhonemizers[note.PhonemizerOverride] = newPhonemizer;
+                                }
+                            }
+                            
+                            if (newPhonemizer != null) {
+                                trackPhonemizers.Add(newPhonemizer);
+                                pIndex = trackPhonemizers.Count - 1;
+                            } else {
+                                pIndex = 0;
+                            }
+                        }
+                    }
+                    notePhonemizerIndices.Add(pIndex);
                     noteIndex++;
                 }
+
                 var request = new PhonemizerRequest() {
                     singer = track.Singer,
                     part = this,
                     timestamp = DateTime.Now.ToFileTimeUtc(),
                     noteIndexes = noteIndexes.ToArray(),
                     notes = groups.ToArray(),
-                    phonemizer = track.Phonemizer,
+                    
+                    // NEW: Feed the runner our multi-phonemizer data instead of a single phonemizer
+                    phonemizers = trackPhonemizers.ToArray(),
+                    notePhonemizerIndices = notePhonemizerIndices.ToArray(),
+                    
                     timeAxis = project.timeAxis.Clone(),
                 };
                 notesTimestamp = request.timestamp;
@@ -149,7 +185,9 @@ namespace OpenUtau.Core.Ustx {
                     var resp = phonemizerResponse;
                     if (resp.timestamp == notesTimestamp) {
                         phonemes.Clear();
-                        notes.ForEach(note => note.phonemizerExpressions.Clear());
+                        foreach (var note in notes) {
+                            note.phonemizerExpressions.Clear();
+                        }
 
                         for (int i = 0; i < resp.phonemes.Length; ++i) {
                             var indexes = new List<int>();
@@ -159,7 +197,8 @@ namespace OpenUtau.Core.Ustx {
                                     rawPosition = resp.phonemes[i][j].position - position,
                                     rawPhoneme = resp.phonemes[i][j].phoneme,
                                     index = resp.phonemes[i][j].index ?? j,
-                                    Parent = note
+                                    Parent = note,
+                                    ErrorException = resp.phonemes[i][j].error
                                 };
                                 // Check for duplicate indexes
                                 if (phonemes.Any(p => p.Parent == phoneme.Parent && p.index == phoneme.index)) {
@@ -215,6 +254,8 @@ namespace OpenUtau.Core.Ustx {
                     phoneme.phoneme = phoneme.rawPhoneme;
                     phoneme.preutterDelta = null;
                     phoneme.overlapDelta = null;
+                    phoneme.attackTimeDelta = null;
+                    phoneme.releaseTimeDelta = null;
                     var note = phoneme.Parent;
                     if (note == null) {
                         continue;
@@ -225,6 +266,8 @@ namespace OpenUtau.Core.Ustx {
                         phoneme.phoneme = !string.IsNullOrWhiteSpace(o.phoneme) ? o.phoneme : phoneme.rawPhoneme;
                         phoneme.preutterDelta = o.preutterDelta;
                         phoneme.overlapDelta = o.overlapDelta;
+                        phoneme.attackTimeDelta = o.attackTimeDelta;
+                        phoneme.releaseTimeDelta = o.releaseTimeDelta;
                     }
                 }
                 // Safety treatment after phonemizer output and phoneme overrides.
@@ -295,8 +338,10 @@ namespace OpenUtau.Core.Ustx {
 
         [YamlMember(Order = 100)] public string relativePath;
         [YamlMember(Order = 101)] public double fileDurationMs;
-        [YamlMember(Order = 102)] public double skipMs;
-        [YamlMember(Order = 103)] public double trimMs;
+        [YamlMember(Order = 102)] public int skip;
+        [YamlMember(Order = 103)] public int trim;
+        [YamlMember(Order = 104)] public int fadein;
+        [YamlMember(Order = 105)] public int fadeout;
 
         [YamlIgnore]
         public override string DisplayName => Missing ? $"[Missing] {name}" : name;
@@ -315,23 +360,28 @@ namespace OpenUtau.Core.Ustx {
 
         private int duration;
 
+        public double GetSkipMs(UProject project) {
+            return project.timeAxis.MsBetweenTickPos(position - skip, position);
+        }
+
+        public double GetTrimMs(UProject project) {
+            return project.timeAxis.MsBetweenTickPos(End, End + trim);
+        }
+
         public override int GetMinDurTick(UProject project) {
-            double posMs = project.timeAxis.TickPosToMsPos(position);
-            int end = project.timeAxis.MsPosToTickPos(posMs + fileDurationMs);
-            return end - position;
+            return project.resolution;
         }
 
         public override int GetMaxPosiTick(UProject project) {
-            // TODO
-            return position;
+            return End - project.resolution;
         }
 
         public override UPart Clone() {
             var part = new UWavePart() {
                 _filePath = _filePath,
                 relativePath = relativePath,
-                skipMs = skipMs,
-                trimMs = trimMs,
+                skip = skip,
+                trim = trim,
             };
             part.Load(DocManager.Inst.Project);
             return part;
@@ -403,9 +453,9 @@ namespace OpenUtau.Core.Ustx {
         }
 
         private void UpdateDuration(UProject project) {
-            double posMs = project.timeAxis.TickPosToMsPos(position);
-            int end = project.timeAxis.MsPosToTickPos(posMs + fileDurationMs);
-            duration = end - position;
+            double fileStartMs = project.timeAxis.TickPosToMsPos(position - skip);
+            int fileEnd = project.timeAxis.MsPosToTickPos(fileStartMs + fileDurationMs);
+            duration = fileEnd - trim - position;
         }
 
         public override void BeforeSave(UProject project, UTrack track) {
@@ -421,6 +471,44 @@ namespace OpenUtau.Core.Ustx {
                 }
             }
             Load(project);
+        }
+
+        public ISignalSource TrimSamples(UProject project) {
+            double offsetMs = project.timeAxis.TickPosToMsPos(position);
+            double estimatedLengthMs = project.timeAxis.TickPosToMsPos(End) - offsetMs;
+            var waveSource = new WaveSource(
+                offsetMs,
+                estimatedLengthMs,
+                0, channels);
+            int skipCount = (int)(GetSkipMs(project) * sampleRate / 1000) * channels;
+            int trimCount = (int)(GetTrimMs(project) * sampleRate / 1000) * channels;
+            int remainingCount = Samples.Length - skipCount - trimCount;
+            if (remainingCount <= 0) {
+                waveSource.SetSamples(new float[0]);
+                return waveSource;
+            }
+            float[] trimmedSamples = new float[remainingCount];
+            Array.Copy(Samples, skipCount, trimmedSamples, 0, remainingCount);
+
+            int fadeinFrames = (int)(project.timeAxis.MsBetweenTickPos(position, position + fadein) * sampleRate / 1000);
+            for (int i = 0; i < fadeinFrames && i * channels < remainingCount; i++) {
+                float gain = (float)i / fadeinFrames;
+                for (int j = 0; j < channels; j++) {
+                    trimmedSamples[i * channels + j] *= gain;
+                }
+            }
+            int fadeoutFrames = (int)(project.timeAxis.MsBetweenTickPos(End - fadeout, End) * sampleRate / 1000);
+            for (int i = 0; i < fadeoutFrames && i * channels < remainingCount; i++) {
+                float gain = (float)i / fadeoutFrames;
+                for (int j = 0; j < channels; j++) {
+                    int targetIdx = remainingCount - 1 - (i * channels + (channels - 1 - j));
+                    if (targetIdx >= 0) {
+                        trimmedSamples[targetIdx] *= gain;
+                    }
+                }
+            }
+            waveSource.SetSamples(trimmedSamples);
+            return waveSource;
         }
     }
 }

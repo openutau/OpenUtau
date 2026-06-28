@@ -26,11 +26,11 @@ namespace OpenUtau.Core.Voicevox {
                     currentLyric = lyricList[1];
                 }
                 if (!VoicevoxUtils.IsSyllableVowelExtensionNote(currentLyric)) {
-                    if (VoicevoxUtils.IsPau(currentLyric)) {
+                    if (VoicevoxUtils.IsDicPau(currentLyric)) {
                         currentLyric = string.Empty;
                     } else if (VoicevoxUtils.dic.IsDic(currentLyric)) {
                         currentLyric = VoicevoxUtils.dic.Lyrictodic(currentLyric);
-                    } else if (!VoicevoxUtils.phoneme_List.kanas.ContainsKey(currentLyric)) {
+                    } else if (!VoicevoxUtils.IsDicKana(currentLyric)) {
                         currentLyric = string.Empty;
                     }
                 }
@@ -94,13 +94,10 @@ namespace OpenUtau.Core.Voicevox {
                     }).ToArray(),
                 };
             }
-            return new Result {
-                phonemes = new Phoneme[] {
-                    new Phoneme {
-                        phoneme = "error",
-                    }
-                },
-            };
+            if (SetUpException != null) {
+                throw new Exception("Phonemizer failed to process.", SetUpException);
+            }
+            throw new Exception("Part result not found");
 
         }
 

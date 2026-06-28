@@ -4,13 +4,17 @@
 #include <iterator>
 #include <vector>
 
+#include "world/cheaptrick.h"
 #include "world/codec.h"
+#include "world/d4c.h"
+#include "world/dio.h"
 #include "world/synthesis.h"
 #include "worldline/classic/resampler.h"
 #include "worldline/common/vec_utils.h"
 #include "worldline/f0/dio_estimator.h"
 #include "worldline/f0/dio_ss_estimator.h"
 #include "worldline/f0/f0_estimator.h"
+#include "worldline/f0/harvest_estimator.h"
 #include "worldline/f0/pyin_estimator.h"
 #include "worldline/model/effects.h"
 
@@ -26,8 +30,13 @@ DLL_API int F0(float* samples, int length, int fs, double frame_period,
                int method, double** f0) {
   std::unique_ptr<worldline::F0Estimator> estimator;
   switch (method) {
+    case -1: {
+      int f0_length = GetSamplesForDIO(fs, length, frame_period);
+      *f0 = new double[f0_length];
+      return f0_length;
+    }
     case 1:
-      estimator = std::make_unique<worldline::DioSsEstimator>();
+      estimator = std::make_unique<worldline::HarvestEstimator>();
       break;
     case 2:
       estimator = std::make_unique<worldline::PyinEstimator>();
@@ -68,6 +77,76 @@ DLL_API int DecodeBap(int f0_length, double* bap, int fft_size, int fs,
   DecodeAperiodicity(bap2d, f0_length, fs, fft_size, ap2d);
   delete[] ap2d;
   return ap_size;
+}
+
+void InitAnalysisConfig(AnalysisConfig* config, int fs, int hop_size,
+                        int fft_size) {
+  config->fs = fs;
+  config->hop_size = hop_size;
+  config->fft_size = fft_size;
+  config->f0_floor = (float)GetF0FloorForCheapTrick(fs, fft_size);
+  config->frame_ms = static_cast<double>(config->hop_size) * 1000.0 /
+                     static_cast<double>(config->fs);
+}
+
+DLL_API void WorldAnalysis(const AnalysisConfig* config, float* samples,
+                           int num_samples, double** f0_out,
+                           double** sp_env_out, double** ap_out,
+                           int* num_frames) {
+  std::vector<double> samples_vec;
+  samples_vec.reserve(num_samples);
+  std::copy(samples, samples + num_samples, std::back_inserter(samples_vec));
+  auto f0_estimator = std::make_unique<worldline::PyinEstimator>();
+  worldline::Model model(std::move(samples_vec), config->fs, config->frame_ms,
+                         std::move(f0_estimator));
+  model.BuildF0();
+  model.BuildSp();
+  model.BuildAp();
+  *num_frames = model.f0().size();
+  *f0_out = new double[*num_frames];
+  int sp_size = config->fft_size / 2 + 1;
+  *sp_env_out = new double[*num_frames * sp_size];
+  *ap_out = new double[*num_frames * sp_size];
+  std::copy(model.f0().begin(), model.f0().end(), *f0_out);
+  for (int i = 0; i < *num_frames; ++i) {
+    std::copy(model.sp()[i].begin(), model.sp()[i].end(),
+              *sp_env_out + i * sp_size);
+    std::copy(model.ap()[i].begin(), model.ap()[i].end(),
+              *ap_out + i * sp_size);
+  }
+}
+
+DLL_API void WorldAnalysisF0In(const AnalysisConfig* config, float* samples,
+                               int num_samples, double* f0_in, int num_frames,
+                               double* sp_env_out, double* ap_out) {
+  std::vector<double> samples_vec;
+  samples_vec.reserve(num_samples);
+  std::copy(samples, samples + num_samples, std::back_inserter(samples_vec));
+  std::vector<double> ts_vec;
+  ts_vec.reserve(num_frames);
+  for (int i = 0; i < num_frames; ++i) {
+    ts_vec.push_back(i * config->frame_ms / 1000.0);
+  }
+
+  int sp_size = config->fft_size / 2 + 1;
+  double** sp_env_2d = to2d(sp_env_out, num_frames, sp_size);
+  double** ap_2d = to2d(ap_out, num_frames, sp_size);
+
+  CheapTrickOption ct_option;
+  InitializeCheapTrickOption(config->fs, &ct_option);
+  ct_option.f0_floor = config->f0_floor;
+  ct_option.fft_size = config->fft_size;
+  CheapTrick(samples_vec.data(), samples_vec.size(), config->fs, ts_vec.data(),
+             f0_in, num_frames, &ct_option, sp_env_2d);
+
+  D4COption d4c_option;
+  InitializeD4COption(&d4c_option);
+  // d4c_option.threshold = 0;
+  D4C(samples_vec.data(), samples_vec.size(), config->fs, ts_vec.data(), f0_in,
+      num_frames, config->fft_size, &d4c_option, ap_2d);
+
+  delete[] sp_env_2d;
+  delete[] ap_2d;
 }
 
 DLL_API int WorldSynthesis(double* const f0, int f0_length,

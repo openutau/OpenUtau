@@ -73,24 +73,7 @@
           </Path.RenderTransform>
         </Path>
         <Button.ContextMenu>
-          <ContextMenu Name="SingerMenu" PlacementMode="Bottom">
-            <ContextMenu.Styles>
-              <Style Selector="CheckBox">
-                <Setter Property="IsHitTestVisible" Value="False" />
-                <Style Selector="^:unchecked /template/ Border#NormalRectangle">
-                  <Setter Property="BorderThickness" Value="0" />
-                  <Setter Property="Background" Value="Transparent"/>
-                </Style>
-                <Style Selector="^:checked /template/ Path#CheckGlyph">
-                  <Setter Property="Fill" Value="{DynamicResource SelectedTrackAccentBrush}" />
-                  <Setter Property="Width" Value="12" />
-                </Style>
-                <Style Selector="^:checked /template/ Border#NormalRectangle">
-                  <Setter Property="BorderThickness" Value="0" />
-                  <Setter Property="Background" Value="Transparent"/>
-                </Style>
-              </Style>
-            </ContextMenu.Styles>
+          <ContextMenu Name="SingerMenu" Placement="Bottom">
             <MenuItem Header="{DynamicResource singers.visitwebsite}" Click="OnVisitWebsite" IsEnabled="{Binding HasWebsite}"/>
             <MenuItem Header="{DynamicResource singers.setimage}" Click="OnSetImage"/>
             <MenuItem Header="{DynamicResource singers.setportrait}" Click="OnSetPortrait"/>
@@ -148,8 +131,8 @@
           <MenuItem Header="{DynamicResource singers.editoto.editinvlabeler}" Click="GotoVLabelerOto"/>
           <MenuItem Header="{DynamicResource singers.editoto.editinsetparam}" Click="GotoSetParamOto"/>
           <MenuItem Header="{DynamicResource singers.editoto.regenfrq}">
+            <MenuItem Header="HARVEST" Click="RegenFrq" Tag="harvest"/>
             <MenuItem Header="DIO" Click="RegenFrq" Tag="dio"/>
-            <MenuItem Header="DIO(5x)" Click="RegenFrq" Tag="dioss"/>
             <MenuItem Header="pYIN" Click="RegenFrq" Tag="pyin"/>
             <MenuItem Header="CREPE" Click="RegenFrq" Tag="crepe"/>
           </MenuItem>

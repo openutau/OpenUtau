@@ -123,7 +123,7 @@ namespace OpenUtau.App.ViewModels {
                 do {
                     _notes.Add(cursor);
                     cursor = cursor.Next;
-                } while (cursor != end && cursor.Next != null);
+                } while (cursor != end && cursor?.Next != null);
             }
             return true;
         }

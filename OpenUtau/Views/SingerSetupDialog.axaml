@@ -6,7 +6,7 @@
         mc:Ignorable="d" Width="600" Height="400" MinWidth="600" MinHeight="400"
         x:Class="OpenUtau.App.Views.SingerSetupDialog"
         Icon="/Assets/open-utau.ico"
-        Title="Singer Setup"
+        Title="{DynamicResource singersetup.title}"
         WindowStartupLocation="CenterScreen">
   <Window.Resources>
     <vm:EncodingNameConverter x:Key="encodingNameConverter"/>

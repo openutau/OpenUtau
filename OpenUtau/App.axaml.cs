@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -8,6 +9,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using OpenUtau.App.Views;
+using OpenUtau.Colors;
 using Serilog;
 
 namespace OpenUtau.App {
@@ -81,8 +83,14 @@ namespace OpenUtau.App {
             }
         }
 
-        static void InitializeTheme() {
+        static async void InitializeTheme() {
             Log.Information("Initializing theme.");
+            try {
+                CustomTheme.ListThemes();
+                await OudepLoaderRegistry.LoadAllAsync();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to load themes from packages.");
+            }
             SetTheme();
             Log.Information("Initialized theme.");
         }
@@ -91,18 +99,36 @@ namespace OpenUtau.App {
             if (Current == null) {
                 return;
             }
-            var light = (IResourceProvider)Current.Resources["themes-light"]!;
-            var dark = (IResourceProvider)Current.Resources["themes-dark"]!;
-            Current.Resources.MergedDictionaries.Remove(light);
-            Current.Resources.MergedDictionaries.Remove(dark);
-            if (Core.Util.Preferences.Default.Theme == 0) {
-                Current.Resources.MergedDictionaries.Add(light);
-                Current.RequestedThemeVariant = ThemeVariant.Light;
-            } else {
-                Current.Resources.MergedDictionaries.Add(dark);
-                Current.RequestedThemeVariant = ThemeVariant.Dark;
+            var light = (IResourceDictionary) Current.Resources["themes-light"]!;
+            var dark = (IResourceDictionary) Current.Resources["themes-dark"]!;
+            var custom = (IResourceDictionary) Current.Resources["themes-custom"]!;
+            switch (Core.Util.Preferences.Default.ThemeName) { 
+                case "Light":
+                    ApplyTheme(light);
+                    Current.RequestedThemeVariant = ThemeVariant.Light;
+                    break;
+                case "Dark":
+                    ApplyTheme(dark);
+                    Current.RequestedThemeVariant = ThemeVariant.Dark;
+                    break;
+                default:
+                    ApplyTheme(custom);
+                    CustomTheme.ApplyTheme(Core.Util.Preferences.Default.ThemeName);
+                    if (CustomTheme.Default.IsDarkMode == true) {
+                        Current.RequestedThemeVariant = ThemeVariant.Dark;
+                    } else {
+                        Current.RequestedThemeVariant = ThemeVariant.Light;
+                    }
+                    break;
             }
             ThemeManager.LoadTheme();
+        }
+
+        private static void ApplyTheme(IResourceDictionary resDict) { 
+            var res = Current?.Resources;
+            foreach (var item in resDict) {
+                res![item.Key] = item.Value;
+            }
         }
     }
 }

@@ -13,7 +13,6 @@ using NWaves.Audio;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Classic;
 using OpenUtau.Core;
-using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
 using Serilog;
 
@@ -342,26 +341,13 @@ namespace OpenUtau.App.Views {
 
         public void OnPlayCharacterSample(object sender, RoutedEventArgs e) {
             var viewModel = (DataContext as SingersViewModel)!;
-            var playBack = PlaybackManager.Inst.AudioOutput;
-            var playbackState = playBack.PlaybackState;
             if (viewModel.Singer != null) {
-                // Stop other sounds to play sample
-                if (playbackState == PlaybackState.Playing) {
-                    playBack.Stop();
-                }
-
                 var sample = FindSample(viewModel.Singer);
                 if(sample == null){
                     return;
                 }
-                try{
-                    var playSound = Wave.OpenFile(sample);
-                    playBack.Init(playSound.ToSampleProvider());
-                } catch (Exception ex) {
-                    Log.Error(ex, $"Failed to load sample {sample}.");
-                    return;
-                }
-                playBack.Play();
+
+                PlaybackManager.Inst.PlayFile(sample);
             }
         }
 
@@ -371,22 +357,7 @@ namespace OpenUtau.App.Views {
                 return;
             }
 
-            var playBack = PlaybackManager.Inst.AudioOutput;
-            var playbackState = playBack.PlaybackState;
-
-            // If currently playing something, stop it to play sample right away
-            if (playbackState == PlaybackState.Playing) {
-                playBack.Stop();
-            }
-
-            try {
-                var playSound = Wave.OpenFile(oto.File);
-                playBack.Init(playSound.ToSampleProvider());
-            } catch (Exception ex) {
-                Log.Error(ex, $"Failed to load sample {oto.File}.");
-                return;
-            }
-            playBack.Play();
+            PlaybackManager.Inst.PlayFile(oto.File);
         }
 
         void RegenFrq(object sender, RoutedEventArgs args) {
@@ -529,9 +500,9 @@ namespace OpenUtau.App.Views {
         public void OnNext(UCommand cmd, bool isUndo) {
             if (cmd is LoadingNotification loadingNotif && loadingNotif.window == typeof(SingersDialog)) {
                 if (loadingNotif.startLoading) {
-                    MessageBox.ShowLoading(this);
+                    LoadingWindow.BeginLoading(this);
                 } else {
-                    MessageBox.CloseLoading();
+                    LoadingWindow.EndLoading();
                 }
             } else if (cmd is OtoChangedNotification otoChanged) {
                 var viewModel = DataContext as SingersViewModel;

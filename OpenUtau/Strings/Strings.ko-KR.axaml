@@ -184,8 +184,6 @@
   <system:String x:Key="menu.file.exit">나가기</system:String>
   <system:String x:Key="menu.file.exportaudio">[내보내기] 오디오</system:String>
   <system:String x:Key="menu.file.exportds">[다른 이름으로 저장] DiffSinger 스크립트로...</system:String>
-  <system:String x:Key="menu.file.exportds.v2">[다른 이름으로 저장] DiffSinger 스크립트로 (v2)...</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">[다른 이름으로 저장] DiffSinger 스크립트로 (v2, 피치선 제외)...</system:String>
   <system:String x:Key="menu.file.exportmidi">Midi로...</system:String>
   <system:String x:Key="menu.file.exportmixdown">Wav로 믹스다운</system:String>
   <system:String x:Key="menu.file.exportproject">[내보내기] 프로젝트</system:String>

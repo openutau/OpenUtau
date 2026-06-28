@@ -5,6 +5,8 @@ using System.Linq;
 using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core;
+using System.IO;
+using Serilog;
 
 namespace OpenUtau.Plugin.Builtin {
     /// Phonemizer for 'KOR CV' ///
@@ -13,73 +15,88 @@ namespace OpenUtau.Plugin.Builtin {
     public class KoreanCVPhonemizer : BaseKoreanPhonemizer {
 
         // 1. Load Singer and Settings
-        private KoreanCVIniSetting koreanCVIniSetting; // Manages Setting
-
-        public bool isUsingShi, isUsing_aX, isUsingCV_L, isUsing_i, isRentan, isUsingBatchimSpace, isUsingTanBatchim;
+        private KoreanCVSetting kocvS;
 
         public override void SetSinger(USinger singer) {
-            if (this.singer == singer) {return;}
+            if (this.singer == singer) { return; }
             this.singer = singer;
-            if (this.singer == null) {return;}
+            if (this.singer == null) { return; }
 
-            if (this.singer.SingerType != USingerType.Classic){return;}
+            if (this.singer.SingerType != USingerType.Classic) { return; }
 
-            koreanCVIniSetting = new KoreanCVIniSetting();
-            koreanCVIniSetting.Initialize(singer, "ko-CV.ini", new Hashtable(){
-                {"CV", new Hashtable(){
-                    {"Use rentan", false},
-                    {"Use 'shi' for '시'(otherwise 'si')", false},
-                    {"Use 'i' for '의'(otherwise 'eui')", false},
-                    {"Use replace the batchim 'L' with 'l' when followed by 'r'", false},
-                }},
-                {"BATCHIM", new Hashtable(){
-                    {"Use space between the Batchim and the next note", true},
-                    {"Use tan Batchim", false},
-                    {"Use 'aX' instead of 'a X'", false},
-                }}
-            });
-
-            isUsingShi = koreanCVIniSetting.isUsingShi;
-            isUsingBatchimSpace = koreanCVIniSetting.isUsingBatchimSpace;
-            isUsingTanBatchim = koreanCVIniSetting.isUsingTanBatchim;
-            isUsing_aX = koreanCVIniSetting.isUsing_aX;
-            isUsingCV_L = koreanCVIniSetting.isUsingCV_L;
-            isUsing_i = koreanCVIniSetting.isUsing_i;
-            isRentan = koreanCVIniSetting.isRentan;
+            LoadKOCVSetting();
         }
 
-        private class KoreanCVIniSetting : BaseIniManager{
-            public bool isRentan;
-            public bool isUsingShi;
-            public bool isUsing_aX;
-            public bool isUsingCV_L;
-            public bool isUsing_i;
-            public bool isUsingBatchimSpace;
-            public bool isUsingTanBatchim;
-
-            protected override void IniSetUp(Hashtable iniSetting) {
-                // ko-CV.ini
-                SetOrReadThisValue("CV", "Use rentan", false, out var resultValue); // 연단음 사용 유무 - 기본값 false
-                isRentan = resultValue;
-                
-                SetOrReadThisValue("CV", "Use 'shi' for '시'(otherwise 'si')", false, out resultValue); // 시를 [shi]로 표기할 지 유무 - 기본값 false
-                isUsingShi = resultValue;
-
-                SetOrReadThisValue("CV", "Use 'i' for '의'(otherwise 'eui')", false, out resultValue); // 의를 [i]로 표기할 지 유무 - 기본값 false
-                isUsing_i = resultValue;
-                
-                SetOrReadThisValue("CV", "Use replace the batchim 'L' with 'l' when followed by 'r'", false, out resultValue); // 받침 ㄹ 뒤에 오는 ㄹ 가사를 l로 치환 유무 - 기본값 false(= r 사용)
-                isUsingCV_L = resultValue;
-
-                SetOrReadThisValue("BATCHIM", "Use tan Batchim", false, out resultValue); // 받침 표기를 단독음식으로 할지 유무 - 기본값 false (=a n 사용)
-                isUsingTanBatchim = resultValue;
-
-                SetOrReadThisValue("BATCHIM", "Use 'aX' instead of 'a X'", false, out resultValue); // 받침 표기를 a n 처럼 할 지 an 처럼 할지 유무 - 기본값 false(=a n 사용)
-                isUsing_aX = resultValue;
-
-                SetOrReadThisValue("BATCHIM", "Use space between the Batchim and the next note", true, out resultValue); // 받침과 다음 노트 사이의 공백 추가 유무 - 기본값 true
-                isUsingBatchimSpace = resultValue;
+        protected void LoadKOCVSetting() {
+            // Load KO-CV Phonemizer Setting from plugin folder.
+            string path = Path.Combine(PluginDir, "kocv.yaml");
+            if (!File.Exists(path)) {
+                Directory.CreateDirectory(PluginDir);
+                File.WriteAllBytes(path, Data.Resources.kocv_template);
+            } else {
+                try {
+                    string settingText = File.ReadAllText(path, encoding: System.Text.Encoding.UTF8);
+                    kocvS = Yaml.DefaultDeserializer.Deserialize<KoreanCVSetting>(settingText);
+                    
+                } catch (Exception e) {
+                    Log.Error(e, $"[KO CV] Failed to load {path}. Regenerating kocv.yaml in Plugin Directory...");
+                    Directory.CreateDirectory(PluginDir);
+                    File.WriteAllBytes(path, Data.Resources.kocv_template);
+                }
             }
+
+            // If singer's setting file exists, use it instead
+            if (singer != null && singer.Found && singer.Loaded) {
+                string file = Path.Combine(singer.Location, "kocv.yaml");
+                if (File.Exists(file)) {
+                    try {
+                        string settingText = File.ReadAllText(file, encoding: System.Text.Encoding.UTF8);
+                        kocvS = Yaml.DefaultDeserializer.Deserialize<KoreanCVSetting>(settingText);
+                    } catch (Exception e) {
+                        Log.Error(e, $"[KO CV] Failed to load {file}. Use Default Settings in Plugin Directory.");
+                    }
+                }
+
+                // If there's legacy ko-CV.ini, tries to delete it
+                string legacyFile = Path.Combine(singer.Location, "ko-CV.ini");
+                if (File.Exists(legacyFile)) {
+                    try {
+                        File.Delete(legacyFile);
+                    } catch (Exception e) {
+                        Log.Error(e, $"[KO CV] Failed to delete {legacyFile}. ko-CV.ini is not used anymore, please remove it from your singer path manually.");
+                    }
+                }
+            }
+        }
+
+        [Serializable]
+        private class KoreanCVSetting {
+            private static readonly Version CURRENT_VERSION = new Version(1, 0);
+            public string version { get; set; } 
+            public Settings settings { get; set; }
+            public List<BatchimConnection> batchim_connections { get; set; }
+        
+            [Serializable]
+            public class Settings {
+                public bool use_rentan { get; set; }
+                public string eui_fallback { get; set; }
+                public bool use_shi_phoneme { get; set; }
+                public bool use_ax_batchim_phoneme { get; set; }
+                public bool use_ax_batchim_phoneme_only { get; set; }
+                public bool use_capital_batchim { get; set; }
+                public bool use_capital_batchim_only { get; set; }
+                public bool attach_empty_phoneme_after_batchims { get; set; }
+                public bool use_batchim_C { get; set; }
+                public bool use_batchim_C_only { get; set; }
+            }
+
+            [Serializable]
+            public class BatchimConnection {
+                public string if_prev_batchim_is { get; set; }            // "ㄹ"
+                public string if_current_consonant { get; set; }          // "ㄹ"
+                public string use_current_consonant_phoneme_as { get; set; }  // "l"
+            }
+
         }
         
         static readonly Dictionary<string, string> FIRST_CONSONANTS = new Dictionary<string, string>(){
@@ -161,7 +178,16 @@ namespace OpenUtau.Plugin.Builtin {
             {" ", new string[]{""}}, // no batchim
             {"null", new string[]{"", ""}} // 뒤 글자가 없을 때를 대비
             };
-        
+
+        private bool CheckThisPhonemeExists(string phoneme, Note note) {
+            return FindInOto(phoneme, note, true) != null;
+        }
+
+        private void SetbatchimIfExists(ref string _batchim, string __batchim, Note note) {
+            if (CheckThisPhonemeExists(__batchim, note)) {
+                _batchim = __batchim;
+            }
+        }
         private Result ConvertForCV(Note[] notes, string[] prevLyric, string[] thisLyric, string[] nextLyric) {
             string thisMidVowelHead;
             string thisMidVowelTail;
@@ -171,91 +197,145 @@ namespace OpenUtau.Plugin.Builtin {
             bool isItNeedsFrontCV;
             bool isRelaxedVC;
             isItNeedsFrontCV = prevLyric[0] == "null" || prevLyric[1] == "null" || (prevLyric[2] != "null" && HARD_BATCHIMS.Contains(prevLyric[2]) && prevLyric[2] != "ㅁ");
-            isRelaxedVC = nextLyric[0] == "null" || nextLyric[1] == "null" || ((thisLyric[2] == nextLyric[0]) && (KoreanPhonemizerUtil.nasalSounds.ContainsKey(thisLyric[2]) || thisLyric[2] == "ㄹ"));
+            isRelaxedVC = nextLyric[0] == "null" || nextLyric[1] == "null";
 
+            string firstConsonant = FIRST_CONSONANTS[thisLyric[0]];
             if (thisLyric.All(part => part == null)) {
                 return GenerateResult(FindInOto(note.lyric, note));
-            }
-            else if (thisLyric[1] == "ㅢ") {
-                if (isUsing_i) {
-                    thisMidVowelHead = $"{MIDDLE_VOWELS["ㅣ"][1]}";
-                    thisMidVowelTail = $"{MIDDLE_VOWELS["ㅣ"][2]}";
-                }
-                else {
-                    thisMidVowelHead = $"{MIDDLE_VOWELS["ㅢ"][1]}";
-                    thisMidVowelTail = $"{MIDDLE_VOWELS["ㅢ"][2]}";
-                }
-            }
-            else {
+            } else {
                 thisMidVowelHead = $"{MIDDLE_VOWELS[thisLyric[1]][1]}";
                 thisMidVowelTail = $"{MIDDLE_VOWELS[thisLyric[1]][2]}";
-            }
-            
-            
-            string CV = $"{FIRST_CONSONANTS[thisLyric[0]]}{thisMidVowelHead}{thisMidVowelTail}"; 
-            string frontCV;
-            string batchim;
 
-            if (isUsingCV_L) {
-                if (prevLyric[2] == "ㄹ" && thisLyric[0] == "ㄹ") { // 앞 노트의 종성이 ㄹ 이면서 시작하는 노트의 초성이 ㄹ 일 경우
-                    CV = $"l{thisMidVowelHead}{thisMidVowelTail}"; // 초성을 l로 변경
-                }
-            }
-            
-            if (isRentan) {
-                frontCV = $"- {CV}";
-                if (FindInOto(frontCV, note, true) == null) {
-                    frontCV = $"-{CV}";
-                    if (FindInOto(frontCV, note, true) == null) {
-                        frontCV = CV;
+                if (kocvS.settings.use_shi_phoneme) { // 시를 shi로 사용할수 있을 시 사용
+                    if (thisLyric[1][0] == 'ㅅ' && thisLyric[1][1] == 'ㅣ') {
+                        if (CheckThisPhonemeExists("shi", note)) {
+                            firstConsonant = "sh";
+                        }
                     }
                 }
             }
-            else {
+
+            string CV = $"{firstConsonant}{thisMidVowelHead}{thisMidVowelTail}";
+            string frontCV;
+            string batchim;
+
+            if (FindInOto(CV, note, true) == null) {
+                // ㅢ 대체 필요할 경우 대체
+                if (thisLyric[1] == "ㅢ") {
+                    if (MIDDLE_VOWELS.ContainsKey(kocvS.settings.eui_fallback)) {
+                        thisMidVowelHead = $"{MIDDLE_VOWELS[kocvS.settings.eui_fallback][1]}";
+                        thisMidVowelTail = $"{MIDDLE_VOWELS[kocvS.settings.eui_fallback][2]}";
+                    } else {
+                        thisMidVowelHead = $"{MIDDLE_VOWELS["ㅔ"][1]}";
+                        thisMidVowelTail = $"{MIDDLE_VOWELS["ㅔ"][2]}";
+                    }
+                }
+
+                // Regenerate CV
+                CV = $"{firstConsonant}{thisMidVowelHead}{thisMidVowelTail}";
+            }
+            foreach (var batchimConnection in kocvS.batchim_connections) {
+                // 앞 노트의 종성과 현재 노트의 초성을 설정 파일에 맞춰 조정 
+                if (prevLyric[2] == batchimConnection.if_prev_batchim_is && thisLyric[0] == batchimConnection.if_current_consonant) {
+                    string CV_ = $"{batchimConnection.use_current_consonant_phoneme_as}{thisMidVowelHead}{thisMidVowelTail}";
+                    if (CheckThisPhonemeExists(CV_, note)) {
+                        CV = CV_;
+                    }
+                    break;
+                }
+            }
+
+            if (kocvS.settings.use_rentan) { // 연단음 적용
+                frontCV = $"- {CV}";
+                if (!CheckThisPhonemeExists(frontCV, note)) {
+                    frontCV = $"-{CV}";
+                    if (!CheckThisPhonemeExists(frontCV, note)) {
+                        frontCV = CV;
+                    }
+                }
+            } else {
                 frontCV = CV;
             }
-        
+
             if (thisLyric[2] == " ") { // no batchim
-                if (isItNeedsFrontCV){
+                if (isItNeedsFrontCV) {
                     return GenerateResult(FindInOto(frontCV, note));
                 }
                 return GenerateResult(FindInOto(CV, note));
             }
+
+            // batchim
+            // priority(example): a n -> an -> a N or aN -> n or N
+
+            // tries a x
+            string _batchim = $"{thisMidVowelTail} {LAST_CONSONANTS[thisLyric[2]][0]}";
+            string __batchim; // temporary variable
+
+
+            // tries ax
+            if (kocvS.settings.use_ax_batchim_phoneme) {
+                if (kocvS.settings.use_ax_batchim_phoneme_only) {
+                    __batchim = $"{thisMidVowelTail}{LAST_CONSONANTS[thisLyric[2]][0]}";
+                    SetbatchimIfExists(ref _batchim, __batchim, note);
+                }
+                if (!CheckThisPhonemeExists(_batchim, note)) {
+                    __batchim = $"{thisMidVowelTail}{LAST_CONSONANTS[thisLyric[2]][0]}";
+                    SetbatchimIfExists(ref _batchim, __batchim, note);
+                }
+            }
+
+            // tries a X / aX
+            if (kocvS.settings.use_capital_batchim) {
+                if (kocvS.settings.use_capital_batchim_only) {
+                    __batchim = $"{thisMidVowelTail} {LAST_CONSONANTS[thisLyric[2]][0].ToUpper()}";
+                    SetbatchimIfExists(ref _batchim, __batchim, note);
+                } else {
+                    __batchim = $"{thisMidVowelTail}{LAST_CONSONANTS[thisLyric[2]][0].ToUpper()}";
+                    SetbatchimIfExists(ref _batchim, __batchim, note);
+                }
+            }
+
+            // tries x / X
+            if (kocvS.settings.use_batchim_C) {
+                if (kocvS.settings.use_batchim_C_only) {
+                    if (kocvS.settings.use_capital_batchim) {
+                        __batchim = $"{LAST_CONSONANTS[thisLyric[2]][0]}";
+                        if (kocvS.settings.use_capital_batchim_only || CheckThisPhonemeExists(__batchim, note)) {
+                            __batchim = $"{LAST_CONSONANTS[thisLyric[2]][0].ToUpper()}";
+                            SetbatchimIfExists(ref _batchim, __batchim, note);
+                        }
+                    } else {
+                        __batchim = $"{LAST_CONSONANTS[thisLyric[2]][0]}";
+                        SetbatchimIfExists(ref _batchim, __batchim, note);
+                    }
+                }
+            }
             
-            if (isUsing_aX) {
-                batchim = $"{thisMidVowelTail}{LAST_CONSONANTS[thisLyric[2]][0]}";
-            }
-            else if (isUsingTanBatchim) {
-                batchim = $"{LAST_CONSONANTS[thisLyric[2]][0]}";
-            }
-            else {
-                batchim = $"{thisMidVowelTail} {LAST_CONSONANTS[thisLyric[2]][0]}";
-            }
-            
-            if (thisLyric[2] == "ㅁ" || ! HARD_BATCHIMS.Contains(thisLyric[2])) { // batchim ㅁ + ㄴ ㄹ ㅇ
+            batchim = _batchim;
+
+            if (thisLyric[2] == "ㅁ" || !HARD_BATCHIMS.Contains(thisLyric[2])) { // batchim ㅁ + ㄴ ㄹ ㅇ
                 if (isItNeedsFrontCV) {
-                   return isRelaxedVC ? 
-                        GenerateResult(FindInOto(frontCV, note), FindInOto(batchim, note), totalDuration, 120, 8) 
-                        : (isUsingBatchimSpace ? 
-                            GenerateResult(FindInOto(frontCV, note), FindInOto(batchim, note), "", totalDuration, 120, 3, 5) 
-                            : GenerateResult(FindInOto(frontCV, note), FindInOto(batchim, note), totalDuration, 120, 8));
+                    return isRelaxedVC ?
+                         GenerateResult(FindInOto(frontCV, note), FindInOto(batchim, note), totalDuration, 120, 8)
+                         : (kocvS.settings.attach_empty_phoneme_after_batchims ?
+                             GenerateResult(FindInOto(frontCV, note), FindInOto(batchim, note), "", totalDuration, Math.Max(totalDuration / 2, 120), 3, 5)
+                             : GenerateResult(FindInOto(frontCV, note), FindInOto(batchim, note), totalDuration, Math.Max(totalDuration / 2, 120), 2));
                 }
-                return isRelaxedVC ? 
-                    GenerateResult(FindInOto(CV, note), FindInOto(batchim, note), totalDuration, 120, 8) 
-                    : (isUsingBatchimSpace ? 
-                        GenerateResult(FindInOto(CV, note), FindInOto(batchim, note), "", totalDuration, 120, 3, 5) 
-                        : GenerateResult(FindInOto(CV, note), FindInOto(batchim, note), totalDuration, 120, 8));
+                return isRelaxedVC ?
+                    GenerateResult(FindInOto(CV, note), FindInOto(batchim, note), totalDuration, 120, 8)
+                    : (kocvS.settings.attach_empty_phoneme_after_batchims ?
+                        GenerateResult(FindInOto(CV, note), FindInOto(batchim, note), "", totalDuration, Math.Max(totalDuration / 2, 120), 3, 5)
+                        : GenerateResult(FindInOto(CV, note), FindInOto(batchim, note), totalDuration, Math.Max(totalDuration / 2, 120), 3));
             } else {
-                if (isItNeedsFrontCV){
-                    return isRelaxedVC ? 
+                if (isItNeedsFrontCV) {
+                    return isRelaxedVC ?
                     GenerateResult(FindInOto(frontCV, note), FindInOto(batchim, note), totalDuration, 120, 8)
-                    : GenerateResult(FindInOto(frontCV, note), FindInOto(batchim, note), totalDuration, 120, 5);
+                    : GenerateResult(FindInOto(frontCV, note), FindInOto(batchim, note), totalDuration, Math.Max(totalDuration / 2, 120), 3);
                 }
-                return isRelaxedVC ? 
+                return isRelaxedVC ?
                 GenerateResult(FindInOto(CV, note), FindInOto(batchim, note), totalDuration, 120, 8)
-                : GenerateResult(FindInOto(CV, note), FindInOto(batchim, note), totalDuration, 120, 5);
+                : GenerateResult(FindInOto(CV, note), FindInOto(batchim, note), totalDuration, Math.Max(totalDuration / 2, 120), 3);
             }
-            
         }
 
         private string? FindInOto(String phoneme, Note note, bool nullIfNotFound=false){
@@ -300,7 +380,7 @@ namespace OpenUtau.Plugin.Builtin {
 
             Note prevNeighbour_ = (Note)prevNeighbour;
             Hashtable lyrics = KoreanPhonemizerUtil.Separate(prevNeighbour_.lyric);
-
+            
             string[] prevLyric = new string[]{ // "ㄴ", "ㅑ", "ㅇ"
                 (string)lyrics[0], 
                 (string)lyrics[1], 
@@ -314,14 +394,15 @@ namespace OpenUtau.Plugin.Builtin {
             
 
             if (prevLyric[1] == "ㅢ") {
-                if (isUsing_i) {
-                    prevMidVowel = $"{MIDDLE_VOWELS["ㅣ"][0]}";
+                bool euiExists = CheckThisPhonemeExists("eui", note);
+                if (!euiExists && MIDDLE_VOWELS.ContainsKey(kocvS.settings.eui_fallback)) {
+                    prevMidVowel = $"{MIDDLE_VOWELS[kocvS.settings.eui_fallback][2]}";
+                } else if (!euiExists) {
+                    prevMidVowel = $"{MIDDLE_VOWELS["ㅔ"][2]}";
+                } else {
+                    prevMidVowel = $"{MIDDLE_VOWELS["ㅢ"][2]}";
                 }
-                else {
-                    prevMidVowel = $"{MIDDLE_VOWELS["ㅢ"][0]}";
-                }
-            }
-            else{
+            } else {
                 prevMidVowel = MIDDLE_VOWELS.ContainsKey(soundBeforeEndSound) ? MIDDLE_VOWELS[soundBeforeEndSound][2] : LAST_CONSONANTS[soundBeforeEndSound][0];
             }
             

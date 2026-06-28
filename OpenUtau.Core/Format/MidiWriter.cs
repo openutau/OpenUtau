@@ -207,7 +207,7 @@ namespace OpenUtau.Core.Format {
                                 lyric = defaultLyric;
                             }
                             if (lyric == "-") {
-                                lyric = "+";
+                                lyric = "+~";
                             }
                             note.lyric = lyric;
                             if (NotePresets.Default.AutoVibratoToggle && note.duration >= NotePresets.Default.AutoVibratoNoteDuration) {
@@ -269,7 +269,7 @@ namespace OpenUtau.Core.Format {
                                 continue;
                             }
                             string lyric = note.lyric;
-                            if (lyric == "+") {
+                            if (lyric == "+~" || lyric == "+*") {
                                 lyric = "-";
                             }
                             events.Add(new TimedEvent(new LyricEvent(lyric), note.position + partOffset));

@@ -299,8 +299,8 @@ namespace OpenUtau.Plugin.Builtin {
                 }
 
                 // If the note is an End Breath note
-                if (Config.SupportedTailBreath.Contains(phoneme) && prev != null) {
-                    phoneme = GetOtoAlias(singer, $"{GetLyricVowel(prev?.lyric)} {phoneme}", notes[0]);
+                if (Config.SupportedTailBreath.Contains(phoneme) && prevNeighbour != null) {
+                    phoneme = GetOtoAlias(singer, $"{GetLyricVowel(prevNeighbour?.lyric)} {phoneme}", notes[0]);
                     
                     return new Result {
                         // Output in the form "Basic vowel shape + End Breath written with lyrics"
@@ -309,7 +309,7 @@ namespace OpenUtau.Plugin.Builtin {
                 }
 
                 // If retan is set to True in zhcvvplus.yaml, there is no previous note, and the "- lyrics" alias exists in oto.ini
-                if (Config.UseRetan && prev == null && isExistPhonemeInOto(singer, $"- {phoneme}", notes[0])) {
+                if (Config.UseRetan && prevNeighbour == null && isExistPhonemeInOto(singer, $"- {phoneme}", notes[0])) {
                     // 가사를 "- 가사"로 변경
                     phoneme = $"- {phoneme}";
                     phoneme = GetOtoAlias(singer, phoneme, notes[0]);
@@ -354,7 +354,7 @@ namespace OpenUtau.Plugin.Builtin {
                 return new Result {
                     phonemes = new Phoneme[] {
                         new Phoneme() {
-                            phoneme = phoneme, // Output the entered lyrics.
+                            phoneme = GetOtoAlias(singer, phoneme, notes[0]), // 防止无尾音歌词在多音阶情况下丢失prefix map suffix
                         }
                     }
                 };

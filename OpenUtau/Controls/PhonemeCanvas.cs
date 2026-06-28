@@ -11,6 +11,8 @@ using ReactiveUI;
 
 namespace OpenUtau.App.Controls {
     class PhonemeCanvas : Control {
+        private static readonly IPen ErrorPen = new Pen(Brushes.Red, 1);
+
         public static readonly DirectProperty<PhonemeCanvas, IBrush> BackgroundProperty =
             AvaloniaProperty.RegisterDirect<PhonemeCanvas, IBrush>(
                 nameof(Background),
@@ -148,9 +150,19 @@ namespace OpenUtau.App.Controls {
                     using (var state = context.PushTransform(Matrix.CreateTranslation(x0, y + y0 - 1))) {
                         context.DrawGeometry(brush, pen, pointGeometry);
                     }
-                    brush = phoneme.overlapDelta.HasValue ? pen!.Brush : ThemeManager.BackgroundBrush;
+                    brush = phoneme.attackTimeDelta.HasValue ? pen!.Brush : ThemeManager.BackgroundBrush;
                     using (var state = context.PushTransform(Matrix.CreateTranslation(point1))) {
                         context.DrawGeometry(brush, pen, pointGeometry);
+                    }
+                    brush = phoneme.releaseTimeDelta.HasValue ? pen!.Brush : ThemeManager.BackgroundBrush;
+                    using (var state = context.PushTransform(Matrix.CreateTranslation(point3))) {
+                        context.DrawGeometry(brush, pen, pointGeometry);
+                    }
+                    if (phoneme.Next != null && phoneme.Next.adjacent) {
+                        brush = phoneme.Next.overlapDelta.HasValue ? pen!.Brush : ThemeManager.BackgroundBrush;
+                        using (var state = context.PushTransform(Matrix.CreateTranslation(x4, y + y4 - 1))) {
+                            context.DrawGeometry(brush, pen, pointGeometry);
+                        }
                     }
                 }
 
@@ -167,7 +179,9 @@ namespace OpenUtau.App.Controls {
                         (double textX, double textY, Size size, TextLayout textLayout) 
                         = PhonemeUIRender.AliasPosition(viewModel, phoneme, langCode, ref lastTextEndX, ref raiseText);
                         using (var state = context.PushTransform(Matrix.CreateTranslation(textX + 2, textY))) {
-                            var pen = mouseoverPhoneme == phoneme ? ThemeManager.AccentPen1Thickness2 : ThemeManager.NeutralAccentPenSemi;
+                            var pen = mouseoverPhoneme == phoneme ? ThemeManager.AccentPen1Thickness2
+                                : phoneme.Error ? ErrorPen
+                                : ThemeManager.NeutralAccentPenSemi;
                             context.DrawRectangle(ThemeManager.BackgroundBrush, pen, new Rect(new Point(-2, 1.5), size), 4, 4);
                             textLayout.Draw(context, new Point());
                         }

@@ -13,9 +13,15 @@ namespace OpenUtau.Plugin.Builtin {
     public class ChineseCVVCPhonemizer : Phonemizer {
         private Dictionary<string, string> vowels = new Dictionary<string, string>();
         private Dictionary<string, string> consonants = new Dictionary<string, string>();
+        private Dictionary<string, string> replace = new Dictionary<string, string>();
         private USinger singer;
         public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevNeighbours) {
             var lyric = notes[0].lyric;
+            foreach (var pair in replace) { // replace (exact match)
+                if (pair.Key == lyric) {
+                    lyric = pair.Value;
+                }
+            }
             string consonant = consonants.TryGetValue(lyric, out consonant) ? consonant : lyric;
             string prevVowel = "-";
             if (prevNeighbour != null) {
@@ -56,12 +62,12 @@ namespace OpenUtau.Plugin.Builtin {
             int vcLen = 120;
             int endTick = notes[^1].position + notes[^1].duration;
             if (singer.TryGetMappedOto(lyric, notes[0].tone + attr1.toneShift, attr1.voiceColor, out var cvOto)) {
-                vcLen = -timeAxis.MsToTickAt(-cvOto.Preutter, endTick);
+                 vcLen = -timeAxis.MsToTickAt(-cvOto.Preutter, endTick);
                 if (cvOto.Overlap == 0 && vcLen < 120) {
                     vcLen = Math.Min(120, vcLen * 2); // explosive consonant with short preutter.
                 }
                 if (cvOto.Overlap < 0) {
-                    vcLen = -timeAxis.MsToTickAt(-(cvOto.Preutter - cvOto.Overlap), endTick);
+                     vcLen = -timeAxis.MsToTickAt(-(cvOto.Preutter - cvOto.Overlap), endTick);
                 }
             }
 
@@ -184,6 +190,7 @@ namespace OpenUtau.Plugin.Builtin {
             this.singer = singer;
             vowels.Clear();
             consonants.Clear();
+            replace.Clear();
             if (this.singer == null) {
                 return;
             }
@@ -215,14 +222,18 @@ namespace OpenUtau.Plugin.Builtin {
                         }
                     }
                     var priority = blocks.Find(block => block.header == "PRIORITY");
-                    var replace = blocks.Find(block => block.header == "REPLACE");
+                    var replaceLines = blocks.Find(block => block.header == "[REPLACE]").lines;
+                    foreach (var iniLine in replaceLines) {
+                        var parts = iniLine.line.Split('=');
+                        replace[parts[0]]=parts[1];
+                    }
                     var alias = blocks.Find(block => block.header == "ALIAS");
                 }
             } catch (Exception e) {
                 Log.Error(e, "failed to load presamp.ini");
             }
         }
-    
+
         public static Note[] ChangeLyric(Note[] group, string lyric) {
             var oldNote = group[0];
             group[0] = new Note {

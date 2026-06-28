@@ -1,0 +1,91 @@
+%YAML 1.2
+---
+symbols:
+#VCCV-style (X-SAMPA) symbols
+  - {symbol: a, type: vowel}
+  - {symbol: 6, type: vowel}
+  - {symbol: e, type: vowel}
+  - {symbol: E, type: vowel}
+  - {symbol: 2, type: vowel}
+  - {symbol: i, type: vowel}
+  - {symbol: I, type: vowel}
+  - {symbol: y, type: vowel}
+  - {symbol: Y, type: vowel}
+  - {symbol: u, type: vowel}
+  - {symbol: U, type: vowel}
+  - {symbol: o, type: vowel}
+  - {symbol: O, type: vowel}
+  - {symbol: '@', type: vowel}
+  - {symbol: aU, type: vowel}
+  - {symbol: OY, type: vowel}
+  - {symbol: aI, type: vowel}
+  - {symbol: C, type: fricative}
+  - {symbol: h, type: aspirate}
+  - {symbol: j, type: semivowel}
+  - {symbol: kh, type: stop}
+  - {symbol: N, type: nasal}
+  - {symbol: ph, type: stop}
+  - {symbol: R;, type: liquid}
+  - {symbol: S, type: fricative}
+  - {symbol: th, type: stop}
+  - {symbol: Z, type: fricative}
+  - {symbol: dZ, type: affricate}
+  - {symbol: ks, type: affricate}
+  - {symbol: st, type: fricative}
+  - {symbol: St, type: fricative}
+  - {symbol: tS, type: affricate}
+#CMUSphinx symbols
+  - {symbol: aa, type: vowel}
+  - {symbol: ae, type: vowel}
+  - {symbol: ah, type: vowel}
+  - {symbol: ao, type: vowel}
+  - {symbol: aw, type: vowel}
+  - {symbol: ax, type: vowel}
+  - {symbol: ay, type: vowel}
+  - {symbol: b, type: stop}
+  - {symbol: cc, type: fricative}
+  - {symbol: ch, type: affricate}
+  - {symbol: d, type: stop}
+  - {symbol: dh, type: fricative}
+  - {symbol: ee, type: vowel}
+  - {symbol: eh, type: vowel}
+  - {symbol: er, type: vowel}
+  - {symbol: ex, type: vowel}
+  - {symbol: f, type: fricative}
+  - {symbol: g, type: stop}
+  - {symbol: hh, type: aspirate}
+  - {symbol: ih, type: vowel}
+  - {symbol: iy, type: vowel}
+  - {symbol: jh, type: affricate}
+  - {symbol: k, type: stop}
+  - {symbol: l, type: liquid}
+  - {symbol: m, type: nasal}
+  - {symbol: n, type: nasal}
+  - {symbol: ng, type: nasal}
+  - {symbol: oe, type: vowel}
+  - {symbol: ohh, type: vowel}
+  - {symbol: ooh, type: vowel}
+  - {symbol: oy, type: vowel}
+  - {symbol: p, type: stop}
+  - {symbol: pf, type: affricate}
+  - {symbol: q, type: glottal}
+  - {symbol: r, type: liquid}
+  - {symbol: rr, type: liquid}
+  - {symbol: s, type: fricative}
+  - {symbol: sh, type: fricative}
+  - {symbol: t, type: stop}
+  - {symbol: th, type: fricative}
+  - {symbol: ts, type: affricate}
+  - {symbol: ue, type: vowel}
+  - {symbol: uh, type: vowel}
+  - {symbol: uw, type: vowel}
+  - {symbol: v, type: fricative}
+  - {symbol: w, type: semivowel}
+  - {symbol: x, type: fricative}
+  - {symbol: y, type: semivowel}
+  - {symbol: yy, type: vowel}
+  - {symbol: z, type: fricative}
+  - {symbol: zh, type: fricative}
+entries:
+  - grapheme: "openutau"
+    phonemes: [q, ooh, p, ax, n, q, uw, t, aw]

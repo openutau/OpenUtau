@@ -185,8 +185,6 @@ Nouveau tempo :</system:String>
   <system:String x:Key="menu.file.exit">Quitter</system:String>
   <system:String x:Key="menu.file.exportaudio">Exporter l'audio</system:String>
   <system:String x:Key="menu.file.exportds">Exporter les scripts DiffSingers vers</system:String>
-  <system:String x:Key="menu.file.exportds.v2">Exporter les scripts DiffSingers vers (v2)</system:String>
-  <system:String x:Key="menu.file.exportds.v2withoutpitch">Exporter les scripts DiffSingers vers (v2, sans courbe de pitch)</system:String>
   <system:String x:Key="menu.file.exportmidi">Exporter un MIDI</system:String>
   <system:String x:Key="menu.file.exportmixdown">Mixer en fichier Wav</system:String>
   <system:String x:Key="menu.file.exportproject">Exporter le projet</system:String>

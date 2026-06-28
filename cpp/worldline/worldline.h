@@ -26,6 +26,26 @@ DLL_API int DecodeMgc(int f0_length, double* mgc, int mgc_size, int fft_size,
 DLL_API int DecodeBap(int f0_length, double* bap, int fft_size, int fs,
                       double** aperiodicity);
 
+struct AnalysisConfig {
+  int fs;
+  int hop_size;
+  int fft_size;
+  float f0_floor;
+  double frame_ms;
+};
+
+DLL_API void InitAnalysisConfig(AnalysisConfig* config, int fs, int hop_size,
+                                int fft_size);
+
+DLL_API void WorldAnalysis(const AnalysisConfig* config, float* samples,
+                           int num_samples, double** f0_out,
+                           double** sp_env_out, double** ap_out,
+                           int* num_frames);
+
+DLL_API void WorldAnalysisF0In(const AnalysisConfig* config, float* samples,
+                               int num_samples, double* f0_in, int num_frames,
+                               double* sp_env_out, double* ap_out);
+
 // gender: [0, 1] default 0.5
 // tension: [0, 1] default 0.5
 // breathiness: [0, 1] default 0.5

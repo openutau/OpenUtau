@@ -1,26 +1,37 @@
 ﻿using System;
+using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
+using OpenUtau.App;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using ReactiveUI;
 using Serilog;
 
 namespace OpenUtau.App.Views {
-    public partial class SplashWindow : Window {
+    public partial class SplashWindow : Window, IDisposable {
         public SplashWindow() {
             InitializeComponent();
-            if (ThemeManager.IsDarkMode) {
-                LogoTypeLight.IsVisible = false;
-                LogoTypeDark.IsVisible = true;
-            } else {
-                LogoTypeLight.IsVisible = true;
-                LogoTypeDark.IsVisible = false;
-            }
+            UpdateLogo();
+            MessageBus.Current.Listen<ThemeChangedEvent>()
+                .Subscribe(_ => UpdateLogo())
+                .DisposeWith(disposable);
             this.Cursor = new Cursor(StandardCursorType.AppStarting);
             this.Opened += SplashWindow_Opened;
+        }
+
+        private readonly CompositeDisposable disposable = new();
+
+        private void UpdateLogo() {
+            LogoTypeDark.IsVisible = ThemeManager.IsDarkMode;
+            LogoTypeLight.IsVisible = !ThemeManager.IsDarkMode;
+        }
+
+        public void Dispose() {
+            disposable.Dispose();
         }
 
         private void SplashWindow_Opened(object? sender, EventArgs e) {
@@ -53,6 +64,7 @@ namespace OpenUtau.App.Views {
                     mainWindow.Show();
                     desktop.MainWindow = mainWindow;
                     mainWindow.InitProject();
+                    LoadingWindow.InitializeLoadingWindow();
                     Close();
                 }
             }, CancellationToken.None, TaskContinuationOptions.None, mainScheduler);
@@ -68,7 +80,7 @@ namespace OpenUtau.App.Views {
                 }
             } else {
                 try {
-                    PlaybackManager.Inst.AudioOutput = new Audio.NAudioOutput();
+                    PlaybackManager.Inst.AudioOutput = new NAudioOutput();
                 } catch (Exception e2) {
                     Log.Error(e2, "Failed to init NAudio");
                 }

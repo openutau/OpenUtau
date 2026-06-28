@@ -1,4 +1,4 @@
-using Serilog;
+﻿using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -287,9 +287,10 @@ namespace OpenUtau.App.ViewModels {
                         else
                         {
                             string currentFolder = Path.Join(OtherSinger.Location, folder.Name);
-                            Directory.EnumerateFiles(currentFolder, "oto.ini", SearchOption.AllDirectories)
-                                .Select(d => Path.GetDirectoryName(d)!)
-                                .ForEach(d => AddFolder(d, Path.Join(thisSinger.Location, folder.NewName, Path.GetRelativePath(currentFolder, d))));
+                            foreach (var d in Directory.EnumerateFiles(currentFolder, "oto.ini", SearchOption.AllDirectories)
+                                .Select(d => Path.GetDirectoryName(d)!)) {
+                                AddFolder(d, Path.Join(thisSinger.Location, folder.NewName, Path.GetRelativePath(currentFolder, d)));
+                            }
                         }
                     }
                     var totalFiles = otosToConvert.Count + filesToCopy.Count;
@@ -335,9 +336,8 @@ namespace OpenUtau.App.ViewModels {
                     using (var stream = File.Open(yamlFile, FileMode.Create)) {
                         bankConfig.Save(stream);
                     }
-
                 } catch (Exception e) {
-                    var customEx = new MessageCustomizableException("Failed to merge voicebank", "<translate:errors.failed.merge>: voicebank", e);
+                    var customEx = new MessageCustomizableException("Failed to merge singer", "<translate:mergevoicebank.error>", e);
                     DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
                 } finally {
                     new Task(() =>

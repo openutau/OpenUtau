@@ -139,4 +139,10 @@
   <data name="german_template" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>german.template.yaml;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="kocv_template" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>kocv.template.yaml;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="njokis_template" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>njokis.template.yaml;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>
