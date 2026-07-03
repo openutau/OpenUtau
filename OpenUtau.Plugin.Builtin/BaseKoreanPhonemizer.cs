@@ -36,14 +36,12 @@ namespace OpenUtau.Plugin.Builtin {
             string phonemeToReturn;
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
             string color = attr.voiceColor ?? string.Empty;
-            int toneShift = 0;
-            int? alt = null;
             if (phoneme.Equals("")) {return phoneme;}
 
-            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var otoAlt)) {
+            if (singer.TryGetMappedOto(phoneme + attr.alternate, note.tone + attr.toneShift, color, out var otoAlt)) {
                 phonemeToReturn = otoAlt.Alias;
             } 
-            else if (singer.TryGetMappedOto(phoneme, note.tone + toneShift, color, out var oto)) {
+            else if (singer.TryGetMappedOto(phoneme, note.tone + attr.toneShift, color, out var oto)) {
                 phonemeToReturn = oto.Alias;
             } 
             else if (singer.TryGetMappedOto(phoneme, note.tone, color, out oto)) {
