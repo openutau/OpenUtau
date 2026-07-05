@@ -265,6 +265,15 @@
             <TextBlock Text="{DynamicResource prefs.appearance.showghostnotes}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding ShowGhostNotes}"/>
           </Grid>
+          <TextBlock Text="{DynamicResource prefs.appearance.waveformdisplay}" Margin="0,10,0,0" FontWeight="SemiBold"/>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.rendering.realtimerender}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding RealTimeRender}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.appearance.autohidewaveform}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding AutoHideWaveform}"/>
+          </Grid>
         </StackPanel>
 
         <!-- UTAU -->

@@ -19,7 +19,7 @@ namespace OpenUtau.ViewModels {
     public enum CurveTools {
         CurveSelectTool,
         CurvePenTool,
-        //CurveLineTool,
+        CurveLineTool,
         CurveEraserTool
     }
 

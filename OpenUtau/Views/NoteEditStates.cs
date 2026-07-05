@@ -817,6 +817,71 @@ namespace OpenUtau.App.Views {
         }
     }
 
+    class ExpLineDrawState : NoteEditState {
+        private Point firstPoint;
+        private int firstTick;
+        private int firstValue;
+        private UExpressionDescriptor? descriptor;
+        protected override string? commandNameKey => "command.exp.linedraw";
+
+        public ExpLineDrawState(
+            Control control,
+            PianoRollViewModel vm,
+            IValueTip valueTip,
+            UExpressionDescriptor descriptor) : base(control, vm, valueTip) {
+            this.descriptor = descriptor;
+        }
+
+        public override void Begin(IPointer pointer, Point point) {
+            base.Begin(pointer, point);
+            firstPoint = point;
+            var notesVm = vm.NotesViewModel;
+            firstTick = notesVm.PointToTick(point);
+            firstValue = (int)Math.Round(
+                descriptor!.min + (descriptor.max - descriptor.min) * (1 - point.Y / control.Bounds.Height));
+            firstValue = Math.Clamp(firstValue, (int)descriptor.min, (int)descriptor.max);
+        }
+
+        public override void Update(IPointer pointer, Point point) {
+            if (descriptor == null) {
+                return;
+            }
+            var notesVm = vm.NotesViewModel;
+            if (notesVm.Part == null) {
+                return;
+            }
+
+            int currentTick = notesVm.PointToTick(point);
+            int currentValue = (int)Math.Round(
+                descriptor.min + (descriptor.max - descriptor.min) * (1 - point.Y / control.Bounds.Height));
+            currentValue = Math.Clamp(currentValue, (int)descriptor.min, (int)descriptor.max);
+
+            int startX = firstTick;
+            int endX = currentTick;
+            int startY = firstValue;
+            int endY = shiftHeld ? firstValue : currentValue;
+            if (startX > endX) {
+                Swap(ref startX, ref endX);
+                Swap(ref startY, ref endY);
+            }
+
+            if (startX == endX) {
+                DocManager.Inst.ExecuteCmd(new SetCurveCommand(
+                    notesVm.Project, notesVm.Part, notesVm.PrimaryKey,
+                    startX, startY, startX, startY));
+            } else {
+                DocManager.Inst.ExecuteCmd(new SetCurveCommand(
+                    notesVm.Project, notesVm.Part, notesVm.PrimaryKey,
+                    startX, startY, startX, startY));
+                DocManager.Inst.ExecuteCmd(new SetCurveCommand(
+                    notesVm.Project, notesVm.Part, notesVm.PrimaryKey,
+                    endX, endY, startX, startY));
+            }
+
+            valueTip.UpdateValueTip($"({startX}, {startY}) → ({endX}, {endY})");
+        }
+    }
+
     class ExpResetValueState : NoteEditState {
         private Point lastPoint;
         private UExpressionDescriptor? descriptor;

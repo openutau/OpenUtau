@@ -86,6 +86,8 @@ namespace OpenUtau.App.ViewModels {
             get => Math.Min(8, LogicalCoreCount / 2);
         }
         [Reactive] public bool SkipRenderingMutedTracks { get; set; }
+        [Reactive] public bool RealTimeRender { get; set; }
+        [Reactive] public bool AutoHideWaveform { get; set; }
         [Reactive] public bool ClearCacheOnQuit { get; set; }
         public List<string> OnnxRunnerOptions { get; set; }
         [Reactive] public string OnnxRunner { get; set; }
@@ -176,6 +178,8 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerTensorCache = Preferences.Default.DiffSingerTensorCache;
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
+            RealTimeRender = Preferences.Default.RealTimeRender;
+            AutoHideWaveform = Preferences.Default.AutoHideWaveform;
             ThemeName = Preferences.Default.ThemeName;
             DegreeStyle = Preferences.Default.DegreeStyle;
             UseTrackColor = Preferences.Default.UseTrackColor;
@@ -395,6 +399,16 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.SkipRenderingMutedTracks)
                 .Subscribe(skipRenderingMutedTracks => {
                     Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.RealTimeRender)
+                .Subscribe(realTimeRender => {
+                    Preferences.Default.RealTimeRender = realTimeRender;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.AutoHideWaveform)
+                .Subscribe(autoHide => {
+                    Preferences.Default.AutoHideWaveform = autoHide;
                     Preferences.Save();
                 });
         }

@@ -449,7 +449,8 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">Replace "-" with "+~"</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.edit">Edit Lyrics</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.hiraganatoromaji">Hiragana to Romaji</system:String>
-  <system:String x:Key="pianoroll.menu.lyrics.insertslur">Insert slur lyric</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.shiftbackward">Shift lyrics backward</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.shiftforward">Shift lyrics forward</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.javcvtocv">Japanese VCV to CV</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.movesuffixtovoicecolor">Move Suffix to VoiceColor</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.removelettersuffix">Remove Letter Suffix</system:String>
@@ -522,6 +523,10 @@ Warning: this option removes custom presets.</system:String>
     Hold Ctrl to select</system:String>
   <system:String x:Key="pianoroll.tool.eraser">Eraser Tool (3)</system:String>
   <system:String x:Key="pianoroll.tool.knife">Knife Tool (4)</system:String>
+  <system:String x:Key="pianoroll.tool.curveline">Curve Line Tool (Ctrl + 3)
+    Click and drag to draw a straight line
+    Hold Shift to lock value as horizontal line
+    Right click to reset</system:String>
   <system:String x:Key="pianoroll.tool.pitchline">Pitch Line Tool (Shift + 2)
     Left click to draw straight line
     Right click to reset
@@ -571,6 +576,8 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.diffsingerlangcodehide">Hide language prefix from phoneme editor</system:String>
   <system:String x:Key="prefs.appearance.lang">Language</system:String>
   <system:String x:Key="prefs.appearance.showghostnotes">Show other tracks' notes on piano roll</system:String>
+  <system:String x:Key="prefs.appearance.waveformdisplay">Waveform Display</system:String>
+  <system:String x:Key="prefs.appearance.autohidewaveform">Auto-hide waveform when zoomed out</system:String>
   <system:String x:Key="prefs.appearance.showicon">Show icon on piano roll</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Show portrait on piano roll</system:String>
   <system:String x:Key="prefs.appearance.sortorder">Singer name display language</system:String>
@@ -628,6 +635,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.rendering.onnxrunner">Machine Learning Runner</system:String>
   <system:String x:Key="prefs.rendering.phasecomp">Phase Compensation</system:String>
   <system:String x:Key="prefs.rendering.prerender">Pre-render</system:String>
+  <system:String x:Key="prefs.rendering.realtimerender">Real-time update waveform display</system:String>
   <system:String x:Key="prefs.rendering.resampler">Resampler</system:String>
   <system:String x:Key="prefs.rendering.resampler.morewarn">Warning: moresampler is not fully supported. It may be slow and cause high CPU usage. If you insist, please:
   1. Set "resampler-compatibility" to "on" in moreconfig.txt.

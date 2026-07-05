@@ -182,29 +182,77 @@ namespace OpenUtau.Core.Editing {
         }
     }
 
-    public class InsertSlur : BatchEdit{
+    /// <summary>
+    /// Shift lyrics backward.
+    /// The first selected note becomes "+" (slur), and all subsequent lyrics
+    /// are shifted backward by one position (each note gets the previous note's lyric).
+    /// </summary>
+    public class ShiftLyricBackward : BatchEdit {
         public virtual string Name => name;
         private string name;
 
-        public InsertSlur() {
-            name = "pianoroll.menu.lyrics.insertslur";
+        public ShiftLyricBackward() {
+            name = "pianoroll.menu.lyrics.shiftbackward";
         }
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
-            if(selectedNotes.Count == 0){
+            if (selectedNotes.Count == 0) {
                 return;
             }
             var startPos = selectedNotes.First().position;
-            Queue<string> lyricsQueue = new Queue<string>();
-            docManager.StartUndoGroup("command.batch.lyric", true);
-            foreach(var note in part.notes.Where(n => n.position >= startPos)){
-                lyricsQueue.Enqueue(note.lyric);
-                if(selectedNotes.Contains(note)){
-                    docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, note, "+~"));
-                } else {
-                    docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, note, lyricsQueue.Dequeue()));
-                }
+            var notesInRange = part.notes
+                .Where(n => n.position >= startPos)
+                .OrderBy(n => n.position)
+                .ToList();
+            if (notesInRange.Count == 0) {
+                return;
             }
+            var originalLyrics = notesInRange.Select(n => n.lyric).ToArray();
+            docManager.StartUndoGroup("command.batch.lyric", true);
+            // First note becomes "+".
+            docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, notesInRange[0], "+"));
+            // Each subsequent note gets the previous note's original lyric.
+            for (int i = 1; i < notesInRange.Count; i++) {
+                docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, notesInRange[i], originalLyrics[i - 1]));
+            }
+            docManager.EndUndoGroup();
+        }
+    }
+
+    /// <summary>
+    /// Shift lyrics forward (歌词前移).
+    /// The first selected note's lyric is deleted (overwritten by the next note's lyric),
+    /// and all subsequent lyrics shift forward by one position.
+    /// The last note in range gets "R" (rest) as a placeholder.
+    /// </summary>
+    public class ShiftLyricForward : BatchEdit {
+        public virtual string Name => name;
+        private string name;
+
+        public ShiftLyricForward() {
+            name = "pianoroll.menu.lyrics.shiftforward";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            if (selectedNotes.Count == 0) {
+                return;
+            }
+            var startPos = selectedNotes.First().position;
+            var notesInRange = part.notes
+                .Where(n => n.position >= startPos)
+                .OrderBy(n => n.position)
+                .ToList();
+            if (notesInRange.Count == 0) {
+                return;
+            }
+            var originalLyrics = notesInRange.Select(n => n.lyric).ToArray();
+            docManager.StartUndoGroup("command.batch.lyric", true);
+            // Each note gets the next note's original lyric.
+            for (int i = 0; i < notesInRange.Count - 1; i++) {
+                docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, notesInRange[i], originalLyrics[i + 1]));
+            }
+            // Last note becomes "R" (rest).
+            docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, notesInRange[^1], "R"));
             docManager.EndUndoGroup();
         }
     }
