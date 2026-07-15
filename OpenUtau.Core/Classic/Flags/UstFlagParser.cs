@@ -1,6 +1,4 @@
-﻿
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace OpenUtau.Classic.Flags {
@@ -11,7 +9,7 @@ namespace OpenUtau.Classic.Flags {
             var valueBuilder = new StringBuilder();
             bool wasDigit = false;
             for (int i = 0; i <= text.Length; ++i) {
-                if (i == text.Length || char.IsLetter(text[i]) && wasDigit) {
+                if (i == text.Length || (char.IsLetter(text[i]) || text[i] == '/') && wasDigit) {
                     string key = keyBuilder.ToString();
                     if (!int.TryParse(valueBuilder.ToString(), out int value)) {
                         value = 0;
@@ -29,7 +27,7 @@ namespace OpenUtau.Classic.Flags {
                 if (c == '-' || c == '+' || char.IsDigit(c)) {
                     valueBuilder.Append(c);
                     wasDigit = true;
-                } else if (char.IsLetter(c)) {
+                } else if (char.IsLetter(c) || c == '/') {
                     if (keyBuilder.Length == 0 && IsSingleCharacterFlag(c)) {
                         flags.Add(new UstFlag(c.ToString(), 0));
                         continue;
