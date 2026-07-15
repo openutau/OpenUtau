@@ -784,17 +784,18 @@ namespace OpenUtau.App.Controls {
             }
             var noteHitInfo = ViewModel.NotesViewModel.HitTest.HitTestNote(point.Position);
             if (noteHitInfo.hitBody) {
+                var selectedNotes = ViewModel.NotesViewModel.Selection.ToList();
                 if (noteHitInfo.hitResizeArea) {
                     editState = new NoteResizeEditState(
                         control, ViewModel, this, noteHitInfo.note,
                         args.KeyModifiers == KeyModifiers.Alt,
                         fromStart: noteHitInfo.hitResizeAreaFromStart);
                     Cursor = ViewConstants.cursorSizeWE;
-                } else if (args.KeyModifiers == cmdKey) {
+                } else if (args.KeyModifiers == cmdKey && selectedNotes.Count > 1) {
                     ViewModel.NotesViewModel.ToggleSelectNote(noteHitInfo.note);
-                } else if (args.KeyModifiers == KeyModifiers.Shift) {
+                } else if (args.KeyModifiers == KeyModifiers.Shift && selectedNotes.Count > 0) {
                     ViewModel.NotesViewModel.SelectNotesUntil(noteHitInfo.note);
-                } else if (ViewModel.EditTool.CurrentTool == EditTools.KnifeTool) {
+                } else if (ViewModel.EditTool.CurrentTool == EditTools.KnifeTool && args.KeyModifiers != cmdKey) {
                     ViewModel.NotesViewModel.DeselectNotes();
                     editState = new NoteSplitEditState(
                             control, ViewModel, this, noteHitInfo.note);
