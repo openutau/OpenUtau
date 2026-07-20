@@ -775,11 +775,11 @@ namespace OpenUtau.Core.DiffSinger {
         /// Data structure for phoneme timing information
         /// </summary>
         private struct PhonemeTiming {
-            public readonly int StartTime;
-            public readonly int EndTime;
+            public readonly double StartTime;
+            public readonly double EndTime;
             public readonly double DurationMs;
 
-            public PhonemeTiming(int startTime, int endTime) {
+            public PhonemeTiming(double startTime, double endTime) {
                 StartTime = startTime;
                 EndTime = endTime;
                 DurationMs = endTime - startTime;
@@ -860,14 +860,12 @@ namespace OpenUtau.Core.DiffSinger {
             var timingData = new List<PhonemeTiming>(phonemeData.Count);
 
             for (int i = 0; i < phonemeData.Count; i++) {
-                int startTime = phonemeData[i].StartTime;
-                int endTime;
+                double startTime = timeAxis.TickPosToMsPos(phonemeData[i].StartTime);
+                double endTime;
 
                 if (i + 1 < phonemeData.Count) {
-                    // Use next phoneme's start time for internal phonemes
-                    endTime = phonemeData[i + 1].StartTime;
+                    endTime = timeAxis.TickPosToMsPos(phonemeData[i + 1].StartTime);
                 } else {
-                    // For the last phoneme, consider next note's first phoneme timing
                     endTime = currentNoteDur + nextFirstPhonemeDur;
                 }
 
@@ -897,11 +895,11 @@ namespace OpenUtau.Core.DiffSinger {
             var timingData = new List<PhonemeTiming>(phonemeData.Count);
 
             for (int i = 0; i < phonemeData.Count; i++) {
-                int startTime = phonemeData[i].StartTime;
-                int endTime;
+                double startTime = timeAxis.TickPosToMsPos(phonemeData[i].StartTime);
+                double endTime;
 
                 if (i + 1 < phonemeData.Count) {
-                    endTime = phonemeData[i + 1].StartTime;
+                    endTime = timeAxis.TickPosToMsPos(phonemeData[i + 1].StartTime);
                 } else {
                     endTime = noteDur;
                 }
@@ -1318,7 +1316,7 @@ namespace OpenUtau.Core.DiffSinger {
                 }
 
                 var noteResult = tempResults[word[0].position];
-                var wordDur = word.Sum(n => n.duration);
+                var wordDur = (int)timeAxis.MsBetweenTickPos(word[0].position, word[0].position + word.Sum(n => n.duration));
 
                 // Get next note information if available
                 Note[] nextWord = (wordIndex + 1 < phrase.Length) ? phrase[wordIndex + 1] : null;
@@ -1328,7 +1326,7 @@ namespace OpenUtau.Core.DiffSinger {
                 if (nextWord != null && nextWord.Length > 0 && tempResults.ContainsKey(nextWord[0].position)) {
                     var nextNoteResult = tempResults[nextWord[0].position];
                     if (nextNoteResult.Count > 0) {
-                        nextFirstPhonemeDur = nextNoteResult[0].Item2;
+                        nextFirstPhonemeDur = (int)timeAxis.MsBetweenTickPos(nextWord[0].position, nextWord[0].position + nextNoteResult[0].Item2);
                     }
                 }
 
