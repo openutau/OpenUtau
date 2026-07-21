@@ -1,0 +1,6 @@
+﻿Phonemizer Template: IndonesianVCCVPhonemizer
+=========================================
+Vowels:
+a,i,u,e,o,E,@,ai,au,oi,ei
+Consonants:
+b,c,ch,d,f,g,h,j,k,kh,l,m,n,ng,ny,p,q,r,s,sy,t,v,w,x,y,z

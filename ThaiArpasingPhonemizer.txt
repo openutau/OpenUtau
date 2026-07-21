@@ -1,0 +1,6 @@
+﻿Phonemizer Template: ThaiArpasingPhonemizer
+=========================================
+Vowels:
+ah,ih,uh,eh,oh,ae,ao,er,ue,eu,ia,ua,ay,aw,am
+Consonants:
+b,ch,d,f,h,j,k,kh,l,m,n,ng,p,ph,r,s,t,th,w,y

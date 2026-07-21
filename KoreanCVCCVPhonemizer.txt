@@ -1,0 +1,4 @@
+﻿Phonemizer Template: KoreanCVCCVPhonemizer
+=========================================
+Vowels:
+a=ㅏ,ya=ㅑ,eo=ㅓ,yeo=ㅕ,o=ㅗ,yo=ㅛ,u=ㅜ,yu=ㅠ,eu=ㅡ,i=ㅣ,e=ㅔ,ㅐ,ye=ㅖ,ㅒ,eui=ㅢ,wa=ㅘ,weo=ㅝ,we=ㅞ,ㅙ,ㅚ,wi=ㅟ,

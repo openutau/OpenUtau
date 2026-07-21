@@ -1,20 +1,24 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using OpenUtau.Api;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
+using Serilog;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.EventEmitters;
-using Serilog;
 
 namespace OpenUtau.Plugin.Builtin {
     /// <summary>
     /// zhcvvplus.yaml class
     /// </summary> 
     [Serializable]
+    // Version: v
     public class ChineseCVVPlusConfigYaml {
 
         /// <summary>
@@ -274,7 +278,7 @@ namespace OpenUtau.Plugin.Builtin {
 
         public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevNeighbours) {
             try {
-                
+
                 int totalDuration = notes.Sum(n => n.duration);
                 string phoneme = notes[0].lyric;
                 string? lryicVowel = GetLyricVowel(notes[0].lyric);
@@ -287,7 +291,7 @@ namespace OpenUtau.Plugin.Builtin {
 
                     foreach (var phoneticHint in phoneticHints.Select((hint, index) => (hint, index))) {
                         phonemes[phoneticHint.index] = new Phoneme {
-                            phoneme = GetOtoAlias(singer, phoneticHint.hint.Trim(), notes[0]) ,
+                            phoneme = GetOtoAlias(singer, phoneticHint.hint.Trim(), notes[0]),
                             // The position is evenly divided into n parts.
                             position = totalDuration - ((totalDuration / phoneticHints.Length) * (phoneticHints.Length - phoneticHint.index)),
                         };
@@ -301,7 +305,7 @@ namespace OpenUtau.Plugin.Builtin {
                 // If the note is an End Breath note
                 if (Config.SupportedTailBreath.Contains(phoneme) && prevNeighbour != null) {
                     phoneme = GetOtoAlias(singer, $"{GetLyricVowel(prevNeighbour?.lyric)} {phoneme}", notes[0]);
-                    
+
                     return new Result {
                         // Output in the form "Basic vowel shape + End Breath written with lyrics"
                         phonemes = new Phoneme[] { new Phoneme { phoneme = phoneme } }
@@ -348,23 +352,24 @@ namespace OpenUtau.Plugin.Builtin {
                             }
                         };
                     }
-                };
+                }
+                ;
 
                 // If it does not match any of the above if statements,
                 return new Result {
                     phonemes = new Phoneme[] {
                         new Phoneme() {
-                            phoneme = phoneme, // Output the entered lyrics.
+                            phoneme = GetOtoAlias(singer, phoneme, notes[0]), // 防止无尾音歌词在多音阶情况下丢失prefix map suffix
                         }
                     }
                 };
-            } catch (Exception e) { 
+            } catch (Exception e) {
                 Log.Error(e, "An error occurred during the phoneme processing in zh cvv+ module."); // Logging
 
                 return new Result {
                     phonemes = new Phoneme[] {
                         new Phoneme() {
-                            phoneme = "ERROR", 
+                            phoneme = "ERROR",
                         }
                     }
                 };

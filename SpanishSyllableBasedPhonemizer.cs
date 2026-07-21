@@ -1,10 +1,11 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using OpenUtau.Api;
 using OpenUtau.Core.G2p;
-using System.Linq;
 using Serilog;
-using System.IO;
 
 namespace OpenUtau.Plugin.Builtin {
     /// <summary>
@@ -17,6 +18,7 @@ namespace OpenUtau.Plugin.Builtin {
     /// Now with full VCV support, including "consonant VCV" if the voicebank has either of them (ex. "l ba", "n da" but also "m bra" etc.).
     /// </summary>
     [Phonemizer("Spanish Syllable-Based Phonemizer", "ES SYL", "Lotte V", language: "UTAU")]
+    // Version: v
     public class SpanishSyllableBasedPhonemizer : SyllableBasedPhonemizer {
 
         private readonly string[] vowels = "a,e,i,o,u".Split(',');
@@ -337,13 +339,13 @@ namespace OpenUtau.Plugin.Builtin {
                         firstC = 1;
                         break;
                     } else
-                    if (HasOto(vc, ending.tone) || HasOto(ValidateAlias(vc), ending.tone)) {
-                        phonemes.Add(vc);
-                        break;
-                    } else {
-                        TryAddPhoneme(phonemes, ending.tone, vc2, ValidateAlias(vc2));
-                        break;
-                    }
+                        if (HasOto(vc, ending.tone) || HasOto(ValidateAlias(vc), ending.tone)) {
+                            phonemes.Add(vc);
+                            break;
+                        } else {
+                            TryAddPhoneme(phonemes, ending.tone, vc2, ValidateAlias(vc2));
+                            break;
+                        }
                 }
 
                 for (var i = firstC; i < lastC; i++) {

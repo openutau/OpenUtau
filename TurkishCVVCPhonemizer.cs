@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -7,6 +10,7 @@ using OpenUtau.Core.Ustx;
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Turkish CVVC Phonemizer", "TR CVVC", "ise", language: "UTAU")]
     // Contributed by ise with the help of Japanese CVVC phonemizer by TUBS
+    // Version: v
     public class TurkishCVVCPhonemizer : Phonemizer {
         static readonly string[] glottalStops = new string[] { "?", "q" };
         static readonly string[] vowels = new string[] { "a", "e", "ae", "eu", "i", "o", "oe", "u", "ue" };

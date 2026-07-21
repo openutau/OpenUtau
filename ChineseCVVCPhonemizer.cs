@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +13,7 @@ using Serilog;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Chinese CVVC Phonemizer", "ZH CVVC", language: "UTAU")]
+    // Version: v
     public class ChineseCVVCPhonemizer : Phonemizer {
         private Dictionary<string, string> vowels = new Dictionary<string, string>();
         private Dictionary<string, string> consonants = new Dictionary<string, string>();
@@ -29,7 +33,8 @@ namespace OpenUtau.Plugin.Builtin {
                 if (vowels.TryGetValue(prevLyric, out var vowel)) {
                     prevVowel = vowel;
                 }
-            };
+            }
+            ;
             var attr0 = notes[0].phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
             var attr1 = notes[0].phonemeAttributes?.FirstOrDefault(attr => attr.index == 1) ?? default;
             var attr2 = notes[0].phonemeAttributes?.FirstOrDefault(attr => attr.index == 2) ?? default;
@@ -62,12 +67,12 @@ namespace OpenUtau.Plugin.Builtin {
             int vcLen = 120;
             int endTick = notes[^1].position + notes[^1].duration;
             if (singer.TryGetMappedOto(lyric, notes[0].tone + attr1.toneShift, attr1.voiceColor, out var cvOto)) {
-                 vcLen = -timeAxis.MsToTickAt(-cvOto.Preutter, endTick);
+                vcLen = -timeAxis.MsToTickAt(-cvOto.Preutter, endTick);
                 if (cvOto.Overlap == 0 && vcLen < 120) {
                     vcLen = Math.Min(120, vcLen * 2); // explosive consonant with short preutter.
                 }
                 if (cvOto.Overlap < 0) {
-                     vcLen = -timeAxis.MsToTickAt(-(cvOto.Preutter - cvOto.Overlap), endTick);
+                    vcLen = -timeAxis.MsToTickAt(-(cvOto.Preutter - cvOto.Overlap), endTick);
                 }
             }
 
@@ -225,7 +230,7 @@ namespace OpenUtau.Plugin.Builtin {
                     var replaceLines = blocks.Find(block => block.header == "[REPLACE]").lines;
                     foreach (var iniLine in replaceLines) {
                         var parts = iniLine.line.Split('=');
-                        replace[parts[0]]=parts[1];
+                        replace[parts[0]] = parts[1];
                     }
                     var alias = blocks.Find(block => block.header == "ALIAS");
                 }

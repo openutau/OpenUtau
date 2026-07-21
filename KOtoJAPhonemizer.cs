@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +13,7 @@ using static OpenUtau.Core.KoreanPhonemizerUtil;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("KO to JA Phonemizer", "KO to JA", "Lotte V", language: "UTAU")]
+    // Version: v
     public class KOtoJAPhonemizer : BaseKoreanPhonemizer {
         /// <summary>
         /// Phonemizer for making Japanese banks sing in Korean.
@@ -458,7 +462,7 @@ namespace OpenUtau.Plugin.Builtin {
                                         phoneme = currPhoneme
                                     }
                                 }
-                            };
+                                };
                         } else prevIMF = GetIMFFromHint(prevNeighbour.Value.phoneticHint);
 
                         if (string.IsNullOrEmpty(prevIMF[2])) {

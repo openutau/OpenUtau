@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -9,6 +12,7 @@ using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Japanese presamp Phonemizer", "JA VCV & CVVC", "Maiko", language: "UTAU")]
+    // Version: v
     public class JapanesePresampPhonemizer : Phonemizer {
 
         // CV, VCV, CVVCを含むすべての日本語VBをサポートする予定です。Will support all Japanese VBs including CV, VCV, CVVC
@@ -114,7 +118,7 @@ namespace OpenUtau.Plugin.Builtin {
                     if (checkOtoUntilHit(tests, note, out var oto)) {
                         currentLyric = oto.Alias;
                     }
-                } else if (presamp.PhonemeList.TryGetValue(prevAlias, out PresampPhoneme prevPhoneme)) {
+                } else if (TryGetPresampPhoneme(prevAlias, out PresampPhoneme prevPhoneme)) {
                     if (currentLyric.Contains("・")) {
                         // Glottal stop
                         var tests = new List<string>();
@@ -140,7 +144,7 @@ namespace OpenUtau.Plugin.Builtin {
                         if (checkOtoUntilHit(tests, note, out oto)) { // check VCV and CV
                             currentLyric = oto.Alias;
                         }
-                    } else if (presamp.PhonemeList.TryGetValue(currentLyric, out PresampPhoneme currentPhoneme) && currentPhoneme.IsPriority) {
+                    } else if (TryGetPresampPhoneme(currentLyric, out PresampPhoneme currentPhoneme) && currentPhoneme.IsPriority) {
                         // Priority: not VCV, VC (almost C)
                         var tests = new List<string> { currentLyric, initial };
                         if (checkOtoUntilHit(tests, note, out var oto)) {
@@ -156,7 +160,7 @@ namespace OpenUtau.Plugin.Builtin {
                             var axtu1 = $"{prevVow}{vcvpad}{currentLyric}"; // a っ
                             var axtu2 = $"{prevVow}{vcpad}{currentLyric}"; // a っ
                             var tests2 = new List<string> { axtu1, axtu2, currentLyric };
-                            if (presamp.PhonemeList.TryGetValue(nextAlias, out PresampPhoneme nextPhoneme) && nextPhoneme.HasConsonant) {
+                            if (TryGetPresampPhoneme(nextAlias, out PresampPhoneme nextPhoneme) && nextPhoneme.HasConsonant) {
                                 tests2.Insert(2, $"{prevVow}{vcpad}{nextPhoneme.Consonant}"); // VC
                             }
                             if (checkOtoUntilHit(tests2, note, out var oto2)) {
@@ -192,7 +196,7 @@ namespace OpenUtau.Plugin.Builtin {
             if (string.IsNullOrEmpty(note.phoneticHint)
                 && preCFlag
                 && !currentLyric.Contains(vcvpad)
-                && presamp.PhonemeList.TryGetValue(currentAlias, out PresampPhoneme phoneme)
+                && TryGetPresampPhoneme(currentAlias, out PresampPhoneme phoneme)
                 && phoneme.HasConsonant
                 && (presamp.Priorities == null || !presamp.Priorities.Contains(phoneme.Consonant))) {
                 if (checkOtoUntilHit(new List<string> { $"-{vcvpad}{phoneme.Consonant}" }, note, 2, out var cOto, out var color)
@@ -209,7 +213,7 @@ namespace OpenUtau.Plugin.Builtin {
 
                     result.Insert(0, new Phoneme() {
                         phoneme = cOto.Alias,
-                        position = Convert.ToInt32(- cLength),
+                        position = Convert.ToInt32(-cLength),
                         index = 2,
                         expressions = new List<PhonemeExpression>()
                     });
@@ -235,7 +239,7 @@ namespace OpenUtau.Plugin.Builtin {
                 int? vcColorIndex;
 
                 // Without current vowel, VC cannot be created
-                if (!presamp.PhonemeList.TryGetValue(currentAlias, out PresampPhoneme currentPhoneme) || !currentPhoneme.HasVowel) {
+                if (!TryGetPresampPhoneme(currentAlias, out PresampPhoneme currentPhoneme) || !currentPhoneme.HasVowel) {
                     return new Result { phonemes = result.ToArray() };
                 }
                 var vowel = currentPhoneme.Vowel;
@@ -276,7 +280,7 @@ namespace OpenUtau.Plugin.Builtin {
                     } else {
 
                         // Without next consonant, VC cannot be created
-                        if (!presamp.PhonemeList.TryGetValue(nextAlias, out PresampPhoneme nextPhoneme) || !nextPhoneme.HasConsonant) {
+                        if (!TryGetPresampPhoneme(nextAlias, out PresampPhoneme nextPhoneme) || !nextPhoneme.HasConsonant) {
                             return new Result { phonemes = result.ToArray() };
                         }
                         var consonant = nextPhoneme.Consonant;
@@ -418,6 +422,18 @@ namespace OpenUtau.Plugin.Builtin {
                 alias = alias.Replace("・", "");
             }
             return alias;
+        }
+
+        private bool TryGetPresampPhoneme(string alias, out PresampPhoneme pPhoneme) {
+            if (presamp.PhonemeList.TryGetValue(alias, out pPhoneme)) {
+                return true;
+            } else {
+                var match = Regex.Match(alias, @".+([ぁぃぅぇぉゃゅょ])");
+                if (match.Success) {
+                    return presamp.PhonemeList.TryGetValue(match.Groups[1].Value, out pPhoneme);
+                }
+            }
+            return false;
         }
     }
 }

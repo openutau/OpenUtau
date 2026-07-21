@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+using System;
 using System.Collections.Generic;
 using System.IO;
 using OpenUtau.Api;
@@ -10,6 +11,7 @@ namespace OpenUtau.Plugin.Builtin {
     /// A French diphone phonemizer that uses CMUSphinx dictionary.
     /// </summary>
     [Phonemizer("French CMUSphinx Phonemizer", "FR SPHINX", language: "UTAU")]
+    // Version: v
     public class FrenchCMUSphinxPhonemizer : LatinDiphonePhonemizer {
         public FrenchCMUSphinxPhonemizer() {
             try {

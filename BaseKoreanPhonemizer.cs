@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -15,19 +18,19 @@ namespace OpenUtau.Plugin.Builtin {
     /// <para>4. Can generate phonemes according to Phoneme hints.</para>
     /// </summary>
     public abstract class BaseKoreanPhonemizer : Phonemizer {
-        
+
         protected USinger singer;
 
         protected int vcLengthShort = 90;
 
-        protected static readonly string[] PLAIN_VOWELS = new string[]{"ㅏ", "ㅣ", "ㅜ", "ㅔ", "ㅗ", "ㅡ", "ㅓ", "ㅢ"};
-        protected static readonly string[] SOFT_BATCHIMS = new string[]{"ㄴ", "ㄹ", "ㅇ"};
-        protected static readonly string[] HARD_BATCHIMS = new string[]{"ㄱ", "ㄷ", "ㅂ", "ㅁ"};
+        protected static readonly string[] PLAIN_VOWELS = new string[] { "ㅏ", "ㅣ", "ㅜ", "ㅔ", "ㅗ", "ㅡ", "ㅓ", "ㅢ" };
+        protected static readonly string[] SOFT_BATCHIMS = new string[] { "ㄴ", "ㄹ", "ㅇ" };
+        protected static readonly string[] HARD_BATCHIMS = new string[] { "ㄱ", "ㄷ", "ㅂ", "ㅁ" };
 
         // this phonemizer will call ConvertPhonemes() when lyric is hanguel or additionalTest is true . (override to use)
         protected virtual bool additionalTest(string lyric) {
             return false;
-        } 
+        }
         public override void SetSinger(USinger singer) => this.singer = singer;
         public static string? FindInOto(USinger singer, string phoneme, Note note, bool nullIfNotFound = false) {
             // 음소와 노트를 입력받고, 다음계 및 보이스컬러 에일리어스를 적용한다. 
@@ -38,27 +41,23 @@ namespace OpenUtau.Plugin.Builtin {
             string color = attr.voiceColor ?? string.Empty;
             int toneShift = 0;
             int? alt = null;
-            if (phoneme.Equals("")) {return phoneme;}
+            if (phoneme.Equals("")) { return phoneme; }
 
             if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var otoAlt)) {
                 phonemeToReturn = otoAlt.Alias;
-            } 
-            else if (singer.TryGetMappedOto(phoneme, note.tone + toneShift, color, out var oto)) {
+            } else if (singer.TryGetMappedOto(phoneme, note.tone + toneShift, color, out var oto)) {
                 phonemeToReturn = oto.Alias;
-            } 
-            else if (singer.TryGetMappedOto(phoneme, note.tone, color, out oto)) {
+            } else if (singer.TryGetMappedOto(phoneme, note.tone, color, out oto)) {
                 phonemeToReturn = oto.Alias;
-            } 
-            else if (nullIfNotFound) {
+            } else if (nullIfNotFound) {
                 phonemeToReturn = null;
-            } 
-            else {
+            } else {
                 phonemeToReturn = phoneme;
             }
 
             return phonemeToReturn;
         }
-        
+
         /// <summary>
         /// <para>All child Korean Phonemizer have to do is implementing this (1). </para>
         /// <para> This Function manages phoneme conversion at Notes that are not in last position. </para>
@@ -106,7 +105,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// <param name="totalDuration"></param>
         /// <param name="totalDurationDivider"></param>
         /// </summary>
-        public Result GenerateResult(String firstPhoneme, String secondPhoneme, int totalDuration, int secondPhonemePosition, int totalDurationDivider=3){
+        public Result GenerateResult(String firstPhoneme, String secondPhoneme, int totalDuration, int secondPhonemePosition, int totalDurationDivider = 3) {
             return new Result() {
                 phonemes = new Phoneme[] {
                     new Phoneme { phoneme = firstPhoneme },
@@ -123,7 +122,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// <param name="totalDuration"></param>
         /// <param name="totalDurationDivider"></param>
         /// </summary>
-        public Result GenerateResult(String firstPhoneme, String secondPhoneme, int totalDuration, int totalDurationDivider=3){
+        public Result GenerateResult(String firstPhoneme, String secondPhoneme, int totalDuration, int totalDurationDivider = 3) {
             return new Result() {
                 phonemes = new Phoneme[] {
                     new Phoneme { phoneme = firstPhoneme },
@@ -131,13 +130,13 @@ namespace OpenUtau.Plugin.Builtin {
                     position = totalDuration - totalDuration / totalDurationDivider},
                 }
             };
-            
+
         }
 
         /// <summary>
         /// Returns Result with one input Phonemes. 
         /// </summary>
-        public Result GenerateResult(String firstPhoneme){
+        public Result GenerateResult(String firstPhoneme) {
             return new Result() {
                 phonemes = new Phoneme[] {
                     new Phoneme { phoneme = firstPhoneme },
@@ -157,7 +156,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// <param name="secondTotalDurationDivider"></param>
         /// <param name="thirdTotalDurationDivider"></param>
         /// <returns> Result  </returns>
-        public Result GenerateResult(String firstPhoneme, String secondPhoneme, String thirdPhoneme, int totalDuration, int secondPhonemePosition, int secondTotalDurationDivider=3, int thirdTotalDurationDivider=8){
+        public Result GenerateResult(String firstPhoneme, String secondPhoneme, String thirdPhoneme, int totalDuration, int secondPhonemePosition, int secondTotalDurationDivider = 3, int thirdTotalDurationDivider = 8) {
             return new Result() {
                 phonemes = new Phoneme[] {
                     new Phoneme { phoneme = firstPhoneme},
@@ -221,7 +220,7 @@ namespace OpenUtau.Plugin.Builtin {
                             };
 
                         }
-                        
+
                     }
                 }
                 return new ProcessResult {
@@ -241,7 +240,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// <param name="note"></param>
         /// <param name="totalDuration"></param>
         /// <returns> Result? </returns>
-        public  Result? RenderPhoneticHint(USinger singer, Note note, int totalDuration) {
+        public Result? RenderPhoneticHint(USinger singer, Note note, int totalDuration) {
             var phoneticHint = note.phoneticHint;
 
             if (phoneticHint != null) {
@@ -278,16 +277,14 @@ namespace OpenUtau.Plugin.Builtin {
                         if (i == 0) {
                             // first syllable
                             phonemes[i] = new Phoneme { phoneme = alias };
-                        } 
-                        else if ((i == phoneticHintsLength - 1) && ((phoneticHints[i].Trim().EndsWith('-')) || phoneticHints[i].Trim().EndsWith('R'))) {
+                        } else if ((i == phoneticHintsLength - 1) && ((phoneticHints[i].Trim().EndsWith('-')) || phoneticHints[i].Trim().EndsWith('R'))) {
                             // 마지막 음소이고 끝음소(ex: a -, a R)일 경우, VCLengthShort에 맞춰 음소를 배치
                             phonemes[i] = new Phoneme {
                                 phoneme = alias,
                                 position = totalDuration - Math.Min(vcLengthShort, totalDuration / 8)
                                 // 8등분한 길이로 끝에 숨소리 음소 배치, n등분했을 때의 음소 길이가 이보다 작다면 n등분했을 때의 길이로 간다
                             };
-                        } 
-                        else if (phoneticHintsLength == 2) {
+                        } else if (phoneticHintsLength == 2) {
                             // 입력되는 발음힌트가 2개일 경우, 2등분되어 음소가 배치된다.
                             // 이 경우 부자연스러우므로 3등분해서 음소 배치하게 조정
                             phonemes[i] = new Phoneme {
@@ -295,8 +292,7 @@ namespace OpenUtau.Plugin.Builtin {
                                 position = totalDuration - totalDuration / 3
                                 // 3등분해서 음소가 배치됨
                             };
-                        } 
-                        else {
+                        } else {
                             phonemes[i] = new Phoneme {
                                 phoneme = alias,
                                 position = totalDuration - ((totalDuration / phoneticHintsLength) * (phoneticHintsLength - i))
@@ -313,8 +309,7 @@ namespace OpenUtau.Plugin.Builtin {
                                 position = totalDuration - totalDuration / 3
                                 // 3등분해서 음소가 배치됨
                             };
-                        } 
-                        else {
+                        } else {
                             phonemes[i] = new Phoneme {
                                 phoneme = FindInOto(singer, VVdictionary[phoneticHints[i].Trim()], note),
                                 position = totalDuration - ((totalDuration / phoneticHintsLength) * (phoneticHintsLength - i))
@@ -350,7 +345,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// <param name="secondTotalDurationDivider"></param>
         /// <param name="thirdTotalDurationDivider"></param>
         /// <returns> Result  </returns>
-        public Result GenerateResult(String firstPhoneme, String secondPhoneme, String thirdPhoneme, int totalDuration, int secondTotalDurationDivider=3, int thirdTotalDurationDivider=8){
+        public Result GenerateResult(String firstPhoneme, String secondPhoneme, String thirdPhoneme, int totalDuration, int secondTotalDurationDivider = 3, int thirdTotalDurationDivider = 8) {
             return new Result() {
                 phonemes = new Phoneme[] {
                     new Phoneme { phoneme = firstPhoneme},
@@ -378,7 +373,7 @@ namespace OpenUtau.Plugin.Builtin {
 
             var phoneticHint = RenderPhoneticHint(singer, note, totalDuration);
             if (phoneticHint != null) {
-                return (Result) phoneticHint;
+                return (Result)phoneticHint;
             }
 
             var romaji2Korean = ConvertRomajiNoteToHangeul(notes, prevNeighbour, nextNeighbour);
@@ -388,17 +383,16 @@ namespace OpenUtau.Plugin.Builtin {
 
             if (KoreanPhonemizerUtil.IsHangeul(lyric) || !KoreanPhonemizerUtil.IsHangeul(lyric) && additionalTest(lyric)) {
                 return ConvertPhonemes(notes, prev, next, prevNeighbour, nextNeighbour, prevNeighbours);
-            } 
-            else {
+            } else {
                 return GenerateEndSound(notes, prev, next, prevNeighbour, nextNeighbour, prevNeighbours);
             }
         }
 
-        
+
         /// <summary>
         /// abstract class for Ini Management
         /// To use, child phonemizer should implement this class(BaseIniManager) with its own setting values!
         /// </summary>
-        public abstract class BaseIniManager : KoreanPhonemizerUtil.BaseIniManager{}
+        public abstract class BaseIniManager : KoreanPhonemizerUtil.BaseIniManager { }
     }
 }

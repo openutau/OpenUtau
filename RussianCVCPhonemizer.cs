@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -6,6 +9,7 @@ using OpenUtau.Core.G2p;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Russian CVC Phonemizer", "RU CVC", "Heiden.BZR", language: "UTAU")]
+    // Version: v
     public class RussianCVCPhonemizer : SyllableBasedPhonemizer {
 
         private readonly string[] vowels = "a,e,o,u,y,i,M,N".Split(",");
@@ -43,22 +47,19 @@ namespace OpenUtau.Plugin.Builtin {
             var phonemes = new List<string>();
             if (syllable.IsStartingV) {
                 basePhoneme = $"-{v}";
-            }
-            else if (syllable.IsVV) {
+            } else if (syllable.IsVV) {
                 if (!CanMakeAliasExtension(syllable)) {
                     basePhoneme = v;
                 } else {
                     // the previous alias will be extended
                     basePhoneme = null;
                 }
-            }
-            else if (syllable.IsStartingCV) {
+            } else if (syllable.IsStartingCV) {
                 basePhoneme = $"-{cc.Last()}{v}";
                 for (var i = 0; i < cc.Length - 1; i++) {
                     phonemes.Add($"-{cc[i]}");
                 }
-            }
-            else { // VCV
+            } else { // VCV
                 if (cc.Length == 1 || IsShort(syllable) || cc.Last() == "`") {
                     basePhoneme = $"{cc.Last()}{v}";
                 } else {
@@ -82,8 +83,7 @@ namespace OpenUtau.Plugin.Builtin {
             var phonemes = new List<string>();
             if (ending.IsEndingV) {
                 phonemes.Add($"{v}-");
-            }
-            else {
+            } else {
                 phonemes.Add($"{v}{cc[0]}-");
                 for (var i = 1; i < cc.Length; i++) {
                     var cr = $"{cc[i]}-";

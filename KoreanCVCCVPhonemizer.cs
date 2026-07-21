@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Melanchall.DryWetMidi.MusicTheory;
@@ -9,6 +12,7 @@ using static OpenUtau.Api.Phonemizer;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Korean CVCCV Phonemizer", "KO CVCCV", "RYUUSEI", language: "UTAU")]
+    // Version: v
     public class KoreanCVCCVPhonemizer : BaseKoreanPhonemizer {
         static readonly string initialConsonantsTable = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
         static readonly string vowelsTable = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
@@ -282,10 +286,10 @@ namespace OpenUtau.Plugin.Builtin {
         private USinger singer;
 
         public override void SetSinger(USinger singer) => this.singer = singer;
-        
+
         // Legacy mapping. Might adjust later to new mapping style.
-		public override bool LegacyMapping => true;
-        
+        public override bool LegacyMapping => true;
+
         public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevs) {
             var prevLyric = prevNeighbour?.lyric;
             var nextLyric = nextNeighbour?.lyric;
@@ -295,10 +299,10 @@ namespace OpenUtau.Plugin.Builtin {
 
             int totalDuration = notes.Sum(n => n.duration);
             int vcLength = 120;
-            
+
             var phoneticHint = RenderPhoneticHint(singer, notes[0], totalDuration);
             if (phoneticHint != null) {
-                return (Result) phoneticHint;
+                return (Result)phoneticHint;
             }
 
             var romaji2Korean = ConvertRomajiNoteToHangeul(notes, prevNeighbour, nextNeighbour);
@@ -306,10 +310,10 @@ namespace OpenUtau.Plugin.Builtin {
                 notes = romaji2Korean.KoreanLyricNotes;
                 prevNeighbour = romaji2Korean.KoreanLyricPrevNote;
                 nextNeighbour = romaji2Korean.KoreanLyricNextNote;
-                
+
                 prevLyric = prevNeighbour?.lyric;
                 nextLyric = nextNeighbour?.lyric;
-            } 
+            }
 
 
             List<Phoneme> phonemesArr = new List<Phoneme>();
@@ -326,7 +330,8 @@ namespace OpenUtau.Plugin.Builtin {
                         new Phoneme {
                         phoneme = currentLyric,
                     }
-                }};
+                }
+                };
             }
 
             if (prevLyric != null && prevLyric[0] >= '가' && prevLyric[0] <= '힣') {
@@ -377,7 +382,7 @@ namespace OpenUtau.Plugin.Builtin {
                                 phoneme = $"{currentCCVConsonants}{currentVowel}",
                             }
                         );
-                                                
+
                         break;
 
                     case TYPE_FLAG.VC_NCV:
@@ -517,7 +522,7 @@ namespace OpenUtau.Plugin.Builtin {
                                 }
                             );
                         }
-                        
+
                         break;
 
                     case TYPE_FLAG.VC_CCV:
@@ -631,7 +636,8 @@ namespace OpenUtau.Plugin.Builtin {
                     case TYPE_FLAG.CV:
 
                         break;
-                };
+                }
+                ;
 
             } else {
                 // 뒷글자 없음

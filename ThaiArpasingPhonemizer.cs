@@ -1,7 +1,11 @@
+#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
 // ==========================================
-// สร้างและตรวจสอบโดย DELTA SYNTH & Gemini AI
-// ต้นฉบับโดย: OpenUtau Contributors
-// เวอร์ชัน: 5.0 (เสถียรภาพสูง, เอื้อนอัตโนมัติ, กรองหน่วยเสียง, ลบตัวเลข)
+// Made And Checked By DELTA SYNTH & Gemini AI
+// Original by Patiphat Wongyai
+// Version: v.4.6
+// History/Summary: Implemented Safety Position Buffer (prevPos + 10) to prevent phoneme overlapping. Multi-syllable + note support.
 // ==========================================
 
 using System;
@@ -15,485 +19,438 @@ using OpenUtau.Core.Ustx;
 using Serilog;
 
 namespace OpenUtau.Plugin.Builtin {
-    [Phonemizer("Thai Arpasing Phonemizer v5.0", "TH Arpasing Delta", "DELTA SYNTH", language: "TH")]
+    [Phonemizer("Thai Arpasing Phonemizer", "TH Arpasing Delta", "DELTA SYNTH", language: "TH")]
     public class ThaiArpasingPhonemizer : Phonemizer {
 
-        private USinger singer;
+        static readonly string[] vowels = new string[] { "ah", "ih", "uh", "eh", "oh", "ae", "ao", "er", "ue", "eu", "ia", "ua", "ay", "aw", "am" };
+        static readonly string[] diphthongs = new string[] { "r", "l", "w" };
+        static readonly string[] consonants = new string[] { "b", "ch", "d", "f", "h", "j", "k", "kh", "l", "m", "n", "ng", "p", "ph", "r", "s", "t", "th", "w", "y" };
+        static readonly string[] endingConsonants = new string[] { "b", "ch", "d", "f", "h", "j", "k", "kh", "l", "m", "n", "ng", "p", "ph", "r", "s", "t", "th", "w", "y" };
 
-        // ==========================================
-        // 🔤 ตารางสระ พยัญชนะ และคำควบกล้ำ (Arpasing)
-        // ==========================================
-        readonly string[] vowels = {
-            "ia", "ua", "ay", "aw", "am",
-            "ah", "ih", "uh", "eh", "oh",
-            "ae", "ao", "er", "ue", "eu"
+        private static readonly List<(string Key, string Value)> VowelMapping = new List<(string Key, string Value)> {
+            ("เcือะ", "ue"), ("เcือx", "ue"), ("แcะ", "ae"), ("แcx", "ae"), ("เcอะ", "er"), ("เcอx", "er"), ("เcอ", "er"),
+            ("เcย", "er"), ("ไc", "ay"), ("ใc", "ay"), ("ไcx", "ay"), ("ใcx", "ay"),
+            ("เcาะ", "ao"), ("cอx", "ao"), ("cืx", "eu"), ("cึx", "eu"), ("cือ", "eu"),
+            ("cะ", "ah"), ("cัx", "ah"), ("cาx", "ah"), ("cรรx", "ah"), 
+            ("เcา", "aw"), ("เcาx", "aw"), 
+            ("เcะ", "eh"), ("เcx", "eh"),
+            ("cิx", "ih"), ("cีx", "ih"), ("เcียะ", "ia"), ("เcียx", "ia"), ("โcะ", "oh"), ("โcx", "oh"),
+            ("cุx", "uh"), ("cูx", "uh"), ("cัวะ", "ua"), ("cัว", "ua"), ("cวx", "ua"),
+            ("cำ", "am"), ("cำx", "am"), 
+            ("เcิx", "er"), ("เcิ", "er")
         };
 
-        readonly string[] diphthongs = { "r", "l", "w" };
-
-        // เรียงจากยาวไปสั้น (kh ก่อน k)
-        readonly string[] consonants = {
-            "kh", "ph", "th", "ch",
-            "b", "d", "f", "g", "h", "j", "k", "l", "m", "n",
-            "p", "r", "s", "t", "w", "y"
-        };
-
-        readonly string[] endingConsonants = {
-            "kh", "ph", "th", "ch",
-            "b", "d", "f", "g", "h", "j", "k", "l", "m", "n",
-            "p", "r", "s", "t", "w", "y"
-        };
-
-        // ==========================================
-        // 🗺️ ตารางแปลงสระไทย → Arpasing
-        // ==========================================
-        private readonly Dictionary<string, string> VowelMapping = new Dictionary<string, string> {
-            {"เcือะ", "ue"}, {"เcือx", "ue"}, {"แcะ", "ae"}, {"แcx", "ae"},
-            {"เcอะ", "er"}, {"เcอ", "er"}, {"ไc", "ay"}, {"ใc", "ay"},
-            {"เcาะ", "ao"}, {"cอx", "ao"}, {"cืx", "eu"}, {"cึx", "eu"},
-            {"cือ", "eu"}, {"cะ", "ah"}, {"cัx", "ah"}, {"cาx", "ah"},
-            {"cรรx", "ah"}, {"เcา", "aw"}, {"เcะ", "eh"}, {"เcx", "eh"},
-            {"cิx", "ih"}, {"cีx", "ih"}, {"เcียะ", "ia"}, {"เcียx", "ia"},
-            {"โcะ", "oh"}, {"โcx", "oh"}, {"cุx", "uh"}, {"cูx", "uh"},
-            {"cัวะ", "ua"}, {"cัว", "ua"}, {"cำ", "am"}, {"เcิx", "er"}, {"เcิ", "er"}
-        };
-
-        // ==========================================
-        // 🗺️ ตารางแปลงพยัญชนะต้น และตัวสะกด
-        // ==========================================
-        private readonly Dictionary<char, string> CMapping = new Dictionary<char, string> {
+        private static readonly Dictionary<char, string> CMapping = new Dictionary<char, string> {
             {'ก', "k"}, {'ข', "kh"}, {'ค', "kh"}, {'ฆ', "kh"}, {'ฅ', "kh"}, {'ฃ', "kh"},
             {'จ', "j"}, {'ฉ', "ch"}, {'ช', "ch"}, {'ฌ', "ch"},
             {'ฎ', "d"}, {'ด', "d"}, {'ต', "t"}, {'ฏ', "t"},
             {'ถ', "th"}, {'ฐ', "th"}, {'ฑ', "th"}, {'ฒ', "th"}, {'ธ', "th"}, {'ท', "th"},
             {'บ', "b"}, {'ป', "p"}, {'พ', "ph"}, {'ผ', "ph"}, {'ภ', "ph"}, {'ฟ', "f"}, {'ฝ', "f"},
-            {'ห', "h"}, {'ฮ', "h"}, {'ม', "m"}, {'น', "n"}, {'ณ', "n"},
-            {'ร', "r"}, {'ล', "l"}, {'ฤ', "r"},
+            {'ห', "h"}, {'ฮ', "h"}, {'ม', "m"}, {'น', "n"}, {'ณ', "n"}, {'ร', "r"}, {'ล', "l"}, {'ฤ', "r"},
             {'ส', "s"}, {'ศ', "s"}, {'ษ', "s"}, {'ซ', "s"},
-            {'ง', "g"}, {'ย', "y"}, {'ญ', "y"}, {'ว', "w"}, {'ฬ', "r"}
+            {'ง', "ng"}, {'ย', "y"}, {'ญ', "y"}, {'ว', "w"}, {'ฬ', "r"}
         };
 
-        private readonly Dictionary<char, string> XMapping = new Dictionary<char, string> {
+        private static readonly Dictionary<char, string> XMapping = new Dictionary<char, string> {
             {'บ', "b"}, {'ป', "b"}, {'พ', "b"}, {'ฟ', "b"}, {'ภ', "b"},
             {'ด', "d"}, {'จ', "d"}, {'ช', "d"}, {'ซ', "d"}, {'ฎ', "d"}, {'ฏ', "d"}, {'ฐ', "d"},
-            {'ฑ', "d"}, {'ฒ', "d"}, {'ต', "d"}, {'ถ', "d"}, {'ท', "d"}, {'ธ', "d"},
-            {'ศ', "d"}, {'ษ', "d"}, {'ส', "d"},
+            {'ฑ', "d"}, {'ฒ', "d"}, {'ต', "d"}, {'ถ', "d"}, {'ท', "d"}, {'ธ', "d"}, {'ศ', "d"}, {'ษ', "d"}, {'ส', "d"},
             {'ก', "k"}, {'ข', "k"}, {'ค', "k"}, {'ฆ', "k"},
-            {'ว', "w"}, {'ย', "y"}, {'ง', "g"}, {'ม', "m"},
+            {'ว', "w"}, {'ย', "y"}, {'ง', "ng"}, {'ม', "m"},
             {'น', "n"}, {'ญ', "n"}, {'ณ', "n"}, {'ร', "n"}, {'ล', "n"}, {'ฬ', "n"}
         };
 
-        // ==========================================
-        // ⚙️ SetSinger
-        // ==========================================
+        private static readonly HashSet<string> TrueClusters = new HashSet<string> {
+            "กร", "กล", "กว", "ขร", "ขล", "ขว", "คร", "คล", "คว", "ปร", "ปล", "พร", "พล", "ตร", "ผล", "บร", "บล", "ฟร", "ฟล", "ดร", "ทร", "หง", "หญ", "หน", "หม", "หย", "หร", "หล", "หว", "อย", "สร", "ศร", "ซร", "จร"
+        };
+
+        private static readonly Regex ToneRegex = new Regex("[่้๊๋็]", RegexOptions.Compiled);
+        private static readonly Regex KaranRegex1 = new Regex("[ก-ฮ][ิุ]?์", RegexOptions.Compiled);
+        private static readonly Regex KaranRegex2 = new Regex("[ก-ฮ]์", RegexOptions.Compiled);
+        private static readonly Regex ThaiCharRegex = new Regex("[ก-ฮ]", RegexOptions.Compiled);
+        private static readonly Regex ValidVowelRegex = new Regex("[ะาิีึืุูเแโไใโัำ]", RegexOptions.Compiled);
+        private static readonly List<(string Key, Regex Pattern, string Replacement)> CompiledVowelMappings = new List<(string, Regex, string)>();
+
+        static ThaiArpasingPhonemizer() {
+            foreach (var mapping in VowelMapping) {
+                string pattern = "^" + mapping.Key.Replace("c", "([ก-ฮ][ลรว]?|อ[ย]?|ห[ก-ฮ]?)").Replace("x", "([ก-ฮ]{0,2})");
+                CompiledVowelMappings.Add((mapping.Key, new Regex(pattern, RegexOptions.Compiled), mapping.Value));
+            }
+        }
+
+        private Dictionary<string, string> CustomDictionary = new Dictionary<string, string> {
+            {"บวร", "baw wawn"},
+            {"ศร", "sawn"},
+            {"โสน", "sah noh"},
+            {"เบื้อง", "beuang"},
+            {"คือ", "kheu"},
+            {"เรือ", "reuah"},
+            {"บ่", "bao"},
+            {"ก็", "kao"},
+            {"เอื้อ", "euah"},
+            {"ตึก", "tuek"},
+            {"ปู่", "puh"},
+            {"ครุธ", "khrut"},
+            {"ครุฑ", "khrut"},
+            {"สถิตย์", "sah thit"},
+            {"ธ", "thah"},
+            {"ณ", "nah"},
+            {"ฤาษี", "rue sih"},
+            {"ฤทธิ์", "rit"},
+            {"ฤกดิ์", "ruek"},
+            {"ศักดิ์", "sak"},
+            {"เพียง", "ph ia ng"}, {"หลง", "l oh ng"}, {"เหี่ยว", "h ia w"}, {"เพรียว", "ph r ia w"}, // สระลดรูปและคำควบกล้ำเพิ่มเติม (v17.3)
+            {"เกิน", "k er n"}, {"เคย", "kh er y"}, {"เธอ", "th er"}, {"เพ้อ", "ph er"}, {"เจอ", "j er"}, {"เดิน", "d er n"}, // สระลดรูปเพิ่มเติม (v17.3)
+            {"ฤดู", "r eu d uh"}, {"อยู่", "y uh"}, {"หมด", "m oh d"}, {"คง", "kh oh ng"}, {"หม่น", "m oh n"} // สระลดรูปเพิ่มเติม (v17.3)
+        };
+        private bool isDictLoaded = false;
+        private USinger? singer;
+
         public override void SetSinger(USinger singer) {
             this.singer = singer;
+            LoadCustomDictionary();
         }
 
-        // ==========================================
-        // 🔢 ลบตัวเลขอารบิก + ไทยออก
-        // ==========================================
-        private static readonly Regex NumberStripRegex =
-            new Regex(@"[0-9\u0E50-\u0E59]+", RegexOptions.Compiled);
-        private static string StripNumbers(string s) =>
-            string.IsNullOrEmpty(s) ? s : NumberStripRegex.Replace(s, "");
-
-        // ==========================================
-        // 🔍 ตรวจสอบ Alias ในฐานข้อมูลเสียง OTO
-        // ==========================================
-        private bool IsValidAlias(string alias, Note note) {
-            if (singer == null || string.IsNullOrEmpty(alias)) return false;
-            var attr = note.phonemeAttributes?.FirstOrDefault(a => a.index == 0) ?? default;
-            return singer.TryGetMappedOto(alias, note.tone + attr.toneShift, attr.voiceColor, out _);
+        private void LoadCustomDictionary() {
+            if (isDictLoaded) return;
+            try {
+                string[] dictPaths = {
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Dictionaries", "dsdict-th.txt"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Dictionary", "words_th.txt"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Dictionary", "words_th_dict.txt")
+                };
+                foreach (var path in dictPaths) {
+                    LoadDictFile(path);
+                }
+            } catch (Exception ex) {
+                Log.Error(ex, "Failed to load custom dictionary.");
+            }
+            isDictLoaded = true;
         }
 
-        private bool checkOtoUntilHit(string[] candidates, Note note, out UOto oto) {
+        private void LoadDictFile(string path) {
+            if (File.Exists(path)) {
+                var lines = File.ReadAllLines(path, Encoding.UTF8);
+                foreach (var line in lines) {
+                    if (line.StartsWith("#") || string.IsNullOrWhiteSpace(line)) continue;
+                    var parts = line.Split(new[] { '=', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2) {
+                        CustomDictionary[parts[0].Trim()] = parts[1].Trim();
+                    }
+                }
+            }
+        }
+
+        private bool checkOtoUntilHit(string[] input, Note note, out UOto oto) {
             oto = default;
-            if (singer == null) return false;
             var attr = note.phonemeAttributes?.FirstOrDefault(a => a.index == 0) ?? default;
-            foreach (var test in candidates) {
-                if (!string.IsNullOrEmpty(test) &&
-                    singer.TryGetMappedOto(test, note.tone + attr.toneShift, attr.voiceColor, out var hit)) {
-                    oto = hit;
+            foreach (string test in input) {
+                if (singer.TryGetMappedOto(test, note.tone + attr.toneShift, attr.voiceColor, out var otoCandidacy)) {
+                    oto = otoCandidacy;
                     return true;
                 }
             }
             return false;
         }
 
-        // ==========================================
-        // 🎤 Process: ประมวลผลโน้ต → หน่วยเสียง Arpasing
-        // ==========================================
-        public override Result Process(Note[] notes, Note? prev, Note? next,
-            Note? prevNeighbour, Note? nextNeighbour, Note[] prevNeighbours) {
+        public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevNeighbours) {
+            var firstNote = notes[0];
+            var currentLyric = string.IsNullOrEmpty(firstNote.phoneticHint) ? firstNote.lyric.Normalize() : firstNote.phoneticHint.Normalize();
+            var syllables = WordToPhonemes(currentLyric);
+            if (syllables.Length == 0) syllables = new[] { currentLyric };
 
-            var note = notes[0];
-
-            // 1. อ่านเนื้อร้อง ลบตัวเลขออก
-            string baseLyric = StripNumbers(
-                string.IsNullOrEmpty(note.phoneticHint)
-                    ? note.lyric.Normalize()
-                    : note.phoneticHint.Normalize());
-
-            // 2. แยกพยางค์
-            string[] syllables = SplitToSyllables(baseLyric);
-
-            // 3. กระจาย Duration
-            int total = notes.Sum(n => n.duration);
-            int[] durations = new int[syllables.Length];
-            int[] offsets   = new int[syllables.Length];
-            DistributeDurations(notes, syllables.Length, total, ref durations, ref offsets);
-
-            // 4. บริบทเริ่มต้น
             var phonemes = new List<Phoneme>();
-            bool isStart = IsStartOfPhrase(prevNeighbour);
+            
+            bool isStart = prevNeighbour == null
+                || string.IsNullOrWhiteSpace(prevNeighbour.Value.lyric)
+                || prevNeighbour.Value.lyric == "-"
+                || prevNeighbour.Value.lyric.ToLower() == "r";
+                
             string prevPhoneme = "-";
-            if (!isStart && prevNeighbour.HasValue) {
-                var pTh = ParseInput(prevNeighbour.Value.lyric);
-                prevPhoneme = pTh.EndingConsonant ?? pTh.Vowel ?? "-";
+            if (!isStart && prevNeighbour != null) {
+                var prevTh = ParseInput(prevNeighbour.Value.lyric);
+                prevPhoneme = prevTh.EndingConsonant ?? prevTh.Vowel ?? "-";
             }
 
-            // 5. วนประมวลผลแต่ละพยางค์
-            for (int k = 0; k < syllables.Length; k++) {
-                string syl = syllables[k];
-                int dur    = durations[k];
-                int offset = offsets[k];
+            int totalNotesDuration = notes.Sum(n => n.duration);
+            int currentNoteIndex = 0;
+            int currentTickPosition = 0;
+            int lastNoteIndex = -1;
+
+            for (int sIdx = 0; sIdx < syllables.Length; sIdx++) {
+                string syllable = syllables[sIdx];
+                List<string> aliases = new List<string>();
+                
+                Note currentNote = notes[currentNoteIndex];
+                int noteStartPos = currentNote.position - firstNote.position;
+                int noteEndPos = noteStartPos + currentNote.duration;
+
+                if (sIdx > 0 && currentNoteIndex < notes.Length - 1) {
+                    currentNoteIndex++;
+                    currentNote = notes[currentNoteIndex];
+                    noteStartPos = currentNote.position - firstNote.position;
+                    noteEndPos = noteStartPos + currentNote.duration;
+                }
+                
+                int noteDuration = currentNote.duration;
+                int remainingSyllablesOnNote = 1;
+                for (int nextSIdx = sIdx + 1; nextSIdx < syllables.Length; nextSIdx++) {
+                    if (nextSIdx > 0 && currentNoteIndex < notes.Length - 1) break; 
+                    remainingSyllablesOnNote++;
+                }
+                
+                int sylDuration = noteDuration / remainingSyllablesOnNote;
+                if (sIdx > 0 && currentNoteIndex == lastNoteIndex) {
+                    noteStartPos = currentTickPosition;
+                    noteEndPos = noteStartPos + sylDuration;
+                    noteDuration = sylDuration;
+                } else if (remainingSyllablesOnNote > 1) {
+                    noteEndPos = noteStartPos + sylDuration;
+                    noteDuration = sylDuration;
+                }
+                lastNoteIndex = currentNoteIndex;
 
                 bool forceClose = false;
-                if (syl.EndsWith("-") && syl.Length > 1) {
-                    forceClose = true;
-                    syl = syl.Substring(0, syl.Length - 1);
-                }
-
-                var (C, Dip, V, X) = ParseInput(syl);
-                bool hasCluster = !string.IsNullOrEmpty(Dip);
-                bool hasEnding  = !string.IsNullOrEmpty(X);
-                bool isFirst = isStart && k == 0;
-                bool isLast  = k == syllables.Length - 1 &&
-                               (nextNeighbour == null || forceClose ||
-                                nextNeighbour.Value.lyric == "-" ||
-                                nextNeighbour.Value.lyric.ToLower() == "r");
-
-                // Auto-Melisma: เอื้อนสระซ้ำ
-                if (k > 0 && !string.IsNullOrEmpty(V) && string.IsNullOrEmpty(X) && string.IsNullOrEmpty(C)
-                    && (V == prevPhoneme || prevPhoneme.EndsWith(V))) {
-                    string mel = V + " " + V;
-                    if (!IsValidAlias(mel, note)) mel = V;
-                    if (IsValidAlias(mel, note)) {
-                        phonemes.Add(new Phoneme { phoneme = mel, position = offset });
-                        prevPhoneme = V;
-                        continue;
+                bool isEnd = false;
+                if (sIdx == syllables.Length - 1) {
+                    isEnd = nextNeighbour == null || nextNeighbour.Value.lyric == "-" || nextNeighbour.Value.lyric.ToLower() == "r";
+                    if (syllable.EndsWith("-") && syllable.Length > 1) {
+                        forceClose = true;
+                        isEnd = true;
+                        syllable = syllable.Substring(0, syllable.Length - 1);
                     }
                 }
 
-                // สร้างรายการ Alias พร้อมระบุประเภท (0=Onset, 1=Cluster, 2=Vowel, 3=VC, 4=End)
-                var raw = new List<(string alias, int type)>();
-
-                if (syl == "-") {
-                    raw.Add(($"{prevPhoneme} -", 4));
+                string? C = null, Dip = null, V = null, X = null;
+                if (syllable == "-") {
+                    aliases.Add($"{prevPhoneme} -");
                 } else {
-                    // lead: C หรือ V
-                    string lead = C ?? V;
-                    if (!string.IsNullOrEmpty(lead))
-                        raw.Add((isFirst ? $"- {lead}" : $"{prevPhoneme} {lead}", 0));
+                    (C, Dip, V, X) = ParseInput(syllable);
+
+                    string lead = C ?? V ?? "";
+                    if (!string.IsNullOrEmpty(lead)) {
+                        if (sIdx == 0 && isStart) aliases.Add($"- {lead}");
+                        else aliases.Add($"{prevPhoneme} {lead}");
+                    }
 
                     if (!string.IsNullOrEmpty(C)) {
-                        if (hasCluster) {
-                            raw.Add(($"{C} {Dip}", 1));
-                            if (!string.IsNullOrEmpty(V)) raw.Add(($"{Dip} {V}", 2));
+                        if (!string.IsNullOrEmpty(Dip)) {
+                            aliases.Add($"{C} {Dip}");
+                            aliases.Add($"{Dip} {V}");
                         } else if (!string.IsNullOrEmpty(V)) {
-                            raw.Add(($"{C} {V}", 2));
+                            aliases.Add($"{C} {V}");
                         }
                     }
 
-                    if (hasEnding && !string.IsNullOrEmpty(V))
-                        raw.Add(($"{V} {X}", 3));
+                    if (!string.IsNullOrEmpty(X) && !string.IsNullOrEmpty(V)) {
+                        aliases.Add($"{V} {X}");
+                    }
 
-                    if (isLast) {
-                        string tail = X ?? V;
-                        if (!string.IsNullOrEmpty(tail)) raw.Add(($"{tail} -", 4));
+                    if (isEnd || forceClose) {
+                        string tail = X ?? V ?? "";
+                        if (!string.IsNullOrEmpty(tail)) aliases.Add($"{tail} -");
+                    }
+                    
+                    prevPhoneme = X ?? V ?? "-";
+                }
+
+                if (aliases.Count == 0) aliases.Add(string.IsNullOrEmpty(syllable) ? "ah" : syllable);
+
+                for (int i = 0; i < aliases.Count; i++) {
+                    string alias = aliases[i];
+                    if (!checkOtoUntilHit(new[] { alias }, currentNote, out var oto)) {
+                        var parts = alias.Split(' ');
+                        if (parts.Length == 2 && parts[0] != "-") alias = parts[1] == "-" ? parts[0] : parts[1];
+                    }
+
+                    int position = 0;
+                    if (i == 0) {
+                        // ควบคุมรอยต่อ [C C] และการเริ่มเสียง ให้มีช่วง pre-utterance 7% (v17.3)
+                        position = -Math.Min((int)(noteDuration * 0.07), 40);
+                    } else if (alias.EndsWith("-")) {
+                        // ปรับการผลักเสียงช่วงพัก (-) ให้ไปอยู่ท้ายสุด 95% (v17.3)
+                        position = Math.Max((int)(noteDuration * 0.95), noteDuration - 15); 
+                    } else if (X != null && alias == $"{V} {X}") {
+                        position = Math.Max((int)(noteDuration * 0.60), noteDuration - 120); 
+                    } else if (Dip != null && i == 1) {
+                        position = Math.Min((int)(noteDuration * 0.05), 30);
+                    } else if (Dip != null && i == 2) {
+                        position = Math.Min((int)(noteDuration * 0.10), 60);
+                    } else if (i == aliases.Count - 1 && aliases.Count >= 3) {
+                        position = Math.Max((int)(noteDuration * 0.80), noteDuration - 60);
+                    } else if (i == 1) {
+                        position = Math.Min((int)(noteDuration * 0.12), 80);
+                    } else {
+                        position = Math.Min((int)(noteDuration * 0.20), 110);
+                    }
+
+                    int absolutePosition = position + noteStartPos;
+                    int lastPos = phonemes.Count > 0 ? phonemes.Last().position : -120;
+                    if (absolutePosition <= lastPos) {
+                        absolutePosition = lastPos + 10;
+                    }
+                    // ยอมให้ตำแหน่งติดลบได้เพื่อ pre-utterance ของ [C C] (v17.3)
+                    absolutePosition = Math.Min(absolutePosition, noteEndPos - 10);
+                    phonemes.Add(new Phoneme { phoneme = alias, position = absolutePosition });
+                    currentTickPosition = absolutePosition;
+                }
+            }
+
+            int gap = prevNeighbour == null ? 9999 : firstNote.position - (prevNeighbour.Value.position + prevNeighbour.Value.duration);
+            if (gap >= 120) {
+                bool hasOpening = phonemes.Count > 0 && (phonemes[0].phoneme.StartsWith("- ") || phonemes[0].phoneme.StartsWith("-"));
+                if (!hasOpening) {
+                    var attr = firstNote.phonemeAttributes?.FirstOrDefault(a => a.index == 0) ?? default;
+                    if (singer.TryGetMappedOto("Breath", firstNote.tone + attr.toneShift, attr.voiceColor, out var breathOto)) {
+                        int insertPos = -60;
+                        if (phonemes.Count > 0 && insertPos >= phonemes[0].position) {
+                            insertPos = phonemes[0].position - 10;
+                        }
+                        phonemes.Insert(0, new Phoneme { phoneme = breathOto.Alias, position = insertPos });
                     }
                 }
-
-                if (raw.Count == 0) raw.Add((string.IsNullOrEmpty(syl) ? "ah" : syl, 2));
-
-                // กรอง alias ที่มีใน OTO จริง
-                var valid = new List<(string alias, int type)>();
-                foreach (var item in raw) {
-                    if (IsValidAlias(item.alias, note)) { valid.Add(item); continue; }
-                    // fallback: "A B" → "B"
-                    var p = item.alias.Split(' ');
-                    if (p.Length == 2 && p[0] != "-") {
-                        string fb = p[1] == "-" ? p[0] : p[1];
-                        if (IsValidAlias(fb, note)) { valid.Add((fb, item.type)); continue; }
-                    }
-                    // ข้าม
-                }
-                // last-resort fallback
-                if (valid.Count == 0 && !string.IsNullOrEmpty(V) && IsValidAlias(V, note))
-                    valid.Add((V, 2));
-
-                // Emit phonemes ด้วย Timing ที่ปรับแล้วตามกฎเปอร์เซ็นต์
-                for (int i = 0; i < valid.Count; i++) {
-                    var item = valid[i];
-                    int pos = ComputePosition(item.alias, item.type, dur, hasCluster);
-                    phonemes.Add(new Phoneme { phoneme = item.alias, position = pos + offset });
-                }
-
-                prevPhoneme = X ?? V ?? "-";
             }
 
             return new Result { phonemes = phonemes.ToArray() };
         }
 
-        // ==========================================
-        // ⏱️ คำนวณตำแหน่ง Timing สำหรับแต่ละ Alias (อิงตามกฎเปอร์เซ็นต์ใหม่)
-        // ==========================================
-        private int ComputePosition(string alias, int type, int dur, bool hasCluster) {
-            bool isDiffSinger = singer != null && singer.SingerType == USingerType.DiffSinger;
-            bool isCVType = !alias.Contains(" "); // ถ้าเป็น phoneme แบบ C+V เดี่ยวๆ ไม่มีเว้นวรรค
-            
-            bool isException = isDiffSinger || isCVType;
+        (string? Consonant, string? Dipthong, string? Vowel, string? EndingConsonant) ParseInput(string input) {
+            if (string.IsNullOrEmpty(input)) return (null, null, null, null);
+            input = input.Replace(" ", ""); // Remove spaces to correctly parse phonemes
+            string? consonant = null, diphthong = null, vowel = null, endingConsonant = null;
 
-            if (isException) {
-                // Rule B: กฎยกเว้นสำหรับกลุ่ม C+V และ Diffsinger
-                switch (type) {
-                    case 0: // Onset (- C หรือ prevV C)
-                        return hasCluster ? -(int)(dur * 0.15) : -(int)(dur * 0.10);
-                    case 1: // Cluster (C Dip)
-                        return -(int)(dur * 0.05);
-                    case 2: // Vowel (C V หรือ Dip V)
-                        return 0; // Vowel ไม่จำกัดพื้นที่ (เริ่มที่ 0)
-                    case 3: // VC (ตัวสะกด)
-                        return dur - (int)(dur * 0.30); // C ตัวสะกดใช้พื้นที่ 30%
-                    case 4: // End (C - หรือ V -)
-                        return dur;
+            if (string.IsNullOrEmpty(input)) return (null, null, null, null);
+
+            foreach (var con in consonants) {
+                if (input.StartsWith(con) && (consonant == null || consonant.Length < con.Length)) consonant = con;
+            }
+            int startIdx = consonant?.Length ?? 0;
+            foreach (var dip in diphthongs) {
+                if (input.Substring(startIdx).StartsWith(dip) && (diphthong == null || diphthong.Length < dip.Length)) diphthong = dip;
+            }
+            startIdx += diphthong?.Length ?? 0;
+            foreach (var vow in vowels) {
+                if (input.Substring(startIdx).StartsWith(vow) && (vowel == null || vowel.Length < vow.Length)) vowel = vow;
+            }
+
+            int vowelEndIdx = startIdx + (vowel?.Length ?? 0);
+            if (vowelEndIdx < input.Length) {
+                string remainder = input.Substring(vowelEndIdx);
+                foreach (var con in endingConsonants) {
+                    if (remainder.EndsWith(con) && (endingConsonant == null || endingConsonant.Length < con.Length)) endingConsonant = con;
                 }
-            } else {
-                // Rule A: กฎมาตรฐานสำหรับ Thai Arpasing
-                switch (type) {
-                    case 0: // Onset
-                        if (alias.StartsWith("- ")) {
-                            return -(int)(dur * 0.20); // นำหน้าประโยค ใช้ความยาว 20% จากนอกมิดี้โน้ต
-                        } else {
-                            if (hasCluster) {
-                                return -(int)(dur * 0.10); // คำควบกล้ำ CCV ใช้ไม่เกิน 10%
-                            } else {
-                                return -(int)(dur * 0.50); // พยัญชนะแม่ ก กา CV ใช้ 50% ขึ้นไป (ขยายแถบชมพู)
+            }
+
+            return (consonant, diphthong, vowel, endingConsonant);
+        }
+
+        public string[] WordToPhonemes(string input) {
+            if (string.IsNullOrEmpty(input)) return new string[0];
+            
+            if (CustomDictionary.ContainsKey(input)) {
+                return new[] { CustomDictionary[input] };
+            }
+
+            input = input.Replace(" ", "");
+            if (string.IsNullOrEmpty(input)) return new string[0];
+
+            input = input.Replace("ก็", "ก้อ").Replace("บ่", "บ่อ").Replace("ฤทธิ์", "ริด").Replace("อังกฤษ", "อังกิด").Replace("\u0E40\u0E40", "\u0E41");
+            input = KaranRegex1.Replace(input, "");
+            input = KaranRegex2.Replace(input, "");
+            input = ToneRegex.Replace(input, "");
+
+            if (!ThaiCharRegex.IsMatch(input)) return new[] { input };
+
+            List<string> syllables = new List<string>();
+            int safetyCounter = 0;
+            while (input.Length > 0 && safetyCounter < 10) {
+                safetyCounter++;
+                bool matched = false;
+
+                foreach (var mapping in CompiledVowelMappings) {
+                    var match = mapping.Pattern.Match(input);
+                    if (match.Success) {
+                        string c = match.Groups[1].Value;
+                        string x = match.Groups.Count > 2 ? match.Groups[2].Value : string.Empty;
+
+                        if (mapping.Key == "cรรx" && string.IsNullOrEmpty(x)) x = "น";
+                        else if (mapping.Key.EndsWith("x") && string.IsNullOrEmpty(x)) {
+                            if (!TrueClusters.Contains(c) && c.Length > 1) {
+                                x = c.Substring(c.Length - 1);
+                                c = c.Substring(0, c.Length - 1);
                             }
                         }
-                    case 1: // Cluster (C Dip)
-                        return -(int)(dur * 0.05); // ส่วนหนึ่งของคำควบกล้ำ (รวมแล้วไม่เกิน 10%)
-                    case 2: // Vowel
-                        return 0;
-                    case 3: // VC (ตัวสะกด)
-                        return dur - (int)(dur * 0.40); // ตัวสะกด VC ใช้ 40%
-                    case 4: // End
-                        return dur; // ท้ายประโยค 15% จากนอกมิดี้โน้ต (เริ่มที่ขอบโน้ตเพื่อลากออกไป)
-                }
-            }
-            return 0;
-        }
 
-        // ==========================================
-        // 📐 แยกพยางค์จากเนื้อร้อง
-        // ==========================================
-        private string[] SplitToSyllables(string lyric) {
-            if (string.IsNullOrEmpty(lyric)) return new[] { lyric };
-            if (lyric.Contains("ๆ")) {
-                string bw = lyric.Replace("ๆ", "").Trim();
-                if (!string.IsNullOrEmpty(bw)) return new[] { bw, bw };
-            }
-            if (ThaiDictionaryLoader.Dictionary.TryGetValue(lyric, out string mapped) && !string.IsNullOrEmpty(mapped)) {
-                var parts = mapped.Split(new[] { ' ', ',', '|' }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length > 1) return parts;
-            }
-            return new[] { lyric };
-        }
+                        if (x.Length > 1) x = x.Substring(0, 1);
+                        if (c.Length >= 2 && (c.StartsWith("ห") || c.StartsWith("อ"))) c = c.Substring(1);
 
-        // ==========================================
-        // ⏱️ กระจาย Duration
-        // ==========================================
-        private void DistributeDurations(Note[] notes, int count, int total,
-            ref int[] durations, ref int[] offsets) {
-            if (notes.Length >= count) {
-                for (int k = 0; k < count; k++) {
-                    durations[k] = notes[k].duration;
-                    offsets[k]   = notes[k].position - notes[0].position;
-                }
-                if (notes.Length > count)
-                    durations[count - 1] = total - offsets[count - 1];
-            } else {
-                int cursor = 0;
-                for (int k = 0; k < count; k++) {
-                    int d = total / count;
-                    if (k == count - 1) d = total - cursor;
-                    durations[k] = Math.Max(1, d);
-                    offsets[k]   = cursor;
-                    cursor += d;
-                }
-            }
-        }
+                        string cConverted = ConvertC(c);
+                        string xConverted = ConvertX(x);
 
-        // ==========================================
-        // 🔍 ตรวจสอบเริ่มต้นประโยค
-        // ==========================================
-        private static bool IsStartOfPhrase(Note? prev) {
-            if (!prev.HasValue) return true;
-            string lyr = prev.Value.lyric?.ToLower() ?? "";
-            return lyr == "-" || lyr == "r" || lyr == "";
-        }
-
-        // ==========================================
-        // 🔬 ParseInput: แยกพยางค์ → C, Dip, V, X
-        // ==========================================
-        private (string Consonant, string Dipthong, string Vowel, string EndingConsonant)
-            ParseInput(string input) {
-            if (string.IsNullOrEmpty(input)) return default;
-            input = WordToPhonemes(input);
-            if (string.IsNullOrEmpty(input)) return default;
-
-            string C = null, Dip = null, V = null, X = null;
-
-            foreach (var c in consonants)
-                if (input.StartsWith(c) && (C == null || c.Length > C.Length)) C = c;
-
-            int idx = C?.Length ?? 0;
-            string rest = input.Substring(idx);
-
-            foreach (var d in diphthongs)
-                if (rest.StartsWith(d) && (Dip == null || d.Length > Dip.Length)) Dip = d;
-
-            idx += Dip?.Length ?? 0;
-            rest = input.Substring(idx);
-
-            foreach (var v in vowels)
-                if (rest.StartsWith(v) && (V == null || v.Length > V.Length)) V = v;
-
-            foreach (var x in endingConsonants)
-                if (input.EndsWith(x) && (X == null || x.Length > X.Length)) X = x;
-
-            // ป้องกัน X ชนกับ V
-            if (V != null && X != null && V.EndsWith(X)) X = null;
-
-            return (C, Dip, V, X);
-        }
-
-        // ==========================================
-        // 🔄 WordToPhonemes: แปลงคำไทย → สัทอักษร Arpasing
-        // ==========================================
-        public string WordToPhonemes(string input) {
-            if (string.IsNullOrEmpty(input)) return input;
-            input = input.Replace(" ", "");
-            input = StripNumbers(input);
-
-            if (ThaiDictionaryLoader.Dictionary.TryGetValue(input, out string mapped)) return mapped;
-
-            // คำข้อยกเว้น
-            input = input
-                .Replace("ก็", "ก้อ")
-                .Replace("บ่", "บ่อ")
-                .Replace("ฤทธิ์", "ริด")
-                .Replace("อังกฤษ", "อังกิด");
-
-            input = input.Replace("\u0E40\u0E40", "\u0E41");
-            // ลบการันต์และวรรณยุกต์
-            input = Regex.Replace(input, @"[ก-ฮ][ิุ]?์", "");
-            input = Regex.Replace(input, @"[ก-ฮ]์", "");
-            input = Regex.Replace(input, @"[่้๊๋็]", "");
-            input = NumberStripRegex.Replace(input, "");
-
-            if (!Regex.IsMatch(input, @"[ก-ฮ]")) return input;
-
-            foreach (var kv in VowelMapping) {
-                string pattern = "^" + kv.Key
-                    .Replace("c", @"([ก-ฮ][ลรว]?|อ[ย]?|ห[ก-ฮ]?)")
-                    .Replace("x", @"([ก-ฮ]*)") + "$";
-                var m = Regex.Match(input, pattern);
-                if (!m.Success) continue;
-
-                string c = m.Groups[1].Value;
-                string x = m.Groups.Count > 2 ? m.Groups[2].Value : "";
-
-                if (kv.Key == "cรรx" && x == "") x = "น";
-                else if (kv.Key.EndsWith("x") && x == "") {
-                    string[] trueClusters = {
-                        "กร","กล","กว","ขร","ขล","ขว","คร","คล","คว",
-                        "ปร","ปล","พร","พล","ตร","ผล","บร","บล","ฟร","ฟล","ดร","ทร"
-                    };
-                    if (!trueClusters.Contains(c) && c.Length > 1) {
-                        x = c.Substring(c.Length - 1);
-                        c = c.Substring(0, c.Length - 1);
+                        string phoneme;
+                        if (mapping.Replacement == "ah" && input.Contains("ั") && x == "ว") phoneme = cConverted + "ua";
+                        else if (mapping.Key == "เcย") phoneme = cConverted + "er" + "y";
+                        else if (mapping.Replacement == "eh" && x == "ย") phoneme = cConverted + "er" + xConverted;
+                        else phoneme = cConverted + mapping.Replacement + xConverted;
+                        
+                        syllables.Add(phoneme);
+                        input = input.Substring(match.Length);
+                        matched = true;
+                        break;
                     }
                 }
 
-                if (x.Length > 1) x = x.Substring(0, 1);
-                if (c.Length >= 2 && (c.StartsWith("ห") || c.StartsWith("อ")))
-                    c = c.Substring(1);
-
-                string cc = ConvertC(c);
-                string xc = ConvertX(x);
-
-                if (kv.Value == "ah" && input.Contains("ั") && x == "ว") return cc + "ua";
-                if (kv.Value == "eh" && x == "ย") return cc + "er" + xc;
-                return cc + kv.Value + xc;
-            }
-
-            // คำสั้นไม่มีสระ
-            if (!Regex.IsMatch(input, @"[ะาิีึืุูเแโไใโั]")) {
-                if (input.Contains("ว") && input.Length >= 3) {
-                    int wi = input.IndexOf('ว');
-                    string xs = input.Substring(wi + 1);
-                    if (xs.Length > 1) xs = xs.Substring(0, 1);
-                    return ConvertC(input.Substring(0, wi)) + "ua" + ConvertX(xs);
-                }
-                if (input.Length >= 2) {
-                    string[] clusters = {
-                        "กร","กล","กว","ขร","ขล","ขว","คร","คล","คว","ปร","ปล",
-                        "พร","พล","ตร","ผล","บร","บล","ฟร","ฟล","ดร","ทร",
-                        "หง","หญ","หน","หม","หย","หร","หล","หว","อย"
-                    };
-                    string cs = input[0].ToString(), xs = input.Substring(1);
-                    if (input.Length >= 3 && clusters.Contains(input.Substring(0, 2))) {
-                        cs = input.Substring(0, 2);
-                        xs = input.Substring(2);
+                if (!matched) {
+                    if (!ValidVowelRegex.IsMatch(input)) {
+                        if (input.Contains("ว") && input.Length >= 3) {
+                            int wIdx = input.IndexOf('ว');
+                            string xStr = input.Substring(wIdx + 1);
+                            if (xStr.Length > 1) xStr = xStr.Substring(0, 1);
+                            syllables.Add(ConvertC(input.Substring(0, wIdx)) + "ua" + ConvertX(xStr));
+                            input = "";
+                        } else if (input.Length >= 2) {
+                            string cStr = input[0].ToString();
+                            string xStr = input.Substring(1);
+                            if (input.Length >= 3 && TrueClusters.Contains(input.Substring(0, 2))) {
+                                cStr = input.Substring(0, 2);
+                                xStr = input.Substring(2);
+                            }
+                            if (xStr.Length > 1) xStr = xStr.Substring(0, 1);
+                            syllables.Add(ConvertC(cStr) + "oh" + ConvertX(xStr));
+                            input = "";
+                        } else {
+                            syllables.Add(input);
+                            input = "";
+                        }
+                    } else {
+                        syllables.Add(input);
+                        input = "";
                     }
-                    if (xs.Length > 1) xs = xs.Substring(0, 1);
-                    return ConvertC(cs) + "oh" + ConvertX(xs);
                 }
-                if (input.Length == 1) return ConvertC(input);
             }
 
-            return input;
+            return syllables.ToArray();
         }
 
-        // ==========================================
-        // 🔡 แปลงพยัญชนะต้น
-        // ==========================================
         private string ConvertC(string input) {
-            if (string.IsNullOrEmpty(input) || input == "อ") return "";
+            if (string.IsNullOrEmpty(input)) return "";
             if (input == "ทร" || input == "สร" || input == "ศร" || input == "ซร") return "s";
             if (input == "จร") return "j";
-            if (input == "อย") return "y";
-            if (input.Length >= 2 && (input.StartsWith("ห") || input.StartsWith("อ")))
-                input = input.Substring(1);
-            if (string.IsNullOrEmpty(input)) return "";
-            char first = input[0];
-            char? second = input.Length > 1 ? input[1] : (char?)null;
-            if (CMapping.TryGetValue(first, out string fc)) {
-                if (second.HasValue && CMapping.TryGetValue(second.Value, out string sc))
-                    return fc + sc;
-                return fc;
+            if (input.Length >= 2 && (input.StartsWith("ห") || input.StartsWith("อ"))) input = input.Substring(1);
+            char firstChar = input[0];
+            char? secondChar = input.Length > 1 ? input[1] : (char?)null;
+            if (CMapping.ContainsKey(firstChar)) {
+                string firstCharConverted = CMapping[firstChar];
+                if (secondChar != null && CMapping.ContainsKey((char)secondChar)) return firstCharConverted + CMapping[(char)secondChar];
+                return firstCharConverted;
             }
             return input;
         }
 
-        // ==========================================
-        // 🔡 แปลงตัวสะกด
-        // ==========================================
         private string ConvertX(string input) {
             if (string.IsNullOrEmpty(input)) return "";
-            return XMapping.TryGetValue(input[0], out string r) ? r : input;
+            char firstChar = input[0];
+            return XMapping.ContainsKey(firstChar) ? XMapping[firstChar] : input;
         }
     }
 }

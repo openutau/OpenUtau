@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
@@ -11,6 +14,7 @@ namespace OpenUtau.Plugin.Builtin {
     /// Supports hanzi and jyutping input.
     /// </summary>
     [Phonemizer("Cantonese Syo-Style Phonemizer", "ZH-YUE SYO", "Lotte V", language: "UTAU")]
+    // Version: v
     public class CantoneseSyoPhonemizer : Phonemizer {
 
         /// <summary>

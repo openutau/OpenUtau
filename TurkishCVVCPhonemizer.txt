@@ -1,0 +1,4 @@
+﻿Phonemizer Template: TurkishCVVCPhonemizer
+=========================================
+Vowels:
+a,e,ae,eu,i,o,oe,u,ue

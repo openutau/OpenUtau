@@ -1,17 +1,21 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using OpenUtau.Api;
-using OpenUtau.Core.Ustx;
 using OpenUtau.Core;
-using System.IO;
+using OpenUtau.Core.Ustx;
 using Serilog;
 
 namespace OpenUtau.Plugin.Builtin {
     /// Phonemizer for 'KOR CV' ///
     [Phonemizer("Korean CV Phonemizer", "KO CV", "EX3", language: "UTAU")]
 
+    // Version: v
     public class KoreanCVPhonemizer : BaseKoreanPhonemizer {
 
         // 1. Load Singer and Settings
@@ -37,7 +41,7 @@ namespace OpenUtau.Plugin.Builtin {
                 try {
                     string settingText = File.ReadAllText(path, encoding: System.Text.Encoding.UTF8);
                     kocvS = Yaml.DefaultDeserializer.Deserialize<KoreanCVSetting>(settingText);
-                    
+
                 } catch (Exception e) {
                     Log.Error(e, $"[KO CV] Failed to load {path}. Regenerating kocv.yaml in Plugin Directory...");
                     Directory.CreateDirectory(PluginDir);
@@ -72,10 +76,10 @@ namespace OpenUtau.Plugin.Builtin {
         [Serializable]
         private class KoreanCVSetting {
             private static readonly Version CURRENT_VERSION = new Version(1, 0);
-            public string version { get; set; } 
+            public string version { get; set; }
             public Settings settings { get; set; }
             public List<BatchimConnection> batchim_connections { get; set; }
-        
+
             [Serializable]
             public class Settings {
                 public bool use_rentan { get; set; }
@@ -98,7 +102,7 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
         }
-        
+
         static readonly Dictionary<string, string> FIRST_CONSONANTS = new Dictionary<string, string>(){
             {"ㄱ", "g"},
             {"ㄲ", "gg"},
@@ -121,7 +125,7 @@ namespace OpenUtau.Plugin.Builtin {
             {"ㅎ", "h"},
             {"null", ""} // 뒤 글자가 없을 때를 대비
             };
-        
+
         static readonly Dictionary<string, string[]> MIDDLE_VOWELS = new Dictionary<string, string[]>(){
             {"ㅏ", new string[3]{"a", "", "a"}},
             {"ㅐ", new string[3]{"e", "", "e"}},
@@ -310,7 +314,7 @@ namespace OpenUtau.Plugin.Builtin {
                     }
                 }
             }
-            
+
             batchim = _batchim;
 
             if (thisLyric[2] == "ㅁ" || !HARD_BATCHIMS.Contains(thisLyric[2])) { // batchim ㅁ + ㄴ ㄹ ㅇ
@@ -338,7 +342,7 @@ namespace OpenUtau.Plugin.Builtin {
             }
         }
 
-        private string? FindInOto(String phoneme, Note note, bool nullIfNotFound=false){
+        private string? FindInOto(String phoneme, Note note, bool nullIfNotFound = false) {
             return BaseKoreanPhonemizer.FindInOto(singer, phoneme, note, nullIfNotFound);
         }
 
@@ -348,29 +352,29 @@ namespace OpenUtau.Plugin.Builtin {
 
             Hashtable lyrics = KoreanPhonemizerUtil.Variate(prevNeighbour, note, nextNeighbour);
             string[] prevLyric = new string[]{ // "ㄴ", "ㅑ", "ㅇ"
-                (string)lyrics[0], 
-                (string)lyrics[1], 
+                (string)lyrics[0],
+                (string)lyrics[1],
                 (string)lyrics[2]
                 };
             string[] thisLyric = new string[]{ // "ㄴ", "ㅑ", "ㅇ"
-                (string)lyrics[3], 
-                (string)lyrics[4], 
+                (string)lyrics[3],
+                (string)lyrics[4],
                 (string)lyrics[5]
                 };
             string[] nextLyric = new string[]{ // "ㄴ", "ㅑ", "ㅇ"
-                (string)lyrics[6], 
-                (string)lyrics[7], 
+                (string)lyrics[6],
+                (string)lyrics[7],
                 (string)lyrics[8]
                 };
 
-            if (thisLyric[0] == "null") { 
+            if (thisLyric[0] == "null") {
                 return GenerateResult(FindInOto(notes[0].lyric, notes[0]));
             }
-            
+
             return ConvertForCV(notes, prevLyric, thisLyric, nextLyric);
 
         }
-        
+
 
         public override Result GenerateEndSound(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevNeighbours) {
             Note note = notes[0];
@@ -380,10 +384,10 @@ namespace OpenUtau.Plugin.Builtin {
 
             Note prevNeighbour_ = (Note)prevNeighbour;
             Hashtable lyrics = KoreanPhonemizerUtil.Separate(prevNeighbour_.lyric);
-            
+
             string[] prevLyric = new string[]{ // "ㄴ", "ㅑ", "ㅇ"
-                (string)lyrics[0], 
-                (string)lyrics[1], 
+                (string)lyrics[0],
+                (string)lyrics[1],
                 (string)lyrics[2]
                 };
 
@@ -391,7 +395,7 @@ namespace OpenUtau.Plugin.Builtin {
             string endSound = note.lyric;
             string prevMidVowel;
 
-            
+
 
             if (prevLyric[1] == "ㅢ") {
                 bool euiExists = CheckThisPhonemeExists("eui", note);
@@ -405,14 +409,14 @@ namespace OpenUtau.Plugin.Builtin {
             } else {
                 prevMidVowel = MIDDLE_VOWELS.ContainsKey(soundBeforeEndSound) ? MIDDLE_VOWELS[soundBeforeEndSound][2] : LAST_CONSONANTS[soundBeforeEndSound][0];
             }
-            
+
             if (FindInOto($"{prevMidVowel} {endSound}", note, true) == null) {
                 if (FindInOto($"{prevMidVowel}{endSound}", note, true) == null) {
                     return GenerateResult(FindInOto($"{endSound}", note));
                 }
                 return GenerateResult(FindInOto($"{prevMidVowel}{endSound}", note, true));
             }
-            return GenerateResult(FindInOto($"{prevMidVowel} {endSound}", note));            
+            return GenerateResult(FindInOto($"{prevMidVowel} {endSound}", note));
         }
     }
 }

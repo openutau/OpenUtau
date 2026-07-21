@@ -1,8 +1,9 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using OpenUtau.Api;
-using System.Linq;
 
 
 namespace OpenUtau.Plugin.Builtin {
@@ -10,6 +11,7 @@ namespace OpenUtau.Plugin.Builtin {
     // Contributed by Mim with the help of Heiden.BZR & nago's phonemizers
 
     //This is a first implementation and I'm already working on optimization 
+    // Version: v
     public class FrenchCVVCPhonemizer : SyllableBasedPhonemizer {
 
         private readonly string[] vowels = "ah,ae,eh,ee,oe,ih,oh,oo,ou,uh,en,in,on,oi,ui,a,ai,e,i,o,u,eu".Split(",");

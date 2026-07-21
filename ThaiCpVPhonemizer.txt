@@ -1,0 +1,6 @@
+﻿Phonemizer Template: ThaiCpVPhonemizer
+=========================================
+Vowels:
+a,i,u,e,o,@,Q,3,6,1,ia,ua,I,8
+Consonants:
+b,ch,d,f,g,h,j,k,kh,l,m,n,p,ph,r,s,t,th,w,y

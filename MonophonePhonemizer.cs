@@ -1,17 +1,16 @@
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Serilog;
 
-namespace OpenUtau.Plugin.Builtin
-{
-    public abstract class MonophonePhonemizer : PhonemeBasedPhonemizer
-    {
-        public MonophonePhonemizer(){
+namespace OpenUtau.Plugin.Builtin {
+    public abstract class MonophonePhonemizer : PhonemeBasedPhonemizer {
+        public MonophonePhonemizer() {
             addTail = false;
         }
-        
+
         protected override string GetPhonemeOrFallback(string prevSymbol, string symbol, int tone, string color, string alt) {
             if (!string.IsNullOrEmpty(alt) && singer.TryGetMappedOto($"{symbol}{alt}", tone, color, out var oto)) {
                 return oto.Alias;

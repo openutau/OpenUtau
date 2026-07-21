@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -7,6 +10,7 @@ using WanaKanaNet;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Filipino to Japanese Phonemizer", "FIL to JA", "Cadlaxa", language: "UTAU")]
+    // Version: v
     public class FILtoJAPhonemizer : SyllableBasedPhonemizer {
         protected override string[] GetVowels() => vowels;
         private string[] vowels =
@@ -456,7 +460,7 @@ namespace OpenUtau.Plugin.Builtin {
 
                 prevV = WanaKana.ToRomaji(solo).Last<char>().ToString();
             }
-            
+
             if (ending.IsEndingV) {
                 TryAddPhoneme(phonemes, ending.tone, $"{prevV} R", $"{prevV} -", $"{prevV}-");
             }
@@ -482,7 +486,7 @@ namespace OpenUtau.Plugin.Builtin {
 
             var vc = $"{vowel} {cons}";
             var altVc = $"{vowel} {cons[0]}";
-            
+
             if (HasOto(vc, tone)) {
                 phonemes.Add(vc);
             } else if (HasOto(altVc, tone)) {

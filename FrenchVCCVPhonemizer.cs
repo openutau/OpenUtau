@@ -1,13 +1,15 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using OpenUtau.Api;
-using System.Linq;
 
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("French VCCV m2RUg Phonemizer", "FR VCCV", "Mim", language: "UTAU")]
 
+    // Version: v
     public class FrenchVCCVPhonemizer : SyllableBasedPhonemizer {
 
         private readonly string[] vowels = "A,E,e,2,9,i,o,O,u,y,a,U,0,A',E',e',2',9',i',o',O',u',y',a',U',0'".Split(",");
@@ -50,8 +52,8 @@ namespace OpenUtau.Plugin.Builtin {
                 basePhoneme = $"- {v}";
 
             } else if (syllable.IsVV) {  // if VV
-                //if (!CanMakeAliasExtension(syllable)) {
-                    basePhoneme = $"{prevV} {v}";
+                                         //if (!CanMakeAliasExtension(syllable)) {
+                basePhoneme = $"{prevV} {v}";
                 //} else {
                 //    // the previous alias will be extended
                 //    basePhoneme = null;
@@ -60,7 +62,7 @@ namespace OpenUtau.Plugin.Builtin {
             } else if (syllable.IsStartingCVWithOneConsonant) {
 
                 basePhoneme = $"- {cc[0]}{v}";
-                if(!HasOto(basePhoneme,syllable.tone)) {
+                if (!HasOto(basePhoneme, syllable.tone)) {
                     TryAddPhoneme(phonemes, syllable.tone, $"- {cc[0]}");
                     basePhoneme = $"{cc[0]}{v}";
                 }
@@ -75,8 +77,8 @@ namespace OpenUtau.Plugin.Builtin {
                 basePhoneme = $"{cc.Last()}{v}";
 
                 // CC + CCV support
-                var ccv = $"{cc[cc.Length-2]}{cc.Last()}{v}";
-                if (HasOto(ccv,syllable.tone)) {
+                var ccv = $"{cc[cc.Length - 2]}{cc.Last()}{v}";
+                if (HasOto(ccv, syllable.tone)) {
                     basePhoneme = ccv;
 
                     for (int i = 0; i < cc.Length - 2; i++) {
@@ -87,7 +89,7 @@ namespace OpenUtau.Plugin.Builtin {
                         }
                         if (!HasOto(cci, syllable.tone)) {
                             cci = $"{cc[i]}{cc[i + 1]}_";
-                            if (i+1 == cc.Length-2 && HasOto($"_{ccv}",syllable.tone)) {
+                            if (i + 1 == cc.Length - 2 && HasOto($"_{ccv}", syllable.tone)) {
                                 basePhoneme = $"_{ccv}";
                             }
                         }
@@ -101,7 +103,7 @@ namespace OpenUtau.Plugin.Builtin {
 
                         if (i == 0) {
                             cci = $"- {cc[i]}{cc[i + 1]}_";
-                            if (!HasOto(cci,syllable.tone)) {
+                            if (!HasOto(cci, syllable.tone)) {
                                 cci = $"{cc[i]}{cc[i + 1]}_";
                             }
                         }
@@ -175,7 +177,7 @@ namespace OpenUtau.Plugin.Builtin {
                 }
 
                 // convert 'n + j' to 'J'
-                if($"{cc.Last()}" == "j" && $"{cc[cc.Length-2]}" == "n") {
+                if ($"{cc.Last()}" == "j" && $"{cc[cc.Length - 2]}" == "n") {
                     basePhoneme = $"J{v}";
                 }
 
@@ -201,7 +203,7 @@ namespace OpenUtau.Plugin.Builtin {
 
                     // try 'VC -' else 'V C' + 'C -'
                     var vc = $"{v}{cc[0]} -";
-                    if(HasOto(vc,ending.tone)) {
+                    if (HasOto(vc, ending.tone)) {
                         phonemes.Add(vc);
                     } else {
                         vc = $"{v} {cc[0]}";
@@ -210,7 +212,7 @@ namespace OpenUtau.Plugin.Builtin {
                         var cE = $"{cc[0]} -";
                         phonemes.Add(cE);
                     }
-                    
+
 
 
                 } else {
@@ -223,11 +225,11 @@ namespace OpenUtau.Plugin.Builtin {
                     for (int i = 0; i < cc.Length - 1; i++) {
                         var cci = $"{cc[i]} {cc[i + 1]}";
 
-                        if(i == cc.Length - 2) {
+                        if (i == cc.Length - 2) {
                             cci = $"{cc[i]}{cc[i + 1]} -";
                             hasEnding = true;
                         }
-                        if (!HasOto(cci,ending.tone)) {
+                        if (!HasOto(cci, ending.tone)) {
                             cci = $"{cc[i]}{cc[i + 1]}_";
                             hasEnding = false;
                         }

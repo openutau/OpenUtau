@@ -5,6 +5,12 @@
     <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
     <DebugType>embedded</DebugType>
     <Nullable>enable</Nullable>
+    <Product>Thai OpenUtau</Product>
+    <Company>DELTA SYNTH</Company>
+    <Authors>DELTA SYNTH</Authors>
+    <PackageProjectUrl>https://patiphatwongyai.wixsite.com/deltasynth</PackageProjectUrl>
+    <ApplicationIcon>..\OpenUtau\Assets\Thai OpenUtau Logo type.ico</ApplicationIcon>
+    <NoWarn>CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8619;CS8625;CS8629;CS8632;CS0108;CS0114;CS0162;CS0169;CS0219;CS0414;CS0612;CS0649;CS8981;CS0472;CS0164;$(NoWarn);CS8769;CS8767;CS8612;CS8714;CS0168;CS0618;CA2200</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,13 +36,5 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="words_th.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="dict-th-VCCV.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>
+

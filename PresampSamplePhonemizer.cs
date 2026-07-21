@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -10,6 +13,7 @@ using OpenUtau.Core.Ustx;
 #if DEBUG
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Presamp Sample Phonemizer", "ZH CVVC", language: "UTAU")]
+    // Version: v
     public class PresampSamplePhonemizer : Phonemizer {
         // Supporting: [VOWEL][CONSONANT][PRIORITY][REPLACE][ALIAS(VCPAD,VCVPAD)]
 
@@ -54,7 +58,8 @@ namespace OpenUtau.Plugin.Builtin {
                 if (presamp.PhonemeList.TryGetValue(prevLyric, out PresampPhoneme prevPhoneme)) {
                     prevVowel = prevPhoneme.Vowel;
                 }
-            };
+            }
+            ;
             string vcpad = presamp.AliasRules.VCPAD;
 
             var attr0 = notes[0].phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;

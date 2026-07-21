@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,16 +14,16 @@ namespace OpenUtau.Plugin.Builtin {
     /// <para>It works by spliting "duang" to "duang" + "_ang", to produce the proper tail sound.</para>
     /// </summary>
     [Phonemizer("Chinese CVV (十月式整音扩张) Phonemizer", "ZH CVV", language: "UTAU")]
-    public class ChineseCVVMonophonePhonemizer : MonophonePhonemizer
-    {
+    // Version: v
+    public class ChineseCVVMonophonePhonemizer : MonophonePhonemizer {
         static readonly string pinyins = "a,ai,an,ang,ao,ba,bai,ban,bang,bao,bei,ben,beng,bi,bian,biao,bie,bin,bing,bo,bu,ca,cai,can,cang,cao,ce,cei,cen,ceng,cha,chai,chan,chang,chao,che,chen,cheng,chi,chong,chou,chu,chua,chuai,chuan,chuang,chui,chun,chuo,ci,cong,cou,cu,cuan,cui,cun,cuo,da,dai,dan,dang,dao,de,dei,den,deng,di,dia,dian,diao,die,ding,diu,dong,dou,du,duan,dui,dun,duo,e,ei,en,eng,er,fa,fan,fang,fei,fen,feng,fo,fou,fu,ga,gai,gan,gang,gao,ge,gei,gen,geng,gong,gou,gu,gua,guai,guan,guang,gui,gun,guo,ha,hai,han,hang,hao,he,hei,hen,heng,hong,hou,hu,hua,huai,huan,huang,hui,hun,huo,ji,jia,jian,jiang,jiao,jie,jin,jing,jiong,jiu,ju,jv,juan,jvan,jue,jve,jun,jvn,ka,kai,kan,kang,kao,ke,kei,ken,keng,kong,kou,ku,kua,kuai,kuan,kuang,kui,kun,kuo,la,lai,lan,lang,lao,le,lei,leng,li,lia,lian,liang,liao,lie,lin,ling,liu,lo,long,lou,lu,luan,lun,luo,lv,lve,ma,mai,man,mang,mao,me,mei,men,meng,mi,mian,miao,mie,min,ming,miu,mo,mou,mu,na,nai,nan,nang,nao,ne,nei,nen,neng,ni,nian,niang,niao,nie,nin,ning,niu,nong,nou,nu,nuan,nun,nuo,nv,nve,o,ou,pa,pai,pan,pang,pao,pei,pen,peng,pi,pian,piao,pie,pin,ping,po,pou,pu,qi,qia,qian,qiang,qiao,qie,qin,qing,qiong,qiu,qu,qv,quan,qvan,que,qve,qun,qvn,ran,rang,rao,re,ren,reng,ri,rong,rou,ru,rua,ruan,rui,run,ruo,sa,sai,san,sang,sao,se,sen,seng,sha,shai,shan,shang,shao,she,shei,shen,sheng,shi,shou,shu,shua,shuai,shuan,shuang,shui,shun,shuo,si,song,sou,su,suan,sui,sun,suo,ta,tai,tan,tang,tao,te,tei,teng,ti,tian,tiao,tie,ting,tong,tou,tu,tuan,tui,tun,tuo,wa,wai,wan,wang,wei,wen,weng,wo,wu,xi,xia,xian,xiang,xiao,xie,xin,xing,xiong,xiu,xu,xv,xuan,xvan,xue,xve,xun,xvn,ya,yan,yang,yao,ye,yi,yin,ying,yo,yong,you,yu,yv,yuan,yvan,yue,yve,yun,yvn,za,zai,zan,zang,zao,ze,zei,zen,zeng,zha,zhai,zhan,zhang,zhao,zhe,zhei,zhen,zheng,zhi,zhong,zhou,zhu,zhua,zhuai,zhuan,zhuang,zhui,zhun,zhuo,zi,zong,zou,zu,zuan,zui,zun";
         static readonly string tails = "_vn,_ing,_ong,_an,_ou,_er,_ao,_eng,_ang,_en,_en2,_ai,_iong,_in,_ei";
-        
+
         static readonly string[] pinyinList = pinyins.Split(',');
         static readonly string[] tailList = tails.Split(',');
 
         public ChineseCVVMonophonePhonemizer() {
-            ConsonantLength = 120;    
+            ConsonantLength = 120;
         }
 
         protected override IG2p LoadG2p() {
@@ -59,8 +60,8 @@ namespace OpenUtau.Plugin.Builtin {
             BaseChinesePhonemizer.RomanizeNotes(groups);
         }
     }
-    
-    class ChineseCVVG2p : IG2p{
+
+    class ChineseCVVG2p : IG2p {
         /// <summary>
         ///  The consonant table.
         /// </summary>
@@ -72,7 +73,7 @@ namespace OpenUtau.Plugin.Builtin {
 
         static HashSet<string> cSet;
         static Dictionary<string, string> vDict;
-        
+
         static ChineseCVVG2p() {
             cSet = new HashSet<string>(consonants.Split(','));
             vDict = vowels.Split(',')
@@ -80,15 +81,15 @@ namespace OpenUtau.Plugin.Builtin {
                 .ToDictionary(a => a[0], a => a[1]);
         }
 
-        public bool IsVowel(string phoneme){
+        public bool IsVowel(string phoneme) {
             return !phoneme.StartsWith("_");
         }
 
-        public bool IsGlide(string phoneme){
+        public bool IsGlide(string phoneme) {
             return false;
         }
 
-        public string[] Query(string lyric){
+        public string[] Query(string lyric) {
             // The overall logic is:
             // 1. Remove consonant: "duang" -> "uang".
             // 2. Lookup the trailing sound in vowel table: "uang" -> "_ang".
@@ -113,14 +114,14 @@ namespace OpenUtau.Plugin.Builtin {
             if ((vowel == "an") && (consonant == "y")) {
                 vowel = "ian";
             }
-            if(vDict.TryGetValue(vowel, out var tail)){
+            if (vDict.TryGetValue(vowel, out var tail)) {
                 return new string[] { lyric, tail };
-            }else{
+            } else {
                 return new string[] { lyric };
             }
-                        
+
         }
-        public bool IsValidSymbol(string symbol){
+        public bool IsValidSymbol(string symbol) {
             return true;
         }
 

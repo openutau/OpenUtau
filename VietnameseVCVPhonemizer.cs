@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Vietnamese VCV Phonemizer", "VIE VCV", "Jani Tran", language: "UTAU")]
+    // Version: v
     public class VietnameseVCVPhonemizer : Phonemizer {
         /// <summary>
         /// The lookup table to convert a hiragana to its tail vowel.
@@ -41,9 +45,9 @@ namespace OpenUtau.Plugin.Builtin {
         private USinger singer;
 
         public override void SetSinger(USinger singer) => this.singer = singer;
-        
+
         // Legacy mapping. Might adjust later to new mapping style.
-		public override bool LegacyMapping => true;
+        public override bool LegacyMapping => true;
 
         public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevNeighbours) {
             var note = notes[0];
@@ -219,9 +223,9 @@ namespace OpenUtau.Plugin.Builtin {
                         }
                     } else
                         if (prevNeighbour == null) {
-                        phonemes.Add(
-                        new Phoneme { phoneme = $"- {N}" });
-                    }
+                            phonemes.Add(
+                            new Phoneme { phoneme = $"- {N}" });
+                        }
                 }
                 // 2 kí tự CV, ví dụ: "ba"
                 if ((dem == 2) && tontaiC) {

@@ -1,0 +1,4 @@
+﻿Phonemizer Template: FilipinoPhonemizer
+=========================================
+Vowels:
+a,e,i,o,u,ay,ey,oy,uy,aw,ew,ow,iw

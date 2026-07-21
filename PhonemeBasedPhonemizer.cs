@@ -1,3 +1,6 @@
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,10 +8,8 @@ using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
 using Serilog;
 
-namespace OpenUtau.Plugin.Builtin
-{
-    public abstract class PhonemeBasedPhonemizer : Phonemizer
-    {
+namespace OpenUtau.Plugin.Builtin {
+    public abstract class PhonemeBasedPhonemizer : Phonemizer {
         protected Dictionary<string, string[]> vowelFallback;
         protected USinger singer;
         protected IG2p g2p;
@@ -21,7 +22,7 @@ namespace OpenUtau.Plugin.Builtin
         /// This property will later be exposed in UI for user adjustment.
         /// </summary>
         public int ConsonantLength { get; set; } = 60;
-        
+
         public bool addTail { get; set; } = true;
 
         public PhonemeBasedPhonemizer() {
@@ -92,14 +93,14 @@ namespace OpenUtau.Plugin.Builtin
             // - "+n" manually aligns to n-th phoneme.
             alignments.Clear();
             //notes except those whose lyrics start witn "+*" or "+~"
-            var nonExtensionNotes = notes.Where(n=>!IsSyllableVowelExtensionNote(n)).ToArray();
+            var nonExtensionNotes = notes.Where(n => !IsSyllableVowelExtensionNote(n)).ToArray();
             for (int i = 0; i < symbols.Length; i++) {
                 if (isVowel[i] && alignments.Count < nonExtensionNotes.Length) {
                     //Handle glide phonemes
                     //For "Consonant-Glide-Vowel" syllable, the glide phoneme is placed after the start position of the note.
-                    if(i>=2 && isGlide[i-1] && !isVowel[i-2]){
-                        alignments.Add(Tuple.Create(i-1, nonExtensionNotes[alignments.Count].position - notes[0].position, false));
-                    } else{
+                    if (i >= 2 && isGlide[i - 1] && !isVowel[i - 2]) {
+                        alignments.Add(Tuple.Create(i - 1, nonExtensionNotes[alignments.Count].position - notes[0].position, false));
+                    } else {
                         alignments.Add(Tuple.Create(i, nonExtensionNotes[alignments.Count].position - notes[0].position, false));
                     }
                 }

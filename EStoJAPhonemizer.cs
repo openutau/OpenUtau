@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -7,6 +10,7 @@ using WanaKanaNet;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Spanish to Japanese Phonemizer", "ES to JA", "Lotte V", language: "UTAU")]
+    // Version: v
     public class EStoJAPhonemizer : SyllableBasedPhonemizer {
         /// <summary>
         /// Phonemizer for using Japanese banks for Spanish songs.
@@ -296,7 +300,7 @@ namespace OpenUtau.Plugin.Builtin {
             {"wu", "u" },
             {"wi", "uli" },
             {"we", "ule" },
-            {"wo", "ulo" }, 
+            {"wo", "ulo" },
         };
 
         private Dictionary<string, string> ConditionalAlt => conditionalAlt;
@@ -340,7 +344,7 @@ namespace OpenUtau.Plugin.Builtin {
             {"sula", new [] { "su", "wa" } },
             {"sui", new [] { "su", "uli" } },
             {"sule", new [] { "su", "ule" } },
-            {"sulo", new [] { "su", "ulo" } }, 
+            {"sulo", new [] { "su", "ulo" } },
             {"je", new [] { "ji", "e" } },
             {"jya", new [] { "ji", "ya" } },
             {"jye", new [] { "ji", "e" } },

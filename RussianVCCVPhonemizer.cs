@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -6,6 +7,7 @@ using OpenUtau.Core.G2p;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Russian VCCV Phonemizer", "RU VCCV", "Heiden.BZR", language: "UTAU")]
+    // Version: v
     public class RussianVCCVPhonemizer : SyllableBasedPhonemizer {
 
         private readonly string[] vowels = "a,e,o,u,y,i,M,N,ex,ax,x".Split(",");

@@ -1,4 +1,7 @@
-﻿using System;
+﻿#pragma warning disable CS0618, CS0649, CS8632, CS0108
+#nullable enable
+#pragma warning disable CS8632
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +13,7 @@ namespace OpenUtau.Plugin.Builtin {
     /// Reclist by haku
     /// </summary>
     [Phonemizer("Polish CVC Phonemizer", "PL CVC", "Heiden.BZR", language: "UTAU")]
+    // Version: v
     public class PolishCVCPhonemizer : SyllableBasedPhonemizer {
 
         private readonly string[] vowels = "a A e E i o u y".Split(" ");
@@ -24,14 +28,12 @@ namespace OpenUtau.Plugin.Builtin {
             var phonemes = new List<string>();
             if (syllable.IsStartingV) {
                 basePhoneme = $"- {v}";
-            }
-            else if (syllable.IsStartingCV) {
+            } else if (syllable.IsStartingCV) {
                 basePhoneme = $"- {cc.Last()}{v}";
                 for (var i = 0; i < cc.Length - 1; i++) {
                     phonemes.Add($"- {cc[i]}");
                 }
-            }
-            else if (syllable.IsVV) {
+            } else if (syllable.IsVV) {
                 if (!CanMakeAliasExtension(syllable)) {
                     basePhoneme = v;
                 } else {
