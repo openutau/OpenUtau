@@ -92,7 +92,9 @@ namespace OpenUtau.App.Views {
             HighlightTempoMarker(draggedTempo);
 
             args.Pointer.Capture(TimelineCanvas);
-            DocManager.Inst.StartUndoGroup("command.project.tempo");
+            DocManager.Inst.StartUndoGroup(
+                "command.project.tempo",
+                deferValidate: true);
             Cursor = ViewConstants.cursorSizeWE;
             args.Handled = true;
         }
@@ -153,6 +155,13 @@ namespace OpenUtau.App.Views {
                 return;
             }
 
+            if (!tempoDragHasMoved) {
+                viewModel.TracksViewModel.PointToLineTick(
+                    tempoDragStartPoint,
+                    out int left,
+                    out _);
+                viewModel.PlaybackViewModel.MovePlayPos(left);
+            }
             FinishTempoMarkerUndoGroup();
             draggedTempo = null;
             tempoDragHasMoved = false;
