@@ -163,7 +163,8 @@ Devam edip mevcut çalma kafasından sonra, notaların olmadığı en yakın kon
   <system:String x:Key="errors.diffsinger.downloadvocoder1">Vocoder yüklenemedi </system:String>
   <system:String x:Key="errors.diffsinger.downloadvocoder2">. Lütfen vocoder'ı şuradan indirin </system:String>
   <system:String x:Key="errors.editing.autopitch.unsupported">Mevcut ses bankası pitch eğrisi üretmeyi desteklemiyor. Lütfen bir DiffSinger veya Enunu ses bankası kullanın.</system:String>
-<system:String x:Key="errors.encryptedarchive">Şifreli arşiv dosyaları desteklenmiyor. Lütfen Araçlar > Tercihler > Yollar üzerinden Ses Bankası klasörünü açın ve arşiv dosyasını manuel olarak bu konuma çıkarın.</system:String>  <system:String x:Key="errors.expression.abbrlong">Kısaltma 1 ila 4 karakter arasında olmalıdır</system:String>
+<system:String x:Key="errors.encryptedarchive">Şifreli arşiv dosyaları desteklenmiyor. Lütfen Araçlar > Tercihler > Yollar üzerinden Ses Bankası klasörünü açın ve arşiv dosyasını manuel olarak bu konuma çıkarın.</system:String>
+<system:String x:Key="errors.expression.abbrlong">Kısaltma 1 ila 4 karakter arasında olmalıdır</system:String>
   <system:String x:Key="errors.expression.abbrset">Kısaltma ayarlanmalıdır</system:String>
   <system:String x:Key="errors.expression.abbrunique">Kısaltmalar benzersiz olmalıdır</system:String>
   <system:String x:Key="errors.expression.customDefault">Proje/Parça varsayılan değeri min ile max arasında olmalıdır</system:String>
