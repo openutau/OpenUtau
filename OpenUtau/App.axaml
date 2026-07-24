@@ -25,6 +25,7 @@
       <ResourceInclude x:Key="strings-zh-CN" Source="/Strings/Strings.zh-CN.axaml"/>
       <ResourceInclude x:Key="strings-zh-TW" Source="/Strings/Strings.zh-TW.axaml"/>
       <ResourceInclude x:Key="strings-th-TH" Source="/Strings/Strings.th-TH.axaml"/>
+      <ResourceInclude x:Key="strings-tr-TR" Source="/Strings/Strings.tr-TR.axaml"/>
       <ResourceInclude x:Key="themes-dark" Source="/Colors/DarkTheme.axaml"/>
       <ResourceInclude x:Key="themes-light" Source="/Colors/LightTheme.axaml"/>
       <ResourceInclude x:Key="themes-custom" Source="/Colors/CustomTheme.axaml"/>

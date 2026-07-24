@@ -1,0 +1,842 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  
+  <system:String x:Key="button.apply">Uygula</system:String>
+  <system:String x:Key="button.cancel">İptal</system:String>
+  <system:String x:Key="button.no">Hayır</system:String>
+  <system:String x:Key="button.off">Kapalı</system:String>
+  <system:String x:Key="button.ok">Tamam</system:String>
+  <system:String x:Key="button.on">Açık</system:String>
+  <system:String x:Key="button.open">Aç</system:String>
+  <system:String x:Key="button.remove">Kaldır</system:String>
+  <system:String x:Key="button.reset">Sıfırla</system:String>
+  <system:String x:Key="button.save">Kaydet</system:String>
+  <system:String x:Key="button.select">Seç</system:String>
+  <system:String x:Key="button.yes">Evet</system:String>
+
+  <system:String x:Key="command.batch.lyric">Toplu söz düzenleme</system:String>
+  <system:String x:Key="command.batch.note">Toplu nota düzenleme</system:String>
+  <system:String x:Key="command.batch.plugin">Eklenti uygula</system:String>
+  <system:String x:Key="command.batch.reset">Toplu sıfırla</system:String>
+  <system:String x:Key="command.exp.edit">İfade düzenle</system:String>
+  <system:String x:Key="command.exp.paste">İfade eğrisini yapıştır</system:String>
+  <system:String x:Key="command.exp.reset">İfadeyi sıfırla</system:String>
+  <system:String x:Key="command.import.audio">Ses dosyası içe aktar</system:String>
+  <system:String x:Key="command.import.track">Parça(lar)ı içe aktar</system:String>
+  <system:String x:Key="command.note.add">Nota ekle</system:String>
+  <system:String x:Key="command.note.delete">Nota(lar)ı sil</system:String>
+  <system:String x:Key="command.note.edit">Nota(lar)ı düzenle</system:String>
+  <system:String x:Key="command.part.fadein">Parça için fade-in düzenle</system:String>
+  <system:String x:Key="command.part.fadeout">Parça için fade-out düzenle</system:String>
+  <system:String x:Key="command.note.lyric">Söz(ler)i düzenle</system:String>
+  <system:String x:Key="command.note.move">Nota(lar)ı taşı</system:String>
+  <system:String x:Key="command.note.paste">Nota(lar)ı yapıştır</system:String>
+  <system:String x:Key="command.note.split">Notayı böl</system:String>
+  <system:String x:Key="command.parameter.paste">Parametre(ler)ı yapıştır</system:String>
+  <system:String x:Key="command.part.add">Parça ekle</system:String>
+  <system:String x:Key="command.part.delete">Parça(lar)ı sil</system:String>
+  <system:String x:Key="command.part.edit">Parça(lar)ı düzenle</system:String>
+  <system:String x:Key="command.part.move">Parça(lar)ı taşı</system:String>
+  <system:String x:Key="command.part.paste">Parça(lar)ı yapıştır</system:String>
+  <system:String x:Key="command.part.transcribe">Notaya çevirmek için ses transkribe et</system:String>
+  <system:String x:Key="command.phoneme.edit">Fonem düzenle</system:String>
+  <system:String x:Key="command.phoneme.reset">Fonemi sıfırla</system:String>
+  <system:String x:Key="command.pitch.add">Pitch noktası ekle</system:String>
+  <system:String x:Key="command.pitch.delete">Pitch noktasını sil</system:String>
+  <system:String x:Key="command.pitch.draw">Pitch çiz</system:String>
+  <system:String x:Key="command.pitch.edit">Pitch düzenle</system:String>
+  <system:String x:Key="command.pitch.editpoint">Pitch noktasını düzenle</system:String>
+  <system:String x:Key="command.pitch.reset">Pitch'i sıfırla</system:String>
+  <system:String x:Key="command.project.exp">Proje ifadelerini düzenle</system:String>
+  <system:String x:Key="command.project.key">Projeyi transpoze et (anahtar değiştir)</system:String>
+  <system:String x:Key="command.project.tempo">Tempo düzenle</system:String>
+  <system:String x:Key="command.project.timesignature">Vuruş işaretini düzenle</system:String>
+  <system:String x:Key="command.property.edit">Nota(lar)ın özelliklerini düzenle</system:String>
+  <system:String x:Key="command.property.reset">Nota(lar)ın özelliklerini sıfırla</system:String>
+  <system:String x:Key="command.track.add">Parça ekle</system:String>
+  <system:String x:Key="command.track.delete">Parçayı sil</system:String>
+  <system:String x:Key="command.track.duplicate">Parçayı kopyala</system:String>
+  <system:String x:Key="command.track.exp">Parça ifadelerini düzenle</system:String>
+  <system:String x:Key="command.track.order">Parça sırasını düzenle</system:String>
+  <system:String x:Key="command.track.remapvc">VoiceColor eşlemesini değiştir</system:String>
+  <system:String x:Key="command.track.setting">Parça ayarını değiştir</system:String>
+  <system:String x:Key="command.track.singer">Parça için şarkıcıyı değiştir</system:String>
+  <system:String x:Key="command.vibrato.edit">Vibrato düzenle</system:String>
+
+  <system:String x:Key="context.note.clearcache">İfadenin önbelleğini temizle</system:String>
+  <system:String x:Key="context.note.copy">Notayı kopyala</system:String>
+  <system:String x:Key="context.note.delete">Notayı sil</system:String>
+  <system:String x:Key="context.note.pasteparameters">Parametreleri seç ve yapıştır</system:String>
+  <system:String x:Key="context.part.delete">Parçayı sil</system:String>
+  <system:String x:Key="context.part.gotofile">Dosya konumunu görüntüle</system:String>
+  <system:String x:Key="context.part.merge">Parçaları birleştir</system:String>
+  <system:String x:Key="context.part.rename">Parçayı yeniden adlandır</system:String>
+  <system:String x:Key="context.part.replaceaudio">Ses dosyasını yeniden seç</system:String>
+  <system:String x:Key="context.part.split">Parçayı çalma kafasından böl</system:String>
+  <system:String x:Key="context.part.transcribe">Notaya çevirmek için sesi transkribe et</system:String>
+  <system:String x:Key="context.part.transcribing">Transkribe ediliyor</system:String>
+  <system:String x:Key="context.part.applypitch">Pitch uygula kaynaktan...</system:String>
+  <system:String x:Key="context.part.nopitchsource">Mevcut bir wave parçası yok</system:String>
+  <system:String x:Key="context.part.extractingpitch">Pitch çıkarılıyor</system:String>
+  <system:String x:Key="context.part.nopitchregion">Kaynak wave parçası ile hedef nota parçası arasında örtüşen bir bölge yok.</system:String>
+  <system:String x:Key="context.part.nopitchdetected">Kaynak wave parçasından pitch tespit edilemedi.</system:String>
+  <system:String x:Key="context.pitch.easein">Yumuşatma (Ease in)</system:String>
+  <system:String x:Key="context.pitch.easeinout">Yumuşatma (Ease in/out)</system:String>
+  <system:String x:Key="context.pitch.easeout">Yumuşatma (Ease out)</system:String>
+  <system:String x:Key="context.pitch.linear">Doğrusal</system:String>
+  <system:String x:Key="context.pitch.shape">Eğri şekli</system:String>
+  <system:String x:Key="context.pitch.smooth">Yumuşak</system:String>
+  <system:String x:Key="context.pitch.pointadd">Nokta ekle</system:String>
+  <system:String x:Key="context.pitch.pointdel">Noktayı sil</system:String>
+  <system:String x:Key="context.pitch.pointsnapprev">Önceki notaya yasla</system:String>
+  <system:String x:Key="context.timeline.addtempo">{0} konumunda tempo değişikliği ekle</system:String>
+  <system:String x:Key="context.timeline.addtimesig">Vuruş değişikliği ekle</system:String>
+  <system:String x:Key="context.timeline.deltempo">{0} konumundaki tempo değişikliğini sil</system:String>
+  <system:String x:Key="context.timeline.deltimesig">Vuruş değişikliğini sil</system:String>
+
+  <system:String x:Key="debug.clear">Temizle</system:String>
+  <system:String x:Key="debug.copylog">Logu kopyala</system:String>
+  <system:String x:Key="debug.reverselogorder">Log sırasını ters çevir</system:String>
+
+  <system:String x:Key="dialogs.about.caption">OpenUTAU Hakkında</system:String>
+  <system:String x:Key="dialogs.about.message">OpenUtau, UTAU topluluğu için modern bir kullanıcı deneyimi ve akıllı fonolojik destek sunan açık kaynak bir düzenleme ortamı olmayı amaçlar. Github'ta bizi ziyaret edin.</system:String>
+  <system:String x:Key="dialogs.exitsave.caption">OpenUtau'dan Çık</system:String>
+  <system:String x:Key="dialogs.exitsave.message">Aktif projede kaydedilmemiş değişiklikler var. Kaydetmek ister misiniz?</system:String>
+  <system:String x:Key="dialogs.export.caption">Dışa Aktar</system:String>
+  <system:String x:Key="dialogs.export.savefirst">Önce proje dosyasını kaydedin</system:String>
+  <system:String x:Key="dialogs.importtracks.caption">Parçaları içe aktar</system:String>
+  <system:String x:Key="dialogs.importtracks.importtempo">İçe aktarılan proje aşağıdaki tempo işaretlerini içeriyor. Bunları kullanmak ister misiniz?</system:String>
+  <system:String x:Key="dialogs.installdependency.caption">Bağımlılık yükleniyor</system:String>
+  <system:String x:Key="dialogs.installdependency.message">Yükleniyor </system:String>
+  <system:String x:Key="dialogs.installdll.caption">Phonemizer yükleniyor</system:String>
+  <system:String x:Key="dialogs.installdll.message">Yükleniyor </system:String>
+  <system:String x:Key="dialogs.merge.caption">Parçalar Birleştiriliyor</system:String>
+  <system:String x:Key="dialogs.merge.multitracks">Farklı parçalardaki öğeler birleştirilemez.</system:String>
+  <system:String x:Key="dialogs.splitpart.caption">Parça Bölünüyor</system:String>
+  <system:String x:Key="dialogs.splitpart.intheway">Çalma kafasıyla örtüşen bir veya daha fazla nota var.
+Devam edip mevcut çalma kafasından sonra, notaların olmadığı en yakın konumdan bölmek ister misiniz?</system:String>
+  <system:String x:Key="dialogs.exportds.caption">DiffSinger Komut Dosyalarını Dışa Aktar</system:String>
+  <system:String x:Key="dialogs.exportds.curves">Eğriler</system:String>
+  <system:String x:Key="dialogs.exportds.pitch">Pitch (f0)</system:String>
+  <system:String x:Key="dialogs.exportds.variance">Varyans ifadeleri</system:String>
+  <system:String x:Key="dialogs.exportds.variance.hint">Varyans eğrilerini dışa aktarmak için Tercihler'de DiffSinger Tensor Cache'i etkinleştirin.</system:String>
+  <system:String x:Key="dialogs.exportds.notrendered">Dışa aktarmadan önce lütfen tüm parçaları renderlayın.</system:String>
+  <system:String x:Key="dialogs.messagebox.copy">Hatanın kopyasını panoya al</system:String>
+  <system:String x:Key="dialogs.noresampler.caption">Resampler yok</system:String>
+  <system:String x:Key="dialogs.noresampler.message">Resampler yok! Favori resampler exe veya dll dosyanızı Resamplers klasörüne koyun ve Tercihler'den seçin!</system:String>
+  <system:String x:Key="dialogs.recovery">Önceki çalıştırmada OpenUtau anormal şekilde sonlandı. Kurtarmak için buraya tıklayın.</system:String>
+  <system:String x:Key="dialogs.recovery.caption">Kurtarma projesi</system:String>
+  <system:String x:Key="dialogs.remaptimeaxis.message">Bu araç, notaların gerçek konum ve sürelerini (saniye cinsinden) değiştirmeden projenin temposunu değiştirecek.
+  Yeni BPM:</system:String>
+  <system:String x:Key="dialogs.timesig.caption">Vuruş İşareti</system:String>
+  <system:String x:Key="dialogs.tracksettings.caption">Parça Ayarları</system:String>
+  <system:String x:Key="dialogs.tracksettings.location">Konum</system:String>
+  <system:String x:Key="dialogs.tracksettings.renderer">Renderer</system:String>
+  <system:String x:Key="dialogs.tracksettings.setasdefault">Varsayılan Yap</system:String>
+  <system:String x:Key="dialogs.unsupportedfile.caption">Desteklenmeyen dosya biçimi</system:String>
+  <system:String x:Key="dialogs.unsupportedfile.message">Desteklenmeyen dosya biçimi: </system:String>
+  <system:String x:Key="dialogs.voicecolorremapping">Voice color yeniden eşleme</system:String>
+  <system:String x:Key="dialogs.voicecolorremapping.error">Bu şarkıcının voice color bilgisi yok</system:String>
+  <system:String x:Key="dialogs.voicecolorremapping.caption">Bu parçada bulunan tüm notalara uygulanır:</system:String>
+  <system:String x:Key="dialogs.transcribe.caption">Sesi Transkribe Et</system:String>
+  <system:String x:Key="dialogs.transcribe.midialgorithm">Algoritma</system:String>
+  <system:String x:Key="dialogs.transcribe.some.notfound">SOME yüklü değil.</system:String>
+  <system:String x:Key="dialogs.transcribe.game.notfound">GAME yüklü değil.</system:String>
+  <system:String x:Key="dialogs.transcribe.rmvpe.notfound">RMVPE yüklü değil. Paket Yöneticisi aracılığıyla yükleyin.</system:String>
+  <system:String x:Key="dialogs.transcribe.allnotfound">Hiçbir transkripsiyon modeli yüklü değil. Lütfen Paket Yöneticisi'nden GAME'i yükleyin veya manuel olarak {0} adresinden indirin.</system:String>
+  <system:String x:Key="dialogs.transcribe.rmvpe">RMVPE kullanarak pitch çıkar</system:String>
+  <system:String x:Key="dialogs.transcribe.game.options">GAME Seçenekleri</system:String>
+  <system:String x:Key="dialogs.transcribe.game.language">Dil</system:String>
+  <system:String x:Key="dialogs.transcribe.game.language.universal">[evrensel]</system:String>
+  <system:String x:Key="dialogs.transcribe.game.steps">Örnekleme Adımları</system:String>
+  <system:String x:Key="dialogs.transcribe.game.segthreshold">Sınırlama Eşiği</system:String>
+  <system:String x:Key="dialogs.transcribe.game.segradius">Sınır Yarıçapı</system:String>
+  <system:String x:Key="dialogs.transcribe.game.estthreshold">Skor Eşiği</system:String>
+  <system:String x:Key="dialogs.transcribe.game.batchsize">Batch Boyutu</system:String>
+  <system:String x:Key="dialogs.transcribe.game.batchduration">Maks Batch Süresi (s)</system:String>
+  <system:String x:Key="dialogs.transcribe.longchunk.message">Bir veya daha fazla ses parçası çok uzun ve transkribe ederken büyük miktarda bellek tüketebilir. Genellikle altyapı içeren kayıtlarda olur. Yine de devam edilsin mi?</system:String>
+
+  <system:String x:Key="errors.caption">Hata</system:String>
+  <system:String x:Key="errors.details">Hata Ayrıntıları</system:String>
+  <system:String x:Key="errors.diffsinger.downloadvocoder">"{0}" vocoder yüklenemedi. Lütfen vocoder'ı {1} adresinden indirin</system:String>
+  <system:String x:Key="errors.diffsinger.downloadvocoder1">Vocoder yüklenemedi </system:String>
+  <system:String x:Key="errors.diffsinger.downloadvocoder2">. Lütfen vocoder'ı şuradan indirin </system:String>
+  <system:String x:Key="errors.editing.autopitch.unsupported">Mevcut voicebank pitch eğrisi üretmeyi desteklemiyor. Lütfen bir Diffsinger veya Enunu voicebank kullanın.</system:String>
+  <system:String x:Key="errors.encryptedarchive">Şifreli arşiv dosyaları desteklenmiyor. Lütfen Tools > Preferences > Paths üzerinden Singer klasörünü açın ve arşiv dosyasını manuel olarak bu konuma çıkarın.</system:String>
+  <system:String x:Key="errors.expression.abbrlong">Kısaltma 1 ila 4 karakter arasında olmalıdır</system:String>
+  <system:String x:Key="errors.expression.abbrset">Kısaltma ayarlanmalıdır</system:String>
+  <system:String x:Key="errors.expression.abbrunique">Kısaltmalar benzersiz olmalıdır</system:String>
+  <system:String x:Key="errors.expression.customDefault">Proje/Parça varsayılan değeri min ile max arasında olmalıdır</system:String>
+  <system:String x:Key="errors.expression.default">Varsayılan değer min ile max arasında olmalıdır</system:String>
+  <system:String x:Key="errors.expression.flagunique">Bayraklar benzersiz olmalıdır</system:String>
+  <system:String x:Key="errors.expression.marge">Aşağıdaki ifadeler, yinelenen bayraklar nedeniyle birleştirildi</system:String>
+  <system:String x:Key="errors.expression.min">Min, max'tan daha küçük olmalıdır</system:String>
+  <system:String x:Key="errors.expression.name">İsim ayarlanmalıdır</system:String>
+  <system:String x:Key="errors.failed.export">Dışa aktarma başarısız</system:String>
+  <system:String x:Key="errors.failed.importaudio">Ses içe aktarma başarısız</system:String>
+  <system:String x:Key="errors.failed.importfiles">Dosya içe aktarma başarısız</system:String>
+  <system:String x:Key="errors.failed.importmidi">MIDI içe aktarma başarısız</system:String>
+  <system:String x:Key="errors.failed.importustandothers">Projeler açılamadı. İçinde ust ve diğer dosya formatları karışımı var.</system:String>
+  <system:String x:Key="errors.failed.importustflags">Projedeki aşağıdaki tanımsız bayraklar içe aktarılmadı:</system:String>
+  <system:String x:Key="errors.failed.installsinger">Şarkıcı yüklenemedi</system:String>
+  <system:String x:Key="errors.failed.load">Yükleme başarısız</system:String>
+  <system:String x:Key="errors.failed.loadprefs">Ayarlar yüklenemedi. Başlatın.</system:String>
+  <system:String x:Key="errors.failed.openfile">Açma başarısız</system:String>
+  <system:String x:Key="errors.failed.openlocation">Konum açılamadı</system:String>
+  <system:String x:Key="errors.failed.opennewerproject">Proje dosyası yazılımdan daha yeni! OpenUtau'yu güncelleyin!</system:String>
+  <system:String x:Key="errors.failed.render">Render başarısız.</system:String>
+  <system:String x:Key="errors.failed.runeditingmacro">Düzenleme makrosu çalıştırılamadı</system:String>
+  <system:String x:Key="errors.failed.save">Kaydetme başarısız</system:String>
+  <system:String x:Key="errors.failed.savesingerconfig">Şarkıcı yapılandırma dosyası kaydedilemedi</system:String>
+  <system:String x:Key="errors.failed.searchsinger">Şarkıcı arama başarısız</system:String>
+  <system:String x:Key="errors.failed.synth.cutoffbeforeoffset">Oto hatası: cutoff offset'den önce</system:String>
+  <system:String x:Key="errors.failed.synth.cutoffexceedduration">Oto hatası: cutoff ses dosyası süresini aşıyor</system:String>
+  <system:String x:Key="errors.failed.transcribe.rmvpe">RMVPE ONNX modeli yüklenemedi. Paket Yöneticisi'nden yükleyin veya rmvpe.onnx dosyasını {0} konumuna koyun</system:String>
+  <system:String x:Key="errors.failed.transcribe.some">SOME yüklenemedi. Lütfen SOME'i {0} adresinden indirin</system:String>
+  <system:String x:Key="errors.install.cpp">En son Visual C++ Yeniden Dağıtılabilir paketini yüklemeyi deneyin. https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170</system:String>
+  <system:String x:Key="errors.lyrics.regex">Düzenli ifadede izin verilmeyen karakter</system:String>
+  <system:String x:Key="errors.lyrics.regexpreview">- düzenli ifade hatası -</system:String>
+
+  <system:String x:Key="exesetup.installing">"{0}" yükleniyor...</system:String>
+  <system:String x:Key="exesetup.linux">Linux'ta exe resampler veya wavtool kullanmak için:
+1. {0} adresinden wine kurun
+2. Tercihler > Gelişmiş > Wine Path kısmına wine yolunu ayarlayın</system:String>
+  <system:String x:Key="exesetup.mac">MacOS'ta exe resampler veya wavtool kullanmak için:
+1. Aşağıdaki komutlarla wine kurun
+2. Tercihler > Gelişmiş > Wine Path kısmına wine yolunu ayarlayın</system:String>
+  <system:String x:Key="exesetup.resampler">Resampler olarak yükle (Resampler)</system:String>
+  <system:String x:Key="exesetup.title">Exe Dosyası Yükleniyor</system:String>
+  <system:String x:Key="exesetup.wavtool">Wavtool olarak yükle (Wavtool)</system:String>
+
+  <system:String x:Key="exps.abbr">Kısaltma</system:String>
+  <system:String x:Key="exps.caption">İfadeler</system:String>
+  <system:String x:Key="exps.defaultvalue">Varsayılan</system:String>
+  <system:String x:Key="exps.flag">Resampler Bayrağı</system:String>
+  <system:String x:Key="exps.getsuggestions">Renderer'ların önerdiği tüm ifadeleri ekle</system:String>
+  <system:String x:Key="exps.isflag">Resampler Bayrağı mı</system:String>
+  <system:String x:Key="exps.maxvalue">Maks</system:String>
+  <system:String x:Key="exps.minvalue">Min</system:String>
+  <system:String x:Key="exps.name">İsim</system:String>
+  <system:String x:Key="exps.optionvalues">Seçenek Değerleri</system:String>
+  <system:String x:Key="exps.project">Proje İfadeleri</system:String>
+  <system:String x:Key="exps.projectdefault">Proje Varsayılanı</system:String>
+  <system:String x:Key="exps.sepbycomma">Değerleri ',' ile ayırın</system:String>
+  <system:String x:Key="exps.skipoutput">Değer sistem varsayılanıysa bayrak çıktısını atla</system:String>
+  <system:String x:Key="exps.systemdefault">Sistem Varsayılanı</system:String>
+  <system:String x:Key="exps.track">Parça İfadeleri (üstünlük)</system:String>
+  <system:String x:Key="exps.trackdefault">Parça Varsayılanı</system:String>
+  <system:String x:Key="exps.type">Tür</system:String>
+  <system:String x:Key="exps.type.curve">Eğri</system:String>
+  <system:String x:Key="exps.type.numerical">Sayısal</system:String>
+  <system:String x:Key="exps.type.options">Seçenekler</system:String>
+
+  <system:String x:Key="languages.de">Almanca</system:String>
+  <system:String x:Key="languages.en">İngilizce</system:String>
+  <system:String x:Key="languages.es">İspanyolca</system:String>
+  <system:String x:Key="languages.fil">Filipince</system:String>
+  <system:String x:Key="languages.fr">Fransızca</system:String>
+  <system:String x:Key="languages.invariant">Çevrilmiyor</system:String>
+  <system:String x:Key="languages.it">İtalyanca</system:String>
+  <system:String x:Key="languages.ja">Japonca</system:String>
+  <system:String x:Key="languages.ko">Korece</system:String>
+  <system:String x:Key="languages.pl">Lehçe</system:String>
+  <system:String x:Key="languages.pt">Portekizce</system:String>
+  <system:String x:Key="languages.ru">Rusça</system:String>
+  <system:String x:Key="languages.th">Tayca</system:String>
+  <system:String x:Key="languages.tr">Türkçe</system:String>
+  <system:String x:Key="languages.vi">Vietnamca</system:String>
+  <system:String x:Key="languages.zh">Çince</system:String>
+  <system:String x:Key="languages.zh-yue">Kantonca</system:String>
+
+  <system:String x:Key="lyrics.applyselected">Sadece seçili notalara uygula</system:String>
+  <system:String x:Key="lyrics.caption">Sözleri Düzenle</system:String>
+  <system:String x:Key="lyrics.livepreview">Canlı önizleme</system:String>
+  <system:String x:Key="lyrics.nonote">Nota yok!</system:String>
+  <system:String x:Key="lyrics.selectnotes">Önce bazı notaları seçin!</system:String>
+  <system:String x:Key="lyrics.separators">Ayırıcılar</system:String>
+
+  <system:String x:Key="lyricsreplace.after">Sonra :</system:String>
+  <system:String x:Key="lyricsreplace.before">Önce :</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvalphabet">Alfabeti kaldır</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvnonhiragana">Hiragana olmayanları kaldır</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvphonetichint">Fonetik ipucunu kaldır</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvspace">Boşlukları ve öncesini kaldır</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvtone">Ton ekini kaldır</system:String>
+  <system:String x:Key="lyricsreplace.presets">Önayarlar</system:String>
+  <system:String x:Key="lyricsreplace.preview">Önizleme</system:String>
+  <system:String x:Key="lyricsreplace.regex">Düzenli ifadeler kullanılabilir</system:String>
+  <system:String x:Key="lyricsreplace.replace">Genel söz değiştirme</system:String>
+
+  <system:String x:Key="menu.edit">Düzenle</system:String>
+  <system:String x:Key="menu.edit.copy">Kopyala</system:String>
+  <system:String x:Key="menu.edit.cut">Kes</system:String>
+  <system:String x:Key="menu.edit.delete">Sil</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes">Seçilmemiş notaların düzenlemesini kilitle</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.expressions">İfadeler</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.pitchpoints">Pitch Noktaları</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.vibrato">Vibrato</system:String>
+  <system:String x:Key="menu.edit.paste">Yapıştır</system:String>
+  <system:String x:Key="menu.edit.pasteplainnotes">Düz notalar olarak yapıştır</system:String>
+  <system:String x:Key="menu.edit.redo">Yinele</system:String>
+  <system:String x:Key="menu.edit.selectall">Tümünü Seç</system:String>
+  <system:String x:Key="menu.edit.undo">Geri Al</system:String>
+  <system:String x:Key="menu.file">Dosya</system:String>
+  <system:String x:Key="menu.file.exit">Çıkış</system:String>
+  <system:String x:Key="menu.file.exportaudio">Sesi Dışa Aktar</system:String>
+  <system:String x:Key="menu.file.exportds">DiffSinger Komut Dosyalarını Dışa Aktar</system:String>
+  <system:String x:Key="menu.file.exportmidi">MIDI Dosyasını Dışa Aktar</system:String>
+  <system:String x:Key="menu.file.exportmixdown">Mixdown'ı Wav Dosyasına Aktar</system:String>
+  <system:String x:Key="menu.file.exportproject">Projeyi Dışa Aktar</system:String>
+  <system:String x:Key="menu.file.exportust">UST Dosyalarını Dışa Aktar</system:String>
+  <system:String x:Key="menu.file.exportustto">UST Dosyalarını Şuraya Dışa Aktar...</system:String>
+  <system:String x:Key="menu.file.exportwav">Wav Dosyalarını Dışa Aktar</system:String>
+  <system:String x:Key="menu.file.exportwavto">Wav Dosyalarını Şuraya Dışa Aktar...</system:String>
+  <system:String x:Key="menu.file.importaudio">Ses İçe Aktar...</system:String>
+  <system:String x:Key="menu.file.importmidi">MIDI İçe Aktar...</system:String>
+  <system:String x:Key="menu.file.importmidi.drywetmidi">DryWetMidi İçe Aktarıcı</system:String>
+  <system:String x:Key="menu.file.importmidi.naudio">Naudio İçe Aktarıcı</system:String>
+  <system:String x:Key="menu.file.importtracks">Parçaları İçe Aktar...</system:String>
+  <system:String x:Key="menu.file.new">Yeni</system:String>
+  <system:String x:Key="menu.file.newfromtemplate">Şablondan Yeni</system:String>
+  <system:String x:Key="menu.file.open">Aç...</system:String>
+  <system:String x:Key="menu.file.openas">Farklı Aç</system:String>
+  <system:String x:Key="menu.file.openexportlocation">Dışa Aktarma Konumunu Aç</system:String>
+  <system:String x:Key="menu.file.openprojectlocation">Proje Konumunu Aç</system:String>
+  <system:String x:Key="menu.file.openrecent">Son Açılanlar</system:String>
+  <system:String x:Key="menu.file.save">Kaydet</system:String>
+  <system:String x:Key="menu.file.saveas">Farklı Kaydet...</system:String>
+  <system:String x:Key="menu.file.savetemplate">Şablonu Kaydet...</system:String>
+  <system:String x:Key="menu.help">Yardım</system:String>
+  <system:String x:Key="menu.help.about">OpenUtau Hakkında</system:String>
+  <system:String x:Key="menu.help.checkupdate">Güncellemeleri Kontrol Et</system:String>
+  <system:String x:Key="menu.help.logslocation">Log Konumunu Aç</system:String>
+  <system:String x:Key="menu.help.reportissue">Sorun Bildir</system:String>
+  <system:String x:Key="menu.help.wiki">OpenUtau Dokümantasyonu</system:String>
+  <system:String x:Key="menu.project">Proje</system:String>
+  <system:String x:Key="menu.project.expressions">İfadeler...</system:String>
+  <system:String x:Key="menu.project.remaptimeaxis">Tempo Ayarla (Zamanlamayı Korur)</system:String>
+  <system:String x:Key="menu.tools">Araçlar</system:String>
+  <system:String x:Key="menu.tools.clearcache">Önbelleği Temizle</system:String>
+  <system:String x:Key="menu.tools.debugwindow">Hata Ayıklama Penceresi</system:String>
+  <system:String x:Key="menu.tools.fullscreen">Tam Ekran</system:String>
+  <system:String x:Key="menu.tools.layout">Düzen</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit11">Yatay 1:1</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit12">Yatay 1:2</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit13">Yatay 1:3</system:String>
+  <system:String x:Key="menu.tools.layout.reset">Düzeni Sıfırla</system:String>
+  <system:String x:Key="menu.tools.layout.vsplit11">Dikey 1:1</system:String>
+  <system:String x:Key="menu.tools.layout.vsplit12">Dikey 1:2</system:String>
+  <system:String x:Key="menu.tools.layout.vsplit13">Dikey 1:3</system:String>
+  <system:String x:Key="menu.tools.packages">Paketler...</system:String>
+  <system:String x:Key="menu.tools.prefs">Tercihler...</system:String>
+  <system:String x:Key="menu.tools.singer.install">Şarkıcı Yükle...</system:String>
+  <system:String x:Key="menu.tools.singer.installadv">Şarkıcı Yükle (Gelişmiş)...</system:String>
+  <system:String x:Key="menu.tools.singers">Şarkıcılar...</system:String>
+  <system:String x:Key="menu.tools.wavtoolresampler.install">Wavtool/Resampler (.exe) Yükle...</system:String>
+  <system:String x:Key="menu.view">Görünüm</system:String>
+
+  <system:String x:Key="mergevoicebank.back">Geri</system:String>
+  <system:String x:Key="mergevoicebank.error">Şarkıcı birleştirme başarısız.</system:String>
+  <system:String x:Key="mergevoicebank.merge">Birleştir</system:String>
+  <system:String x:Key="mergevoicebank.next">İleri</system:String>
+  <system:String x:Key="mergevoicebank.selectsinger">Bu araç, başka bir voicebank'i mevcut voicebank'a yeni voice color'lar olarak ekleyecek.
+Birleştirmek istediğiniz voicebank'i seçin</system:String>
+  <system:String x:Key="mergevoicebank.setfolder">Kopyalanan klasörler için yeni adlar belirleyin.</system:String>
+  <system:String x:Key="mergevoicebank.setsubbank">Alt banklar için yeni önek ve sonek belirleyin.
+Sözdizimi: prefix,suffix</system:String>
+  <system:String x:Key="mergevoicebank.setvoicecolor">Voice color için yeni adlar belirleyin (CLR ifadesinde gösterilir).</system:String>
+  <system:String x:Key="mergevoicebank.title">Voicebankleri birleştir</system:String>
+
+  <system:String x:Key="notedefaults.lyric">Söz</system:String>
+  <system:String x:Key="notedefaults.lyric.enter">Enter ile</system:String>
+  <system:String x:Key="notedefaults.lyric.knife">Knife Aracı ile</system:String>
+  <system:String x:Key="notedefaults.portamento">Portamento</system:String>
+  <system:String x:Key="notedefaults.portamento.length">Uzunluk</system:String>
+  <system:String x:Key="notedefaults.portamento.start">Başlangıç</system:String>
+  <system:String x:Key="notedefaults.preset">Önayar</system:String>
+  <system:String x:Key="notedefaults.preset.namenew">Yeni Önayar Adı</system:String>
+  <system:String x:Key="notedefaults.preset.remove.tooltip">Son uygulanan önayarı kaldırır.</system:String>
+  <system:String x:Key="notedefaults.preset.save.tooltip">Mevcut ayarları yeni bir önayara kaydet.</system:String>
+  <system:String x:Key="notedefaults.reset">Tüm Ayarları Sıfırla</system:String>
+  <system:String x:Key="notedefaults.reset.tooltip">Tüm ayarları varsayılan değerlere sıfırlar.
+Uyarı: Bu seçenek özel önayarları kaldırır.</system:String>
+  <system:String x:Key="notedefaults.vibrato">Vibrato</system:String>
+  <system:String x:Key="notedefaults.vibrato.autominlength">Minimum Uzunluk</system:String>
+  <system:String x:Key="notedefaults.vibrato.autotoggle">Uzunluğa Göre Otomatik Vibrato</system:String>
+  <system:String x:Key="notedefaults.vibrato.depth">Derinlik</system:String>
+  <system:String x:Key="notedefaults.vibrato.drift">Sürüklenme</system:String>
+  <system:String x:Key="notedefaults.vibrato.in">Fade In</system:String>
+  <system:String x:Key="notedefaults.vibrato.length">Uzunluk</system:String>
+  <system:String x:Key="notedefaults.vibrato.out">Fade Out</system:String>
+  <system:String x:Key="notedefaults.vibrato.period">Periyot</system:String>
+  <system:String x:Key="notedefaults.vibrato.shift">Kaydırma</system:String>
+  <system:String x:Key="notedefaults.vibrato.vollink">Ses Seviyesi Bağlantısı</system:String>
+
+  <system:String x:Key="noteproperty">Nota Özellikleri</system:String>
+  <system:String x:Key="noteproperty.basic">Temel</system:String>
+  <system:String x:Key="noteproperty.set">Ayarla</system:String>
+  <system:String x:Key="noteproperty.setlongnote">Yalnızca uzun notalarda uygula</system:String>
+  <system:String x:Key="noteproperty.tone">Ton</system:String>
+  <system:String x:Key="noteproperty.tuning">Tuning</system:String>
+  <system:String x:Key="noteproperty.vibratoenable">Etkinleştir</system:String>
+  <system:String x:Key="noteproperty.phonemizer">Phonemizer</system:String>
+  <system:String x:Key="noteproperty.parent.phonemizer">Üst Phonemizer'ı takip et</system:String>
+
+  <system:String x:Key="oto.alias">Alias</system:String>
+  <system:String x:Key="oto.color">Renk</system:String>
+  <system:String x:Key="oto.consonant">Consonant</system:String>
+  <system:String x:Key="oto.cutoff">Cutoff</system:String>
+  <system:String x:Key="oto.edit.consonant">Consonant ayarla</system:String>
+  <system:String x:Key="oto.edit.cutoff">Cutoff ayarla</system:String>
+  <system:String x:Key="oto.edit.offset">Offset ayarla</system:String>
+  <system:String x:Key="oto.edit.overlap">Overlap ayarla</system:String>
+  <system:String x:Key="oto.edit.preutter">Preutter ayarla</system:String>
+  <system:String x:Key="oto.file">Dosya</system:String>
+  <system:String x:Key="oto.offset">Offset</system:String>
+  <system:String x:Key="oto.overlap">Overlap</system:String>
+  <system:String x:Key="oto.phonetic">Fonetik</system:String>
+  <system:String x:Key="oto.prefix">Önek</system:String>
+  <system:String x:Key="oto.preutter">Preutter</system:String>
+  <system:String x:Key="oto.set">Ayarla</system:String>
+  <system:String x:Key="oto.suffix">Sonek</system:String>
+
+  <system:String x:Key="packages.caption">Paketler</system:String>
+  <system:String x:Key="packages.refresh">Yenile</system:String>
+  <system:String x:Key="packages.installed">Yüklü</system:String>
+  <system:String x:Key="packages.col.name">İsim</system:String>
+  <system:String x:Key="packages.col.id">Id</system:String>
+  <system:String x:Key="packages.col.developer">Geliştirici</system:String>
+  <system:String x:Key="packages.col.version">Sürüm</system:String>
+  <system:String x:Key="packages.col.action">İşlem</system:String>
+  <system:String x:Key="packages.col.installed">Yüklü</system:String>
+  <system:String x:Key="packages.unknownversion">bilinmeyen sürüm</system:String>
+  <system:String x:Key="packages.install">Yükle</system:String>
+  <system:String x:Key="packages.update">Güncelle</system:String>
+  <system:String x:Key="packages.uninstall">Kaldır</system:String>
+  <system:String x:Key="packages.openinstalllocation">Yükleme Konumunu Aç</system:String>
+  <system:String x:Key="packages.installfromfile">Dosyadan Yükle (.oudep)...</system:String>
+  <system:String x:Key="packages.confirm.install.caption">Paketi yükle</system:String>
+  <system:String x:Key="packages.confirm.install.message">{0} yüklemek istiyor musunuz?</system:String>
+  <system:String x:Key="packages.confirm.update.caption">Paketi güncelle</system:String>
+  <system:String x:Key="packages.confirm.update.message">{0} paketini {1} sürümüne güncellemek istiyor musunuz?</system:String>
+  <system:String x:Key="packages.confirm.uninstall.caption">Paketi kaldır</system:String>
+  <system:String x:Key="packages.confirm.uninstall.message">{0} paketini kaldırmak istiyor musunuz?</system:String>
+  <system:String x:Key="packages.status.fetching">Kayıt alınıyor...</system:String>
+  <system:String x:Key="packages.status.uninstalling">{0} kaldırılıyor...</system:String>
+  <system:String x:Key="packages.status.uninstallfinished">Kaldırma tamamlandı</system:String>
+  <system:String x:Key="packages.status.uninstallfailed">Kaldırma başarısız</system:String>
+  <system:String x:Key="packages.status.listinginstalled">Yüklüler listeleniyor...</system:String>
+  <system:String x:Key="packages.status.ready">Hazır</system:String>
+  <system:String x:Key="packages.status.error">Hata</system:String>
+  <system:String x:Key="packages.status.installing">{0} yükleniyor...</system:String>
+  <system:String x:Key="packages.status.installfinished">Yükleme tamamlandı</system:String>
+  <system:String x:Key="packages.status.installfailed">Yükleme başarısız</system:String>
+  <system:String x:Key="packages.errors.missing">{0} paketi bulunamadı. Paket Yöneticisi ile yükleyin.</system:String>
+
+  <system:String x:Key="phoneticassistant.caption">Fonetik Asistan</system:String>
+  <system:String x:Key="phoneticassistant.copy">Kopyala</system:String>
+
+  <system:String x:Key="pianoroll.key">Ton (dizi derece gösterimi için)</system:String>
+  <system:String x:Key="pianoroll.menu.view.pianoroll">Piyano Rulosu</system:String>
+  <system:String x:Key="pianoroll.menu.view.pianoroll.detach">Ayrıştır</system:String>
+  <system:String x:Key="pianoroll.menu.view.pianoroll.hide">Gizle</system:String>
+  <system:String x:Key="pianoroll.menu.batch">Toplu Düzenlemeler</system:String>
+  <system:String x:Key="pianoroll.menu.batch.running">Toplu düzenleme çalışıyor</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics">Sözler</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.dashtoplus">"-" yerine "+" koy</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">"-" yerine "+~" koy</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.edit">Sözleri Düzenle</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.hiraganatoromaji">Hiragana'dan Romaji'ye</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.insertslur">Bağlama sözü ekle</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.javcvtocv">Japonca VCV'den CV'ye</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.movesuffixtovoicecolor">Sonek'i VoiceColor'a taşı</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removelettersuffix">Harf soneğini kaldır</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removephonetichint">Fonetik ipucunu kaldır</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removetonesuffix">Ton ekini kaldır</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.romajitohiragana">Romaji'den Hiragana'ya</system:String>
+  <system:String x:Key="pianoroll.menu.notedefaults">Nota Varsayılanları</system:String>
+  <system:String x:Key="pianoroll.menu.notes">Notalar</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addbreath">Nefes ekle</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addtaildash">Sonek "-" ekle</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addtailrest">Sonek "R" ekle</system:String>
+  <system:String x:Key="pianoroll.menu.notes.autolegato">Oto Legato</system:String>
+  <system:String x:Key="pianoroll.menu.notes.bakepitch">PITD'yi pitch kontrol noktalarına dönüştür</system:String>
+  <system:String x:Key="pianoroll.menu.notes.clear.vibratos">Vibratoları temizle</system:String>
+  <system:String x:Key="pianoroll.menu.notes.commonnotecopy">Commonnote Kopyala</system:String>
+  <system:String x:Key="pianoroll.menu.notes.commonnotepaste">Commonnote Yapıştır</system:String>
+  <system:String x:Key="pianoroll.menu.notes.fixoverlap">Örtüşen notaları düzelt</system:String>
+  <system:String x:Key="pianoroll.menu.notes.hanzitopinyin">Hanzi'yi pinyin'e çevir</system:String>
+  <system:String x:Key="pianoroll.menu.notes.lengthencrossfade">Geçiş uzunluklarını uzat</system:String>
+  <system:String x:Key="pianoroll.menu.notes.loadrenderedpitch">Renderlanmış pitch'i yükle</system:String>
+  <system:String x:Key="pianoroll.menu.notes.octavedown">Bir oktav aşağı taşı</system:String>
+  <system:String x:Key="pianoroll.menu.notes.octaveup">Bir oktav yukarı taşı</system:String>
+  <system:String x:Key="pianoroll.menu.notes.quantize">Izgara boyutuna hizala</system:String>
+  <system:String x:Key="pianoroll.menu.notes.randomizeoffset">Fonem offset'ini rastgeleleştir</system:String>
+  <system:String x:Key="pianoroll.menu.notes.randomizetiming">Nota zamanlamasını rastgeleleştir</system:String>
+  <system:String x:Key="pianoroll.menu.notes.randomizetuning">Tuning'i rastgeleleştir</system:String>
+  <system:String x:Key="pianoroll.menu.notes.refreshrealcurves">Gerçek eğrileri yenile</system:String>
+  <system:String x:Key="pianoroll.menu.notes.removetaildash">Sonek "-" kaldır</system:String>
+  <system:String x:Key="pianoroll.menu.notes.removetailrest">Sonek "R" kaldır</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.aliases">Fonem alias'larını sıfırla</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.all">Notaları varsayılanlara sıfırla</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.allparameters">Tüm parametreleri sıfırla</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.exps">Tüm ifadeleri sıfırla</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.phonemetimings">Fonem zamanlamalarını ve zarflarını sıfırla</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.pitchbends">Pitch bend'leri sıfırla</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.vibratos">Vibratoları sıfırla</system:String>
+  <system:String x:Key="pianoroll.menu.part">Parça</system:String>
+  <system:String x:Key="pianoroll.menu.part.legacypluginexp">Eski Eklenti (Deneysel)</system:String>
+  <system:String x:Key="pianoroll.menu.part.singer">Şarkıcı ve Oto ayarları</system:String>
+  <system:String x:Key="pianoroll.menu.plugin.openfolder">Klasörü aç</system:String>
+  <system:String x:Key="pianoroll.menu.plugin.reload">Yeniden yükle</system:String>
+  <system:String x:Key="pianoroll.menu.reset">Sıfırla</system:String>
+  <system:String x:Key="pianoroll.menu.external">Dış</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote">Notayı Ara</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.alias">Alias</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.all">Tümünü Seç</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.close">Kapat</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.next">İleri</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.note">Nota</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.prev">Geri</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.searchalias">Alias Ara</system:String>
+  <system:String x:Key="pianoroll.snapdiv">Yapışma Bölümü</system:String>
+  <system:String x:Key="pianoroll.toggle.finalpitch">Render için Son Pitch'i Gör (R)</system:String>
+  <system:String x:Key="pianoroll.toggle.noteparams">Nota Parametrelerini Gör (\)</system:String>
+  <system:String x:Key="pianoroll.toggle.phoneme">Fonemleri Gör (O)</system:String>
+  <system:String x:Key="pianoroll.toggle.pitch">Pitch Bend'i Gör (I)</system:String>
+  <system:String x:Key="pianoroll.toggle.snap">Yapışmayı Değiştir (P)</system:String>
+  <system:String x:Key="pianoroll.toggle.snap.auto">Otomatik</system:String>
+  <system:String x:Key="pianoroll.toggle.snap.autotriplet">Otomatik (üçleme)</system:String>
+  <system:String x:Key="pianoroll.toggle.phonemizer">Phonemizer Etiketlerini Gör</system:String>
+  <system:String x:Key="pianoroll.toggle.tips">İpuçlarını Gör (T)</system:String>
+  <system:String x:Key="pianoroll.toggle.tone">Nota Tonunu Değiştir (Y)</system:String>
+  <system:String x:Key="pianoroll.toggle.overwritepitch">Üzerine Yazma Pitch Modunu Değiştir</system:String>
+  <system:String x:Key="pianoroll.toggle.vibrato">Vibratoyu Gör (U)</system:String>
+  <system:String x:Key="pianoroll.toggle.waveform">Dalga Biçimini Gör (W)</system:String>
+  <system:String x:Key="pianoroll.toggle.expressions">İfadeleri Gör (L)</system:String>
+  <system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (Shift + 1)
+    Left click to draw
+    Right click to reset
+    Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.eraser">Eraser Tool (3)</system:String>
+  <system:String x:Key="pianoroll.tool.knife">Knife Tool (4)</system:String>
+  <system:String x:Key="pianoroll.tool.pitchline">Pitch Line Tool (Shift + 2)
+    Left click to draw straight line
+    Right click to reset
+    Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.pitchscurve">Pitch S-Curve Tool (Shift + 3)
+    Drag to draw S-curve, release to enter adjusting mode
+    Move mouse to tune S-curve strength, click to apply
+    Right click to reset
+    Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.pitchesinewave">Pitch Sine Wave Tool (Shift + 4)
+    Drag to draw sine wave, release to enter adjusting mode
+    Move mouse to adjust wavelength and amplitude, click to apply
+    Right click to reset
+    Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.pitchsmoothen">Pitch Smoothen Tool (Shift + 5)
+    Left click to smoothen pitch
+    Right click to reset
+    Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.penplus">Pen Plus Tool (Ctrl + 2)
+    Left click to draw
+    Right click to delete
+    Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.penv2">Pen Tool (2)
+    Left click to draw
+    Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.selectionv2">Selection Tool (1)</system:String>
+  <system:String x:Key="pianoroll.tooltip.attack">Attack time delta</system:String>
+  <system:String x:Key="pianoroll.tooltip.overlap">Overlap</system:String>
+  <system:String x:Key="pianoroll.tooltip.preutter">Preutter</system:String>
+  <system:String x:Key="pianoroll.tooltip.release">Release time delta</system:String>
+
+  <system:String x:Key="prefs.advanced">Gelişmiş</system:String>
+  <system:String x:Key="prefs.advanced.beta">Beta</system:String>
+  <system:String x:Key="prefs.advanced.lyricshelper">Söz Yardımcısı</system:String>
+  <system:String x:Key="prefs.advanced.lyricshelper.brackets">Söz Yardımcısı köşeli parantez ekler</system:String>
+  <system:String x:Key="prefs.advanced.rememberfiletypes">"Son Açılanlar" içinde bu dosya türlerini hatırla</system:String>
+  <system:String x:Key="prefs.advanced.resamplerlogging">Resampler Günlüğü</system:String>
+  <system:String x:Key="prefs.advanced.resamplerlogging.warn">Resampler çıktısını log dosyalarına kaydeder. Bu seçenek UI ve render'ı yavaşlatır.</system:String>
+  <system:String x:Key="prefs.advanced.stable">Kararlı</system:String>
+  <system:String x:Key="prefs.advanced.vlabelerpath">vLabeler Yolu</system:String>
+  <system:String x:Key="prefs.advanced.winepath">Wine Yolu (uyumluluk için wine'ı etkinleştirmek amacıyla ayarlayın)</system:String>
+  <system:String x:Key="prefs.appearance">Görünüm</system:String>
+  <system:String x:Key="prefs.appearance.degree">Dizi derece gösterim stili</system:String>
+  <system:String x:Key="prefs.appearance.degree.numbered">Numaralandırılmış (1 2 3 4 5 6 7)</system:String>
+  <system:String x:Key="prefs.appearance.degree.off">Kapalı</system:String>
+  <system:String x:Key="prefs.appearance.degree.solfege">Solfaj (do re mi fa sol la ti)</system:String>
+  <system:String x:Key="prefs.appearance.diffsingerlangcodehide">Fonem düzenleyicisinden dil önekini gizle</system:String>
+  <system:String x:Key="prefs.appearance.lang">Dil</system:String>
+  <system:String x:Key="prefs.appearance.showghostnotes">Piyano rulosunda diğer parçaların notalarını göster</system:String>
+  <system:String x:Key="prefs.appearance.showicon">Piyano rulosunda ikon göster</system:String>
+  <system:String x:Key="prefs.appearance.showportrait">Piyano rulosunda portre göster</system:String>
+  <system:String x:Key="prefs.appearance.sortorder">Şarkıcı adının gösterim dili</system:String>
+  <system:String x:Key="prefs.appearance.theme">Tema</system:String>
+  <system:String x:Key="prefs.appearance.theme.dark">Koyu</system:String>
+  <system:String x:Key="prefs.appearance.theme.light">Açık</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.edit.title">Özel Temayı Düzenle</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.delete.title">Özel Temayı Sil</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.delete.message">Bu temayı silmek istediğinizden emin misiniz?</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.create.title">Özel Tema Oluştur</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.create.prompt">Tema Adını Girin</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.create.empty">Tema adı boş olamaz.</system:String>
+  <system:String x:Key="prefs.appearance.trackcolor">UI'da parça rengini kullan</system:String>
+  <system:String x:Key="prefs.cache">Önbellek</system:String>
+  <system:String x:Key="prefs.cache.clearonquit">Çıkışta önbelleği temizle</system:String>
+  <system:String x:Key="prefs.cache.diffsingertensorcache">DiffSinger Tensor Önbelleği</system:String>
+  <system:String x:Key="prefs.caption">Tercihler</system:String>
+  <system:String x:Key="prefs.diffsinger">DiffSinger</system:String>
+  <system:String x:Key="prefs.editing">Düzenleme</system:String>
+  <system:String x:Key="prefs.general">Genel</system:String>
+  <system:String x:Key="prefs.note.restart">Not: Bu öğeyi değiştirdikten sonra OpenUtau'yu yeniden başlatın.</system:String>
+  <system:String x:Key="prefs.otoeditor">Oto Editörü</system:String>
+  <system:String x:Key="prefs.otoeditor.select">Varsayılan Oto Editörü</system:String>
+  <system:String x:Key="prefs.otoeditor.setparampath">setParam Yolu</system:String>
+  <system:String x:Key="prefs.paths">Yollar</system:String>
+  <system:String x:Key="prefs.paths.addlsinger">Ek Şarkıcı Yolu</system:String>
+  <system:String x:Key="prefs.paths.addlsinger.install">Ek Şarkıcı Yolu'na yükle</system:String>
+  <system:String x:Key="prefs.paths.detect">Algıla</system:String>
+  <system:String x:Key="prefs.paths.loaddeepfolders">Tüm derinlik klasörlerini yükle</system:String>
+  <system:String x:Key="prefs.paths.singer">Şarkıcı Yolu</system:String>
+  <system:String x:Key="prefs.playback">Çalma</system:String>
+  <system:String x:Key="prefs.playback.autoscroll">Otomatik Kaydırma</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode">Otomatik Kaydırma Modu</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode.off">Kapalı</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode.pagescroll">Sayfa Kaydır</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode.stationarycursor">Sabit İmleç</system:String>
+  <system:String x:Key="prefs.playback.backend">Ses Arka Ucu</system:String>
+  <system:String x:Key="prefs.playback.backend.auto">Otomatik</system:String>
+  <system:String x:Key="prefs.playback.backend.mini">MiniAudio</system:String>
+  <system:String x:Key="prefs.playback.cursorposition">Otomatik Kaydırma Marjı</system:String>
+  <system:String x:Key="prefs.playback.device">Çalma Cihazı</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime">Duraklatma sırasında</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.off">Hiçbir şey yapma</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.on">Oynatmaya başladığınız konuma imleci ve görünümü geri getir</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.onlycursor">Sadece imleci başladığınız konuma geri getir</system:String>
+  <system:String x:Key="prefs.playback.systemdefault">Sistem varsayılan cihazını kullan</system:String>
+  <system:String x:Key="prefs.playback.test">Test</system:String>
+  <system:String x:Key="prefs.rendering">Render</system:String>
+  <system:String x:Key="prefs.rendering.defaultrenderer">Varsayılan renderer (klasik voicebanklar için)</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger Render Derinliği</system:String>
+  <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Akustik için Render Adımları</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger Pitch için Render Adımları</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger Varyans için Render Adımları</system:String>
+  <system:String x:Key="prefs.rendering.diffsingervariancelocalpitchpatch">Pitch düzenlemeleri için DiffSinger yerel varyans güncellemesi</system:String>
+  <system:String x:Key="prefs.rendering.onnxgpu">GPU</system:String>
+  <system:String x:Key="prefs.rendering.onnxrunner">Makine Öğrenimi Çalıştırıcısı</system:String>
+  <system:String x:Key="prefs.rendering.phasecomp">Faz Telafisi</system:String>
+  <system:String x:Key="prefs.rendering.prerender">Ön-render</system:String>
+  <system:String x:Key="prefs.rendering.resampler">Resampler</system:String>
+  <system:String x:Key="prefs.rendering.resampler.morewarn">Uyarı: moresampler tam olarak desteklenmiyor. Yavaş olabilir ve yüksek CPU kullanımı oluşturabilir. Israr ediyorsanız lütfen:
+  1. moreconfig.txt içinde "resampler-compatibility" değerini "on" yapın.
+  2. moreconfig.txt içinde "auto-update-llsm-mrq" değerini "off" yapın.
+  3. moresampler eksik llsm dosyalarını oluşturana kadar sabırlı olun.</system:String>
+  <system:String x:Key="prefs.rendering.resampler.note">Not: Harici resampler kullanmak için, resampler DLL veya EXE dosyasını OpenUtau kurulum yolundaki Resamplers klasörüne ekleyin ve Tercihler'den seçin.</system:String>
+  <system:String x:Key="prefs.rendering.skipmuted">Susturulmuş parçaları atla</system:String>
+  <system:String x:Key="prefs.rendering.threads.cpuwarn">Uyarı: çok fazla render iş parçacığı OpenUtau'nun yavaş çalışmasına neden olabilir.</system:String>
+  <system:String x:Key="prefs.rendering.threads.numthreads">Maksimum Render İş Parçacığı</system:String>
+  <system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>
+  <system:String x:Key="prefs.utau">UTAU</system:String>
+
+  <system:String x:Key="progress.cachecleared">Önbellek temizlendi.</system:String>
+  <system:String x:Key="progress.clearingcache">Önbellek temizleniyor...</system:String>
+  <system:String x:Key="progress.loadingsingers">Şarkıcılar yükleniyor...</system:String>
+  <system:String x:Key="progress.saved">Proje kaydedildi. {0}</system:String>
+  <system:String x:Key="progress.waitingrendering">Render bekleniyor</system:String>
+
+  <system:String x:Key="singererror.aliasfullwidthspaces">Alias tam genişlikli boşluk içeriyor.</system:String>
+  <system:String x:Key="singererror.aliasisnfd">Alias NFD formatında.</system:String>
+  <system:String x:Key="singererror.aliasmultiplespaces">Alias birden fazla boşluk içeriyor.</system:String>
+  <system:String x:Key="singererror.aliasstartwithspace">Alias boşluk ile başlıyor veya bitiyor.</system:String>
+  <system:String x:Key="singererror.bitdepth">Ses dosyasının bit derinliği 16bit değil.</system:String>
+  <system:String x:Key="singererror.consonantoutofduration">Consonant ses dosyası süresinin dışında.</system:String>
+  <system:String x:Key="singererror.consonantshort">Consonant >= 0 olmalıdır.</system:String>
+  <system:String x:Key="singererror.cutoffconsonant">Cutoff, consonant'ın sağında olmalıdır.</system:String>
+  <system:String x:Key="singererror.cutoffoutofduration">Cutoff ses dosyası süresinin dışında.</system:String>
+  <system:String x:Key="singererror.cutoffoverlap">Cutoff, overlap'ın sağında olmalıdır.</system:String>
+  <system:String x:Key="singererror.cutoffpreutter">Cutoff, preutter'ın sağında olmalıdır.</system:String>
+  <system:String x:Key="singererror.duplicatealias">Çoğaltılmış alias'lar var.{0}</system:String>
+  <system:String x:Key="singererror.duplicatename">oto set "{0}" içinde büyük/küçük harf duyarsız şekilde çoğaltılmış dosya isimleri bulundu: {1}.
+Voicebank başka bir işletim sisteminde çalışmayabilir.</system:String>
+  <system:String x:Key="singererror.failedload">Voicebank yüklenemedi.</system:String>
+  <system:String x:Key="singererror.invalidduration">Geçersiz süre {0}.</system:String>
+  <system:String x:Key="singererror.invalidoto">Geçersiz oto formatı.</system:String>
+  <system:String x:Key="singererror.mono">Ses dosyası mono kanal değil.</system:String>
+  <system:String x:Key="singererror.offsetoutofduration">Offset ses dosyası süresinin dışında.</system:String>
+  <system:String x:Key="singererror.offsetshort">Offset >= 0 olmalıdır.</system:String>
+  <system:String x:Key="singererror.overlapoutofduration">Overlap ses dosyası süresinin dışında.</system:String>
+  <system:String x:Key="singererror.preutteroutofduration">Preutter ses dosyası süresinin dışında.</system:String>
+  <system:String x:Key="singererror.preuttershort">Preutter >= 0 olmalıdır.</system:String>
+  <system:String x:Key="singererror.samplerate">Ses dosyasının örnekleme hızı 44100Hz değil.</system:String>
+  <system:String x:Key="singererror.soundmissing">Ses dosyası eksik</system:String>
+  <system:String x:Key="singererror.soundnotopened">Ses dosyası açılamıyor.</system:String>
+  <system:String x:Key="singererror.txtnotfound">character.txt bulunamadı.</system:String>
+  <system:String x:Key="singererror.wavisnfd">Wav dosyası adı NFD formatında.</system:String>
+  <system:String x:Key="singererror.wrongcase">Dosya adında yanlış büyük/küçük harf:
+beklenen: {0}
+Gerçek: {1}
+Voicebank başka bir işletim sisteminde çalışmayabilir.</system:String>
+  <system:String x:Key="singererror.yamlnotfound">character.yaml bulunamadı.</system:String>
+  
+  <system:String x:Key="singers.caption">Şarkıcılar</system:String>
+  <system:String x:Key="singers.editoto.editinsetparam">setParam içinde düzenle</system:String>
+  <system:String x:Key="singers.editoto.editinvlabeler">vLabeler içinde düzenle</system:String>
+  <system:String x:Key="singers.editoto.gotosource">Kaynak dosyaya git</system:String>
+  <system:String x:Key="singers.editoto.regenfrq">FRQ yeniden oluştur</system:String>
+  <system:String x:Key="singers.editoto.regenfrq.regenerating">FRQ yeniden oluşturuluyor</system:String>
+  <system:String x:Key="singers.editoto.reset">Oto'ları sıfırla</system:String>
+  <system:String x:Key="singers.editoto.save">Oto'ları kaydet</system:String>
+  <system:String x:Key="singers.editoto.searchalias">Alias ara</system:String>
+  <system:String x:Key="singers.editoto.setsetparampath">setParam (v4.0b veya daha yeni) adresinden indirin ve önce Tercihler'de setParam yolunu ayarlayın!</system:String>
+  <system:String x:Key="singers.editoto.setvlabelerpath">vLabeler (1.0.0-beta1 veya daha yeni) adresinden indirin ve önce Tercihler'de vLabeler yolunu ayarlayın!</system:String>
+  <system:String x:Key="singers.errorreport">Şarkıcı Hata Raporu Oluştur</system:String>
+  <system:String x:Key="singers.location">Konum</system:String>
+  <system:String x:Key="singers.merge">Başka bir voicebank ile birleştir</system:String>
+  <system:String x:Key="singers.otoview.moveleft">Sola Taşı</system:String>
+  <system:String x:Key="singers.otoview.moveright">Sağa Taşı</system:String>
+  <system:String x:Key="singers.otoview.selectnext">Sonrakini Seç</system:String>
+  <system:String x:Key="singers.otoview.selectprev">Öncekini Seç</system:String>
+  <system:String x:Key="singers.otoview.showall">Hepsini Göster</system:String>
+  <system:String x:Key="singers.otoview.zoomin">Büyüt</system:String>
+  <system:String x:Key="singers.otoview.zoomout">Küçült</system:String>
+  <system:String x:Key="singers.playsample">Örneği Oynat</system:String>
+  <system:String x:Key="singers.playselectedfile">Seçilen Dosyayı Oynat</system:String>
+  <system:String x:Key="singers.publish">Şarkıcıyı Yayınla</system:String>
+  <system:String x:Key="singers.publish.description">Şarkıcınız için dağıtıma uygun optimize edilmiş bir zip paketi oluşturun.</system:String>
+  <system:String x:Key="singers.publish.ignoretypes">Paketleme sırasında şu dosya türlerini yoksay (gitignore sözdizimi):</system:String>
+  <system:String x:Key="singers.publish.publish">Yayınla</system:String>
+  <system:String x:Key="singers.publish.useignore">Dosya türü yoksayma kullan</system:String>
+  <system:String x:Key="singers.readme">readme.txt'i aç</system:String>
+  <system:String x:Key="singers.readme.notfound">readme.txt bulunamadı.</system:String>
+  <system:String x:Key="singers.refresh">Yenile</system:String>
+  <system:String x:Key="singers.setdefaultphonemizer">Varsayılan Phonemizer'i ayarla</system:String>
+  <system:String x:Key="singers.setencoding">Kodlamayı ayarla</system:String>
+  <system:String x:Key="singers.setimage">Simgeyi ayarla</system:String>
+  <system:String x:Key="singers.setportrait">Portreyi ayarla</system:String>
+  <system:String x:Key="singers.setsingertype">Şarkıcı Türünü ayarla</system:String>
+  <system:String x:Key="singers.subbanks.clear">Temizle</system:String>
+  <system:String x:Key="singers.subbanks.color">Renk</system:String>
+  <system:String x:Key="singers.subbanks.color.add">Renk Ekle</system:String>
+  <system:String x:Key="singers.subbanks.color.remove">Renk Kaldır</system:String>
+  <system:String x:Key="singers.subbanks.color.rename">Yeniden Adlandır</system:String>
+  <system:String x:Key="singers.subbanks.edit">Altbankları Düzenle</system:String>
+  <system:String x:Key="singers.subbanks.export">prefix.map Dışa Aktar</system:String>
+  <system:String x:Key="singers.subbanks.import">prefix.map İçeri Aktar</system:String>
+  <system:String x:Key="singers.subbanks.selectall">Tümünü Seç</system:String>
+  <system:String x:Key="singers.subbanks.set">Ayarla</system:String>
+  <system:String x:Key="singers.subbanks.tone">Ton</system:String>
+  <system:String x:Key="singers.subbanks.toneranges">Ton Aralıkları</system:String>
+  <system:String x:Key="singers.usefilename">Dosya adını alias olarak kullan</system:String>
+  <system:String x:Key="singers.visitwebsite">Web sitesini ziyaret et</system:String>
+
+  <system:String x:Key="singersetup.archivefileencoding">Arşiv Dosyası Kodlaması</system:String>
+  <system:String x:Key="singersetup.archivefileencoding.prompt">Dosya adlarının doğru görünmesi için bir kodlama seçin.</system:String>
+  <system:String x:Key="singersetup.back">Geri</system:String>
+  <system:String x:Key="singersetup.failed">Şarkıcı yüklenemedi.</system:String>
+  <system:String x:Key="singersetup.install">Yükle</system:String>
+  <system:String x:Key="singersetup.missinginfo">Lütfen bu voicebank'in character.yaml dosyasına aşağıdaki ayarları ekleyin.</system:String>
+  <system:String x:Key="singersetup.next">İleri</system:String>
+  <system:String x:Key="singersetup.singertype">Şarkıcı Türü</system:String>
+  <system:String x:Key="singersetup.succeeded">Kurulum başarılı.</system:String>
+  <system:String x:Key="singersetup.textfileencoding">Metin Dosyası Kodlaması</system:String>
+  <system:String x:Key="singersetup.textfileencoding.prompt">Dosya içeriklerinin doğru görünmesi için bir kodlama seçin.</system:String>
+  <system:String x:Key="singersetup.title">Şarkıcı Kurulumu</system:String>
+
+  <system:String x:Key="themeeditor.title">Tema Düzenleyici</system:String>
+
+  <system:String x:Key="tip.aliasbox">Alias'ı geçersiz kıl</system:String>
+  <system:String x:Key="tip.exps">Sayısal/Seçenek Türü
+    Sol Tık: İfadeleri ayarla
+    Shift + Sol Tık: Birleşik ifadeleri ayarla
+    Sağ Tık: İfadeleri sıfırla
+Eğri Türü
+    Sol Tık: Çiz
+    Shift + Ctrl + Sol Tık: Çizgi Çiz
+    Shift + Sol Tık: Yatay Çizgi Çiz
+    Sağ Tık: Çizgiyi sıfırla</system:String>
+  <system:String x:Key="tip.exps.notsupported">Renderer tarafından desteklenmeyen ifade</system:String>
+  <system:String x:Key="tip.lyricbox.next">Tab: Sonraki Nota</system:String>
+  <system:String x:Key="tip.lyricbox.prev">Shift+Tab: Önceki Nota</system:String>
+  <system:String x:Key="tip.notes.basics">Seçim Aracı
+    Kutu Seçimi: Notaları seç
+    Ctrl + Kutu Seçimi: Daha fazla nota seç
+    Yukarı/Aşağı: Seçili notaları transpoze et
+    Ctrl + Yukarı/Aşağı: Seçili notaları oktavla transpoze et
+Kalem Aracı
+    Sol Tık: Nota ekle
+    Sağ Tık: Nota kaldır
+    Sağ Tıklama+Çizim: Birden fazla notayı kaldır
+Genel
+    T: İpuçlarını değiştir
+    Nota sürükle: Notayı taşı
+    Nota sonunu sürükle: Notayı yeniden boyutlandır
+    Alt + Nota sonunu sürükle: Komşu notaları yeniden boyutlandır
+    Space: Oynat</system:String>
+  <system:String x:Key="tip.notes.zoomx">◀ Yatay yakınlaştırmak için kaydırın ▶</system:String>
+  <system:String x:Key="tip.notes.zoomy">Dikey yakınlaştırmak için burayı kaydırın ▶</system:String>
+
+  <system:String x:Key="tracks.duplicate">Parçayı Çoğalt</system:String>
+  <system:String x:Key="tracks.duplicatesettings">Parça Ayarlarını Çoğalt</system:String>
+  <system:String x:Key="tracks.favorite">Favoriler</system:String>
+  <system:String x:Key="tracks.installsinger">Şarkıcıyı Yükle</system:String>
+  <system:String x:Key="tracks.more">Daha Fazla</system:String>
+  <system:String x:Key="tracks.movedown">Aşağı Taşı</system:String>
+  <system:String x:Key="tracks.moveup">Yukarı Taşı</system:String>
+  <system:String x:Key="tracks.mute">Sustur</system:String>
+  <system:String x:Key="tracks.mute.allothers">Diğerlerini sustur</system:String>
+  <system:String x:Key="tracks.mute.only">Sadece bunu sustur</system:String>
+  <system:String x:Key="tracks.mute.unmuteall">Tümünün susturmasını kaldır</system:String>
+  <system:String x:Key="tracks.nosinger">Şarkıcı yok</system:String>
+  <system:String x:Key="tracks.openaddsingers">Ek şarkıcı konumunu aç</system:String>
+  <system:String x:Key="tracks.opensingers">Şarkıcı konumunu aç</system:String>
+  <system:String x:Key="tracks.remove">Kaldır</system:String>
+  <system:String x:Key="tracks.rename">Parçayı Yeniden Adlandır</system:String>
+  <system:String x:Key="tracks.selectrenderer">Renderer Seç</system:String>
+  <system:String x:Key="tracks.selectsinger">Şarkıcı Seç</system:String>
+  <system:String x:Key="tracks.singerdefault">(Şarkıcı varsayılanı)</system:String>
+  <system:String x:Key="tracks.solo">Solo</system:String>
+  <system:String x:Key="tracks.solo.add">Ekleyerek solo (diğerlerin sololarını kaldırmaz)</system:String>
+  <system:String x:Key="tracks.solo.only">Sadece bunu solo yap (diğerlerinin sololarını kaldırır)</system:String>
+  <system:String x:Key="tracks.solo.unsoloall">Tüm soloları kaldır</system:String>
+  <system:String x:Key="tracks.trackcolor">Parça rengini değiştir</system:String>
+  <system:String x:Key="tracks.tracksettings">Parça Ayarları</system:String>
+
+  <FontFamily x:Key="ui.fontfamily">Segoe UI,San Francisco,Helvetica Neue</FontFamily>
+
+  <system:String x:Key="updater.caption">Güncellemeleri Kontrol Et</system:String>
+  <system:String x:Key="updater.description">Açık kaynak şarkı sentezleme platformu</system:String>
+  <system:String x:Key="updater.github">GitHub</system:String>
+  <system:String x:Key="updater.status.available">v{0} güncellemesi mevcut!</system:String>
+  <system:String x:Key="updater.status.checking">Güncellemeler kontrol ediliyor...</system:String>
+  <system:String x:Key="updater.status.notavailable">Güncel</system:String>
+  <system:String x:Key="updater.status.unknown">Güncelleme kontrolü yapılamadı</system:String>
+  <system:String x:Key="updater.update">Güncelle</system:String>
+
+  <system:String x:Key="warning">Uyarı</system:String>
+  <system:String x:Key="warning.asciipath">OpenUtau ana yolunuz "{0}" ASCII olmayan karakter içeriyor. Exe resamplers çalışmayabilir.</system:String>
+  <system:String x:Key="warning.renderer">Bu renderer için ayar yok.</system:String>
+
+  <system:String x:Key="welcome.new">Yeni</system:String>
+  <system:String x:Key="welcome.new.description">Yeni bir proje oluştur</system:String>
+  <system:String x:Key="welcome.open">Aç</system:String>
+  <system:String x:Key="welcome.open.description">Yerel bir projeyi aç</system:String>
+  <system:String x:Key="welcome.recent">Son</system:String>
+  <system:String x:Key="welcome.start">Başla</system:String>
+  <system:String x:Key="welcome.template">Şablon</system:String>
+
+  <!-- Mix Effects (post-processing) -->
+  <system:String x:Key="mixfx.caption">Parça Parlatma</system:String>
+  <system:String x:Key="mixfx.enabled">Bu parçada etkinleştir</system:String>
+  <system:String x:Key="mixfx.preset">Önayar</system:String>
+  <system:String x:Key="mixfx.recommended">Varsayılan Ayarları Uygula</system:String>
+  <system:String x:Key="mixfx.recommended.tip">Vocal Air + Hafif kompresyon + Küçük Oda</system:String>
+  <system:String x:Key="mixfx.applyonexport">Mixdown dışa aktarılırken uygula</system:String>
+  <system:String x:Key="mixfx.library">Kütüphane</system:String>
+  <system:String x:Key="mixfx.library.placeholder">Kaydedilmiş bir önayar seçin...</system:String>
+  <system:String x:Key="mixfx.library.save">Kaydet...</system:String>
+  <system:String x:Key="mixfx.library.delete">Sil</system:String>
+  <system:String x:Key="mixfx.library.default">Varsayılan</system:String>
+  <system:String x:Key="tracks.mixfx">Parça Parlatma...</system:String>
+</ResourceDictionary>
