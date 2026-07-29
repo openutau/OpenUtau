@@ -92,6 +92,9 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public bool Muted { set; get; }
         public bool Mute { get; set; }
         public bool Solo { get; set; }
+        // Per-track post-processing FX.  null = no FX configured (bypass).
+        // Backwards compatible: older ustx files simply load with this null.
+        public UMixFx MixFx { get; set; }
         public double Volume { set; get; }
         public double Pan { set; get; }
 

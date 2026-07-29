@@ -67,6 +67,10 @@ namespace OpenUtau.Core.Ustx {
             project.timeAxis.TickPosToBarBeat(endTicks, out int bar, out int beat, out int remainingTicks);
             return project.timeAxis.BarBeatToTickPos(bar, beat + 1) - position;
         }
+        public int GetMinDurTickForNoteEdit(UProject project, int noteEnd) {
+            project.timeAxis.TickPosToBarBeat(position + noteEnd - 1, out int bar, out int beat, out int remainingTicks);
+            return project.timeAxis.BarBeatToTickPos(bar + 2, 0) - position;
+        }
         
         public override int GetMaxPosiTick(UProject project) {
             int maxStartTick = position + (notes.FirstOrDefault()?.position ?? Duration);
@@ -181,7 +185,9 @@ namespace OpenUtau.Core.Ustx {
                     var resp = phonemizerResponse;
                     if (resp.timestamp == notesTimestamp) {
                         phonemes.Clear();
-                        notes.ForEach(note => note.phonemizerExpressions.Clear());
+                        foreach (var note in notes) {
+                            note.phonemizerExpressions.Clear();
+                        }
 
                         for (int i = 0; i < resp.phonemes.Length; ++i) {
                             var indexes = new List<int>();
@@ -248,6 +254,8 @@ namespace OpenUtau.Core.Ustx {
                     phoneme.phoneme = phoneme.rawPhoneme;
                     phoneme.preutterDelta = null;
                     phoneme.overlapDelta = null;
+                    phoneme.attackTimeDelta = null;
+                    phoneme.releaseTimeDelta = null;
                     var note = phoneme.Parent;
                     if (note == null) {
                         continue;
@@ -258,6 +266,8 @@ namespace OpenUtau.Core.Ustx {
                         phoneme.phoneme = !string.IsNullOrWhiteSpace(o.phoneme) ? o.phoneme : phoneme.rawPhoneme;
                         phoneme.preutterDelta = o.preutterDelta;
                         phoneme.overlapDelta = o.overlapDelta;
+                        phoneme.attackTimeDelta = o.attackTimeDelta;
+                        phoneme.releaseTimeDelta = o.releaseTimeDelta;
                     }
                 }
                 // Safety treatment after phonemizer output and phoneme overrides.

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -96,6 +96,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// Apply Korean sandhi rules to Hangeul lyrics.
         /// </summary>
         public override void SetUp(Note[][] groups, UProject project, UTrack track) {
+            base.SetUp(groups, project, track);
             // variate lyrics 
             KoreanPhonemizerUtil.RomanizeNotes(groups, false);
         }
@@ -155,7 +156,7 @@ namespace OpenUtau.Plugin.Builtin {
                 var attr1 = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 1) ?? default;
 
                 foreach (string test in input){
-                    if (singer.TryGetMappedOto(test, note.tone + attr0.toneShift, attr0.voiceColor, out oto)){
+                    if (singer.TryGetMappedOto(test, note.tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out oto)){
                         return true;
                     }
                 }
@@ -592,7 +593,7 @@ namespace OpenUtau.Plugin.Builtin {
                     int fcLength = totalDuration / 3;
                     if ((TCLfinal == "k") || (TCLfinal == "p") || (TCLfinal == "t")) { fcLength = totalDuration / 2; }
 
-                    if (singer.TryGetMappedOto(CV, note.tone + attr0.toneShift, attr0.voiceColor, out var oto1) && singer.TryGetMappedOto(FC, note.tone + attr0.toneShift, attr0.voiceColor, out var oto2)) {
+                    if (singer.TryGetMappedOto(CV, note.tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto1) && singer.TryGetMappedOto(FC, note.tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto2)) {
                         CV = oto1.Alias;
                         FC = oto2.Alias;
                         return new Result {
@@ -622,7 +623,7 @@ namespace OpenUtau.Plugin.Builtin {
                         else if ((TNLconsonant == "gg") || (TNLconsonant == "dd") || (TNLconsonant == "bb") || (TNLconsonant == "ss") || (TNLconsonant == "jj")) { vcLength = totalDuration / 2; }
                         vcLength = Math.Min(totalDuration / 2, vcLength);
 
-                        if (singer.TryGetMappedOto(CV, note.tone + attr0.toneShift, attr0.voiceColor, out var oto1) && singer.TryGetMappedOto(VC, note.tone + attr0.toneShift, attr0.voiceColor, out var oto2)) {
+                        if (singer.TryGetMappedOto(CV, note.tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto1) && singer.TryGetMappedOto(VC, note.tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto2)) {
                             CV = oto1.Alias;
                             VC = oto2.Alias;
                             return new Result {
@@ -642,13 +643,13 @@ namespace OpenUtau.Plugin.Builtin {
                         var nextAttr = nextNeighbour.Value.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
                         var nextUnicode = ToUnicodeElements(nextNeighbour?.lyric);
                         var nextLyric = string.Join("", nextUnicode);
-                        if (singer.TryGetMappedOto(nextLyric, nextNeighbour.Value.tone + nextAttr.toneShift, nextAttr.voiceColor, out var oto0)) {
+                        if (singer.TryGetMappedOto(nextLyric, nextNeighbour.Value.tone + (nextAttr.toneShift ?? GetParentToneShift()), nextAttr.voiceColor ?? GetParentVoiceColor(), out var oto0)) {
                             vcLength = MsToTick(oto0.Preutter);
                             
                         }
                         vcLength = Math.Min(totalDuration / 2, vcLength);
 
-                        if (singer.TryGetMappedOto(CV, note.tone + attr0.toneShift, attr0.voiceColor, out var oto1) && singer.TryGetMappedOto(VC, note.tone + attr0.toneShift, attr0.voiceColor, out var oto2)) {
+                        if (singer.TryGetMappedOto(CV, note.tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto1) && singer.TryGetMappedOto(VC, note.tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto2)) {
                             CV = oto1.Alias;
                             VC = oto2.Alias;
                             return new Result {
@@ -665,7 +666,7 @@ namespace OpenUtau.Plugin.Builtin {
                         }
                     }
                     // 그 외(받침 없는 마지막 노트)
-                    if (singer.TryGetMappedOto(CV, note.tone + attr0.toneShift, attr0.voiceColor, out var oto)) {
+                    if (singer.TryGetMappedOto(CV, note.tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto)) {
                         CV = oto.Alias;
                         return new Result {
                             phonemes = new Phoneme[] {
@@ -687,7 +688,7 @@ namespace OpenUtau.Plugin.Builtin {
                     endBreath = $"{TPLplainfinal} R";
                 }
 
-                if (singer.TryGetMappedOto(endBreath, note.tone + attr0.toneShift, attr0.voiceColor, out var oto)){
+                if (singer.TryGetMappedOto(endBreath, note.tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto)){
                     endBreath = oto.Alias;
                     return new Result {
                         phonemes = new Phoneme[] {
@@ -892,7 +893,7 @@ namespace OpenUtau.Plugin.Builtin {
                 
                 int vcLength = 60;
                 var nextAttr = nextNeighbour.Value.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
-                if (singer.TryGetMappedOto(nextLyric, nextNeighbour.Value.tone + nextAttr.toneShift, nextAttr.voiceColor, out var oto)) {
+                if (singer.TryGetMappedOto(nextLyric, nextNeighbour.Value.tone + (nextAttr.toneShift ?? GetParentToneShift()), nextAttr.voiceColor ?? GetParentVoiceColor(), out var oto)) {
                     vcLength = MsToTick(oto.Preutter);
                 } else if ((TNLconsonant == "r") || (TNLconsonant == "h")) { vcLength = 30; }
                 else if (TNLconsonant == "s") { vcLength = totalDuration / 3; }

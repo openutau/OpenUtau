@@ -40,9 +40,9 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public double DurationMs => EndMs - PositionMs;
         [YamlIgnore] public double EndMs { get; set; }
         [YamlIgnore] public bool Selected { get; set; } = false;
-        [YamlIgnore] public UNote Prev { get; set; }
-        [YamlIgnore] public UNote Next { get; set; }
-        [YamlIgnore] public UNote Extends { get; set; }
+        [YamlIgnore] public UNote? Prev { get; set; }
+        [YamlIgnore] public UNote? Next { get; set; }
+        [YamlIgnore] public UNote? Extends { get; set; }
         [YamlIgnore] public int ExtendedDuration { get; set; }
         [YamlIgnore] public int ExtendedEnd => position + ExtendedDuration;
         [YamlIgnore] public int LeftBound => position;
@@ -139,7 +139,7 @@ namespace OpenUtau.Core.Ustx {
                 attr.index = exp.index.Value;
                 if (exp.abbr == Format.Ustx.VEL) {
                     attr.consonantStretchRatio = Math.Pow(2, 1.0 - exp.value / 100.0);
-                } else if (exp.abbr == Format.Ustx.ALT) {
+                } else if (exp.abbr == Format.Ustx.ALT && exp.value != 0) { // 0 means no alt (nothing added)
                     attr.alternate = (int)exp.value;
                 } else if (exp.abbr == Format.Ustx.CLR && track.VoiceColorExp != null) {
                     int optionIdx = (int)exp.value;

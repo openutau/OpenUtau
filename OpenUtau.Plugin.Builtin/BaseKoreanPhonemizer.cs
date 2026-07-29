@@ -29,21 +29,18 @@ namespace OpenUtau.Plugin.Builtin {
             return false;
         } 
         public override void SetSinger(USinger singer) => this.singer = singer;
-        public static string? FindInOto(USinger singer, string phoneme, Note note, bool nullIfNotFound = false) {
+        public string? FindInOto(USinger singer, string phoneme, Note note, bool nullIfNotFound = false) {
             // 음소와 노트를 입력받고, 다음계 및 보이스컬러 에일리어스를 적용한다. 
             // nullIfNotFound가 true이면 음소가 찾아지지 않을 때 음소가 아닌 null을 리턴한다.
             // nullIfNotFound가 false면 음소가 찾아지지 않을 때 그대로 음소를 반환
             string phonemeToReturn;
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
-            string color = attr.voiceColor ?? string.Empty;
-            int toneShift = 0;
-            int? alt = null;
+            string color = attr.voiceColor ?? GetParentVoiceColor();
+            int toneShift = attr.toneShift ?? GetParentToneShift();
+            int? alt = attr.alternate ?? GetParentAlternate();
             if (phoneme.Equals("")) {return phoneme;}
 
-            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var otoAlt)) {
-                phonemeToReturn = otoAlt.Alias;
-            } 
-            else if (singer.TryGetMappedOto(phoneme, note.tone + toneShift, color, out var oto)) {
+            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var oto)) {
                 phonemeToReturn = oto.Alias;
             } 
             else if (singer.TryGetMappedOto(phoneme, note.tone, color, out oto)) {

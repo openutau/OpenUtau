@@ -12,7 +12,7 @@ body:
     attributes:
       label: Acknowledgement
       options:
-        - label: I have read Getting-Started and FAQ
+        - label: I have read [Getting-Started](https://github.com/stakira/OpenUtau/wiki/Getting-Started) and [FAQ](https://github.com/stakira/OpenUtau/wiki/FAQ)
           required: true
         - label: If dealing with version 0.1.549 or higher, you have installed the .NET 8 runtime
           required: true

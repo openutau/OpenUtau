@@ -141,7 +141,7 @@ DLL_API void WorldAnalysisF0In(const AnalysisConfig* config, float* samples,
 
   D4COption d4c_option;
   InitializeD4COption(&d4c_option);
-  // d4c_option.threshold = 0;
+  d4c_option.threshold = 0;
   D4C(samples_vec.data(), samples_vec.size(), config->fs, ts_vec.data(), f0_in,
       num_frames, config->fft_size, &d4c_option, ap_2d);
 

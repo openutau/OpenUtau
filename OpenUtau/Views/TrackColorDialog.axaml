@@ -30,8 +30,8 @@
       </ListBox.Styles>
     </ListBox>
     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Top">
-      <Button Content="{StaticResource lyrics.cancel}" MinWidth="50" Click="OnCancel"/>
-      <Button Content="{StaticResource lyrics.apply}" MinWidth="50" Click="OnFinish"/>
+      <Button Content="{StaticResource button.cancel}" MinWidth="50" Click="OnCancel"/>
+      <Button Content="{StaticResource button.apply}" MinWidth="50" Click="OnFinish"/>
     </StackPanel>
   </Grid>
 </Window>

@@ -165,11 +165,11 @@
 
       <!-- OK / Cancel -->
       <Grid ColumnDefinitions="*,8,*" Margin="0,4,0,0">
-        <Button Grid.Column="0" Content="{DynamicResource dialogs.messagebox.ok}"
+        <Button Grid.Column="0" Content="{DynamicResource button.ok}"
                 HorizontalAlignment="Stretch" Name="OkButton"
                 Click="OnOkClicked"
                 IsEnabled="{Binding CanRun}"/>
-        <Button Grid.Column="2" Content="{DynamicResource dialogs.messagebox.cancel}"
+        <Button Grid.Column="2" Content="{DynamicResource button.cancel}"
                 HorizontalAlignment="Stretch"
                 Click="OnCancelClicked"/>
       </Grid>

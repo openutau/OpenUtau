@@ -193,6 +193,7 @@ namespace OpenUtau.Core.DiffSinger
         }
 
         string GetSpeakerAtIndex(Note note, int index) {
+            if (dsConfig.speakers == null) return "";
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == index) ?? default;
             var speaker = singer.Subbanks
                 .FirstOrDefault(subbank => subbank.Color == attr.voiceColor && subbank.toneSet.Contains(note.tone));

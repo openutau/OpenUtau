@@ -148,7 +148,7 @@ namespace OpenUtau.Plugins {
                         index = j,
                         consonantStretchRatio = 1,
                         toneShift = phonemeParams.shift,
-                        alternate = phonemeParams.alt,
+                        alternate = phonemeParams.alt == 0 ? null : phonemeParams.alt, // 0 means no alt (nothing added)
                         voiceColor = phonemeParams.color
                     };
                 }

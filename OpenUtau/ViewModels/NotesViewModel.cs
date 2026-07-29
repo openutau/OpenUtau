@@ -52,16 +52,6 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public double PlayPosHighlightX { get; set; }
         [Reactive] public double PlayPosHighlightWidth { get; set; }
         [Reactive] public bool PlayPosWaitingRendering { get; set; }
-        [Reactive] public bool CursorTool { get; set; }
-        [Reactive] public bool PenTool { get; set; }
-        [Reactive] public bool PenPlusTool { get; set; }
-        [Reactive] public bool EraserTool { get; set; }
-        [Reactive] public bool DrawPitchTool { get; set; }
-        [Reactive] public bool DrawLinePitchTool { get; set; }
-        [Reactive] public bool OverwritePitchTool { get; set; }
-        [Reactive] public bool OverwriteLinePitchTool { get; set; }
-        [Reactive] public bool KnifeTool { get; set; }
-        public ReactiveCommand<string, Unit> SelectToolCommand { get; }
         [Reactive] public bool ShowTips { get; set; }
         [Reactive] public bool PlayTone { get; set; }
         [Reactive] public bool ShowVibrato { get; set; }
@@ -77,7 +67,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public Rect ExpBounds { get; set; }
         [Reactive] public string PrimaryKey { get; set; }
         [Reactive] public bool PrimaryKeyNotSupported { get; set; }
-        [Reactive] public bool ShowCurveToolbox { get; set; }
+        [Reactive] public bool ShowCurveToolbar { get; set; }
         [Reactive] public string SecondaryKey { get; set; }
         [Reactive] public double ExpTrackHeight { get; set; }
         [Reactive] public double ExpShadowOpacity { get; set; }
@@ -163,16 +153,30 @@ namespace OpenUtau.App.ViewModels {
                 });
             this.WhenAnyValue(x => x.ExpBounds, x => x.PrimaryKey)
                 .Subscribe(t => {
-                    if (t.Item2 != null && Project.expressions.TryGetValue(t.Item2, out var descriptor)) {
-                        if (descriptor.type == UExpressionType.Options && descriptor.options.Length > 0) {
-                            ExpTrackHeight = t.Item1.Height / descriptor.options.Length;
-                            ExpShadowOpacity = 0;
+                    UExpressionDescriptor? descriptor = null;
+                    if (t.Item2 != null) {
+                        UExpressionDescriptor trackDesc = default!;
+                        bool hasTrackDesc = Part != null && Project.tracks[Part.trackNo]
+                            .TryGetExpDescriptor(Project, t.Item2, out trackDesc);
+                        if (hasTrackDesc) {
+                            descriptor = trackDesc;
+                        } else if (Project.expressions.TryGetValue(t.Item2, out var projDesc)) {
+                            descriptor = projDesc;
                         }
-                        ShowCurveToolbox = descriptor.type == UExpressionType.Curve;
+                    }
+                    if (descriptor != null) {
+                        if (descriptor.type == UExpressionType.Options) {
+                            int numOptions = Math.Max(descriptor.options.Length, 1);
+                            ExpTrackHeight = t.Item1.Height / numOptions;
+                            ExpShadowOpacity = 0;
+                        } else {
+                            ExpTrackHeight = 0;
+                        }
+                        ShowCurveToolbar = descriptor.type == UExpressionType.Curve;
                     } else {
                         ExpTrackHeight = 0;
                         ExpShadowOpacity = 0.3;
-                        ShowCurveToolbox = false;
+                        ShowCurveToolbar = false;
                     }
                 });
             this.WhenAnyValue(x => x.Project)
@@ -205,32 +209,6 @@ namespace OpenUtau.App.ViewModels {
                             CommandParameter = index,
                         }));
                 });
-
-            CursorTool = false;
-            if (Preferences.Default.PenPlusDefault) {
-                PenPlusTool = true;
-                PenTool = false;
-            } else {
-                PenTool = true;
-                PenPlusTool = false;
-            }
-            EraserTool = false;
-            DrawPitchTool = false;
-            DrawLinePitchTool = false;
-            OverwritePitchTool = false;
-            OverwriteLinePitchTool = false;
-            KnifeTool = false;
-            SelectToolCommand = ReactiveCommand.Create<string>(index => {
-                CursorTool = index == "1";
-                PenTool = index == "2";
-                PenPlusTool = index == "2+";
-                EraserTool = index == "3";
-                DrawPitchTool = index == "4";
-                OverwritePitchTool = index == "4+";
-                DrawLinePitchTool = index == "4++";
-                OverwriteLinePitchTool = index == "4+++";
-                KnifeTool = index == "5";
-            });
 
             ShowTips = Preferences.Default.ShowTips;
             IsSnapOn = true;
@@ -348,9 +326,9 @@ namespace OpenUtau.App.ViewModels {
             SnapDivText = $"(1/{div})";
         }
 
-        private void UpdateKey(){
+        private void UpdateKey() {
             Key = userKey;
-            KeyText = "1="+MusicMath.KeysInOctave[userKey].Item1;
+            KeyText = "1=" + MusicMath.KeysInOctave[userKey].Item1;
         }
 
         public void OnXZoomed(Point position, double delta) {
@@ -487,7 +465,7 @@ namespace OpenUtau.App.ViewModels {
                 targetHeight = PortraitHeight;
             }
             int targetWidth = (int)Math.Round(targetHeight * Portrait.Size.Width / Portrait.Size.Height);
-            if(targetWidth == 0){
+            if (targetWidth == 0) {
                 targetWidth = 1;
             }
             return Portrait.CreateScaledBitmap(new PixelSize(targetWidth, targetHeight));
@@ -540,7 +518,7 @@ namespace OpenUtau.App.ViewModels {
                                 Portrait = null;
                                 portraitSource = null;
                             } else {
-                                using (var stream = new MemoryStream(data)) { 
+                                using (var stream = new MemoryStream(data)) {
                                     Portrait = ResizePortrait(new Bitmap(stream), singer.PortraitHeight);
                                     portraitSource = singer.Portrait;
                                 }
@@ -635,18 +613,18 @@ namespace OpenUtau.App.ViewModels {
             if (Selection.Move(delta)) {
                 MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
                 ScrollIntoView(Selection.Head!);
-            };
+            }
         }
         public void ExtendSelection(int delta) {
             if (Selection.Resize(delta)) {
                 MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
                 ScrollIntoView(Selection.Head!);
-            };
+            }
         }
         public void ExtendSelection(UNote note) {
             if (Selection.SelectTo(note)) {
                 MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
-            };
+            }
         }
 
         public void MoveCursor(int delta) {
@@ -819,7 +797,7 @@ namespace OpenUtau.App.ViewModels {
             notes.Sort((a, b) => a.position.CompareTo(b.position));
             //Ignore slur lyrics
             var mergedLyrics = String.Join("", notes.Select(x => x.lyric).Where(l => !l.StartsWith("+")));
-            if(mergedLyrics == ""){ //If all notes are slur, the merged note is single slur note
+            if (mergedLyrics == "") { //If all notes are slur, the merged note is single slur note
                 mergedLyrics = notes[0].lyric;
             }
             DocManager.Inst.StartUndoGroup("command.note.edit");
@@ -929,7 +907,7 @@ namespace OpenUtau.App.ViewModels {
         public async void PasteSelectedParams(Window window) {
             if (Part != null && DocManager.Inst.NotesClipboard != null && DocManager.Inst.NotesClipboard.Count > 0) {
                 var selectedNotes = Selection.ToList();
-                if(selectedNotes.Count == 0) {
+                if (selectedNotes.Count == 0) {
                     return;
                 }
 
@@ -992,7 +970,9 @@ namespace OpenUtau.App.ViewModels {
                 DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, ThemeManager.GetString("progress.clearingcache")));
                 var selectedNotes = Selection.ToList();
                 var phrases = Part.renderPhrases.Where(phrase => selectedNotes.Any(note => phrase.notes.Any(rnote => rnote.position == Part.position + note.position - phrase.position && rnote.duration == note.duration)));
-                phrases.ForEach(phrase => phrase.DeleteCacheFiles());
+                foreach (var phrase in phrases) {
+                    phrase.DeleteCacheFiles();
+                }
                 DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, ThemeManager.GetString("progress.cachecleared")));
             }
         }
@@ -1004,9 +984,21 @@ namespace OpenUtau.App.ViewModels {
             }
             tick -= Part?.position ?? 0;
             PlayPosX = TickToneToPoint(tick, 0).X;
-            TickToLineTick(tick, out int left, out int right);
-            PlayPosHighlightX = TickToneToPoint(left, 0).X;
-            PlayPosHighlightWidth = (right - left) * TickWidth;
+            UpdateHighlight();
+        }
+
+        private void UpdateHighlight() {
+            if (DocManager.Inst.rangeEndTick > DocManager.Inst.rangeStartTick) {
+                int partPos = Part?.position ?? 0;
+                int left = DocManager.Inst.rangeStartTick - partPos;
+                int right = DocManager.Inst.rangeEndTick - partPos;
+                PlayPosHighlightX = TickToneToPoint(left, 0).X;
+                PlayPosHighlightWidth = (right - left) * TickWidth;
+            } else {
+                TickToLineTick((int)(PlayPosX / TickWidth + TickOffset), out int left, out int right);
+                PlayPosHighlightX = TickToneToPoint(left, 0).X;
+                PlayPosHighlightWidth = (right - left) * TickWidth;
+            }
         }
 
         private void FocusNote(UNote note) {
@@ -1083,6 +1075,8 @@ namespace OpenUtau.App.ViewModels {
                     if (!setPlayPosTick.pause || Preferences.Default.LockStartTime == 1) {
                         MaybeAutoScroll(PlayPosX);
                     }
+                } else if (cmd is SetRangeSelectionNotification) {
+                    UpdateHighlight();
                 } else if (cmd is FocusNoteNotification focusNote) {
                     if (focusNote.part == Part) {
                         FocusNote(focusNote.note);

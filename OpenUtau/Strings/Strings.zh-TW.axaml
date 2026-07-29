@@ -627,4 +627,18 @@ Curve Type
   <!--<system:String x:Key="welcome.recent">Recent</system:String>-->
   <!--<system:String x:Key="welcome.start">Start</system:String>-->
   <!--<system:String x:Key="welcome.template">Template</system:String>-->
+
+  <!-- Mix Effects -->
+  <system:String x:Key="mixfx.caption">試聽效果</system:String>
+  <system:String x:Key="mixfx.enabled">在該軌道啟用</system:String>
+  <system:String x:Key="mixfx.preset">預設</system:String>
+  <system:String x:Key="mixfx.recommended">套用預設設定</system:String>
+  <system:String x:Key="mixfx.recommended.tip">Vocal Air + Gentle 壓縮 + Small Room</system:String>
+  <system:String x:Key="mixfx.applyonexport">匯出縮混時套用效果</system:String>
+  <system:String x:Key="mixfx.library">預設庫</system:String>
+  <system:String x:Key="mixfx.library.placeholder">選擇已儲存的預設...</system:String>
+  <system:String x:Key="mixfx.library.save">儲存...</system:String>
+  <system:String x:Key="mixfx.library.delete">刪除</system:String>
+  <system:String x:Key="mixfx.library.default">預設</system:String>
+  <system:String x:Key="tracks.mixfx">試聽效果...</system:String>
 </ResourceDictionary>

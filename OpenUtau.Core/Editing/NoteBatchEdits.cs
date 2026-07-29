@@ -313,23 +313,13 @@ namespace OpenUtau.Core.Editing {
             foreach (var note in notes) {
                 foreach (UPhoneme phoneme in part.phonemes) {
                     if (phoneme.Parent == note && phoneme.Prev != null && phoneme.PositionMs == phoneme.Prev.EndMs) {
-
-                        double consonantStretch = Math.Pow(2f, 1.0f - phoneme.GetExpression(project, track, Format.Ustx.VEL).Item1 / 100f);
-                        double maxPreutter = phoneme.oto.Preutter * consonantStretch;
-                        double prevDur = phoneme.Prev.DurationMs;
-                        double preutter = phoneme.preutter;
-
-                        if (maxPreutter > prevDur * 0.9f) {
-                            maxPreutter = prevDur * 0.9f;
-                        }
-                        if (maxPreutter > phoneme.preutter) {
-                            docManager.ExecuteCmd(new PhonemePreutterCommand(part, note, phoneme.index, (float)(maxPreutter - phoneme.autoPreutter)));
-                            preutter = maxPreutter;
-                        }
-
-                        var overlap = preutter * ratio;
-                        if (overlap > phoneme.autoOverlap) {
-                            docManager.ExecuteCmd(new PhonemeOverlapCommand(part, note, phoneme.index, (float)(overlap - phoneme.autoOverlap)));
+                        var max = Math.Min(phoneme.maxOtoPreutter, phoneme.Prev.DurationMs - 5);
+                        docManager.ExecuteCmd(new PhonemePreutterCommand(part, note, phoneme.index, phoneme, (float)(max - phoneme.autoPreutter)));
+                        if (phoneme.autoOverlap > 0) {
+                            var overlap = max * ratio;
+                            if (overlap > phoneme.autoOverlap) {
+                                docManager.ExecuteCmd(new PhonemeOverlapCommand(part, note, phoneme.index, phoneme, (float)(overlap - phoneme.autoOverlap)));
+                            }
                         }
                     }
                 }

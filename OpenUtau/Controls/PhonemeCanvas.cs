@@ -150,9 +150,19 @@ namespace OpenUtau.App.Controls {
                     using (var state = context.PushTransform(Matrix.CreateTranslation(x0, y + y0 - 1))) {
                         context.DrawGeometry(brush, pen, pointGeometry);
                     }
-                    brush = phoneme.overlapDelta.HasValue ? pen!.Brush : ThemeManager.BackgroundBrush;
+                    brush = phoneme.attackTimeDelta.HasValue ? pen!.Brush : ThemeManager.BackgroundBrush;
                     using (var state = context.PushTransform(Matrix.CreateTranslation(point1))) {
                         context.DrawGeometry(brush, pen, pointGeometry);
+                    }
+                    brush = phoneme.releaseTimeDelta.HasValue ? pen!.Brush : ThemeManager.BackgroundBrush;
+                    using (var state = context.PushTransform(Matrix.CreateTranslation(point3))) {
+                        context.DrawGeometry(brush, pen, pointGeometry);
+                    }
+                    if (phoneme.Next != null && phoneme.Next.adjacent) {
+                        brush = phoneme.Next.overlapDelta.HasValue ? pen!.Brush : ThemeManager.BackgroundBrush;
+                        using (var state = context.PushTransform(Matrix.CreateTranslation(x4, y + y4 - 1))) {
+                            context.DrawGeometry(brush, pen, pointGeometry);
+                        }
                     }
                 }
 

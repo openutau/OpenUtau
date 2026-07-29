@@ -217,9 +217,9 @@ namespace OpenUtau.Plugin.Builtin {
             int noteIndex = 0;
             for (int i = 0; i < phonemes.Count; i++) {
                 var attr = notes[0].phonemeAttributes?.FirstOrDefault(attr => attr.index == i) ?? default;
-                string alt = attr.alternate?.ToString() ?? string.Empty;
-                string color = attr.voiceColor;
-                int toneShift = attr.toneShift;
+                string alt = (attr.alternate ?? GetParentAlternate())?.ToString() ?? string.Empty;
+                string color = attr.voiceColor ?? GetParentVoiceColor();
+                int toneShift = attr.toneShift ?? GetParentToneShift();
                 var phoneme = phonemes[i];
                 while (noteIndex < notes.Length - 1 && notes[noteIndex].position - notes[0].position < phoneme.position) {
                     noteIndex++;
@@ -692,9 +692,9 @@ namespace OpenUtau.Plugin.Builtin {
         /// <returns></returns>
         protected virtual string[] HandleWordNotFound(Note note) {
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
-            string alt = attr.alternate?.ToString() ?? string.Empty;
-            string color = attr.voiceColor;
-            int toneShift = attr.toneShift;
+            string alt = (attr.alternate ?? GetParentAlternate())?.ToString() ?? string.Empty;
+            string color = attr.voiceColor ?? GetParentVoiceColor();
+            int toneShift = attr.toneShift ?? GetParentToneShift();
             var mpdlyric = MapPhoneme(note.lyric, note.tone + toneShift, color, alt, singer);
             if(HasOto(mpdlyric, note.tone)){
                 error = mpdlyric;

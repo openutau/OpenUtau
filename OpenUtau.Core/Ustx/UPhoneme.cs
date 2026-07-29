@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading;
 using YamlDotNet.Serialization;
 
 namespace OpenUtau.Core.Ustx {
@@ -19,15 +20,20 @@ namespace OpenUtau.Core.Ustx {
         public double overlap { get; private set; }
         public double autoPreutter { get; private set; }
         public double autoOverlap { get; private set; }
+        public double maxOtoPreutter { get; private set; }
+        public bool adjacent { get; private set; }
         public bool overlapped { get; private set; }
         public double tailIntrude { get; private set; }
         public double tailOverlap { get; private set; }
         public double? preutterDelta { get; set; }
         public double? overlapDelta { get; set; }
+        public double? attackTimeDelta { get; set; }
+        public double? releaseTimeDelta { get; set; }
+        public bool crossfade { get; set; } = true; //Todo
 
         public UNote Parent { get; set; }
         public int Duration { get; private set; }
-        public int End { get { return position + Duration; } }
+        public int End => position + Duration;
         public double PositionMs { get; private set; }
         public double DurationMs => EndMs - PositionMs;
         public double EndMs { get; private set; }
@@ -105,8 +111,8 @@ namespace OpenUtau.Core.Ustx {
             }
             double consonantStretch = Math.Pow(2f, 1.0f - GetExpression(project, track, Format.Ustx.VEL).Item1 / 100f);
             autoOverlap = oto.Overlap * consonantStretch;
-            autoPreutter = oto.Preutter * consonantStretch;
-            overlapped = false;
+            autoPreutter = maxOtoPreutter = oto.Preutter * consonantStretch;
+            adjacent = false;
             tailIntrude = 0;
             tailOverlap = 0;
 
@@ -114,12 +120,20 @@ namespace OpenUtau.Core.Ustx {
                 double gapMs = PositionMs - Prev.EndMs;
                 double prevDur = Prev.DurationMs;
                 double maxPreutter = autoPreutter;
-                if (gapMs <= 0) {
-                    overlapped = true;
-                    if (autoPreutter - autoOverlap > prevDur * 0.5f) {
-                        maxPreutter = prevDur * 0.5f / (autoPreutter - autoOverlap) * autoPreutter;
+                if (gapMs <= 0) { // Adjacent to the previous note
+                    adjacent = true;
+                    if (autoOverlap > 0) {
+                        if (autoPreutter - autoOverlap > prevDur * 0.5f) {
+                            maxPreutter = prevDur * 0.5f / (autoPreutter - autoOverlap) * autoPreutter;
+                        }
+                    } else { // Plosive consonants
+                        maxPreutter = Math.Min(maxPreutter, prevDur * 0.9);
                     }
-                } else if (gapMs < autoPreutter) {
+                    maxPreutter = Math.Min(maxPreutter, prevDur);
+                    if (Prev.preutter < 5) {
+                        maxPreutter = Math.Min(maxPreutter, prevDur + Prev.preutter - 5);
+                    }
+                } else if (gapMs < autoPreutter) { // There is a small gap between the previous note and this one
                     maxPreutter = gapMs;
                 }
                 if (autoPreutter > maxPreutter) {
@@ -127,17 +141,16 @@ namespace OpenUtau.Core.Ustx {
                     autoPreutter = maxPreutter;
                     autoOverlap *= ratio;
                 }
-                if (autoPreutter > prevDur && overlapped) {
-                    double delta = autoPreutter - prevDur;
-                    autoPreutter = prevDur; // Ensure autoPreutter doesn't exceed 100% of prevDur
-                    autoOverlap -= delta;
+                if (autoOverlap < 0) {
+                    autoOverlap = Math.Max(autoOverlap, Math.Min(0, 35 - prevDur + autoPreutter));
                 }
             }
             preutter = Math.Max(0, autoPreutter + (preutterDelta ?? 0));
             overlap = autoOverlap + (overlapDelta ?? 0);
             if (Prev != null) {
-                Prev.tailIntrude = overlapped ? Math.Max(preutter, preutter - overlap) : 0;
-                Prev.tailOverlap = overlapped ? Math.Max(overlap, 0) : 0;
+                Prev.tailIntrude = adjacent ? Math.Max(preutter, preutter - overlap) : 0;
+                Prev.tailOverlap = adjacent ? Math.Max(overlap, 0) : 0;
+                overlapped = adjacent && overlap > 0;
                 Prev.ValidateEnvelope(project, track, Prev.Parent);
             }
         }
@@ -152,13 +165,10 @@ namespace OpenUtau.Core.Ustx {
 
             Vector2 p0, p1, p2, p3, p4;
             p0.X = (float)-preutter;
-            p1.X = (float)(p0.X + (!overlapped && overlapDelta == null ? 5f : Math.Max(overlap, 5f)));
+            p1.X = (float)Math.Max(p0.X + 5, p0.X + GetFadeIn() + (attackTimeDelta ?? 0));
             p2.X = Math.Max(0f, p1.X);
-            p3.X = (float)(DurationMs - tailIntrude);
-            p4.X = (float)(p3.X + tailOverlap);
-            if (p3.X == p4.X) {
-                p3.X = Math.Max(p2.X, p3.X - 35f);
-            }
+            p4.X = (float)(DurationMs - tailIntrude + tailOverlap);
+            p3.X = (float)Math.Max(p2.X, p4.X - GetFadeOut() - (releaseTimeDelta ?? 0));
 
             p0.Y = 0f;
             p1.Y = vol;
@@ -172,6 +182,22 @@ namespace OpenUtau.Core.Ustx {
             envelope.data[2] = p2;
             envelope.data[3] = p3;
             envelope.data[4] = p4;
+        }
+
+        public double GetFadeIn() {
+            if (!crossfade || !overlapped) {
+                return 5;
+            } else {
+                return overlap;
+            }
+        }
+
+        public double GetFadeOut() {
+            if (Next == null || !Next.crossfade || !Next.overlapped) {
+                return 35;
+            } else {
+                return tailOverlap;
+            }
         }
 
         /// <summary>
@@ -269,10 +295,12 @@ namespace OpenUtau.Core.Ustx {
         public int? offset;
         public float? preutterDelta;
         public float? overlapDelta;
+        public float? attackTimeDelta;
+        public float? releaseTimeDelta;
 
         [YamlIgnore]
         public bool IsEmpty => string.IsNullOrWhiteSpace(phoneme) && !offset.HasValue
-            && !preutterDelta.HasValue && !overlapDelta.HasValue;
+            && !preutterDelta.HasValue && !overlapDelta.HasValue && !attackTimeDelta.HasValue && !releaseTimeDelta.HasValue;
 
         public UPhonemeOverride Clone() {
             return new UPhonemeOverride() {
@@ -281,6 +309,8 @@ namespace OpenUtau.Core.Ustx {
                 offset = offset,
                 preutterDelta = preutterDelta,
                 overlapDelta = overlapDelta,
+                attackTimeDelta = attackTimeDelta,
+                releaseTimeDelta = releaseTimeDelta,
             };
         }
     }

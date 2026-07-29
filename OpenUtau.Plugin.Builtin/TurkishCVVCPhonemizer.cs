@@ -21,17 +21,17 @@ namespace OpenUtau.Plugin.Builtin {
         private bool checkOtoUntilHit(string[] input, Note note, out UOto oto) {
             oto = default;
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
+            string color = attr.voiceColor ?? GetParentVoiceColor();
+            int shift = attr.toneShift ?? GetParentToneShift();
+            int? alt = attr.alternate ?? GetParentAlternate();
 
             var otos = new List<UOto>();
             foreach (string test in input) {
-                if (singer.TryGetMappedOto(test + attr.alternate, note.tone + attr.toneShift, attr.voiceColor, out var otoAlt)) {
-                    otos.Add(otoAlt);
-                } else if (singer.TryGetMappedOto(test, note.tone + attr.toneShift, attr.voiceColor, out var otoCandidacy)) {
+                if (singer.TryGetMappedOto(test + alt, note.tone + shift, color, out var otoCandidacy)) {
                     otos.Add(otoCandidacy);
                 }
             }
 
-            string color = attr.voiceColor ?? "";
             if (otos.Count > 0) {
                 if (otos.Any(oto => (oto.Color ?? string.Empty) == color)) {
                     oto = otos.Find(oto => (oto.Color ?? string.Empty) == color);
@@ -279,7 +279,7 @@ namespace OpenUtau.Plugin.Builtin {
                 if (nextNeighbour != null) {
                     isEndCoeff = 1;
                     var attr0 = nextNeighbour.Value.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default; //next first
-                    if (singer.TryGetMappedOto(getNoteStart(phonemesNext, phonemesCurrent)[0], note.tone + attr0.toneShift, attr0.voiceColor, out var oto0)) {
+                    if (singer.TryGetMappedOto(getNoteStart(phonemesNext, phonemesCurrent)[0], note.tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto0)) {
                         // If overlap is a negative value, vcLength is longer than Preutter
                         if (oto0.Overlap < 0)
                             lastLengthFromOto = timeAxis.MsPosToTickPos(oto0.Preutter - oto0.Overlap);
@@ -289,7 +289,7 @@ namespace OpenUtau.Plugin.Builtin {
                 }
                 // vcLength depends on the Vel of the note
                 var attr1 = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 1) ?? default; // current last (noteEnd)
-                var vcLength = Convert.ToInt32(Math.Min(totalDuration / (2 * isEndCoeff), lastLengthFromOto * isCVCoeff * (attr1.consonantStretchRatio ?? 1)));
+                var vcLength = Convert.ToInt32(Math.Min(totalDuration / (2 * isEndCoeff), lastLengthFromOto * isCVCoeff * (attr1.consonantStretchRatio ?? GetParentConsonantStretchRatio())));
 
                 if (noteEndCC == "") {
                     return new Result {
@@ -307,7 +307,7 @@ namespace OpenUtau.Plugin.Builtin {
                     int ccLengthFromOto = 60;
                     var attr2 = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 2) ?? default;
                     if (nextNeighbour != null) {
-                        if (singer.TryGetMappedOto(noteEndCC, note.tone + attr2.toneShift, attr2.voiceColor, out var oto1)) {
+                        if (singer.TryGetMappedOto(noteEndCC, note.tone + (attr2.toneShift ?? GetParentToneShift()), attr2.voiceColor ?? GetParentVoiceColor(), out var oto1)) {
                             // If overlap is a negative value, vcLength is longer than Preutter
                             if (oto1.Overlap < 0) {
                                 ccLengthFromOto = timeAxis.MsPosToTickPos(oto1.Preutter - oto1.Overlap);
@@ -316,8 +316,8 @@ namespace OpenUtau.Plugin.Builtin {
                             }
                         }
                     }
-                    vcLength = Convert.ToInt32(Math.Min(totalDuration / 3, ccLengthFromOto * (attr1.consonantStretchRatio ?? 1)));
-                    var ccLength = Convert.ToInt32(Math.Min(totalDuration / 3, lastLengthFromOto * (attr2.consonantStretchRatio ?? 1)));
+                    vcLength = Convert.ToInt32(Math.Min(totalDuration / 3, ccLengthFromOto * (attr1.consonantStretchRatio ?? GetParentConsonantStretchRatio())));
+                    var ccLength = Convert.ToInt32(Math.Min(totalDuration / 3, lastLengthFromOto * (attr2.consonantStretchRatio ?? GetParentConsonantStretchRatio())));
 
                     List<PhonemeExpression> exp = new List<PhonemeExpression>();
                     PhonemeExpression e = new PhonemeExpression() { abbr = Core.Format.Ustx.VOL, value = 70 };

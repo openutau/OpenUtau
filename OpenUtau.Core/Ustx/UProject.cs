@@ -87,18 +87,24 @@ namespace OpenUtau.Core.Ustx {
 
         public void MargeExpression(string oldAbbr, string newAbbr) {
             if (parts != null && parts.Count > 0) {
-                parts.Where(p => p is UVoicePart)
-                    .OfType<UVoicePart>()
-                    .ForEach(p => p.notes.ForEach(n => ConvertNoteExp(n, tracks[p.trackNo])));
+                foreach (UVoicePart p in parts.Where(p => p is UVoicePart).OfType<UVoicePart>()) {
+                    foreach (var n in p.notes) {
+                        ConvertNoteExp(n, tracks[p.trackNo]);
+                    }
+                }
             } else if (voiceParts != null && voiceParts.Count > 0) {
-                voiceParts.ForEach(p => p.notes.ForEach(n => ConvertNoteExp(n, tracks[p.trackNo])));
+                foreach (var p in voiceParts) {
+                    foreach (var n in p.notes) {
+                        ConvertNoteExp(n, tracks[p.trackNo]);
+                    }
+                }
             }
             expressions.Remove(oldAbbr);
 
             void ConvertNoteExp(UNote note, UTrack track) {
                 if (note.phonemeExpressions.Any(e => e.abbr == oldAbbr)) {
                     var toRemove = new List<UExpression>();
-                    note.phonemeExpressions.Where(e => e.abbr == oldAbbr).ForEach(oldExp => {
+                    foreach (var oldExp in note.phonemeExpressions.Where(e => e.abbr == oldAbbr)) {
                         if (!note.phonemeExpressions.Any(newExp => newExp.abbr == newAbbr && newExp.index == oldExp.index)) {
                             // When there is only old exp, convert it to new exp
                             oldExp.abbr = newAbbr;
@@ -109,7 +115,7 @@ namespace OpenUtau.Core.Ustx {
                             // When both old and new exp exist, remove the old one
                             toRemove.Add(oldExp);
                         }
-                    });
+                    }
                     toRemove.ForEach(exp => note.phonemeExpressions.Remove(exp));
                 }
             }

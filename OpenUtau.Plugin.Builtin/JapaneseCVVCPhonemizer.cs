@@ -103,17 +103,17 @@ namespace OpenUtau.Plugin.Builtin {
         private bool checkOtoUntilHit(string[] input, Note note, out UOto oto) {
             oto = default;
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
+            string color = attr.voiceColor ?? GetParentVoiceColor();
+            int shift = attr.toneShift ?? GetParentToneShift();
+            int? alt = attr.alternate ?? GetParentAlternate();
 
             var otos = new List<UOto>();
             foreach (string test in input) {
-                if (singer.TryGetMappedOto(test + attr.alternate, note.tone + attr.toneShift, attr.voiceColor, out var otoAlt)) {
-                    otos.Add(otoAlt);
-                } else if (singer.TryGetMappedOto(test, note.tone + attr.toneShift, attr.voiceColor, out var otoCandidacy)) {
+                if (singer.TryGetMappedOto(test + alt, note.tone + shift, color, out var otoCandidacy)) {
                     otos.Add(otoCandidacy);
                 }
             }
 
-            string color = attr.voiceColor ?? "";
             if (otos.Count > 0) {
                 oto = otos.FirstOrDefault(oto => oto.IsColorMatch(color));
                 if (oto == null) {
@@ -129,17 +129,17 @@ namespace OpenUtau.Plugin.Builtin {
         private bool checkOtoUntilHitVc(string[] input, Note note, out UOto oto) {
             oto = default;
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 1) ?? default;
+            string color = attr.voiceColor ?? GetParentVoiceColor();
+            int shift = attr.toneShift ?? GetParentToneShift();
+            int? alt = attr.alternate ?? GetParentAlternate();
 
             var otos = new List<UOto>();
             foreach (string test in input) {
-                if (singer.TryGetMappedOto(test + attr.alternate, note.tone + attr.toneShift, attr.voiceColor, out var otoAlt)) {
-                    otos.Add(otoAlt);
-                } else if (singer.TryGetMappedOto(test, note.tone + attr.toneShift, attr.voiceColor, out var otoCandidacy)) {
+                if (singer.TryGetMappedOto(test + alt, note.tone + shift, color, out var otoCandidacy)) {
                     otos.Add(otoCandidacy);
                 }
             }
 
-            string color = attr.voiceColor ?? "";
             if (otos.Count > 0) {
                 oto = otos.FirstOrDefault(oto => oto.IsColorMatch(color));
                 if (oto != null) {
@@ -257,7 +257,7 @@ namespace OpenUtau.Plugin.Builtin {
                 int totalDuration = notes.Sum(n => n.duration);
                 int vcLength = 120;
                 var nextAttr = nextNeighbour.Value.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
-                if (singer.TryGetMappedOto(nextLyric, nextNeighbour.Value.tone + nextAttr.toneShift, nextAttr.voiceColor, out var oto)) {
+                if (singer.TryGetMappedOto(nextLyric, nextNeighbour.Value.tone + (nextAttr.toneShift ?? GetParentToneShift()), nextAttr.voiceColor ?? GetParentVoiceColor(), out var oto)) {
                     // If overlap is a negative value, vcLength is longer than Preutter
                     if (oto.Overlap < 0) {
                         vcLength = MsToTick(oto.Preutter - oto.Overlap);
@@ -266,7 +266,7 @@ namespace OpenUtau.Plugin.Builtin {
                     }
                 }
                 // vcLength depends on the Vel of the next note
-                vcLength = Convert.ToInt32(Math.Min(totalDuration / 2, vcLength * (nextAttr.consonantStretchRatio ?? 1)));
+                vcLength = Convert.ToInt32(Math.Min(totalDuration / 2, vcLength * (nextAttr.consonantStretchRatio ?? GetParentConsonantStretchRatio())));
 
                 return new Result {
                     phonemes = new Phoneme[] {

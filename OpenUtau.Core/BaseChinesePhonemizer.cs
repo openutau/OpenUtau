@@ -44,6 +44,7 @@ namespace OpenUtau.Core {
         }
 
         public override void SetUp(Note[][] groups, UProject project, UTrack track) {
+            base.SetUp(groups, project, track);
             RomanizeNotes(groups);
         }
     }

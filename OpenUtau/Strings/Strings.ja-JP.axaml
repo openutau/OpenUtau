@@ -640,4 +640,18 @@
   <system:String x:Key="welcome.recent">最近使用したファイル</system:String>
   <system:String x:Key="welcome.start">開始</system:String>
   <system:String x:Key="welcome.template">テンプレート</system:String>
+
+  <!-- Mix Effects -->
+  <system:String x:Key="mixfx.caption">試聴エフェクト</system:String>
+  <system:String x:Key="mixfx.enabled">このトラックで有効化</system:String>
+  <system:String x:Key="mixfx.preset">プリセット</system:String>
+  <system:String x:Key="mixfx.recommended">既定設定を適用</system:String>
+  <system:String x:Key="mixfx.recommended.tip">Vocal Air + Gentle コンプ + Small Room</system:String>
+  <system:String x:Key="mixfx.applyonexport">ミックスダウン書き出し時に適用</system:String>
+  <system:String x:Key="mixfx.library">プリセットライブラリ</system:String>
+  <system:String x:Key="mixfx.library.placeholder">保存済みプリセットを選択...</system:String>
+  <system:String x:Key="mixfx.library.save">保存...</system:String>
+  <system:String x:Key="mixfx.library.delete">削除</system:String>
+  <system:String x:Key="mixfx.library.default">既定</system:String>
+  <system:String x:Key="tracks.mixfx">試聴エフェクト...</system:String>
 </ResourceDictionary>

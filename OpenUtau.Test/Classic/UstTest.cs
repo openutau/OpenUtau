@@ -25,10 +25,12 @@ namespace OpenUtau.Classic {
             dir = Path.Join(dir, "Usts");
             var encoding = Encoding.GetEncoding("shift_jis");
             var readerOptions = new ReaderOptions {
-                ArchiveEncoding = new ArchiveEncoding(encoding, encoding)
+                ArchiveEncoding = new ArchiveEncoding {
+                    Forced = encoding,
+                }
             };
             foreach (var file in Directory.GetFiles(dir, "*.zip")) {
-                using (var archive = ArchiveFactory.Open(file, readerOptions)) {
+                using (var archive = ArchiveFactory.OpenArchive(file, readerOptions)) {
                     foreach (var entry in archive.Entries) {
                         if (Path.GetExtension(entry.Key) != ".ust") {
                             continue;

@@ -38,6 +38,15 @@ namespace OpenUtau.Core.DiffSinger {
                     true,
                     new string[] { Path.GetFileName(location), "https://github.com/xunmengshe/OpenUtau/wiki/Vocoders" });
             }
+            if (config.num_mel_bins < 1 || config.num_mel_bins > DsVocoderConfig.MaxMelBins) {
+                throw new MessageCustomizableException(
+                    $"Invalid num_mel_bins in \"{Path.Combine(location, "vocoder.yaml")}\"",
+                    $"<translate:errors.diffsinger.downloadvocoder>",
+                    new Exception(
+                        $"num_mel_bins must be between 1 and {DsVocoderConfig.MaxMelBins}, got {config.num_mel_bins}"),
+                    true,
+                    new string[] { Path.GetFileName(location), "https://github.com/xunmengshe/OpenUtau/wiki/Vocoders" });
+            }
             hash = XXH64.DigestOf(model);
             session = Onnx.getInferenceSession(model);
         }
@@ -66,6 +75,15 @@ namespace OpenUtau.Core.DiffSinger {
 
     [Serializable]
     public class DsVocoderConfig {
+        // Hard cap on the number of mel bins a vocoder may declare. DiffSinger
+        // vocoders in the wild use 80, 128 or similar values; values larger than
+        // this are treated as invalid so that vocoders cannot smuggle through
+        // onnx models that are actually something else (e.g. a full DiffSinger
+        // acoustic model masquerading as a vocoder). Kept as a hard-coded
+        // constant rather than a configurable field on purpose: lowering it
+        // here is a deliberate code change, not something the voicebank author
+        // can override.
+        public const int MaxMelBins = 255;
         public string name = "vocoder";
         public string model = "model.onnx";
         public int sample_rate = 44100;
