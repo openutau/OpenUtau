@@ -1,145 +1,435 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Threading;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
-using WanaKanaNet;
+using OpenUtau.Core.Format;
 
 namespace OpenUtau.Core.Editing {
+    public class AddTailNote : BatchEdit {
+        public string Name => name;
 
-    public abstract class SingleNoteLyricEdit : BatchEdit {
-        public abstract string Name { get; }
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
-            var notes = selectedNotes.Count > 0 ? selectedNotes.ToArray() : part.notes.ToArray();
-            if (notes.Length == 0) {
-                return;
-            }
-            var lyrics = notes.Select(note => Transform(note.lyric)).ToArray();
-            docManager.StartUndoGroup(true);
-            docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, notes, lyrics));
-            docManager.EndUndoGroup();
-        }
-        protected abstract string Transform(string lyric);
-    }
-
-    public class RomajiToHiragana : SingleNoteLyricEdit {
-        static Dictionary<string, string> mapping = new Dictionary<string, string>() {
-            {".", "."}, {",", ","}, {":", ":"}, {"/", "/"}, {"!", "!"}, {"?", "?"},
-            {"~", "~"}, {"-", "-"}, {"‘", "‘"}, {"’", "’"}, {"“", "“"}, {"”", "”"},
-            {"[", "["}, {"]", "]"}, {"(", "("}, {")", ")"}, {"{", "{"}, {"}", "}"},
-        };
-        private WanaKanaOptions option = new WanaKanaOptions() { CustomKanaMapping = mapping };
-        public override string Name => "pianoroll.menu.lyrics.romajitohiragana";
-        protected override string Transform(string lyric) {
-            string hiragana = WanaKana.ToHiragana(lyric, option).Replace('ゔ','ヴ');
-            if(Regex.IsMatch(hiragana, "[ぁ-んァ-ヴ]")) {
-                return hiragana;
-            } else {
-                return lyric;
-            }
-        }
-    }
-
-    public class HiraganaToRomaji : SingleNoteLyricEdit {
-        public override string Name => "pianoroll.menu.lyrics.hiraganatoromaji";
-        protected override string Transform(string lyric) {
-            return WanaKana.ToRomaji(lyric);
-        }
-    }
-
-    public class JapaneseVCVtoCV : SingleNoteLyricEdit {
-        public override string Name => "pianoroll.menu.lyrics.javcvtocv";
-        protected override string Transform(string lyric) {
-            if (lyric.Length > 2 && lyric[1] == ' ') {
-                // When the lyric is like "a あ", "a R" or "- あ", cut off the first two characters.
-                return lyric.Substring(2);
-            } else {
-                // Otherwise cannot recognize VCV, return as is.
-                return lyric;
-            }
-        }
-    }
-
-    // Removes suffix like "C4", "C#4" or "Cb4"
-    public class RemoveToneSuffix : SingleNoteLyricEdit {
-        public override string Name => "pianoroll.menu.lyrics.removetonesuffix";
-        protected override string Transform(string lyric) {
-            if (Regex.IsMatch(lyric, ".+_?[A-G](#|b)?[1-7]")) {
-                return Regex.Replace(lyric, "_?[A-G](#|b)?[1-7]", "");
-            }
-            return lyric;
-        }
-    }
-
-    public class RemoveLetterSuffix : SingleNoteLyricEdit {
-        public override string Name => "pianoroll.menu.lyrics.removelettersuffix";
-        protected override string Transform(string lyric) {
-            int pos = lyric.Length - 1;
-            while (pos >= 0 && ShouldRemove(lyric[pos])) {
-                pos--;
-            }
-            return lyric.Substring(0, pos + 1);
-        }
-
-        private bool ShouldRemove(char c) {
-            return (c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') && c != 'R' && c != 'r';
-        }
-    }
-
-    public class MoveSuffixToVoiceColor : BatchEdit {
-        public virtual string Name => name;
+        private string lyric;
         private string name;
 
-        public MoveSuffixToVoiceColor() {
-            name = "pianoroll.menu.lyrics.movesuffixtovoicecolor";
+        public AddTailNote(string lyric, string name) {
+            this.lyric = lyric;
+            this.name = name;
         }
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
-            var notes = selectedNotes.Count > 0 ? selectedNotes.ToArray() : part.notes.ToArray();
-            if (notes.Length == 0) {
+            List<UNote> toAdd = new List<UNote>();
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            foreach (var note in notes) {
+                if (note.lyric != lyric && (note.Next == null || note.Next.position > note.End + 120)) {
+                    var addNote = project.CreateNote(note.tone, note.End, 120);
+                    foreach (var exp in note.phonemeExpressions.OrderBy(exp => exp.index)) {
+                        addNote.SetExpression(project, project.tracks[part.trackNo], exp.abbr, new float?[] { exp.value });
+                    }
+                    toAdd.Add(addNote);
+                }
+            }
+            if (toAdd.Count == 0) {
                 return;
             }
-            // Determine the character that is the trigger
-            UTrack track = project.tracks[part.trackNo];
-            if (track.VoiceColorExp == null || track.VoiceColorExp.options.Length <= 0) {
+            docManager.StartUndoGroup("command.batch.note", true);
+            foreach (var note in toAdd) {
+                note.lyric = lyric;
+                docManager.ExecuteCmd(new AddNoteCommand(part, note));
+            }
+            docManager.EndUndoGroup();
+        }
+    }
+
+    public class RemoveTailNote : BatchEdit {
+        public string Name => name;
+
+        private string lyric;
+        private string name;
+
+        public RemoveTailNote(string lyric, string name) {
+            this.lyric = lyric;
+            this.name = name;
+        }
+
+        bool NeedToBeRemoved(UNote note) {
+            return note.lyric == lyric
+                && (note.Next == null || note.Next.position > note.End);
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            List<UNote> toRemove = notes.Where(NeedToBeRemoved).ToList();
+            if (toRemove.Count == 0) {
                 return;
             }
-            Dictionary<int, string> colors = new Dictionary<int, string>(); // index, trigger
+            docManager.StartUndoGroup("command.batch.note", true);
+            foreach (var note in toRemove) {
+                note.lyric = lyric;
+                docManager.ExecuteCmd(new RemoveNoteCommand(part, note));
+            }
+            docManager.EndUndoGroup();
+        }
+    }
 
-            foreach (var subbank in track.Singer.Subbanks) {
-                int clrIndex = track.VoiceColorExp.options.ToList().IndexOf(subbank.Color);
-                if (colors.ContainsKey(clrIndex)) {
-                    string suffix = "";
-                    string value = Regex.Replace(subbank.Suffix.Replace("_", ""), "[A-G](#|b)?[1-7]", "");
+    // Made And Checked By DELTA SYNTH & Gemini AI
+    // Original by DELTA
+    // Removes tail "R" notes and simultaneously cleans "cl" and "っ" suffix notes
+    public class RemoveTailRestAndSuffixes : BatchEdit {
+        public string Name => "pianoroll.menu.notes.removetailrestandsuffixes";
 
-                    for (int i = 0; i < colors[clrIndex].Length && i < value.Length; i++) {
-                        if(colors[clrIndex][i] == value[i]) {
-                            suffix += value[i];
-                        } else {
-                            break;
+        // Set of lyrics that should be removed as "rest/suffix" notes
+        private static readonly HashSet<string> RemovableSet = new HashSet<string> {
+            "R", "cl", "っ"
+        };
+
+        bool NeedToBeRemoved(UNote note) {
+            // Remove if the lyric is in the removable set AND the note is at the tail
+            // (i.e., it's not followed by another note immediately)
+            return RemovableSet.Contains(note.lyric)
+                && (note.Next == null || note.Next.position > note.End);
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            List<UNote> toRemove = notes.Where(NeedToBeRemoved).ToList();
+            if (toRemove.Count == 0) {
+                return;
+            }
+            docManager.StartUndoGroup("command.batch.note", true);
+            foreach (var note in toRemove) {
+                docManager.ExecuteCmd(new RemoveNoteCommand(part, note));
+            }
+            docManager.EndUndoGroup();
+        }
+    }
+
+    public class AddBreathNote : BatchEdit {
+        public string Name => name;
+
+        private string lyric;
+        private string name;
+
+        public AddBreathNote(string lyric) {
+            this.lyric = lyric;
+            this.name = "pianoroll.menu.notes.addbreath";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            List<UNote> toAdd = new List<UNote>();
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            foreach (var note in notes) {
+                if (note.lyric != lyric) {
+                    int duration;
+                    if (note.Prev == null) {
+                        duration = 480;
+                    } else if (note.Prev.lyric == lyric || note.position - 120 <= note.Prev.End) {
+                        continue;
+                    } else if (note.Prev.End < note.position - 960) {
+                        duration = 480;
+                    } else {
+                        duration = note.position - note.Prev.End;
+                    }
+                    var addNote = project.CreateNote(note.tone, note.position - duration, duration);
+                    foreach (var exp in note.phonemeExpressions.Where(exp => exp.index == 0)) {
+                        addNote.SetExpression(project, project.tracks[part.trackNo], exp.abbr, new float?[] { exp.value });
+                    }
+                    toAdd.Add(addNote);
+                }
+            }
+            if (toAdd.Count == 0) {
+                return;
+            }
+            docManager.StartUndoGroup("command.batch.note", true);
+            foreach (var note in toAdd) {
+                note.lyric = lyric;
+                docManager.ExecuteCmd(new AddNoteCommand(part, note));
+            }
+            docManager.EndUndoGroup();
+        }
+    }
+
+    public class Transpose : BatchEdit {
+        public string Name => name;
+
+        private int deltaNoteNum;
+        private string name;
+
+        public Transpose(int deltaNoteNum, string name) {
+            this.deltaNoteNum = deltaNoteNum;
+            this.name = name;
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            docManager.StartUndoGroup("command.batch.note", true);
+            foreach (var note in notes) {
+                docManager.ExecuteCmd(new MoveNoteCommand(part, note, 0, deltaNoteNum));
+            }
+            docManager.EndUndoGroup();
+        }
+    }
+
+    public class QuantizeNotes : BatchEdit {
+        public virtual string Name => name;
+
+        private int quantize;
+        private string name;
+
+        public QuantizeNotes(int quantize) {
+            this.quantize = quantize;
+            name = $"pianoroll.menu.notes.quantize";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            docManager.StartUndoGroup("command.batch.note", true);
+            foreach (var note in notes) {
+                int pos = note.position;
+                int end = note.End;
+                int newPos = (int)Math.Round(1.0 * pos / quantize) * quantize;
+                int newEnd = (int)Math.Round(1.0 * end / quantize) * quantize;
+                if (newPos != pos) {
+                    docManager.ExecuteCmd(new MoveNoteCommand(part, note, newPos - pos, 0));
+                    docManager.ExecuteCmd(new ResizeNoteCommand(part, note, newEnd - newPos - note.duration));
+                } else if (newEnd != end) {
+                    docManager.ExecuteCmd(new ResizeNoteCommand(part, note, newEnd - newPos - note.duration));
+                }
+            }
+            docManager.EndUndoGroup();
+        }
+    }
+
+    public class AutoLegato : BatchEdit {
+        public virtual string Name => name;
+
+        private string name;
+
+        public AutoLegato() {
+            name = $"pianoroll.menu.notes.autolegato";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            notes.Sort((a, b) => a.position.CompareTo(b.position));
+            docManager.StartUndoGroup("command.batch.note", true);
+            for (int i = 0; i < notes.Count - 1; i++) {
+                docManager.ExecuteCmd(new ResizeNoteCommand(part, notes[i], notes[i + 1].position - notes[i].position - notes[i].duration));
+            }
+            docManager.EndUndoGroup();
+        }
+    }
+
+    public class FixOverlap : BatchEdit {
+        /// <summary>
+        /// Fix overlapping notes.
+        /// If multiple notes start at the same time, only the one with the highest tone will be kept
+        /// If one notes's end is overlapped by another note, the end will be moved to the start of the next note
+        /// </summary>
+        public virtual string Name => name;
+
+        private string name;
+
+        public FixOverlap() {
+            name = $"pianoroll.menu.notes.fixoverlap";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            if (notes.Count == 0) {
+                return;
+            }
+            docManager.StartUndoGroup("command.batch.note");
+            var currentNote = notes[0];
+            foreach (var note in notes.Skip(1)) {
+                if (note.position == currentNote.position) {
+                    if (note.tone > currentNote.tone) {
+                        docManager.ExecuteCmd(new RemoveNoteCommand(part, currentNote));
+                        currentNote = note;
+                    } else {
+                        docManager.ExecuteCmd(new RemoveNoteCommand(part, note));
+                    }
+                } else if (note.position < currentNote.End) {
+                    docManager.ExecuteCmd(new ResizeNoteCommand(part, currentNote, note.position - currentNote.End));
+                    currentNote = note;
+                } else {
+                    currentNote = note;
+                }
+            }
+            docManager.EndUndoGroup();
+        }
+    }
+
+    public class CommonnoteCopy : BatchEdit {
+        public virtual string Name => name;
+
+        private string name;
+
+        public CommonnoteCopy() {
+            name = $"pianoroll.menu.notes.commonnotecopy";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            Commonnote.CopyToClipboard(notes, project);
+        }
+    }
+
+    public class CommonnotePaste : BatchEdit {
+        public virtual string Name => name;
+
+        private string name;
+
+        public CommonnotePaste() {
+            name = $"pianoroll.menu.notes.commonnotepaste";
+        }
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = Commonnote.LoadFromClipboard(project);
+            if (notes == null) {
+                return;
+            }
+            int left = DocManager.Inst.playPosTick;
+            int minPosition = notes.Select(note => note.position).Min();
+            if (left < part.position) {
+                return;
+            }
+            int offset = left - minPosition - part.position;
+            notes.ForEach(note => note.position += offset);
+            DocManager.Inst.StartUndoGroup("command.batch.note");
+            DocManager.Inst.ExecuteCmd(new AddNoteCommand(part, notes));
+            int minDurTick = part.GetMinDurTick(project);
+            if (part.Duration < minDurTick) {
+                DocManager.Inst.ExecuteCmd(new ResizeVoicePartCommand(project, part, minDurTick - part.Duration, false));
+            }
+            DocManager.Inst.EndUndoGroup();
+        }
+    }
+
+    public class HanziToPinyin : BatchEdit {
+        public virtual string Name => name;
+
+        private string name;
+
+        public HanziToPinyin() {
+            name = "pianoroll.menu.notes.hanzitopinyin";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var pinyinResult = BaseChinesePhonemizer.Romanize(selectedNotes.Select(note => note.lyric));
+            docManager.StartUndoGroup("command.batch.lyric", true);
+            foreach (var t in Enumerable.Zip(selectedNotes, pinyinResult,
+                (note, pinyin) => Tuple.Create(note, pinyin))) {
+                docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, t.Item1, t.Item2));
+            }
+            docManager.EndUndoGroup();
+        }
+    }
+
+    public class LengthenCrossfade : BatchEdit {
+        public virtual string Name => name;
+        private string name;
+        private double ratio;
+
+        public LengthenCrossfade(double ratio) {
+            name = "pianoroll.menu.notes.lengthencrossfade";
+            this.ratio = ratio;
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            if (notes.Count == 0) {
+                return;
+            }
+            docManager.StartUndoGroup("command.batch.note", true);
+            var track = project.tracks[part.trackNo];
+            foreach (var note in notes) {
+                foreach (UPhoneme phoneme in part.phonemes) {
+                    if (phoneme.Parent == note && phoneme.Prev != null && phoneme.PositionMs == phoneme.Prev.EndMs) {
+                        docManager.ExecuteCmd(new PhonemePreutterCommand(part, note, phoneme.index, phoneme, (float)phoneme.maxOtoPreutter));
+                        var overlap = phoneme.preutter * ratio;
+                        if (overlap > phoneme.autoOverlap) {
+                            docManager.ExecuteCmd(new PhonemeOverlapCommand(part, note, phoneme.index, phoneme, (float)(overlap - phoneme.autoOverlap)));
                         }
                     }
-                    colors[clrIndex] = suffix;
-                } else {
-                    colors.Add(clrIndex, Regex.Replace(subbank.Suffix.Replace("_", ""), "[A-G](#|b)?[1-7]", ""));
                 }
             }
+            docManager.EndUndoGroup();
+        }
+    }
 
-            // Order by the number of letters in the trigger
-            var suffixes = colors.Values.ToList();
-            suffixes.Remove("");
-            suffixes.Sort((a, b) => b.Length - a.Length);
+    public class RandomizeTiming : BatchEdit {
+        public virtual string Name => name;
+        private string name;
 
-            // Set lyric and color
-            docManager.StartUndoGroup(true);
+        public RandomizeTiming() {
+            name = "pianoroll.menu.notes.randomizetiming";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            if (notes.Count == 0) {
+                return;
+            }
+            docManager.StartUndoGroup("command.batch.note", true);
+            const int maxTick = 20;
+            int delta;
+            Random random = new Random();
             foreach (var note in notes) {
-                foreach (var suffix in suffixes) {
-                    if (note.lyric.Contains(suffix)) {
-                        string lyric = note.lyric.Split(suffix)[0];
-                        docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, note, lyric));
+                if (random.Next(2) == 0) { // +
+                    var max = Math.Min(maxTick, (int)Math.Round(note.duration / 4f));
+                    delta = random.Next(max / 4, max + 1);
+                } else { // -
+                    var max = maxTick;
+                    if (note.Prev != null && note.Prev.End == note.position) {
+                        max = Math.Min(maxTick, (int)Math.Round(note.Prev.duration / 4f));
+                    }
+                    delta = - random.Next(max / 4, max + 1);
+                }
+                
+                if (note.Prev != null && note.Prev.End == note.position) {
+                    docManager.ExecuteCmd(new ResizeNoteCommand(part, note.Prev, delta));
+                }
+                docManager.ExecuteCmd(new MoveNoteCommand(part, note, delta, 0));
+                docManager.ExecuteCmd(new ResizeNoteCommand(part, note, -delta));
+            }
+            docManager.EndUndoGroup();
+        }
+    }
 
-                        int index = colors.FirstOrDefault(c => c.Value == suffix).Key;
-                        docManager.ExecuteCmd(new SetNoteExpressionCommand(project, track, part, note, Format.Ustx.CLR, new float?[] { index }));
-                        break;
+    public class RandomizePhonemeOffset : BatchEdit {
+        public virtual string Name => name;
+        private string name;
+
+        public RandomizePhonemeOffset() {
+            name = "pianoroll.menu.notes.randomizeoffset";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            if (notes.Count == 0) {
+                return;
+            }
+            docManager.StartUndoGroup("command.batch.note", true);
+            const int maxTick = 20 ;
+            Random random = new Random();
+            foreach (var note in notes) {
+                for (int i = 0; i < part.phonemes.Count; i++) {
+                    UPhoneme phoneme = part.phonemes[i];
+                    if (phoneme.Parent == note) {
+                        if (random.Next(2) == 0) { // +
+                            var tempo = project.timeAxis.GetBpmAtTick(phoneme.position);
+                            var max = Math.Min(maxTick, (int)Math.Round(MusicMath.TempoTickToMs(tempo, phoneme.Duration) / 4));
+                            docManager.ExecuteCmd(new PhonemeOffsetCommand(part, note, phoneme.index, random.Next(max / 4, max + 1)));
+                        } else { // -
+                            var max = maxTick;
+                            if (phoneme.Prev != null && phoneme.Prev.End == phoneme.position) {
+                                var tempo = project.timeAxis.GetBpmAtTick(part.phonemes[i - 1].position);
+                                max = Math.Min(maxTick, (int)Math.Round(MusicMath.TempoTickToMs(tempo, part.phonemes[i - 1].Duration) / 4));
+                            }
+                            var delta = random.Next(max / 4, max + 1);
+                            docManager.ExecuteCmd(new PhonemeOffsetCommand(part, note, phoneme.index, -delta));
+                        }
                     }
                 }
             }
@@ -147,137 +437,652 @@ namespace OpenUtau.Core.Editing {
         }
     }
 
-    public class RemovePhoneticHint : SingleNoteLyricEdit {
-        static readonly Regex phoneticHintPattern = new Regex(@"\[(.*)\]");
-        public override string Name => "pianoroll.menu.lyrics.removephonetichint";
-        protected override string Transform(string lyric) {
-            var lrc = lyric;
-            lrc = phoneticHintPattern.Replace(lrc, match => "");
-            if (string.IsNullOrEmpty(lrc)) {
-                return lyric;
-            }
-            return lrc;
-        }
-    }
-
-    public class DashToPlus : SingleNoteLyricEdit {
-        public override string Name => "pianoroll.menu.lyrics.dashtoplus";
-        protected override string Transform(string lyric) {
-            if (lyric == "-") {
-                return lyric.Replace("-", "+");
-            } else {
-                return lyric;
-            }
-        }
-    }
-
-    public class DashToPlusTilda : SingleNoteLyricEdit {
-        public override string Name => "pianoroll.menu.lyrics.dashtoplustilda";
-        protected override string Transform(string lyric) {
-            if (lyric == "-") {
-                return lyric.Replace("-", "+~");
-            } else {
-                return lyric;
-            }
-        }
-    }
-
-    public class InsertSlur : BatchEdit{
+    public class RandomizeTuning : BatchEdit {
         public virtual string Name => name;
         private string name;
+        private int max;
 
-        public InsertSlur() {
-            name = "pianoroll.menu.lyrics.insertslur";
+        public RandomizeTuning(int max) {
+            name = "pianoroll.menu.notes.randomizetuning";
+            this.max = max;
         }
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
-            if(selectedNotes.Count == 0){
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            if (notes.Count == 0) {
                 return;
             }
-            var startPos = selectedNotes.First().position;
-            Queue<string> lyricsQueue = new Queue<string>();
-            docManager.StartUndoGroup(true);
-            foreach(var note in part.notes.Where(n => n.position >= startPos)){
-                lyricsQueue.Enqueue(note.lyric);
-                if(selectedNotes.Contains(note)){
-                    docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, note, "+~"));
-                } else {
-                    docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, note, lyricsQueue.Dequeue()));
+            docManager.StartUndoGroup("command.batch.note", true);
+            Random random = new Random();
+            foreach (var note in notes) {
+                if (random.Next(2) == 0) { // +
+                    docManager.ExecuteCmd(new ChangeNoteTuningCommand(part, note, random.Next(max / 4, max + 1)));
+                } else { // -
+                    var delta = random.Next(max / 4, max + 1);
+                    docManager.ExecuteCmd(new ChangeNoteTuningCommand(part, note, -delta));
                 }
             }
             docManager.EndUndoGroup();
         }
     }
 
-    // ==========================================
-    // [DELTA SYNTH] CUSTOM LYRIC BATCH EDITS
-    // ==========================================
-
-    // 1. ลบโน้ตกลุ่ม br, AP, SP, Br อัตโนมัติ (ลบออกจาก Piano Roll)
-    public class RemoveThaiBreaths : BatchEdit {
+    public class LoadRenderedPitch : BatchEdit {
         public virtual string Name => name;
+
+        public bool IsAsync => true;
+
         private string name;
 
-        public RemoveThaiBreaths() {
-            name = "pianoroll.menu.lyrics.removethaibreaths";
+        public LoadRenderedPitch() {
+            name = "pianoroll.menu.notes.loadrenderedpitch";
         }
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
-            var notes = selectedNotes.Count > 0 ? selectedNotes.ToArray() : part.notes.ToArray();
-            if (notes.Length == 0) {
+            RunAsync(
+                project, part, selectedNotes, docManager,
+                (current, total) => { }, CancellationToken.None);
+        }
+
+        public void RunAsync(
+            UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
+            Action<int, int> setProgressCallback, CancellationToken cancellationToken) {
+            RunInternal(
+                project, part, selectedNotes, docManager,
+                setProgressCallback, cancellationToken);
+        }
+
+        /// <summary>Live pitch only; must not replace <see cref="RunAsync"/> (BatchEdit interface).</summary>
+        internal void RunLive(
+            UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
+            CancellationToken cancellationToken, double pitchSteps, bool fastRealtime) {
+            RunInternal(
+                project, part, selectedNotes, docManager,
+                (_, _) => { }, cancellationToken,
+                recordUndo: false,
+                showUnsupportedError: false,
+                pitchSteps: pitchSteps,
+                fastRealtime: fastRealtime);
+        }
+
+        void RunInternal(
+            UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
+            Action<int, int> setProgressCallback, CancellationToken cancellationToken,
+            bool recordUndo = true, bool showUnsupportedError = true, double? pitchSteps = null,
+            bool fastRealtime = false) {
+            var renderer = project.tracks[part.trackNo].RendererSettings.Renderer;
+            if (renderer == null || !renderer.SupportsRenderPitch) {
+                if (showUnsupportedError) {
+                    var e = new MessageCustomizableException(
+                        "Current renderer doesn't support generating pitch curve",
+                        $"<translate:errors.editing.autopitch.unsupported>",
+                        new Exception());
+                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+                }
+                return;
+            }
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            var positions = notes.Select(n => n.position + part.position).ToHashSet();
+            var phrases = part.renderPhrases.Where(phrase => phrase.notes.Any(n => positions.Contains(phrase.position + n.position))).ToArray();
+            float minPitD = -1200;
+            if (project.expressions.TryGetValue(Format.Ustx.PITD, out var descriptor)) {
+                minPitD = descriptor.min;
+            }
+
+            int finished = 0;
+            setProgressCallback(0, phrases.Length);
+            var commands = new List<SetCurveCommand>();
+            for (int ph_i = phrases.Count() - 1; ph_i >= 0; ph_i--) {
+                var phrase = phrases[ph_i];
+                RenderPitchResult result;
+                if (pitchSteps.HasValue && renderer is DiffSinger.DiffSingerRenderer diffSingerRenderer) {
+                    result = diffSingerRenderer.LoadRenderedPitchLive(
+                        phrase, positions, pitchSteps.Value, fastRealtime);
+                } else {
+                    result = renderer.LoadRenderedPitch(phrase, positions);
+                }
+                if (result == null) {
+                    continue;
+                }
+                int? lastX = null;
+                int? lastY = null;
+                // TODO: Optimize interpolation and command.
+                if (cancellationToken.IsCancellationRequested) break;
+                // Take the first negative tick before start and the first tick after end for each segment;
+                // Reverse traversal, so that when the score slices are too close, priority is given to covering the consonant pitch of the next segment, reducing the impact on vowels.
+                for (int i = 0; i < result.tones.Length; i++) {
+                    if (result.tones[i] < 0) {
+                        continue;
+                    }
+                    if (result.retakeMask != null && i < result.retakeMask.Length && !result.retakeMask[i]) {
+                        continue;
+                    }
+                    int x = phrase.position - part.position + (int)result.ticks[i];
+                    if (result.ticks[i] < 0) {
+                        if (i + 1 < result.ticks.Length && result.ticks[i + 1] > 0) { } else
+                            continue;
+                    }
+                    if (x >= phrase.position + phrase.duration) {
+                        i = result.tones.Length - 1;
+                    }
+                    int pitchIndex = Math.Clamp((x - (phrase.position - part.position - phrase.leading)) / 5, 0, phrase.pitches.Length - 1);
+                    float basePitch = phrase.pitchesBeforeDeviation[pitchIndex];
+                    int y = (int)(result.tones[i] * 100 - basePitch);
+                    lastX ??= x;
+                    lastY ??= y;
+                    if (y > minPitD) {
+                        commands.Add(new SetCurveCommand(
+                            project, part, Format.Ustx.PITD, x, y, lastX.Value, lastY.Value));
+                    }
+                    lastX = x;
+                    lastY = y;
+                }
+                finished += 1;
+                setProgressCallback(finished, phrases.Length);
+            }
+
+            if (commands.Count == 0) {
+                return;
+            }
+            var validateOptions = new ValidateOptions {
+                SkipTiming = true,
+                Part = part,
+                SkipPhonemizer = true,
+                SkipPhoneme = true,
+            };
+            DocManager.Inst.PostOnUIThread(() => {
+                if (recordUndo) {
+                    docManager.StartUndoGroup("command.batch.note", true);
+                    commands.ForEach(docManager.ExecuteCmd);
+                    docManager.EndUndoGroup();
+                } else {
+                    docManager.ApplyTransient(commands, validateOptions, preRender: !fastRealtime);
+                }
+            });
+        }
+    }
+
+    public class BakePitch : BatchEdit {
+        public virtual string Name => name;
+        private string name;
+        public BakePitch() {
+            name = "pianoroll.menu.notes.bakepitch";
+        }
+
+        struct Point {
+            public int X;
+            public double Y;
+            public PitchPointShape shape;
+            public Point(int X, double Y, PitchPointShape shape = PitchPointShape.l) {
+                this.X = X;
+                this.Y = Y;
+                this.shape = shape;
+            }
+
+            public Point ChangeShape(PitchPointShape shape) {
+                return new Point(X, Y, shape);
+            }
+        }
+
+        double deltaY(Point pt, Point lineStart, Point lineEnd, PitchPointShape shape) {
+            return pt.Y - MusicMath.InterpolateShape(lineStart.X, lineEnd.X, lineStart.Y, lineEnd.Y, pt.X, shape);
+        }
+
+        PitchPointShape DetermineShape(Point start, Point middle, Point end) {
+            if (start.Y == end.Y) {
+                return PitchPointShape.l;
+            }
+            var k = (middle.Y - start.Y) / (end.Y - start.Y);
+            if (k > 0.67) {
+                return PitchPointShape.o;
+            }
+            if (k < 0.33) {
+                return PitchPointShape.i;
+            }
+            return PitchPointShape.l;
+        }
+
+        //reference: https://github.com/sdercolin/utaformatix3/blob/0f026f7024386ca8362972043c3471c6f2ac9859/src/main/kotlin/process/RdpSimplification.kt#L43
+        /*
+        * The Ramer–Douglas–Peucker algorithm is a line simplification algorithm
+        * for reducing the number of points used to define its shape.
+        *
+        * Wikipedia: https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+        * Implementation reference: https://rosettacode.org/wiki/Ramer-Douglas-Peucker_line_simplification
+        * */
+        //perpendicularDistance is replaced with deltaY, because the units of X and Y are different. 
+        //result doesn't contain the last point to enhance performance in recursion
+        List<Point> simplifyShape(List<Point> pointList, Double epsilon) {
+            if (pointList.Count <= 2) {
+                return pointList;
+            }
+
+            // Determine line shape
+            var middlePoint = pointList[pointList.Count / 2];
+            var startPoint = pointList[0];
+            var endPoint = pointList[^1];
+            var shape = DetermineShape(startPoint, middlePoint, endPoint);
+
+            // Find the point with the maximum distance from line between start and end
+            var dmax = 0.0;
+            var index = 0;
+            var end = pointList.Count - 1;
+            for (var i = 1; i < end; i++) {
+                var d = Math.Abs(deltaY(pointList[i], pointList[0], pointList[end], shape));
+                if (d > dmax) {
+                    index = i;
+                    dmax = d;
+                }
+            }
+            // If max distance is greater than epsilon, recursively simplify
+            List<Point> results = new List<Point>();
+            if (dmax > epsilon) {
+                // Recursive call
+                var recResults1 = simplifyShape(pointList.GetRange(0, index + 1), epsilon);
+                var recResults2 = simplifyShape(pointList.GetRange(index, pointList.Count - index), epsilon);
+
+                // Build the result list
+                results.AddRange(recResults1);
+                results.AddRange(recResults2);
+                if (results.Count < 2) {
+                    throw new Exception("Problem assembling output");
+                }
+            } else {
+                //Just return the start point
+                results.Add(pointList[0].ChangeShape(shape));
+            }
+            return results;
+        }
+
+        public static int LastIndexOfMin<T>(IList<T> self, Func<T, double> selector, int startIndex, int endIndex) {
+            if (self == null) {
+                throw new ArgumentNullException("self");
+            }
+
+            if (self.Count == 0) {
+                throw new ArgumentException("List is empty.", "self");
+            }
+
+            var min = selector(self[endIndex - 1]);
+            int minIndex = endIndex - 1;
+
+            for (int i = endIndex - 1; i >= startIndex; --i) {
+                var value = selector(self[i]);
+                if (value < min) {
+                    min = value;
+                    minIndex = i;
+                }
+            }
+
+            return minIndex;
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            TimeAxis timeAxis = project.timeAxis;
+            const int pitchInterval = 5;
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            var positions = notes.Select(n => n.position + part.position).ToHashSet();
+            var phrases = part.renderPhrases.Where(phrase => phrase.notes.Any(n => positions.Contains(phrase.position + n.position)));
+            float minPitD = -1200;
+            if (project.expressions.TryGetValue(Format.Ustx.PITD, out var descriptor)) {
+                minPitD = descriptor.min;
+            }
+            //Dictionary from note start tick to pitch point
+            //value is a tuple of (starttick, endtick, pitch points)
+            //Here starttick and endtick are project absolute tick, and pitch points are ms relative to the starttick
+            var pitchPointsPerNote = new Dictionary<int, Tuple<int, int, List<PitchPoint>>>();
+            foreach (var phrase in phrases) {
+                var pitchStart = -phrase.leading;
+                //var ticks = Enumerable.Range(0, phrase.duration).Select(i => i * 5).ToArray();
+                var pitches = phrase.pitches;
+                var points = Enumerable.Zip(
+                    Enumerable.Range(0, pitches.Length),
+                    pitches,
+                    (i, pitch) => new Point(pitchStart + i * pitchInterval, pitch)
+                ).ToList();
+
+                //Reduce pitch point
+                var mustIncludeIndices = phrase.notes
+                    .SelectMany(n => new[] {
+                        n.position,
+                        n.duration>160 ? n.end-80 : n.position+n.duration/2 })
+                    .Select(t => (t - pitchStart) / pitchInterval)
+                    .Prepend(0)
+                    .Append(points.Count - 1)
+                    .ToList();
+                //pairwise(mustIncludePointIndices) 
+                points = mustIncludeIndices.Zip(mustIncludeIndices.Skip(1),
+                        (a, b) => simplifyShape(points.GetRange(a, b - a), 10))
+                    .SelectMany(x => x).Append(points[^1]).ToList();
+
+                //determine where to distribute pitch point
+                int idx = 0;
+                //note_boundary[i] is the index of the first pitch point after the end of note i
+                var note_boundaries = new int[phrase.notes.Length + 1];
+                note_boundaries[0] = 2;
+                foreach (int i in Enumerable.Range(0, phrase.notes.Length)) {
+                    var note = phrase.notes[i];
+                    while (idx < points.Count
+                        && points[idx].X < note.end) {
+                        idx++;
+                    }
+                    note_boundaries[i + 1] = idx;
+                }
+                //if there is zero point in the note, adjusted_boundaries is the index of the last zero point
+                //otherwise, it is the index of the pitch point with minimal y-distance to the note
+                var adjusted_boundaries = new int[phrase.notes.Length + 1];
+                adjusted_boundaries[0] = 2;
+                foreach (int i in Enumerable.Range(0, phrase.notes.Length - 1)) {
+                    var note = phrase.notes[i];
+                    var notePitch = note.tone * 100;
+                    //var zero_point = points.FindIndex(note_boundaries[i], note_boundaries[i + 1] - note_boundaries[i], p => p.Y == 0);
+                    var zero_point = Enumerable.Range(0, note_boundaries[i + 1] - note_boundaries[i])
+                        .Select(j => note_boundaries[i + 1] - 1 - j)
+                        .Where(j => (points[j].Y - notePitch) * (points[j - 1].Y - notePitch) <= 0)
+                        .DefaultIfEmpty(-1)
+                        .First();
+                    if (zero_point != -1) {
+                        adjusted_boundaries[i + 1] = zero_point + 1;
+                    } else {
+                        adjusted_boundaries[i + 1] = LastIndexOfMin(points, p => Math.Abs(p.Y - notePitch), note_boundaries[i], note_boundaries[i + 1]) + 2;
+                    }
+                }
+                adjusted_boundaries[^1] = note_boundaries[^1];
+                //distribute pitch point to each note
+                foreach (int i in Enumerable.Range(0, phrase.notes.Length)) {
+                    var note = phrase.notes[i];
+                    var pitch = points.GetRange(adjusted_boundaries[i] - 2, adjusted_boundaries[i + 1] - (adjusted_boundaries[i] - 2))
+                        .Select(p => new PitchPoint(
+                            (float)timeAxis.MsBetweenTickPos(note.position + part.position, p.X + part.position),
+                            (float)(p.Y - note.tone * 100) / 10,
+                            p.shape))
+                        .ToList();
+                    pitchPointsPerNote[note.position + phrase.position - part.position]
+                        = Tuple.Create(
+                            points[adjusted_boundaries[i] - 2].X + phrase.position,
+                            points[adjusted_boundaries[i + 1] - 1].X + phrase.position,
+                            pitch);
+                }
+            }
+            docManager.StartUndoGroup("command.batch.note", true);
+            //Apply pitch points to notes
+            foreach (var note in notes) {
+                if (pitchPointsPerNote.TryGetValue(note.position, out var tickRangeAndPitch)) {
+                    var pitch = tickRangeAndPitch.Item3;
+                    docManager.ExecuteCmd(new ResetPitchPointsCommand(part, note));
+                    int index = 0;
+                    foreach (var point in pitch) {
+                        docManager.ExecuteCmd(new AddPitchPointCommand(part, note, point, index));
+                        index++;
+                    }
+                    docManager.ExecuteCmd(new DeletePitchPointCommand(part, note, index));
+                    docManager.ExecuteCmd(new DeletePitchPointCommand(part, note, index));
+                    var lastPitch = note.pitch.data[^1];
+                    docManager.ExecuteCmd(new MovePitchPointCommand(part, lastPitch, 0, -lastPitch.Y));
+
+                }
+            }
+            //Erase PITD curve that has been converted to pitch points
+            foreach (var note in notes) {
+                if (pitchPointsPerNote.TryGetValue(note.position, out var tickRangeAndPitch)) {
+                    var start = tickRangeAndPitch.Item1 - part.position;
+                    var end = tickRangeAndPitch.Item2 - part.position;
+                    docManager.ExecuteCmd(new PasteCurveCommand(project, part, Format.Ustx.PITD,
+                        start, 0,
+                        end, 0));
+                }
+            }
+            //Clear vibratos for selected notes
+            foreach (var note in notes) {
+                if (note.vibrato.length > 0) {
+                    docManager.ExecuteCmd(new VibratoLengthCommand(part, note, 0));
+                }
+            }
+            //Clear MOD+ expressions for selected notes
+            docManager.ExecuteCmd(new SetNotesSameExpressionCommand(DocManager.Inst.Project, project.tracks[part.trackNo], part, notes, "mod+", null));
+            docManager.EndUndoGroup();
+        }
+    }
+
+    public class RefreshRealCurves : BatchEdit {
+        public virtual string Name => name;
+
+        public bool IsAsync => true;
+
+        private string name;
+
+        public RefreshRealCurves() {
+            name = "pianoroll.menu.notes.refreshrealcurves";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            RunAsync(
+                project, part, selectedNotes, docManager,
+                (current, total) => { }, CancellationToken.None);
+        }
+
+        public void RunAsync(
+            UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
+            Action<int, int> setProgressCallback, CancellationToken cancellationToken) {
+            var renderer = project.tracks[part.trackNo].RendererSettings.Renderer;
+            if (renderer == null || !renderer.SupportsRealCurve) {
+                docManager.ExecuteCmd(new ErrorMessageNotification("Not supported"));
                 return;
             }
 
-            // กำหนดกลุ่มคำร้องที่ต้องการลบทิ้ง
-            string[] breathLyrics = { "br", "AP", "SP", "Br", "Pao", "b1", "b2", "Breath" };
-            var notesToRemove = notes.Where(n => breathLyrics.Contains(n.lyric.Trim())).ToArray();
-            
-            if (notesToRemove.Length > 0) {
-                docManager.StartUndoGroup(true);
-                foreach (var note in notesToRemove) {
-                    docManager.ExecuteCmd(new RemoveNoteCommand(part, note));
+            int finished = 0;
+            setProgressCallback(0, part.renderPhrases.Count);
+            var curveDict = new Dictionary<string, UCurve?>();
+            var newXsDict = new Dictionary<string, List<int>>();
+            var newYsDict = new Dictionary<string, List<int>>();
+            for (int ph_i = 0; ph_i < part.renderPhrases.Count; ++ph_i) {
+                var phrase = part.renderPhrases[ph_i];
+                var results = renderer.LoadRenderedRealCurves(phrase);
+                if (results.Count == 0) {
+                    continue;
                 }
+                if (cancellationToken.IsCancellationRequested) break;
+                foreach (var result in results) {
+                    if (!curveDict.ContainsKey(result.abbr)) {
+                        var curve = part.curves.FirstOrDefault(c => c.abbr == result.abbr);
+                        curveDict[result.abbr] = curve;
+                        newXsDict[result.abbr] = new List<int>();
+                        newYsDict[result.abbr] = new List<int>();
+                    }
+                    var xs = newXsDict[result.abbr];
+                    var ys = newYsDict[result.abbr];
+                    var ticks = result.ticks.Select(t => phrase.position - part.position + (int)t).ToArray();
+                    if (ticks.Length == 0) {
+                        continue;
+                    }
+                    while (xs.Count > 0 && xs[^1] >= ticks[0]) {
+                        xs.RemoveAt(xs.Count - 1);
+                        ys.RemoveAt(ys.Count - 1);
+                    }
+                    xs.Add(ticks[0]);
+                    ys.Add(-1);
+                    xs.AddRange(ticks);
+                    ys.AddRange(result.values.Select(v => (int)(v * 1000.0)));
+                }
+                finished += 1;
+                setProgressCallback(finished, part.renderPhrases.Count);
+            }
+            var commands = curveDict
+                .Select(kv => new MergedSetCurveCommand(
+                    project, part, kv.Key,
+                    kv.Value?.realXs.ToArray() ?? Array.Empty<int>(),
+                    kv.Value?.realYs.ToArray() ?? Array.Empty<int>(),
+                    newXsDict[kv.Key].ToArray(),
+                    newYsDict[kv.Key].ToArray(),
+                    true))
+                .ToList();
+
+            DocManager.Inst.PostOnUIThread(() => {
+                docManager.StartUndoGroup("command.batch.note", true);
+                commands.ForEach(docManager.ExecuteCmd);
                 docManager.EndUndoGroup();
-            }
+            });
         }
     }
 
-    // 2. แก้ไข Ooh \ กับ / ให้เป็น + ทันที (ล้างขยะ VSQX)
-    public class ThaiVsqxCleanup : SingleNoteLyricEdit {
-        public override string Name => "pianoroll.menu.lyrics.thaivsqxcleanup";
-        protected override string Transform(string lyric) {
-            if (lyric == @"Ooh \" || lyric == @"\" || lyric == "/") {
-                return "+";
+    // ==========================================
+    // Made And Checked By DELTA SYNTH & Gemini AI
+    // Original by Patiphat Wongyai (Delta)
+    // Version: v1.0
+    // ==========================================
+    public class RemoveBreathNote : BatchEdit {
+        public string Name => "pianoroll.menu.notes.removebreath";
+
+        private static readonly HashSet<string> BreathLyrics = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            "br", "br1", "br2", "br3", "br4", "br5",
+            "SP", "AP", "Pao", "R",
+            "breath",
+            "pau", "sil",
+        };
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            var toRemove = notes.Where(n => BreathLyrics.Contains(n.lyric.Trim())).ToList();
+            if (toRemove.Count == 0) {
+                return;
             }
-            if (lyric.Contains(@"Ooh \")) {
-                return lyric.Replace(@"Ooh \", "+");
+            docManager.StartUndoGroup("command.batch.note", true);
+            foreach (var note in toRemove) {
+                docManager.ExecuteCmd(new RemoveNoteCommand(part, note));
             }
-            return lyric;
+            docManager.EndUndoGroup();
         }
     }
 
-    // 3. ลบ Suffix พิเศษของ UTAU และตัวเลขท้ายคำ (เวอร์ชัน Safe-Thai 100%)
-    public class RemoveUtauSuffixes : SingleNoteLyricEdit {
-        public override string Name => "pianoroll.menu.lyrics.removeutausuffixes";
-        protected override string Transform(string lyric) {
-            string lrc = lyric;
-            
-            // 1. ลบ Suffix ที่เป็นระดับเสียง (เช่น C4, G#3, Bb5) ที่ห้อยท้าย
-            lrc = Regex.Replace(lrc, @"[_]?[A-Ga-g](#|b)?[0-9]+$", "");
-            
-            // 2. ลบตัวเลขล้วนที่ห้อยท้าย (เช่น _1, a2)
-            lrc = Regex.Replace(lrc, @"[_]?[0-9]+$", "");
-            
-            // 3. ลบสัญลักษณ์ UTAU ด้วย Unicode (ป้องกันโค้ดพังและภาษาไทยกลายเป็น ?)
-            // \u56C1=囁, \u2191=↑, \u2193=↓, \u5F31=弱, \u5F37=強, \u606F=息
-            lrc = Regex.Replace(lrc, @"[_]?[\u56C1\u2191\u2193\u5F31\u5F37\u606F]", "");
+    // ==========================================
+    // Made And Checked By DELTA SYNTH & Gemini AI
+    // Original by Patiphat Wongyai (Delta)
+    // Version: v1.1
+    // Converted from Python AutoPitch & Vibrato Inputting script to C# BatchEdit
+    // ==========================================
+    public class AutoPitchVibrato : BatchEdit {
+        public string Name => name;
 
-            // [DELTA SYNTH Safety Guard] กฎเหล็ก: ห้ามปล่อยให้เนื้อเพลงกลายเป็น ? หรือว่างเปล่า
-            if (string.IsNullOrWhiteSpace(lrc) || lrc.Contains("?")) {
-                return lyric; 
+        private readonly string name;
+        private readonly string shapeMode;
+
+        public AutoPitchVibrato(string shapeMode, string name) {
+            this.shapeMode = shapeMode;
+            this.name = name;
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var renderer = project.tracks[part.trackNo].RendererSettings.Renderer;
+            if (renderer == null || !renderer.SupportsRenderPitch) {
+                var e = new MessageCustomizableException(
+                    "Current renderer doesn't support generating pitch curve",
+                    "คลังเสียงปัจจุบันไม่รองรับการสร้างเส้นโค้งระดับเสียง กรุณาใช้คลังเสียง Diffsinger หรือ Enunu ครับ/ค่ะ",
+                    new Exception());
+                docManager.ExecuteCmd(new ErrorMessageNotification(e));
+                return;
             }
+
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            if (notes.Count == 0) {
+                return;
+            }
+            docManager.StartUndoGroup("command.batch.note", true);
+            int totalNotes = notes.Count;
+            int count = 0;
+            var random = new Random();
+            string[] availableShapes = { "W-shape", "Thunderbolt", "Pitch-drop/Rise", "Slope", "U pitch-drop", "Pitchdent" };
+
+            foreach (var note in notes) {
+                string currentShape = shapeMode;
+                if (shapeMode == "Random Mix") {
+                    currentShape = availableShapes[random.Next(availableShapes.Length)];
+                }
+
+                var newPitch = CreatePitchForShape(currentShape, random);
+                docManager.ExecuteCmd(new ResetPitchPointsCommand(part, note));
+                int index = 0;
+                foreach (var point in newPitch.data) {
+                    docManager.ExecuteCmd(new AddPitchPointCommand(part, note, point, index));
+                    index++;
+                }
+                // Remove the two default pitch points added by ResetPitchPointsCommand
+                docManager.ExecuteCmd(new DeletePitchPointCommand(part, note, index));
+                docManager.ExecuteCmd(new DeletePitchPointCommand(part, note, index));
+
+                var vibrato = CreateVibratoForShape(currentShape);
+                docManager.ExecuteCmd(new SetVibratoCommand(part, note, vibrato));
+                docManager.ExecuteCmd(new VibratoLengthCommand(part, note, vibrato.length));
+                
+                count++;
+                docManager.ExecuteCmd(new ProgressBarNotification(count * 100.0 / totalNotes, "AutoPitch..."));
+            }
+            docManager.ExecuteCmd(new ProgressBarNotification(0, ""));
+            docManager.ExecuteCmd(new ShowPitchNotification());
+            docManager.EndUndoGroup();
+        }
+
+        private static UPitch CreatePitchForShape(string shape, Random random) {
+            var pitch = new UPitch();
+            pitch.snapFirst = true;
             
-            return lrc;
+            // Add a small jitter (-5 to +5) to Y values to make it look more natural
+            int jitter() => random.Next(-5, 6);
+
+            switch (shape) {
+                case "W-shape":
+                    pitch.data.Add(new PitchPoint(-50, 0, PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(-10, -20 + jitter(), PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(30, 0 + jitter(), PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(70, -20 + jitter(), PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(110, 0, PitchPointShape.io));
+                    break;
+                case "Thunderbolt":
+                    pitch.data.Add(new PitchPoint(-30, 0, PitchPointShape.l));
+                    pitch.data.Add(new PitchPoint(0, 15 + jitter(), PitchPointShape.l));
+                    pitch.data.Add(new PitchPoint(20, -15 + jitter(), PitchPointShape.l));
+                    pitch.data.Add(new PitchPoint(50, 0, PitchPointShape.l));
+                    break;
+                case "Pitch-drop/Rise":
+                    pitch.data.Add(new PitchPoint(-60, 0, PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(-30, -15 + jitter(), PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(0, 15 + jitter(), PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(30, 0, PitchPointShape.io));
+                    break;
+                case "Slope":
+                    pitch.data.Add(new PitchPoint(-80, 0, PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(20, -15 + jitter(), PitchPointShape.io));
+                    break;
+                case "U pitch-drop":
+                    pitch.data.Add(new PitchPoint(-50, 0, PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(-10, -40 + jitter(), PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(30, 0, PitchPointShape.io));
+                    break;
+                case "Pitchdent":
+                    pitch.data.Add(new PitchPoint(-20, 0, PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(-5, -50 + jitter(), PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(10, 0, PitchPointShape.io));
+                    break;
+                default:
+                    pitch.data.Add(new PitchPoint(-40, 0, PitchPointShape.io));
+                    pitch.data.Add(new PitchPoint(0, 0, PitchPointShape.io));
+                    break;
+            }
+            return pitch;
+        }
+
+        private static UVibrato CreateVibratoForShape(string shape) {
+            var vibrato = new UVibrato();
+            if (shape == "W-shape") {
+                vibrato.length = 65;
+                vibrato.period = 30;
+                vibrato.depth = 35;
+                vibrato.@in = 20;
+                vibrato.@out = 20;
+                vibrato.shift = 0;
+                vibrato.drift = 0;
+            } else {
+                vibrato.length = 0;
+            }
+            return vibrato;
         }
     }
 }

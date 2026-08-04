@@ -92,7 +92,7 @@ namespace OpenUtau.Core.Editing {
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup(true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             foreach (var note in notes) {
                 docManager.ExecuteCmd(new ResetPitchPointsCommand(part, note));
             }
@@ -111,7 +111,7 @@ namespace OpenUtau.Core.Editing {
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup(true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             //reset numerical and options expressions
             foreach (var note in notes) {
                 if (note.phonemeExpressions.Count > 0) {
@@ -129,14 +129,8 @@ namespace OpenUtau.Core.Editing {
                     var selectedTickRanges = SelectionUtils.SelectedTickRanges(part, notes);
                     int defaultValue = (int)part.curves.First(c => c.abbr == abbr).descriptor.defaultValue;
                     foreach(var range in selectedTickRanges){
-                        docManager.ExecuteCmd(new SetCurveCommand(project, part, abbr, 
+                        docManager.ExecuteCmd(new PasteCurveCommand(project, part, Format.Ustx.PITD,
                             range.start, defaultValue,
-                            range.start, defaultValue));
-                        docManager.ExecuteCmd(new SetCurveCommand(project, part, abbr, 
-                            range.end, defaultValue, 
-                            range.end, defaultValue));
-                        docManager.ExecuteCmd(new SetCurveCommand(project, part, abbr, 
-                            range.start, defaultValue, 
                             range.end, defaultValue));
                     }
                 }
@@ -156,7 +150,7 @@ namespace OpenUtau.Core.Editing {
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup(true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             foreach (var note in notes) {
                 if (note.vibrato.length > 0) {
                     docManager.ExecuteCmd(new VibratoLengthCommand(part, note, 0));
@@ -177,7 +171,7 @@ namespace OpenUtau.Core.Editing {
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup(true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             var vibrato = new UVibrato();
             foreach (var note in notes) {
                 docManager.ExecuteCmd(new SetVibratoCommand(part, note, vibrato));
@@ -202,7 +196,7 @@ namespace OpenUtau.Core.Editing {
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup(true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             foreach (var note in notes) {
                 bool shouldClear = false;
                 foreach (var o in note.phonemeOverrides) {
@@ -230,7 +224,7 @@ namespace OpenUtau.Core.Editing {
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup(true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             foreach (var note in notes) {
                 foreach (var o in note.phonemeOverrides) {
                     if (o.phoneme != null) {
@@ -253,7 +247,7 @@ namespace OpenUtau.Core.Editing {
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup(true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             foreach (var note in notes) {
                 // pitch points
                 docManager.ExecuteCmd(new ResetPitchPointsCommand(part, note));
@@ -294,14 +288,8 @@ namespace OpenUtau.Core.Editing {
                     var selectedTickRanges = SelectionUtils.SelectedTickRanges(part, notes);
                     int defaultValue = (int)part.curves.First(c => c.abbr == abbr).descriptor.defaultValue;
                     foreach(var range in selectedTickRanges){
-                        docManager.ExecuteCmd(new SetCurveCommand(project, part, abbr, 
+                        docManager.ExecuteCmd(new PasteCurveCommand(project, part, abbr,
                             range.start, defaultValue,
-                            range.start, defaultValue));
-                        docManager.ExecuteCmd(new SetCurveCommand(project, part, abbr, 
-                            range.end, defaultValue, 
-                            range.end, defaultValue));
-                        docManager.ExecuteCmd(new SetCurveCommand(project, part, abbr, 
-                            range.start, defaultValue, 
                             range.end, defaultValue));
                     }
                 }
