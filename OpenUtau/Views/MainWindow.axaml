@@ -73,15 +73,23 @@
             <MenuItem Header="{DynamicResource menu.tools.singers}" Click="OnMenuSingers"/>
             <MenuItem Header="{DynamicResource menu.tools.singer.install}" Click="OnMenuInstallSinger"/>
             <MenuItem Header="{DynamicResource menu.tools.wavtoolresampler.install}" Click="OnMenuInstallWavtoolResampler"/>
-            <MenuItem Header="{DynamicResource menu.tools.packages}" Click="OnMenuPackageManager"/>
-            <MenuItem Header="{DynamicResource menu.tools.prefs}" Click="OnMenuPreferences"/>
-          </MenuItem>
-          <MenuItem Header="{DynamicResource menu.help}">
+             <MenuItem Header="{DynamicResource menu.tools.packages}" Click="OnMenuPackageManager"/>
+              <MenuItem Header="{DynamicResource menu.tools.prefs}" Click="OnMenuPreferences"/>
+           </MenuItem>
+           <MenuItem Header="{DynamicResource menu.help}">
             <MenuItem Header="{DynamicResource menu.help.wiki}" Click="OnMenuWiki"/>
             <MenuItem Header="{DynamicResource menu.help.checkupdate}" Click="OnMenuCheckUpdate"/>
             <MenuItem Header="{DynamicResource menu.help.reportissue}" Click="OnMenuReportIssue"/>
-            <MenuItem Header="{DynamicResource menu.help.logslocation}" Click="OnMenuLogsLocation"/>
-          </MenuItem>
+             <MenuItem Header="{DynamicResource menu.help.logslocation}" Click="OnMenuLogsLocation"/>
+           </MenuItem>
+             <MenuItem Header="{DynamicResource mcp.caption}">
+               <MenuItem Header="{DynamicResource mcp.menu.start}" Click="OnMenuMcpStart"/>
+               <MenuItem Header="{DynamicResource mcp.menu.stop}" Click="OnMenuMcpStop"/>
+               <MenuItem Header="{DynamicResource mcp.menu.status}" Click="OnMenuMcpStatus"/>
+               <MenuItem Header="{DynamicResource mcp.menu.copytoken}" Click="OnMenuMcpCopyToken"/>
+               <MenuItem Header="{DynamicResource mcp.menu.refreshtoken}" Click="OnMenuMcpRefreshToken"/>
+               <MenuItem Header="{DynamicResource mcp.menu.copyconfiguration}" Click="OnMenuMcpCopyEndpoint"/>
+            </MenuItem>
         </Menu>
       <Carousel SelectedIndex="{Binding Page}" >
         <!--Welcome page-->

@@ -181,6 +181,11 @@ namespace OpenUtau.Core.Util {
             public Dictionary<string, string> SingerPhonemizers = new Dictionary<string, string>();
             public List<string> RecentPhonemizers = new List<string>();
             public bool PreferPortAudio = false;
+            public bool McpEnabled = false;
+            public AgentBridge.McpStartupMode McpStartupMode = AgentBridge.McpStartupMode.Manual;
+            public string McpBindAddress = "127.0.0.1";
+            public int McpPort = 43102;
+            public string McpToken = string.Empty;
             public bool UseSystemDefaultAudioDevice = true;
             public double PlayPosMarkerMargin = 0.9;
             public int LockStartTime = 0;
@@ -253,7 +258,7 @@ namespace OpenUtau.Core.Util {
 errors.txt
 ";
             public string RecoveryPath = string.Empty;
-            public bool DetachPianoRoll = false;
+            public bool DetachPianoRoll = true;
 
             // ----- Mix FX (post-processing) -----
             // Per-track FX state lives in UTrack.MixFx and the project ustx.

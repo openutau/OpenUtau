@@ -58,8 +58,9 @@
       <ListBoxItem Content="{DynamicResource prefs.rendering}"/>
       <ListBoxItem Content="{DynamicResource prefs.appearance}"/>
       <ListBoxItem Content="{DynamicResource prefs.utau}"/>
-      <ListBoxItem Content="{DynamicResource prefs.diffsinger}"/>
-      <ListBoxItem Content="{DynamicResource prefs.advanced}"/>
+       <ListBoxItem Content="{DynamicResource prefs.diffsinger}"/>
+       <ListBoxItem Content="{DynamicResource prefs.advanced}"/>
+        <ListBoxItem Content="{DynamicResource prefs.mcp}"/>
     </ListBox>
     <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible">
       <Carousel Name="PageCarousel" Margin="10" HorizontalAlignment="Stretch" 
@@ -356,6 +357,28 @@
             <Button Grid.Column="4" Content="{DynamicResource prefs.paths.detect}"
                     HorizontalAlignment="Stretch" Click="DetectWinePath"/>
           </Grid>
+        </StackPanel>
+
+        <!-- MCP -->
+        <StackPanel>
+          <TextBlock Text="{DynamicResource prefs.mcp.service}" FontSize="18" Margin="0,10,0,0"/>
+          <TextBlock Text="{DynamicResource prefs.mcp.description}"
+                     TextWrapping="Wrap" FontSize="11" Margin="0,0,0,8"/>
+          <Grid>
+            <TextBlock Text="{DynamicResource prefs.mcp.enabled}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding McpEnabled}"/>
+          </Grid>
+          <TextBlock Text="{DynamicResource prefs.mcp.startupmode}" Margin="0,10,0,0"/>
+          <ComboBox SelectedIndex="{Binding McpStartupMode}">
+            <ComboBoxItem Content="{DynamicResource prefs.mcp.startupmode.manual}"/>
+            <ComboBoxItem Content="{DynamicResource prefs.mcp.startupmode.automatic}"/>
+          </ComboBox>
+          <TextBlock Text="{DynamicResource prefs.mcp.bindaddress}" Margin="0,10,0,0"/>
+          <TextBox Text="{Binding McpBindAddress}"/>
+          <TextBlock Text="{DynamicResource prefs.mcp.port}" Margin="0,10,0,0"/>
+          <TextBox Text="{Binding McpPort}"/>
+          <TextBlock Text="{DynamicResource prefs.mcp.hint}"
+                     TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
         </StackPanel>
       </Carousel>
     </ScrollViewer>

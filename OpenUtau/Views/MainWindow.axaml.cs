@@ -18,6 +18,7 @@ using OpenUtau.App.ViewModels;
 using OpenUtau.Classic;
 using OpenUtau.Core;
 using OpenUtau.Core.Analysis;
+using OpenUtau.Core.AgentBridge;
 using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
@@ -115,6 +116,66 @@ namespace OpenUtau.App.Views {
 
         public void InitProject() {
             viewModel.InitProject(this);
+        }
+
+        public void LoadPartInPianoRoll(UVoicePart part, int tick) {
+            LoadPartInPianoRoll(part, tick, false);
+        }
+
+        public void LoadPartInDetachedPianoRoll(UVoicePart part, int tick) {
+            LoadPartInPianoRoll(part, tick, true);
+        }
+
+        private void LoadPartInPianoRoll(UVoicePart part, int tick, bool forceDetach) {
+            if (!Dispatcher.UIThread.CheckAccess()) {
+                throw new InvalidOperationException("Piano roll loading must run on the Avalonia UI thread.");
+            }
+            if (forceDetach && !Preferences.Default.DetachPianoRoll) {
+                Preferences.Default.DetachPianoRoll = true;
+                Preferences.Save();
+            }
+            if (pianoRoll == null) {
+                LoadingWindow.BeginLoading(this);
+                try {
+                    // The control and its view models subscribe to UI-bound state during construction.
+                    var createdPianoRoll = new PianoRoll(new PianoRollViewModel()) {
+                        MainWindow = this
+                    };
+                    createdPianoRoll.ViewModel.PlaybackViewModel = viewModel.PlaybackViewModel;
+
+                    if (forceDetach || Preferences.Default.DetachPianoRoll) {
+                        viewModel.ShowPianoRoll = false;
+                        pianoRollWindow = new(createdPianoRoll);
+                    } else {
+                        PianoRollContainer.Content = createdPianoRoll;
+                    }
+
+                    createdPianoRoll.InitializePianoRollWindowAsync();
+                    pianoRoll = createdPianoRoll;
+                } catch (Exception e) {
+                    Log.Error(e, "Failed to initialize piano roll.");
+                    throw;
+                } finally {
+                    LoadingWindow.EndLoading();
+                }
+            }
+            if (forceDetach && pianoRollWindow == null) {
+                PianoRollContainer.Content = null;
+                viewModel.ShowPianoRoll = false;
+                pianoRollWindow = new(pianoRoll);
+            }
+            viewModel.Page = 1;
+            if (pianoRollWindow != null) {
+                pianoRollWindow.Show();
+                pianoRollWindow.Activate();
+            } else {
+                viewModel.ShowPianoRoll = true;
+                pianoRoll.Focus();
+            }
+            viewModel.TracksViewModel.DeselectParts();
+            viewModel.TracksViewModel.SelectPart(part);
+            DocManager.Inst.ExecuteCmd(new LoadPartNotification(part, DocManager.Inst.Project, tick));
+            pianoRoll.AttachExpressions();
         }
 
         void OnEditTimeSignature(object sender, PointerPressedEventArgs args) {
@@ -657,6 +718,68 @@ namespace OpenUtau.App.Views {
             if (dialog.Position.Y < 0) {
                 dialog.Position = dialog.Position.WithY(0);
             }
+        }
+
+        void OnMenuMcpStart(object sender, RoutedEventArgs args) {
+            if (!McpServiceOptions.TryCreate(Preferences.Default.McpBindAddress, Preferences.Default.McpPort, out var options, out var error)) {
+                _ = MessageBox.Show(this, error ?? ThemeManager.GetString("mcp.error.invalidconfig"), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.Ok);
+                return;
+            }
+            if (!McpService.Start(options, out error)) {
+                _ = MessageBox.Show(this, error ?? ThemeManager.GetString("mcp.error.startfailed"), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.Ok);
+                return;
+            }
+            _ = MessageBox.Show(this, string.Format(ThemeManager.GetString("mcp.started"), GetMcpEndpoint()), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.Ok);
+        }
+
+        void OnMenuMcpStop(object sender, RoutedEventArgs args) {
+            McpService.Stop();
+            _ = MessageBox.Show(this, ThemeManager.GetString("mcp.stopped"), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.Ok);
+        }
+
+        void OnMenuMcpStatus(object sender, RoutedEventArgs args) {
+            var status = McpService.Status;
+            var state = ThemeManager.GetString(status.Running ? "mcp.status.running" : "mcp.status.stopped");
+            var detail = string.IsNullOrWhiteSpace(status.Error) ? string.Empty : string.Format(ThemeManager.GetString("mcp.status.error"), status.Error);
+            _ = MessageBox.Show(this, string.Format(ThemeManager.GetString("mcp.status"), state, GetMcpEndpoint(), detail), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.Ok);
+        }
+
+        async void OnMenuMcpCopyToken(object sender, RoutedEventArgs args) {
+            if (!McpService.TryGetBearerToken(out var token)) {
+                _ = MessageBox.Show(this, ThemeManager.GetString("mcp.error.notrunning.copytoken"), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.Ok);
+                return;
+            }
+            if (Clipboard != null) {
+                await Clipboard.SetTextAsync(token);
+            }
+            _ = MessageBox.Show(this, ThemeManager.GetString("mcp.token.copied"), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.Ok);
+        }
+
+        async void OnMenuMcpRefreshToken(object sender, RoutedEventArgs args) {
+            var result = await MessageBox.Show(this, ThemeManager.GetString("mcp.token.refresh.confirm"), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.YesNo);
+            if (result != MessageBox.MessageBoxResult.Yes) {
+                return;
+            }
+            McpService.RefreshBearerToken();
+            _ = MessageBox.Show(this, ThemeManager.GetString("mcp.token.refreshed"), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.Ok);
+        }
+
+        async void OnMenuMcpCopyEndpoint(object sender, RoutedEventArgs args) {
+            if (!McpService.TryGetConnectionConfiguration(out var configuration)) {
+                _ = MessageBox.Show(this, ThemeManager.GetString("mcp.error.notrunning.copyconfig"), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.Ok);
+                return;
+            }
+            if (Clipboard != null) {
+                await Clipboard.SetTextAsync(configuration);
+            }
+            _ = MessageBox.Show(this, ThemeManager.GetString("mcp.configuration.copied"), ThemeManager.GetString("mcp.caption"), MessageBox.MessageBoxButtons.Ok);
+        }
+
+        private static string GetMcpEndpoint() {
+            var host = Preferences.Default.McpBindAddress.Contains(':')
+                ? $"[{Preferences.Default.McpBindAddress}]"
+                : Preferences.Default.McpBindAddress;
+            return $"http://{host}:{Preferences.Default.McpPort}/mcp";
         }
 
         void OnMenuFullScreen(object sender, RoutedEventArgs args) {
@@ -1221,46 +1344,14 @@ namespace OpenUtau.App.Views {
             Cursor = null;
         }
 
-        public async void PartsCanvasDoubleTapped(object sender, TappedEventArgs args) {
+        public void PartsCanvasDoubleTapped(object sender, TappedEventArgs args) {
             if (sender is not Canvas canvas) {
                 return;
             }
             var control = canvas.InputHitTest(args.GetPosition(canvas));
-            if (control is PartControl partControl && partControl.part is UVoicePart) {
-                if (pianoRoll == null) {
-                    LoadingWindow.BeginLoading(this);
-
-                    var model = await Task.Run<PianoRollViewModel>(() => new PianoRollViewModel());
-
-                    // Let's attach when needed to avoid startup slowdowns
-                    pianoRoll = new PianoRoll(model) {
-                        MainWindow = this
-                    };
-
-                    if (Preferences.Default.DetachPianoRoll) {
-                        viewModel.ShowPianoRoll = false;
-                        pianoRollWindow = new(pianoRoll);
-                    } else {
-                        PianoRollContainer.Content = pianoRoll;
-                    }
-
-                    await Task.Run(() =>
-                        pianoRoll.InitializePianoRollWindowAsync()
-                    );
-                    LoadingWindow.EndLoading();
-
-                    pianoRoll.ViewModel.PlaybackViewModel = viewModel.PlaybackViewModel;
-                }
-                if (pianoRollWindow != null) {
-                    pianoRollWindow.Show();
-                    pianoRollWindow.Activate();
-                } else {
-                    viewModel.ShowPianoRoll = true;
-                    pianoRoll.Focus();
-                }
+            if (control is PartControl partControl && partControl.part is UVoicePart part) {
                 int tick = viewModel.TracksViewModel.PointToTick(args.GetPosition(canvas));
-                DocManager.Inst.ExecuteCmd(new LoadPartNotification(partControl.part, DocManager.Inst.Project, tick));
-                pianoRoll.AttachExpressions();
+                LoadPartInPianoRoll(part, tick);
             }
         }
 
@@ -1829,6 +1920,8 @@ namespace OpenUtau.App.Views {
 
         public void WindowClosing(object? sender, WindowClosingEventArgs e) {
             if (forceClose || DocManager.Inst.ChangesSaved) {
+                Core.AgentBridge.McpService.Stop();
+                Core.AgentBridge.BridgeCore.Stop();
                 if (Preferences.Default.ClearCacheOnQuit) {
                     Log.Information("Clearing cache...");
                     PathManager.Inst.ClearCache();

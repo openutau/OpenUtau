@@ -8,6 +8,8 @@ using Avalonia.Input;
 using OpenUtau.App;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.AgentBridge;
+using OpenUtau.Core.Util;
 using ReactiveUI;
 using Serilog;
 
@@ -51,6 +53,7 @@ namespace OpenUtau.App.Views {
                 SingerManager.Inst.Initialize();
                 DocManager.Inst.Initialize(mainThread, mainScheduler);
                 DocManager.Inst.PostOnUIThread = action => Avalonia.Threading.Dispatcher.UIThread.Post(action);
+                OpenUtau.Core.AgentBridge.BridgeCore.Start();
                 Log.Information("Initialized OpenUtau.");
                 InitAudio();
             }).ContinueWith(t => {
@@ -61,9 +64,18 @@ namespace OpenUtau.App.Views {
                 }
                 if (App.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
                     var mainWindow = new MainWindow();
+                    Core.AgentBridge.BridgeCore.MainWindow = mainWindow;
+                    Core.AgentBridge.BridgeCore.SetLoadPartAction(mainWindow.LoadPartInDetachedPianoRoll);
                     mainWindow.Show();
                     desktop.MainWindow = mainWindow;
                     mainWindow.InitProject();
+                    if (Preferences.Default.McpEnabled && Preferences.Default.McpStartupMode == McpStartupMode.OnOpenUtauStartup) {
+                        if (McpServiceOptions.TryCreate(Preferences.Default.McpBindAddress, Preferences.Default.McpPort, out var options, out var error)) {
+                            McpService.Start(options, out _);
+                        } else {
+                            Log.Warning("OpenUtau MCP service has invalid preferences: {McpError}", error);
+                        }
+                    }
                     LoadingWindow.InitializeLoadingWindow();
                     Close();
                 }

@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using OpenUtau.Audio;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.AgentBridge;
 using OpenUtau.Core.Util;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
@@ -129,6 +130,12 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool RememberVsqx { get; set; }
         public string WinePath => Preferences.Default.WinePath;
 
+        // MCP
+        [Reactive] public bool McpEnabled { get; set; }
+        [Reactive] public McpStartupMode McpStartupMode { get; set; }
+        [Reactive] public string McpBindAddress { get; set; }
+        [Reactive] public int McpPort { get; set; }
+
         public PreferencesViewModel() {
             var audioOutput = PlaybackManager.Inst.AudioOutput;
             if (audioOutput != null) {
@@ -192,6 +199,10 @@ namespace OpenUtau.App.ViewModels {
             RememberUst = Preferences.Default.RememberUst;
             RememberVsqx = Preferences.Default.RememberVsqx;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
+            McpEnabled = Preferences.Default.McpEnabled;
+            McpStartupMode = Preferences.Default.McpStartupMode;
+            McpBindAddress = Preferences.Default.McpBindAddress;
+            McpPort = Preferences.Default.McpPort;
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
                 .Subscribe(_ => this.RaisePropertyChanged(nameof(IsThemeEditorOpen)));
@@ -362,6 +373,30 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.ClearCacheOnQuit)
                 .Subscribe(index => {
                     Preferences.Default.ClearCacheOnQuit = index;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.McpEnabled)
+                .Skip(1)
+                .Subscribe(enabled => {
+                    Preferences.Default.McpEnabled = enabled;
+                    Preferences.Save();
+                    if (!enabled) {
+                        McpService.Stop();
+                    }
+                });
+            this.WhenAnyValue(vm => vm.McpStartupMode)
+                .Subscribe(mode => {
+                    Preferences.Default.McpStartupMode = mode;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.McpBindAddress)
+                .Subscribe(address => {
+                    Preferences.Default.McpBindAddress = address;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.McpPort)
+                .Subscribe(port => {
+                    Preferences.Default.McpPort = port;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerSteps)
