@@ -10,9 +10,9 @@
 
 คุณสามารถดาวน์โหลดเวอร์ชันล่าสุดสำหรับระบบปฏิบัติการต่างๆ ได้ที่นี่:
 
-*   **Windows:** [ดาวน์โหลด x64](https://github.com/stakira/OpenUtau/releases/latest/download/OpenUtau-win-x64.zip) | [ดาวน์โหลด x86](https://github.com/stakira/OpenUtau/releases/latest/download/OpenUtau-win-x86.zip)
-*   **macOS:** [ดาวน์โหลด DMG (x64)](https://github.com/stakira/OpenUtau/releases/latest/download/OpenUtau-osx-x64.dmg)
-*   **Linux:** [ดาวน์โหลด tar.gz (x64)](https://github.com/stakira/OpenUtau/releases/latest/download/OpenUtau-linux-x64.tar.gz)
+*   **Windows:** [ดาวน์โหลด x64]
+*   **macOS:** [ดาวน์โหลด DMG (x64)]
+*   **Linux:** [ดาวน์โหลด tar.gz (x64)]
 
 > **ข้อแนะนำสำคัญ:** เพื่อการใช้งานที่สมบูรณ์แบบที่สุด ผมขอแนะนำให้คุณศึกษาคู่มือผ่าน [Github Wiki](https://github.com/stakira/OpenUtau/wiki) โดยเฉพาะหัวใจหลักอย่าง **Phonemizers** และ **Resamplers** ครับ
 
