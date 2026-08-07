@@ -1,5 +1,56 @@
 
-# OpenUtau
+# OpenUtau MCP
+
+此分支将原生 HTTP MCP 集成到 OpenUtau 桌面应用。MCP 服务与应用进程一同运行，面向本机 OpenUtau 实例和本地 MCP 客户端。
+
+## 原生 HTTP MCP
+
+实现位于 `OpenUtau.Core/AgentBridge/`，使用 Streamable HTTP、JSON-RPC 2.0 和 Bearer Token。服务仅绑定回环地址，默认端点为 `http://127.0.0.1:43102/mcp`。
+
+### 启动与连接
+
+1. 在 OpenUtau 菜单中打开 `MCP`。
+2. 选择 `启动 MCP 服务`。
+3. 选择 `复制 MCP 连接配置`，将剪贴板中的 JSON 粘贴到 MCP 客户端配置中。
+
+复制出的配置形如以下示例。Token 由应用生成，示例中的值仅为占位符：
+
+```json
+{
+  "mcpServers": {
+    "openutau": {
+      "url": "http://127.0.0.1:43102/mcp",
+      "headers": {
+        "Authorization": "Bearer <MCP_TOKEN>"
+      }
+    }
+  }
+}
+```
+
+服务提供 `openutau_read`、`openutau_plan`、`openutau_apply` 和 `openutau_diagnostics`。写入操作先通过 `openutau_plan` 创建短期计划，再由 `openutau_apply` 以 `planId` 确认执行。
+
+MCP 菜单还提供状态查看、停止服务、复制 Token 与刷新 Token。Token 在应用重启后保持有效；选择 `刷新 MCP Token` 并确认后，客户端需要粘贴新的连接配置。Token 属于本机凭据，请避免记录到日志、版本库或共享渠道。
+
+### 构建与验证
+
+```bash
+/workspace/.dotnet/dotnet build OpenUtau/OpenUtau.csproj -p:BaseOutputPath=/workspace/openutau-build/
+
+/workspace/.dotnet/dotnet test OpenUtau.Test/OpenUtau.Test.csproj --filter "FullyQualifiedName~BridgeProtocolTest" -p:BaseOutputPath=/workspace/openutau-build/
+```
+
+### 音频理解工作流
+
+面向 AI 辅助工程编辑的外部音频理解工作流位于 [`.monkeycode/docs/AUDIO_UNDERSTANDING_WORKFLOW.md`](.monkeycode/docs/AUDIO_UNDERSTANDING_WORKFLOW.md)。该设计稿涵盖用户校对歌词、音素强制对齐、连续音高提取、结构化音频证据和可审核的工程修改计划。
+
+### 相关 Bridge 分支
+
+`origin/Insert` 分支保留 stdio Bridge 协调器和文件 IPC 方案。此分支专注于应用内原生 HTTP MCP。
+
+原版 OpenUtau 与 MCP 修改版适合采用独立安装目录和独立用户数据目录并行部署。发布脚本应明确配置安装器目录、应用标识与用户数据重定向。
+
+## OpenUtau
 
 OpenUtau is a free, open-source editor made for the UTAU community.
 
