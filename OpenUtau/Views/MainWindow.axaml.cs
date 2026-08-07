@@ -174,7 +174,9 @@ namespace OpenUtau.App.Views {
             }
             viewModel.TracksViewModel.DeselectParts();
             viewModel.TracksViewModel.SelectPart(part);
-            DocManager.Inst.ExecuteCmd(new LoadPartNotification(part, DocManager.Inst.Project, tick));
+            Dispatcher.UIThread.Post(
+                () => DocManager.Inst.ExecuteCmd(new LoadPartNotification(part, DocManager.Inst.Project, tick)),
+                DispatcherPriority.Loaded);
             pianoRoll.AttachExpressions();
         }
 
