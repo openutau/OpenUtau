@@ -106,6 +106,16 @@ namespace OpenUtau.Test.AgentBridge {
                 toolsRequest.Headers.TryAddWithoutValidation("mcp-session-id", "legacy-client-session");
                 var toolsResponse = await client.SendAsync(toolsRequest);
                 Assert.Equal(HttpStatusCode.OK, toolsResponse.StatusCode);
+                Assert.Equal("no-store", toolsResponse.Headers.CacheControl?.ToString());
+                Assert.True(toolsResponse.Headers.TryGetValues("X-Content-Type-Options", out var contentTypeOptions));
+                Assert.Contains("nosniff", contentTypeOptions);
+                using var toolsDocument = JsonDocument.Parse(await toolsResponse.Content.ReadAsStringAsync());
+                var tools = toolsDocument.RootElement.GetProperty("result").GetProperty("tools").EnumerateArray().ToArray();
+                var readTool = tools.Single(tool => tool.GetProperty("name").GetString() == "openutau_read");
+                var readSchema = readTool.GetProperty("inputSchema");
+                Assert.Equal("object", readSchema.GetProperty("properties").GetProperty("payload").GetProperty("type").GetString());
+                Assert.Equal("action", readSchema.GetProperty("required")[0].GetString());
+                Assert.False(readSchema.GetProperty("additionalProperties").GetBoolean());
 
                 using var planRequest = new HttpRequestMessage(HttpMethod.Post, endpoint) {
                     Content = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"openutau_plan\",\"arguments\":{\"action\":\"create_part\"}}}", Encoding.UTF8, "application/json"),

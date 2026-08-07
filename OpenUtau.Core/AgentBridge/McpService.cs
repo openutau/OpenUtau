@@ -248,10 +248,10 @@ namespace OpenUtau.Core.AgentBridge {
             if (method == "notifications/initialized") return McpMethodResponse.Success(new { });
             if (method == "tools/list") return McpMethodResponse.Success(new {
                 tools = new[] {
-                    Tool("openutau_read", "Read authoritative OpenUtau state.", "action", "payload"),
-                    Tool("openutau_plan", "Create a guarded write plan that expires after confirmation timeout.", "action", "payload", "expiresInSeconds"),
-                    Tool("openutau_apply", "Apply one pending guarded write plan.", "planId"),
-                    Tool("openutau_diagnostics", "Read Bridge and HTTP diagnostics."),
+                    Tool("openutau_read", "Read authoritative OpenUtau state.", new[] { "action" }, "action", "payload"),
+                    Tool("openutau_plan", "Create a guarded write plan that expires after confirmation timeout.", new[] { "action" }, "action", "payload", "expiresInSeconds"),
+                    Tool("openutau_apply", "Apply one pending guarded write plan.", new[] { "planId" }, "planId"),
+                    Tool("openutau_diagnostics", "Read Bridge and HTTP diagnostics.", Array.Empty<string>()),
                 },
             });
             if (method != "tools/call" || !request.TryGetProperty("params", out var parameters)) return McpMethodResponse.Error(-32601, "METHOD_NOT_FOUND");
@@ -299,9 +299,18 @@ namespace OpenUtau.Core.AgentBridge {
         private static McpMethodResponse ToolContent(object result) => McpMethodResponse.Success(new {
             content = new[] { new { type = "text", text = JsonSerializer.Serialize(result, JsonOptions) } },
         });
-        private static object Tool(string name, string description, params string[] properties) => new {
+        private static object Tool(string name, string description, string[] required, params string[] properties) => new {
             name, description,
-            inputSchema = new { type = "object", properties = properties.ToDictionary(property => property, property => (object)new { type = property == "expiresInSeconds" ? "integer" : "string" }) },
+            inputSchema = new {
+                type = "object",
+                properties = properties.ToDictionary(property => property, property => property switch {
+                    "payload" => (object)new { type = "object" },
+                    "expiresInSeconds" => new { type = "integer", minimum = 1, maximum = 600 },
+                    _ => new { type = "string" },
+                }),
+                required,
+                additionalProperties = false,
+            },
         };
 
         private static JsonElement GetPayload(JsonElement arguments) => arguments.TryGetProperty("payload", out var payload) && payload.ValueKind == JsonValueKind.Object ? payload.Clone() : JsonSerializer.SerializeToElement(new { });
@@ -342,9 +351,11 @@ namespace OpenUtau.Core.AgentBridge {
         private static async Task WriteJsonAsync(HttpListenerResponse response, int statusCode, object payload) {
             var bytes = JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions);
             response.StatusCode = statusCode;
-            response.ContentType = "application/json";
+            response.ContentType = "application/json; charset=utf-8";
             response.ContentEncoding = Encoding.UTF8;
             response.ContentLength64 = bytes.Length;
+            response.Headers[HttpResponseHeader.CacheControl] = "no-store";
+            response.Headers["X-Content-Type-Options"] = "nosniff";
             await response.OutputStream.WriteAsync(bytes).ConfigureAwait(false);
             response.Close();
         }
