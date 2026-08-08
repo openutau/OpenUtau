@@ -47,7 +47,8 @@ namespace OpenUtau.Core {
                     DataPath = exePath;
                 } else {
                     string dataHome = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                    DataPath = Path.Combine(dataHome, "OpenUtau");
+                    var dataDirectoryName = File.Exists(Path.Combine(exePath, "installed-mcp.txt")) ? "OpenUtau MCP" : "OpenUtau";
+                    DataPath = Path.Combine(dataHome, dataDirectoryName);
                 }
                 CachePath = Path.Combine(DataPath, "Cache");
                 HomePathIsAscii = true;
