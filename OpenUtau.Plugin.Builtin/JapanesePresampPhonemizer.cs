@@ -338,12 +338,7 @@ namespace OpenUtau.Plugin.Builtin {
             int shift = attr.toneShift ?? GetParentToneShift();
             int? alt = attr.alternate ?? GetParentAlternate();
 
-            var otos = new List<UOto>();
-            foreach (string test in input) {
-                if (singer.TryGetMappedOto(test + alt, note.tone + shift, color, out var otoCandidacy)) {
-                    otos.Add(otoCandidacy);
-                }
-            }
+            var otos = FindOtos(input, note.tone + shift, color, alt);
 
             if (otos.Count > 0) {
                 oto = otos.FirstOrDefault(oto => oto.IsColorMatch(color));
@@ -354,6 +349,19 @@ namespace OpenUtau.Plugin.Builtin {
             }
             return false;
         }
+
+        private List<UOto> FindOtos(List<string> input, int tone, string color, int? alt) {
+            var otos = new List<UOto>();
+            foreach (string test in input) {
+                if (alt != null && singer.TryGetMappedOto(test + alt, tone, color, out var otoAlt)) {
+                    otos.Add(otoAlt);
+                } else if (singer.TryGetMappedOto(test, tone, color, out var otoCandidacy)) {
+                    otos.Add(otoCandidacy);
+                }
+            }
+            return otos;
+        }
+
         private bool checkOtoUntilHit(List<string> input, Note note, int index, out UOto oto, out int? colorIndex) {
             oto = default;
             colorIndex = null;
@@ -363,12 +371,7 @@ namespace OpenUtau.Plugin.Builtin {
             int shift = attr.toneShift ?? attr0.toneShift ?? GetParentToneShift();
             int? alt = attr.alternate ?? GetParentAlternate();
 
-            var otos = new List<UOto>();
-            foreach (string test in input) {
-                if (singer.TryGetMappedOto(test + alt, note.tone + shift, color, out var otoCandidacy)) {
-                    otos.Add(otoCandidacy);
-                }
-            }
+            var otos = FindOtos(input, note.tone + shift, color, alt);
 
             if (otos.Count > 0) {
                 oto = otos.FirstOrDefault(oto => oto.IsColorMatch(color));

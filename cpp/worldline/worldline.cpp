@@ -28,6 +28,11 @@ static double** to2d(double* const arr, int length, int width) {
 
 DLL_API int F0(float* samples, int length, int fs, double frame_period,
                int method, double** f0) {
+  // Check if there's an issue with the WAV file
+  if (length <= 0) {
+    *f0 = new double[0];
+    return 0;
+  }
   std::unique_ptr<worldline::F0Estimator> estimator;
   switch (method) {
     case -1: {
