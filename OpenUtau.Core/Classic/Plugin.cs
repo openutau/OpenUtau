@@ -18,10 +18,18 @@ namespace OpenUtau.Classic {
                 throw new FileNotFoundException($"Executable {Executable} not found.");
             }
             string winePath = Preferences.Default.WinePath;
-            string ext = Path.GetExtension(tempFile).ToLower();
-            bool useWine = !OS.IsWindows() && !string.IsNullOrEmpty(winePath) && ( ext == "exe" || ext == "bat");
+            string ext = Path.GetExtension(Executable).ToLowerInvariant();
+            string validatedWinePath = string.Empty;
+            bool useWine = !OS.IsWindows()
+                && !string.IsNullOrEmpty(winePath)
+                && (ext == ".exe" || ext == ".bat")
+                && Path.IsPathRooted(winePath)
+                && File.Exists(winePath);
+            if (useWine) {
+                validatedWinePath = Path.GetFullPath(winePath);
+            }
             var startInfo = new ProcessStartInfo() {
-                FileName = useWine ? winePath : Executable,
+                FileName = useWine ? validatedWinePath : Executable,
                 Arguments = useWine ? $"\"{Executable}\" \"{tempFile}\"" : $"\"{tempFile}\"",
                 Environment = {{"LANG", "ja_JP.utf8"}},
                 WorkingDirectory = Path.GetDirectoryName(Executable),
