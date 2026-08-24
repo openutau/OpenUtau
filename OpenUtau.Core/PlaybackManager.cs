@@ -91,7 +91,7 @@ namespace OpenUtau.Core {
 
         private readonly object _lockObj = new object();
 
-        public ToneGenerator() {}
+        public ToneGenerator() { }
 
         public ToneGenerator(float gain) {
             this.gain = gain;
@@ -167,6 +167,134 @@ namespace OpenUtau.Core {
         }
     }
 
+    public class MetronomeGenerator : ISignalSource {
+        private const int SampleRate = 44100;
+
+        private TimeAxis? timeAxis;
+        private int startTick;
+
+        public bool Enabled { get; set; }
+
+        public MetronomeGenerator() {
+        }
+
+        public void SetProject(UProject project, int startTick) {
+            timeAxis = project.timeAxis;
+            this.startTick = startTick;
+        }
+
+        public bool IsReady(int position, int count) => true;
+
+        public int Mix(int position, float[] buffer, int offset, int count) {
+            if (!Enabled || timeAxis == null) {
+                return position + count;
+            }
+
+            double startFrame = position / 2.0;
+            double endFrame = (position + count) / 2.0;
+
+            double startProjectMs =
+                timeAxis.TickPosToMsPos(startTick)
+                + startFrame * 1000.0 / SampleRate;
+
+            double endProjectMs =
+                timeAxis.TickPosToMsPos(startTick)
+                + endFrame * 1000.0 / SampleRate;
+
+            const double clickLengthMs = 50.0;
+            double searchStartMs = Math.Max(0, startProjectMs - clickLengthMs);
+            double searchStartTickExact = timeAxis.MsPosToNonExactTickPos(searchStartMs);
+            double endTickExact = timeAxis.MsPosToNonExactTickPos(endProjectMs);
+
+            int currentTick = (int)Math.Floor(searchStartTickExact);
+
+            timeAxis.TickPosToBarBeat(
+                currentTick,
+                out int bar,
+                out int beat,
+                out _);
+
+            int clickTick = timeAxis.BarBeatToTickPos(bar, beat);
+
+            if (clickTick < currentTick) {
+                timeAxis.NextBarBeat(
+                    bar,
+                    beat,
+                    out bar,
+                    out beat);
+
+                clickTick = timeAxis.BarBeatToTickPos(bar, beat);
+            }
+
+            int clickLengthSamples = (int)(SampleRate * clickLengthMs / 1000.0);
+
+            while (clickTick < endTickExact) {
+                double clickMs = timeAxis.TickPosToMsPos(clickTick);
+                double startMs = timeAxis.TickPosToMsPos(startTick);
+
+                double clickFrame = (clickMs - startMs) * SampleRate / 1000.0;
+                double relativeFrame = clickFrame - startFrame;
+                int frame = (int)Math.Round(relativeFrame);
+
+                if (frame + clickLengthSamples > 0 && frame < count / 2) {
+                    AddClick(
+                        buffer,
+                        offset,
+                        frame,
+                        beat == 0,
+                        count);
+                }
+
+                timeAxis.NextBarBeat(
+                    bar,
+                    beat,
+                    out bar,
+                    out beat);
+
+                clickTick = timeAxis.BarBeatToTickPos(bar, beat);
+            }
+
+            return position + count;
+        }
+
+        private static void AddClick(
+            float[] buffer,
+            int offset,
+            int frame,
+            bool accent,
+            int count) {
+
+            const double clickLengthMs = 50.0;
+            const float volume = 0.5f;
+
+            int clickLength = (int)(SampleRate * clickLengthMs / 1000.0);
+            double frequency = accent ? 1600.0 : 1000.0;
+            int bufferFrameCount = count / 2;
+
+            int startI = frame < 0 ? -frame : 0;
+
+            for (int i = startI; i < clickLength; ++i) {
+                int targetFrame = frame + i;
+
+                if (targetFrame >= bufferFrameCount) {
+                    break;
+                }
+
+                double t = (double)i / SampleRate;
+
+                double envelope = Math.Exp(-t * 80.0);
+
+                float sample = (float)(
+                    Math.Sin(2.0 * Math.PI * frequency * t)
+                    * envelope
+                    * volume);
+
+                buffer[offset + targetFrame * 2] += sample;
+                buffer[offset + targetFrame * 2 + 1] += sample;
+            }
+        }
+    }
+
     public class PlaybackManager : SingletonBase<PlaybackManager>, ICmdSubscriber {
         public ConcurrentDictionary<string, (int trackNo, double posMs, float[] samples, DateTime renderTime)> LiveWaveformCache = new ConcurrentDictionary<string, (int, double, float[], DateTime)>();
         public bool IsWaveformBlanked { get; set; } = false;
@@ -180,14 +308,16 @@ namespace OpenUtau.Core {
             }
 
             toneGenerator = new ToneGenerator();
-            editingMix = new MasterAdapter(toneGenerator);
+            metronomeGenerator = new MetronomeGenerator();
+            editingMix = new MasterAdapter(toneGenerator, metronome: metronomeGenerator);
         }
 
         public readonly ToneGenerator toneGenerator;
+        public readonly MetronomeGenerator metronomeGenerator;
         List<Fader> faders;
         MasterAdapter masterMix;
         MasterAdapter editingMix;
-        
+
         double startMs;
         public int StartTick => DocManager.Inst.Project.timeAxis.MsPosToTickPos(startMs);
         CancellationTokenSource renderCancellation;
@@ -241,7 +371,7 @@ namespace OpenUtau.Core {
             if (AudioOutput.PlaybackState == PlaybackState.Playing) {
                 AudioOutput.Stop();
             }
-            try{
+            try {
                 var playSound = Wave.OpenFile(file);
                 AudioOutput.Init(playSound.ToSampleProvider());
             } catch (Exception ex) {
@@ -249,7 +379,7 @@ namespace OpenUtau.Core {
                 return;
             }
             AudioOutput.Play();
-        } 
+        }
 
         public void PlayOrPause(int tick = -1, int endTick = -1, int trackNo = -1) {
             if (PlayingMaster) {
@@ -315,8 +445,10 @@ namespace OpenUtau.Core {
             toneGenerator.EndAllTones();
 
             this.startMs = startMs;
-            var start = TimeSpan.FromMilliseconds(startMs);
-            Log.Information($"StartPlayback at {start}");
+            int startTick = DocManager.Inst.Project.timeAxis.MsPosToTickPos(startMs);
+            Log.Information($"StartPlayback at {startMs}");
+
+            metronomeGenerator.SetProject(DocManager.Inst.Project, startTick);
             masterMix = masterAdapter;
             AudioOutput.Stop();
             AudioOutput.Init(masterMix);

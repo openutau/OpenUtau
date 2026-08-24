@@ -12,15 +12,17 @@ namespace OpenUtau.Core.SignalChain {
         private readonly WaveFormat waveFormat;
         private readonly ISignalSource source;
         private readonly int endPosition;
+        private readonly ISignalSource? metronome;
         private int position;
         private int startPosition;
 
         public WaveFormat WaveFormat => waveFormat;
         public int Waited { get; private set; }
         public bool IsWaiting { get; private set; }
-        public MasterAdapter(ISignalSource source, double endMs = double.PositiveInfinity) {
+        public MasterAdapter(ISignalSource source, double endMs = double.PositiveInfinity, ISignalSource? metronome = null) {
             waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(SampleRate, Channels);
             this.source = source;
+            this.metronome = metronome;
             endPosition = double.IsPositiveInfinity(endMs)
                 ? -1
                 : (int)(endMs * SampleRate / 1000) * Channels;
@@ -43,6 +45,7 @@ namespace OpenUtau.Core.SignalChain {
             } else {
                 int readPosition = position;
                 int pos = source.Mix(position, buffer, offset, count);
+                metronome?.Mix(position, buffer, offset, count);
                 int n = Math.Max(0, pos - position);
                 position = pos;
                 int startFrame = startPosition / Channels;

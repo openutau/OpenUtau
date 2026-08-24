@@ -95,7 +95,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
         [Reactive] public partial string RedoText { get; set; } = ThemeManager.GetString("menu.edit.redo");
 
-        [Reactive] public bool IsMetronomeEnabled { get; set; } = PlaybackManager.Inst.metronomeGenerator.Enabled;
+        [Reactive] public partial bool IsMetronomeEnabled { get; set; } = PlaybackManager.Inst.metronomeGenerator.Enabled;
 
         private ObservableCollectionExtended<MenuItemViewModel> openRecentMenuItems
             = new ObservableCollectionExtended<MenuItemViewModel>();

@@ -159,7 +159,7 @@ namespace OpenUtau.Core.Render {
                 ? double.PositiveInfinity
                 : project.timeAxis.TickPosToMsPos(endTick);
             var renderMixdownResult = RenderMixdown(uiScheduler, ref cancellation, wait: false);
-            var master = new MasterAdapter(renderMixdownResult.Item1, endMs);
+            var master = new MasterAdapter(renderMixdownResult.Item1, endMs, PlaybackManager.Inst.metronomeGenerator);
             master.SetPosition((int)(startMs * 44100 / 1000) * 2);
             return Tuple.Create(master, renderMixdownResult.Item2);
         }
