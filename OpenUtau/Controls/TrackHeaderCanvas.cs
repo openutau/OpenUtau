@@ -98,6 +98,7 @@ namespace OpenUtau.App.Controls {
                         }
                     }
                 });
+
             MessageBus.Current.Listen<MixFxChangedNotification>()
                 .Subscribe(e => {
                     foreach (var (track, header) in trackHeaders) {

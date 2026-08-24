@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:OpenUtau.App.Controls"
              xmlns:vm="using:OpenUtau.App.ViewModels"
              mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="104"
              x:Class="OpenUtau.App.Controls.TrackHeader" Width="300" Height="104" TrackNo="{Binding TrackNo}">
@@ -77,18 +78,42 @@
                  HorizontalOffset="-3" ItemsSource="{Binding PhonemizerMenuItems}">
       <ContextMenu.Styles>
         <Style Selector="MenuItem">
-          <Setter Property="Header" Value="{Binding Header}"/>
+          <Setter Property="Header" Value="{Binding HeaderViewModel}"/>
           <Setter Property="Command" Value="{Binding Command}"/>
           <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
           <Setter Property="ItemsSource" Value="{Binding Items}"/>
         </Style>
       </ContextMenu.Styles>
+      <ContextMenu.DataTemplates>
+        <DataTemplate DataType="vm:PhonemizerMenuItemViewModel">
+          <Grid ColumnDefinitions="24,*,24" MinHeight="24">
+            <TextBlock Grid.Column="1"
+                       Text="{Binding Header}"
+                       VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"/>
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="2"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center">
+              <controls:ApplyToAllTracksButton
+                  Command="{Binding SecondaryCommand}"
+                  CommandParameter="{Binding CommandParameter}"/>
+            </StackPanel>
+          </Grid>
+        </DataTemplate>
+        <DataTemplate DataType="vm:MenuItemViewModel">
+          <TextBlock Text="{Binding Header}"
+                     VerticalAlignment="Center"
+                     TextTrimming="CharacterEllipsis"/>
+        </DataTemplate>
+      </ContextMenu.DataTemplates>
     </ContextMenu>
     <ContextMenu x:Key="SingersMenuRes" Classes="context" Name="SingersMenu" Placement="BottomEdgeAlignedLeft" 
                  HorizontalOffset="-3" ItemsSource="{Binding SingerMenuItems}">
       <ContextMenu.Styles>
         <Style Selector="MenuItem">
-          <Setter Property="Header" Value="{Binding Header}"/>
+          <Setter Property="Header" Value="{Binding HeaderViewModel}"/>
           <Setter Property="Command" Value="{Binding Command}"/>
           <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
           <Setter Property="ItemsSource" Value="{Binding Items}"/>
@@ -98,6 +123,32 @@
           <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
         </Style>
       </ContextMenu.Styles>
+      <ContextMenu.DataTemplates>
+        <DataTemplate DataType="vm:SingerMenuItemViewModel">
+          <Grid ColumnDefinitions="24,*,24" MinHeight="24" >
+            <controls:FavouriteToggleButton Grid.Column="0"
+                  IsChecked="{Binding IsFavourite}"/>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding Header}"
+                       VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"/>
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="2"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center">
+              <controls:ApplyToAllTracksButton
+                  Command="{Binding SecondaryCommand}"
+                  CommandParameter="{Binding CommandParameter}"/>
+            </StackPanel>
+          </Grid>
+        </DataTemplate>
+        <DataTemplate DataType="vm:MenuItemViewModel">
+          <TextBlock Text="{Binding Header}"
+                     VerticalAlignment="Center"
+                     TextTrimming="CharacterEllipsis"/>
+        </DataTemplate>
+      </ContextMenu.DataTemplates>
     </ContextMenu>
   </UserControl.Resources>
   <Border Margin="1,1,1,1" BorderThickness="1" BorderBrush="{Binding HeaderBorderBrush}"
@@ -255,6 +306,8 @@
           <MenuItem Classes="context" Header="{DynamicResource tracks.trackcolor}" Command="{Binding SelectTrackColor}"/>
           <MenuItem Classes="context" Header="{DynamicResource tracks.duplicate}" Command="{Binding Duplicate}"/>
           <MenuItem Classes="context" Header="{DynamicResource tracks.duplicatesettings}" Command="{Binding DuplicateSettings}"/>
+          <MenuItem Classes="context" Header="{DynamicResource tracks.standardizesettings}" Command="{Binding StandardizeSettings}"/>
+          <MenuItem Classes="context" Header="{DynamicResource tracks.rotateselectedtracksingers}" Command="{Binding RotateSelectedTrackSingers}"/>
           <MenuItem Classes="context" Header="{DynamicResource dialogs.voicecolorremapping}" Command="{Binding VoiceColorRemapping}"/>
           <Separator/>
           <MenuItem Classes="context" Header="{DynamicResource tracks.mixfx}" Command="{Binding OpenMixFxDialog}"/>
