@@ -82,6 +82,7 @@ namespace OpenUtau.Classic {
                     File.WriteAllText(touch, "\n");
                     var config = new VoicebankConfig() {
                         TextFileEncoding = textEncoding.WebName,
+                        SingerType = singerType,
                     };
                     using (var stream = File.Open(touch.Replace(".txt", ".yaml"), FileMode.Create)) {
                         config.Save(stream);

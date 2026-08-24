@@ -30,7 +30,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public Encoding ArchiveEncoding { get; set; }
         [Reactive] public Encoding TextEncoding { get; set; }
         [Reactive] public bool MissingInfo { get; set; }
-        public string[] SingerTypes { get; set; } = new[] { "utau", "enunu", "diffsinger" };
+        public string[] SingerTypes { get; set; } = new[] { "utau", "enunu", "diffsinger", "neutrino" };
         [Reactive] public string SingerType { get; set; }
 
         private ObservableCollectionExtended<string> textItems;

@@ -115,7 +115,7 @@ namespace OpenUtau.App.ViewModels {
                             }
                         ).ToList();
                         var singerTypes = new string[] {
-                            "utau", "enunu", "diffsinger", "voicevox"
+                            "utau", "enunu", "diffsinger", "voicevox", "neutrino"
                         };
                         setSingerTypeMenuItems = singerTypes.Select(singerType =>
                             new MenuItemViewModel((SingerTypeUtils.SingerTypeNames.TryGetValue(singer.SingerType, out var name) ? name : "") == singerType) {
