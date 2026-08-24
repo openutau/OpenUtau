@@ -220,7 +220,7 @@
             <RowDefinition Height="4"/>
           </Grid.RowDefinitions>
           <Panel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="24">
-            <Border Classes="playback" Width="72" HorizontalAlignment="Left" Margin="4,0">
+            <Border Classes="playback" Width="92" HorizontalAlignment="Left" Margin="4,0">
               <Grid>
                 <TextBlock Width="28" HorizontalAlignment="Left"
                           Background="Transparent" PointerPressed="OnEditTimeSignature">
@@ -231,7 +231,7 @@
                     </MultiBinding>
                   </TextBlock.Text>
                 </TextBlock>
-                <TextBlock Width="42" HorizontalAlignment="Right"
+                <TextBlock Width="42" HorizontalAlignment="Center"
                             Background="Transparent" PointerPressed="OnEditBpm">
                   <TextBlock.Text>
                     <MultiBinding StringFormat="{}{0:#0.00}">
@@ -239,6 +239,19 @@
                     </MultiBinding>
                   </TextBlock.Text>
                 </TextBlock>
+                <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="18" Width="18" HorizontalAlignment="Right"
+                  IsChecked="{Binding IsMetronomeEnabled}" ToolTip.Tip="{DynamicResource playback.toggle.metronom}">
+                  <Path Classes="stroked"
+                        Data="M1.5 15.5 L3.8 3.5 Q4 2.5 5 2.5 H8 Q9 2.5 9.2 3.5 L11.5 15.5 Z
+                              M5.8 2.8 L5.8 12.8
+                              M4.9 5 H6.7 V6.5 H4.9 Z
+                              M3.6 5.5 H4.5
+                              M3.3 7.2 H4.5
+                              M3 8.9 H4.5
+                              M2.7 10.6 H4.5
+                              M2.4 12.3 H4.5
+                              M1.2 15.5 H11.8"/>
+                </ToggleButton>
               </Grid>
             </Border>
             <Border Classes="playback" Width="109" HorizontalAlignment="Center">

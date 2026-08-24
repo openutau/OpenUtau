@@ -557,6 +557,8 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.tooltip.preutter">Preutter</system:String>
   <system:String x:Key="pianoroll.tooltip.release">Release time delta</system:String>
 
+  <system:String x:Key="playback.toggle.metronom">Toggle Metronom</system:String>
+
   <system:String x:Key="prefs.advanced">Advanced</system:String>
   <system:String x:Key="prefs.advanced.beta">Beta</system:String>
   <system:String x:Key="prefs.channel">Release Channel</system:String>

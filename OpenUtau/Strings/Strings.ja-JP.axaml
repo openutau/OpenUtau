@@ -573,6 +573,8 @@ Do you want to continue by splitting at the nearest position after current playh
   <!--<system:String x:Key="pianoroll.tooltip.preutter">Preutter</system:String>-->
   <!--<system:String x:Key="pianoroll.tooltip.release">Release time delta</system:String>-->
 
+  <system:String x:Key="playback.toggle.metronom">メトロノーム</system:String>
+
   <system:String x:Key="prefs.advanced">高度な設定</system:String>
   <system:String x:Key="prefs.advanced.beta">ベータ版</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper">歌詞入力ヘルパー</system:String>
