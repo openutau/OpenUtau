@@ -5,15 +5,23 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Serilog;
+using OpenUtau.Core.Util;
 
 namespace OpenUtau.Classic {
     class PluginLoader {
         public static Plugin[] LoadAll(string basePath) {
             Directory.CreateDirectory(basePath);
             var encoding = Encoding.GetEncoding("shift_jis");
-            return Directory.EnumerateFiles(basePath, "plugin.txt", SearchOption.AllDirectories)
-                .Select(filePath => ParsePluginTxt(filePath, encoding))
-                .ToArray();
+            if (Preferences.Default.LoadDeepFolderSinger) {
+                return Directory.EnumerateFiles(basePath, "plugin.txt", SearchOption.AllDirectories)
+                    .Select(filePath => ParsePluginTxt(filePath, encoding))
+                    .ToArray();
+            } else {
+                return Directory.GetDirectories(basePath)
+                    .Where(dir => File.Exists(Path.Combine(dir, "plugin.txt")))
+                    .Select(dir => ParsePluginTxt(Path.Combine(dir, "plugin.txt"), encoding))
+                    .ToArray();
+            }
         }
 
         private static Plugin ParsePluginTxt(string filePath, Encoding encoding) {

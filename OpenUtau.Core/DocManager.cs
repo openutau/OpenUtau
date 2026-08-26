@@ -80,7 +80,11 @@ namespace OpenUtau.Core {
                 if (File.Exists(oldBuiltin)) {
                     File.Delete(oldBuiltin);
                 }
-                files.AddRange(Directory.EnumerateFiles(PathManager.Inst.PluginsPath, "*.dll", SearchOption.AllDirectories));
+                if (Preferences.Default.LoadDeepFolderSinger) {
+                    files.AddRange(Directory.EnumerateFiles(PathManager.Inst.PluginsPath, "*.dll", SearchOption.AllDirectories));
+                } else {
+                    files.AddRange(Directory.EnumerateFiles(PathManager.Inst.PluginsPath, "*.dll"));
+                }
             } catch (Exception e) {
                 Log.Error(e, "Failed to search plugins.");
             }
