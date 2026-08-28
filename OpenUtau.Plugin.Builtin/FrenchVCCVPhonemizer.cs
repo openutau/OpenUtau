@@ -253,19 +253,13 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
+        // Endings has 50 ticks gap
+        protected override bool NoGap => true;
 
-        protected override double GetTransitionBasicLengthMs(string alias = "") {
-            foreach (var c in shortConsonants) {
-                if (alias.EndsWith(c)) {
-                    return base.GetTransitionBasicLengthMs() * 0.75;
-                }
-            }
-            foreach (var c in longConsonants) {
-                if (alias.EndsWith(c)) {
-                    return base.GetTransitionBasicLengthMs() * 1.5;
-                }
-            }
-            return base.GetTransitionBasicLengthMs() * 1.25;
+        protected override double GetTransitionBasicLengthMs(string alias, int tone, PhonemeAttributes attr) {
+            double otoLength = GetTransitionBasicLengthMsByOto(alias, tone, attr);
+
+            return otoLength;
         }
 
         protected override string[] GetSymbols(Note note) {

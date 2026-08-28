@@ -35,32 +35,8 @@ namespace OpenUtau.Plugin.Builtin {
         protected override string GetDictionaryName() => "cmudict_de.txt";
         private bool isYamlFallbacks = false;
 
-        protected override IG2p LoadBaseDictionary() {
-            var g2ps = new List<IG2p>();
-
-            // Load dictionary from plugin folder.
-            string path = Path.Combine(PluginDir, YamlFileName);
-            if (!File.Exists(path)) {
-                Directory.CreateDirectory(PluginDir);
-                File.WriteAllBytes(path, YamlTemplate);
-            }
-            g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(path)).Build());
-
-            // Load dictionary from singer folder.
-            if (singer != null && singer.Found && singer.Loaded) {
-                string file = Path.Combine(singer.Location, YamlFileName);
-                if (File.Exists(file)) {
-                    try {
-                        g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(file)).Build());
-                    } catch (Exception e) {
-                        Log.Error(e, $"Failed to load {file}");
-                    }
-                }
-            }
-
-            // Load base g2p.
-            g2ps.Add(new GermanG2p());
-            return new G2pFallbacks(g2ps.ToArray());
+        protected override IG2p[] GetBaseG2ps() {
+            return new IG2p[] { new GermanG2p() };
         }
 
         protected override string[] GetSymbols(Note note) {
@@ -69,6 +45,12 @@ namespace OpenUtau.Plugin.Builtin {
                 return null;
             }
             List<string> finalProcessedPhonemes = new List<string>();
+            
+            for (int i = 0; i < original.Length; i++) {
+                if (dictionaryReplacements.TryGetValue(original[i], out string replaced)) {
+                    original[i] = replaced;
+                }
+            }
 
             string[] diphthongs = new[] { "aU", "OY", "aI" };
             foreach (string s in original) {
@@ -83,13 +65,11 @@ namespace OpenUtau.Plugin.Builtin {
 
         // prioritize yaml replacements over dictionary replacements
         private string ReplacePhoneme(string phoneme, int tone) {
-            // If the original phoneme has an OTO, use it directly.
-            if (HasOto(phoneme, tone) || HasOto(ValidateAlias(phoneme), tone)) {
-                return phoneme;
-            }
-            // Otherwise, try to apply the dictionary replacement.
             if (dictionaryReplacements.TryGetValue(phoneme, out var replaced)) {
                 return replaced;
+            }
+            if (HasOto(phoneme, tone) || HasOto(ValidateAlias(phoneme), tone)) {
+                return phoneme;
             }
             return phoneme;
         }
@@ -456,9 +436,12 @@ namespace OpenUtau.Plugin.Builtin {
 
             return alias;
         }
+        protected override bool NoGap => true;
 
-        protected override double GetTransitionBasicLengthMs(string alias = "") {
-            return base.GetTransitionBasicLengthMs();
+        protected override double GetTransitionBasicLengthMs(string alias, int tone, PhonemeAttributes attr) {
+            double otoLength = GetTransitionBasicLengthMsByOto(alias, tone, attr);
+
+            return otoLength;
         }
     }
 }

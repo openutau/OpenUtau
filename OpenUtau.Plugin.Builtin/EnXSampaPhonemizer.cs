@@ -173,38 +173,21 @@ namespace OpenUtau.Plugin.Builtin {
                 {"@u","u"},
                 {"3", "r"}
             };
-        protected override IG2p LoadBaseDictionary() {
-            var g2ps = new List<IG2p>();
-
-            // Load dictionary from plugin folder.
-            string path = Path.Combine(PluginDir, YamlFileName);
-            if (!File.Exists(path)) {
-                Directory.CreateDirectory(PluginDir);
-                File.WriteAllBytes(path, YamlTemplate);
-            }
-            g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(path)).Build());
-
-            // Load dictionary from singer folder.
-            if (singer != null && singer.Found && singer.Loaded) {
-                string file = Path.Combine(singer.Location, YamlFileName);
-                if (File.Exists(file)) {
-                    try {
-                        g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(file)).Build());
-                    } catch (Exception e) {
-                        Log.Error(e, $"Failed to load {file}");
-                    }
-                }
-            }
-            g2ps.Add(new ArpabetG2p());
-            return new G2pFallbacks(g2ps.ToArray());
+        protected override IG2p[] GetBaseG2ps() {
+            return new IG2p[] { new ArpabetG2p() };
         }
-
         protected override string[] GetSymbols(Note note) {
             string[] original = base.GetSymbols(note);
             if (original == null) {
                 return null;
             }
             List<string> finalProcessedPhonemes = new List<string>();
+
+            for (int i = 0; i < original.Length; i++) {
+                if (dictionaryReplacements.TryGetValue(original[i], out string replaced)) {
+                    original[i] = replaced;
+                }
+            }
             
             // Splits diphthongs and affricates if not present in the bank
             string[] diphthongs = new[] { "aI", "eI", "OI", "aU", "oU", "VI", "VU", "@U", "ai", "ei", "Oi", "au", "ou", "Ou", "@u", };
@@ -223,13 +206,11 @@ namespace OpenUtau.Plugin.Builtin {
         }
         // prioritize yaml replacements over dictionary replacements
         private string ReplacePhoneme(string phoneme, int tone) {
-            // If the original phoneme has an OTO, use it directly.
-            if (HasOto(phoneme, tone) || HasOto(ValidateAlias(phoneme), tone)) {
-                return phoneme;
-            }
-            // Otherwise, try to apply the dictionary replacement.
             if (dictionaryReplacements.TryGetValue(phoneme, out var replaced)) {
                 return replaced;
+            }
+            if (HasOto(phoneme, tone) || HasOto(ValidateAlias(phoneme), tone)) {
+                return phoneme;
             }
             return phoneme;
         }
@@ -307,38 +288,49 @@ namespace OpenUtau.Plugin.Builtin {
                 }
             } else if (syllable.IsVV) {
                 if (!CanMakeAliasExtension(syllable)) {
-                    var vv = $"{prevV} {v}";
-                    basePhoneme = vv;
-                    if (!HasOto(vv, syllable.vowelTone) && !HasOto(ValidateAlias(vv), syllable.vowelTone) && (vvExceptions.ContainsKey(prevV) && prevV != v || Delta5vvExceptions.ContainsKey(prevV) && prevV != v)) {
-                        // VV splits to [V C][CV] or [V][V]
-                        var delta5vc = $"{Delta5vvExceptions[prevV]}";
-                        bool CV = false;
-                        if ((!HasOto(delta5vc, syllable.vowelTone) && !HasOto(ValidateAlias(delta5vc), syllable.vowelTone))) {
-                            delta5vc = $"{prevV} {vvExceptions[prevV]}";
-                            CV = true;
+                    if (HasOto($"{prevV} {v}", syllable.vowelTone) || HasOto(ValidateAlias($"{prevV} {v}"), syllable.vowelTone)) {
+                        basePhoneme = $"{prevV} {v}";
+                    } else if (HasOto($"{prevV}{v}", syllable.vowelTone) || HasOto(ValidateAlias($"{prevV}{v}"), syllable.vowelTone)) {
+                        basePhoneme = $"{prevV}{v}";
+                    } 
+                    
+                    // Diphthong Fallbacks
+                    else if (diphthongSplits.ContainsKey(prevV) || diphthongTails.ContainsKey(prevV)) {
+                        string cv = "";
+                        if (diphthongSplits.ContainsKey(prevV)) {
+                            var splitOverride = diphthongSplits[prevV];
+                            var vc = splitOverride[0].Replace("{v}", v);
+                            cv = splitOverride[1].Replace("{v}", v);
+                            TryAddPhoneme(phonemes, syllable.tone, vc, ValidateAlias(vc));
+                        } 
+                        else { // Default YAML diphthong logic
+                            var tail = diphthongTails[prevV];
+                            var vcSpace = $"{prevV} {tail}";
+                            var vcNoSpace = $"{prevV}{tail}";
+                            cv = $"{tail}{v}";
+                            TryAddPhoneme(phonemes, syllable.tone, vcSpace, ValidateAlias(vcSpace), vcNoSpace, ValidateAlias(vcNoSpace));
                         }
-                        phonemes.Add(delta5vc);
-                        // if delta5 vc is not available, turn v to cv
-                        var cv = $"{vvExceptions[prevV]}{v}";
-                        basePhoneme = v;
-                        if (CV && (HasOto(cv, syllable.vowelTone) || HasOto(ValidateAlias(cv), syllable.vowelTone))) {
+
+                        if (HasOto(cv, syllable.vowelTone) || HasOto(ValidateAlias(cv), syllable.vowelTone)) {
                             basePhoneme = cv;
-                        }
-                    } else {
-                        // VV to V
-                        if (HasOto($"{prevV} {v}", syllable.vowelTone) || HasOto(ValidateAlias($"{prevV} {v}"), syllable.vowelTone)) {
-                            basePhoneme = $"{prevV} {v}";
-                        } else if (HasOto($"{prevV}{v}", syllable.vowelTone) || HasOto(ValidateAlias($"{prevV}{v}"), syllable.vowelTone)) {
-                            basePhoneme = $"{prevV}{v}";
+                        } else if  (!HasOto(cv, syllable.vowelTone) || !HasOto(ValidateAlias(cv), syllable.vowelTone)) {
+                            basePhoneme = $"{diphthongTails[prevV]} {v}";
                         } else if (HasOto(v, syllable.vowelTone) || HasOto(ValidateAlias(v), syllable.vowelTone)) {
                             basePhoneme = v;
+                        } else {
+                            basePhoneme = ValidateAlias($"- {v}");
+                            phonemes.Add($"{prevV} -");
+                        }
+                    } else {
+                        if (HasOto(v, syllable.vowelTone) || HasOto(ValidateAlias(v), syllable.vowelTone)) {
+                            basePhoneme = v;
+                        } else {
+                            basePhoneme = ValidateAlias($"- {v}");
+                            phonemes.Add($"{prevV} -");
                         }
                     }
-                 // EXTEND AS [V]
-                } else if (HasOto($"{v}", syllable.vowelTone) && HasOto(ValidateAlias($"{v}"), syllable.vowelTone)) {
-                    basePhoneme = v;
-                } else {
-                    // PREVIOUS ALIAS WILL EXTEND as [V V]
+                } 
+                else {
                     basePhoneme = null;
                 }
             } else if (syllable.IsStartingCVWithOneConsonant) {
@@ -447,7 +439,6 @@ namespace OpenUtau.Plugin.Builtin {
                             }
                         }
                     }
-                    FoundMatch:;
                     // try vcc
                     for (var i = lastC + 1; i >= 0; i--) {
                         var vr = $"{prevV} -";
@@ -492,6 +483,12 @@ namespace OpenUtau.Plugin.Builtin {
                 if (CurrentWordCc.Length >= 2 && !PreviousWordCc.Contains(cc1)) {
                     cc1 = $"{string.Join("", cc.Skip(i))}";
                 }
+                if (CurrentWordCc.Length >= 2) {
+                    if (liquid.Contains(cc.Last()) || semivowel.Contains(cc.Last())
+                        || liquid.Contains(ValidateAlias(cc.Last())) || semivowel.Contains(ValidateAlias(cc.Last()))) {
+                        glides(cc1);
+                    }
+                }
                 if (!HasOto(cc1, syllable.tone)) {
                     cc1 = ValidateAlias(cc1);
                 }
@@ -524,6 +521,12 @@ namespace OpenUtau.Plugin.Builtin {
                     }
                     if (!HasOto(cc2, syllable.tone)) {
                         cc2 = ValidateAlias(cc2);
+                    }
+                    if (CurrentWordCc.Length >= 2) {
+                        if (liquid.Contains(cc[i + 1]) || semivowel.Contains(cc[i + 1])
+                            || liquid.Contains(ValidateAlias(cc[i + 1])) || semivowel.Contains(ValidateAlias(cc[i + 1]))) {
+                            glides(cc1);
+                        }
                     }
                     // Use [C2C3] when current word has 2 consonants or more and [C2C3C4...] does not exist
                     if (!HasOto(cc2, syllable.tone) && CurrentWordCc.Length >= 2 && CurrentWordCc.Contains(cc2)) {
@@ -833,123 +836,23 @@ namespace OpenUtau.Plugin.Builtin {
             return alias;
         }
 
-        bool PhonemeIsPresent(string alias, string phoneme) {
-            if (string.IsNullOrEmpty(alias) || string.IsNullOrEmpty(phoneme))
-                return false;
+        // Endings has 50 ticks gap
+        protected override bool NoGap => true;
 
-            // Exact token match
-            if (alias == phoneme)
-                return true;
-
-            return alias.EndsWith(phoneme);
-        }
-
-        private bool PhonemeHasEndingSuffix(string alias, string phoneme) {
-            var escapedPhoneme = Regex.Escape(phoneme);
-            if (Regex.IsMatch(alias, $@"\b{escapedPhoneme}\b\s*-") ||
-                Regex.IsMatch(alias, $@"\b{escapedPhoneme}\b-")) {
-                return true;
-            }
-            if (Regex.IsMatch(alias, $@"\b{escapedPhoneme}\b R")) {
-                return true;
-            }
-            return false;
-        }
-
-        protected override double GetTransitionBasicLengthMs(string alias = "") {
-            //I wish these were automated instead :')
-            double transitionMultiplier = 1.0; // Default multiplier
-
-            var fricative_def = 2.3;
-            var aspirate_def = 1.3;
-            var semivowel_def = 1.2;
-            var liquid_def = 1.5;
-            var nasal_def = 1.5;
-            var stop_def = 1.8;
-            var tap_def = 0.5;
-            var affricate_def = 1.5;
-
-            var allConsonants = fricative.Concat(aspirate)
-                        .Concat(semivowel)
-                        .Concat(liquid)
-                        .Concat(nasal)
-                        .Concat(stop)
-                        .Concat(tap)
-                        .Concat(affricate)
-                        .Distinct(); // Ensure no duplicates
-
-            foreach (var c in allConsonants) {
-                if (PhonemeHasEndingSuffix(alias, c)) {
-                    return base.GetTransitionBasicLengthMs() * 0.5;
-                }
-            }
-
-            foreach (var v in vowels) {
-                if (alias.EndsWith("-")) {
-                    return base.GetTransitionBasicLengthMs() * 0.5;
-                }
-            }
-
-            // consonant timings
+        protected override double GetTransitionBasicLengthMs(string alias, int tone, PhonemeAttributes attr) {
+            double otoLength = GetTransitionBasicLengthMsByOto(alias, tone, attr);
 
             var sortedOverrides = PhonemeOverrides.OrderByDescending(kv => kv.Key.Length);
             foreach (var kvp in sortedOverrides) {
-                var overridePhoneme = kvp.Key;
-                var overrideValue = kvp.Value;
-                if (PhonemeIsPresent(alias, overridePhoneme)) {
-                    return base.GetTransitionBasicLengthMs() * overrideValue;
+                var symbol = kvp.Key;
+                var value = kvp.Value;
+
+                if (Regex.IsMatch(alias, $@"(?<![a-zA-Z]){Regex.Escape(symbol)}(?![a-zA-Z])")) {
+                    return GetTransitionBasicLengthMsByConstant() * value;
                 }
             }
 
-            foreach (var c in fricative) {
-                if (PhonemeIsPresent(alias, c)) {
-                    return base.GetTransitionBasicLengthMs() * fricative_def;
-                }
-            }
-
-            foreach (var c in aspirate) {
-                if (PhonemeIsPresent(alias, c)) {
-                    return base.GetTransitionBasicLengthMs() * aspirate_def;
-                }
-            }
-
-            foreach (var c in semivowel) {
-                if (PhonemeIsPresent(alias, c)) {
-                    return base.GetTransitionBasicLengthMs() * semivowel_def;
-                }
-            }
-
-            foreach (var c in liquid) {
-                if (PhonemeIsPresent(alias, c)) {
-                    return base.GetTransitionBasicLengthMs() * liquid_def;
-                }
-            }
-            
-            foreach (var c in nasal) {
-                if (PhonemeIsPresent(alias, c)) {
-                    return base.GetTransitionBasicLengthMs() * nasal_def;
-                }
-            }
-
-            foreach (var c in stop) {
-                if (PhonemeIsPresent(alias, c)) {
-                    return base.GetTransitionBasicLengthMs() * stop_def;
-                }
-            }
-           
-            foreach (var c in tap) {
-                if (PhonemeIsPresent(alias, c)) {
-                    return base.GetTransitionBasicLengthMs() * tap_def;
-                }
-            }
-
-            foreach (var c in affricate) {
-                if (PhonemeIsPresent(alias, c)) {
-                    return base.GetTransitionBasicLengthMs() * affricate_def;
-                }
-            }
-
-            return base.GetTransitionBasicLengthMs() * transitionMultiplier;
+            return otoLength;
         }
     }
 }

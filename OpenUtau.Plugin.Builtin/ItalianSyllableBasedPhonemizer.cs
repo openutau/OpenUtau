@@ -226,5 +226,14 @@ namespace OpenUtau.Plugin.Builtin {
             }
             return alias;
         }
+
+        // Endings has 50 ticks gap
+        protected override bool NoGap => true;
+
+        protected override double GetTransitionBasicLengthMs(string alias, int tone, PhonemeAttributes attr) {
+            double otoLength = GetTransitionBasicLengthMsByOto(alias, tone, attr);
+
+            return otoLength;
+        }
     }
 }

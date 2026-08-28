@@ -27,6 +27,10 @@ namespace OpenUtau.Core.DiffSinger
         IG2p g2p;
         Dictionary<string, int> phonemeTokens;
         DiffSingerSpeakerEmbedManager speakerEmbedManager;
+        private static int globalDsGeneration = 0;
+        private int localDsGeneration = 0;
+        private static YamlWatcher dsWatcher;
+        private static string currentlyWatchedDsDir;
 
         string defaultPause = "SP";
         protected virtual string GetDictionaryName()=>"dsdict.yaml";
@@ -35,9 +39,11 @@ namespace OpenUtau.Core.DiffSinger
         private bool _singerLoaded;
 
         public override void SetSinger(USinger singer) {
-            if (_singerLoaded && singer == this.singer) return;
+            if (_singerLoaded && singer == this.singer && localDsGeneration == globalDsGeneration) return;
             try {
+                localDsGeneration = globalDsGeneration;
                 _singerLoaded = _executeSetSinger(singer);
+                SetupYamlWatcher(rootPath);
             } catch {
                 _singerLoaded = false;
                 throw;
@@ -101,6 +107,32 @@ namespace OpenUtau.Core.DiffSinger
                 throw new Exception($"Failed to load {durationModelPath}", e);
             }
             return true;
+        }
+
+        private void SetupYamlWatcher(string directory) {
+            if (string.IsNullOrEmpty(directory) || currentlyWatchedDsDir == directory) {
+                return;
+            }
+
+            if (dsWatcher != null) {
+                dsWatcher.Dispose();
+                dsWatcher = null;
+            }
+
+            currentlyWatchedDsDir = directory;
+
+            if (Directory.Exists(directory)) {
+                dsWatcher = new YamlWatcher(directory, () => {
+                    Log.Information($"[DiffSingerBasePhonemizer] Detected YAML change in {directory}. Reloading globally...");
+                    System.Threading.Thread.Sleep(200);
+                    globalDsGeneration++;
+
+                    // Signal OpenUtau to re-run the timeline runner
+                    if (this.singer != null) {
+                        OpenUtau.Core.SingerManager.Inst.ScheduleReload(this.singer);
+                    }
+                });
+            }
         }
 
         protected virtual IG2p LoadG2p(string rootPath, bool useLangId = false) {
