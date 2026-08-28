@@ -16,7 +16,15 @@ namespace OpenUtau.Core.Util {
         static Preferences() {
             Load();
         }
+        public class ShortcutBinding {
+            public string ActionId { get; set; }
+            public string[] Shortcuts { get; set; }
 
+            public ShortcutBinding(string actionId, string[] shortcuts) {
+                ActionId = actionId;
+                Shortcuts = shortcuts;
+            }
+        }
         public static void Save() {
             try {
                 File.WriteAllText(PathManager.Inst.PrefsFilePath,
@@ -217,6 +225,8 @@ namespace OpenUtau.Core.Util {
             public bool LockUnselectedNotesPitch = true;
             public bool LockUnselectedNotesVibrato = true;
             public bool LockUnselectedNotesExpressions = true;
+            public ShortcutBinding[] Shortcuts = [];
+            public ShortcutBinding[] PluginShortcuts = [];
             public bool LyricLivePreview = true;
             public bool LyricApplySelectionOnly = true;
             public bool VoicebankPublishUseIgnore = true;

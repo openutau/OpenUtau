@@ -21,16 +21,16 @@
                 Opened="OnMainMenuOpened" Closed="OnMainMenuClosed" PointerExited="OnMainMenuPointerLeave"
                 ZIndex="1">
           <MenuItem Header="{DynamicResource menu.file}" IsEnabled="{Binding Page}">
-            <MenuItem Header="{DynamicResource menu.file.new}" InputGesture="Ctrl+N" Click="OnMenuNew"/>
+            <MenuItem Header="{DynamicResource menu.file.new}" InputGesture="{Binding Hotkeys[NewProject]}" Click="OnMenuNew"/>
             <MenuItem Header="{DynamicResource menu.file.newfromtemplate}" ItemsSource="{Binding OpenTemplatesMenuItems}" Classes="MenuItemWithSubMenu"/>
             <MenuItem Header="{DynamicResource menu.file.savetemplate}" Click="OnMenuSaveTemplate"/>
             <MenuItem Header="-" Height="1"/>
-            <MenuItem Header="{DynamicResource menu.file.open}" InputGesture="Ctrl+O" Click="OnMenuOpen"/>
+            <MenuItem Header="{DynamicResource menu.file.open}" InputGesture="{Binding Hotkeys[OpenProject]}" Click="OnMenuOpen"/>
             <MenuItem Header="{DynamicResource menu.file.openrecent}" ItemsSource="{Binding OpenRecentMenuItems}" Classes="MenuItemWithSubMenu"/>
             <MenuItem Header="{DynamicResource menu.file.openprojectlocation}" Click="OnMenuOpenProjectLocation"/>
             <MenuItem Header="-" Height="1"/>
-            <MenuItem Header="{DynamicResource menu.file.save}" InputGesture="Ctrl+S" Click="OnMenuSave"/>
-            <MenuItem Header="{DynamicResource menu.file.saveas}"  InputGesture="Ctrl+Shift+S" Click="OnMenuSaveAs"/>
+            <MenuItem Header="{DynamicResource menu.file.save}" InputGesture="{Binding Hotkeys[SaveProject]}" Click="OnMenuSave"/>
+            <MenuItem Header="{DynamicResource menu.file.saveas}"  InputGesture="{Binding Hotkeys[SaveProjectAs]}" Click="OnMenuSaveAs"/>
             <MenuItem Header="-" Height="1"/>
             <MenuItem Header="{DynamicResource menu.file.importtracks}" Click="OnMenuImportTracks"/>
             <MenuItem Header="{DynamicResource menu.file.importaudio}" Click="OnMenuImportAudio"/>
@@ -49,8 +49,8 @@
             <MenuItem Header="{DynamicResource menu.file.openexportlocation}" Click="OnMenuOpenProjectLocation"/>
           </MenuItem>
           <MenuItem Header="{DynamicResource menu.edit}" IsEnabled="{Binding Page}">
-            <MenuItem Header="{Binding UndoText}" InputGesture="Ctrl+Z" Command="{Binding Undo}" IsEnabled="{Binding CanUndo}"/>
-            <MenuItem Header="{Binding RedoText}" InputGesture="Ctrl+Y" Command="{Binding Redo}" IsEnabled="{Binding CanRedo}"/>
+            <MenuItem Header="{Binding UndoText}" InputGesture="{Binding Hotkeys[menu.edit.undo]}" Command="{Binding Undo}" IsEnabled="{Binding CanUndo}"/>
+            <MenuItem Header="{Binding RedoText}" InputGesture="{Binding Hotkeys[menu.edit.redo]}" Command="{Binding Redo}" IsEnabled="{Binding CanRedo}"/>
           </MenuItem>
           <MenuItem Header="{DynamicResource menu.project}" IsEnabled="{Binding Page}">
             <MenuItem Header="{DynamicResource menu.project.expressions}" Click="OnMenuExpressionss"/>
@@ -66,7 +66,7 @@
               <MenuItem Header="{DynamicResource menu.tools.layout.hsplit12}" Click="OnMenuLayoutHSplit12"/>
               <MenuItem Header="{DynamicResource menu.tools.layout.hsplit13}" Click="OnMenuLayoutHSplit13"/>
             </MenuItem>
-            <MenuItem Header="{DynamicResource menu.tools.fullscreen}" InputGesture="F11" Click="OnMenuFullScreen"/>
+            <MenuItem Header="{DynamicResource menu.tools.fullscreen}" InputGesture="{Binding Hotkeys[menu.tools.fullscreen]}" Click="OnMenuFullScreen"/>
             <MenuItem Header="{Binding ClearCacheHeader}" Click="OnMenuClearCache"/>
             <MenuItem Header="{DynamicResource menu.tools.debugwindow}" Click="OnMenuDebugWindow"/>
             <MenuItem Header="{DynamicResource phoneticassistant.caption}" Click="OnMenuPhoneticAssistant"/>

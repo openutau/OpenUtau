@@ -800,86 +800,62 @@ namespace OpenUtau.App.Views {
                 args.Handled = false;
                 return;
             }
-
+            args.Handled = OnKeyExtendedHandler(args);
+        }
+        bool OnKeyExtendedHandler(KeyEventArgs args) {
             var tracksVm = viewModel.TracksViewModel;
 
-            if (args.KeyModifiers == KeyModifiers.None) {
-                args.Handled = true;
-                switch (args.Key) {
-                    case Key.Delete: viewModel.TracksViewModel.DeleteSelectedParts(); break;
-                    case Key.Space: PlayOrPause(); break;
-                    case Key.Home: viewModel.PlaybackViewModel.MovePlayPos(0); break;
-                    case Key.End:
-                        if (viewModel.TracksViewModel.Parts.Count > 0) {
-                            int endTick = viewModel.TracksViewModel.Parts.Max(part => part.End);
-                            viewModel.PlaybackViewModel.MovePlayPos(endTick);
-                        }
-                        break;
-                    case Key.F11:
-                        OnMenuFullScreen(this, new RoutedEventArgs());
-                        break;
-                    default:
-                        args.Handled = false;
-                        break;
-                }
-            } else if (args.KeyModifiers == KeyModifiers.Alt) {
-                args.Handled = true;
-                switch (args.Key) {
-                    case Key.F4:
-                        (Application.Current?.ApplicationLifetime as IControlledApplicationLifetime)?.Shutdown();
-                        break;
-                    default:
-                        args.Handled = false;
-                        break;
-                }
-            } else if (args.KeyModifiers == cmdKey) {
-                args.Handled = true;
-                switch (args.Key) {
-                    case Key.A: viewModel.TracksViewModel.SelectAllParts(); break;
-                    case Key.N: NewProject(); break;
-                    case Key.O: Open(); break;
-                    case Key.S: _ = Save(); break;
-                    case Key.Z: viewModel.Undo(); break;
-                    case Key.Y: viewModel.Redo(); break;
-                    case Key.C: tracksVm.CopyParts(); break;
-                    case Key.X: tracksVm.CutParts(); break;
-                    case Key.V: tracksVm.PasteParts(); break;
-                    default:
-                        args.Handled = false;
-                        break;
-                }
-            } else if (args.KeyModifiers == KeyModifiers.Shift) {
-                args.Handled = true;
-                switch (args.Key) {
-                    // solo
-                    case Key.S:
-                        if (viewModel.TracksViewModel.SelectedParts.Count > 0) {
-                            var part = viewModel.TracksViewModel.SelectedParts.First();
-                            var track = DocManager.Inst.Project.tracks[part.trackNo];
-                            MessageBus.Current.SendMessage(new TracksSoloEvent(part.trackNo, !track.Solo, false));
-                        }
-                        break;
-                    // mute
-                    case Key.M:
-                        if (viewModel.TracksViewModel.SelectedParts.Count > 0) {
-                            var part = viewModel.TracksViewModel.SelectedParts.First();
-                            MessageBus.Current.SendMessage(new TracksMuteEvent(part.trackNo, false));
-                        }
-                        break;
-                    default:
-                        args.Handled = false;
-                        break;
-                }
-            } else if (args.KeyModifiers == (cmdKey | KeyModifiers.Shift)) {
-                args.Handled = true;
-                switch (args.Key) {
-                    case Key.Z: viewModel.Redo(); break;
-                    case Key.S: _ = SaveAs(); break;
-                    default:
-                        args.Handled = false;
-                        break;
-                }
+            string? action = KeyTranslator.GetActionIdFromKey(args.Key, args.KeyModifiers);
+            if (action == null) return false;
+
+            switch (action) {
+                // Playback & Selection
+                case "PlayOrPause": PlayOrPause(); return true;
+                case "SelectAll": viewModel.TracksViewModel.SelectAllParts(); return true;
+
+                // UI & Windows
+                case "CloseWindow":
+                    (Application.Current?.ApplicationLifetime as IControlledApplicationLifetime)?.Shutdown();
+                    return true;
+                case "menu.tools.fullscreen": OnMenuFullScreen(this, new RoutedEventArgs()); return true;
+
+                // Playhead & Timeline Navigation
+                case "PlayheadHome": viewModel.PlaybackViewModel.MovePlayPos(0); return true;
+                case "PlayheadEnd":
+                    if (viewModel.TracksViewModel.Parts.Count > 0) {
+                        int endTick = viewModel.TracksViewModel.Parts.Max(part => part.End);
+                        viewModel.PlaybackViewModel.MovePlayPos(endTick);
+                    }
+                    return true;
+
+                // Track & Project Operations
+                case "NewProject": NewProject(); return true;
+                case "OpenProject": Open(); return true;
+                case "SaveProject": _ = Save(); return true;
+                case "SaveProjectAs": _ = SaveAs(); return true;
+                case "SoloTrack":
+                    if (viewModel.TracksViewModel.SelectedParts.Count > 0) {
+                        var part = viewModel.TracksViewModel.SelectedParts.First();
+                        var track = DocManager.Inst.Project.tracks[part.trackNo];
+                        MessageBus.Current.SendMessage(new TracksSoloEvent(part.trackNo, !track.Solo, false));
+                    }
+                    return true;
+                case "MuteTrack":
+                    if (viewModel.TracksViewModel.SelectedParts.Count > 0) {
+                        var part = viewModel.TracksViewModel.SelectedParts.First();
+                        MessageBus.Current.SendMessage(new TracksMuteEvent(part.trackNo, false));
+                    }
+                    return true;
+
+                // Edit Operations
+                case "menu.edit.undo": viewModel.Undo(); return true;
+                case "menu.edit.redo": viewModel.Redo(); return true;
+                case "menu.edit.copy": tracksVm.CopyParts(); return true;
+                case "menu.edit.cut": tracksVm.CutParts(); return true;
+                case "menu.edit.paste": tracksVm.PasteParts(); return true;
+                case "menu.edit.delete": viewModel.TracksViewModel.DeleteSelectedParts(); return true;
             }
+            return false;
         }
 
         void OnPointerPressed(object? sender, PointerPressedEventArgs args) {

@@ -47,6 +47,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public NotesViewModel NotesViewModel { get; set; }
         [Reactive] public PlaybackViewModel? PlaybackViewModel { get; set; }
         [Reactive] public CurveViewModel CurveViewModel { get; set; }
+        [Reactive] public Dictionary<string, KeyGesture> Hotkeys { get; set; } = new Dictionary<string, KeyGesture>();
 
         public double Width => Preferences.Default.PianorollWindowSize.Width;
         public double Height => Preferences.Default.PianorollWindowSize.Height;
@@ -78,9 +79,9 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public EditTool EditTool { get; set; } = Preferences.Default.EditTool;
-        [Reactive] public int ToolIndex { get; set; } = Preferences.Default.EditTool.BaseTool;
-        [Reactive] public int PenToolIndex { get; set; } = Preferences.Default.EditTool.PenToolVariation;
-        [Reactive] public bool PitchOverwrite { get; set; } = Preferences.Default.EditTool.OverwritePitch;
+        [Reactive] public int ToolIndex { get; set; }
+        [Reactive] public int PenToolIndex { get; set; }
+        [Reactive] public bool PitchOverwrite { get; set; }
 
         public ObservableCollectionExtended<MenuItemViewModel> LegacyPlugins { get; private set; }
             = new ObservableCollectionExtended<MenuItemViewModel>();
@@ -117,16 +118,70 @@ namespace OpenUtau.App.ViewModels {
 
         private ReactiveCommand<Classic.Plugin, Unit> legacyPluginCommand;
 
+        public void ReloadShortcuts() {
+            var newHotkeys = new Dictionary<string, KeyGesture>();
+            foreach (var sc in KeyTranslator.Shortcuts) {
+                newHotkeys.TryAdd(sc.ActionId, sc.Gesture);
+            }
+            Hotkeys = newHotkeys;
+        }
+
+        private int IndexToBaseTool(int index) {
+            return index switch {
+                0 => 0, // UI Mouse -> Backend 0 (Mouse)
+                1 => 1, // UI Draw -> Backend 1 (Draw)
+                2 => 2, // UI Eraser -> Backend 2 (Eraser)
+                3 => 4, // UI Draw Pitch -> Backend 4 (Draw Pitch)
+                4 => 5, // UI Line -> Backend 5 (Line)
+                5 => 6, // UI S-Curve -> Backend 6 (S-Curve)
+                6 => 7, // UI Sine Wave -> Backend 7 (Sine Wave)
+                7 => 8, // UI Smoothen -> Backend 8 (Smoothen)
+                8 => 3, // UI Knife -> Backend 3 (Knife)
+                _ => 0
+            };
+        }
+
+        private int BaseToolToIndex(int baseTool) {
+            return baseTool switch {
+                0 => 0, // Backend 0 (Mouse) -> UI Mouse
+                1 => 1, // Backend 1 (Draw) -> UI Draw
+                2 => 2, // Backend 2 (Eraser) -> UI Eraser
+                3 => 8, // Backend 3 (Knife) -> UI Knife
+                4 => 3, // Backend 4 (Draw Pitch) -> UI Draw Pitch
+                5 => 4, // Backend 5 (Line) -> UI Line
+                6 => 5, // Backend 6 (S-Curve) -> UI S-Curve
+                7 => 6, // Backend 7 (Sine Wave) -> UI Sine Wave
+                8 => 7, // Backend 8 (Smoothen) -> UI Smoothen
+                _ => 0
+            };
+        }
+
         public PianoRollViewModel() {
+            ReloadShortcuts();
             NotesViewModel = new NotesViewModel();
             CurveViewModel = new CurveViewModel();
 
+            // Safely initialize from preferences
+            ToolIndex = BaseToolToIndex(EditTool.BaseTool);
+            PenToolIndex = EditTool.PenToolVariation;
+            PitchOverwrite = EditTool.OverwritePitch;
+
             this.WhenAnyValue(vm => vm.ToolIndex)
-                .Subscribe(index => EditTool.BaseTool = index);
+                .Subscribe(index => {
+                    EditTool.BaseTool = IndexToBaseTool(index);
+                    Preferences.Default.EditTool.BaseTool = EditTool.BaseTool;
+                    Preferences.Save();
+                });
+                
             this.WhenAnyValue(vm => vm.PenToolIndex)
                 .Subscribe(index => EditTool.PenToolVariation = index);
+                
             this.WhenAnyValue(vm => vm.PitchOverwrite)
-                .Subscribe(val => { EditTool.OverwritePitch = val; Preferences.Default.EditTool.OverwritePitch = val; Preferences.Save(); });
+                .Subscribe(val => { 
+                    EditTool.OverwritePitch = val; 
+                    Preferences.Default.EditTool.OverwritePitch = val; 
+                    Preferences.Save(); 
+                });
 
             NoteDeleteCommand = ReactiveCommand.Create<NoteHitInfo>(info => {
                 NotesViewModel.DeleteSelectedNotes();
@@ -214,6 +269,8 @@ namespace OpenUtau.App.ViewModels {
             });
             LoadLegacyPlugins();
             DocManager.Inst.AddSubscriber(this);
+            MessageBus.Current.Listen<ShortcutsRefreshEvent>()
+                .Subscribe(_ => ReloadShortcuts());
         }
 
         private void SetUndoState() {
@@ -235,6 +292,7 @@ namespace OpenUtau.App.ViewModels {
             LegacyPlugins.Clear();
             LegacyPlugins.AddRange(DocManager.Inst.Plugins.Select(plugin => new MenuItemViewModel() {
                 Header = plugin.Name,
+                InputGesture = KeyTranslator.GetGestureForMenu(plugin.Name),
                 Command = legacyPluginCommand,
                 CommandParameter = plugin,
             }));

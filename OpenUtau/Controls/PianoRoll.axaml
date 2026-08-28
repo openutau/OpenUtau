@@ -117,7 +117,6 @@
               Fill="{DynamicResource NeutralAccentBrushSemi}"
               Data="M -6.5 0 L 6.5 0 L 6.5 3 L 0 9 L -6.5 3 Z"/>
       </Canvas>
-      <!-- Notes backgrounds -->
       <c:TrackBackground Grid.Row="3" Grid.Column="1" IsHitTestVisible="False"
                          Foreground="{DynamicResource TrackBackgroundAltBrush}"
                          DataContext="{Binding NotesViewModel}"
@@ -134,8 +133,6 @@
                         SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"
                         SnapTicks="{Binding NotesViewModel.SnapTicks}"
                         ShowBar="True"/>
-      <!-- Notes backgrounds end -->
-      <!-- Expression backgrounds (to rendered below portrait) -->
       <c:TrackBackground Grid.Row="5" Grid.Column="1" IsHitTestVisible="False"
                          IsVisible="{Binding NotesViewModel.ShowExpressions}"
                          Foreground="{DynamicResource TrackBackgroundAltBrush}"
@@ -150,7 +147,6 @@
                         TickOffset="{Binding NotesViewModel.TickOffset}"
                         SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"
                         ShowBar="False"/>
-      <!-- Expression backgrounds end -->
       <Canvas Name="PortraitCanvas" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" IsHitTestVisible="False">
         <Image Name="PortraitImage" Source="{Binding NotesViewModel.Portrait}" OpacityMask="{Binding NotesViewModel.PortraitMask}" Stretch="None"/>
       </Canvas>
@@ -248,17 +244,17 @@
             </Menu.Styles>
 
             <MenuItem Header="{DynamicResource menu.edit}">
-              <MenuItem Header="{Binding UndoText}" InputGesture="Ctrl+Z" Command="{Binding Undo}" IsEnabled="{Binding CanUndo}"/>
-              <MenuItem Header="{Binding RedoText}" InputGesture="Ctrl+Y" Command="{Binding Redo}" IsEnabled="{Binding CanRedo}"/>
+              <MenuItem Header="{Binding UndoText}" InputGesture="{Binding Hotkeys[menu.edit.undo]}" Command="{Binding Undo}" IsEnabled="{Binding CanUndo}"/>
+              <MenuItem Header="{Binding RedoText}" InputGesture="{Binding Hotkeys[menu.edit.redo]}" Command="{Binding Redo}" IsEnabled="{Binding CanRedo}"/>
               <MenuItem Header="-" Height="1"/>
-              <MenuItem Header="{DynamicResource menu.edit.cut}" InputGesture="Ctrl+X" Command="{Binding Cut}"/>
-              <MenuItem Header="{DynamicResource menu.edit.copy}" InputGesture="Ctrl+C" Command="{Binding Copy}"/>
-              <MenuItem Header="{DynamicResource menu.edit.paste}" InputGesture="Ctrl+V" Command="{Binding Paste}"/>
-              <MenuItem Header="{DynamicResource menu.edit.pasteplainnotes}" InputGesture="Ctrl+Shift+V" Command="{Binding PastePlain}"/>
-              <MenuItem Header="{DynamicResource menu.edit.delete}" InputGesture="Delete" Command="{Binding Delete}"/>
+              <MenuItem Header="{DynamicResource menu.edit.cut}" InputGesture="{Binding Hotkeys[menu.edit.cut]}" Command="{Binding Cut}"/>
+              <MenuItem Header="{DynamicResource menu.edit.copy}" InputGesture="{Binding Hotkeys[menu.edit.copy]}" Command="{Binding Copy}"/>
+              <MenuItem Header="{DynamicResource menu.edit.paste}" InputGesture="{Binding Hotkeys[menu.edit.paste]}" Command="{Binding Paste}"/>
+              <MenuItem Header="{DynamicResource menu.edit.pasteplainnotes}" InputGesture="{Binding Hotkeys[PastePlain]}" Command="{Binding PastePlain}"/>
+              <MenuItem Header="{DynamicResource menu.edit.delete}" InputGesture="{Binding Hotkeys[menu.edit.delete]}" Command="{Binding Delete}"/>
               <MenuItem Header="-" Height="1"/>
-              <MenuItem Header="{DynamicResource pianoroll.menu.searchnote}" InputGesture="Ctrl+F" Click="OnMenuSearchNote"/>
-              <MenuItem Header="{DynamicResource menu.edit.selectall}" InputGesture="Ctrl+A" Command="{Binding SelectAll}"/>
+              <MenuItem Header="{DynamicResource pianoroll.menu.searchnote}" InputGesture="{Binding Hotkeys[SearchNote]}" Click="OnMenuSearchNote"/>
+              <MenuItem Header="{DynamicResource menu.edit.selectall}" InputGesture="{Binding Hotkeys[SelectAll]}" Command="{Binding SelectAll}"/>
               <MenuItem Header="-" Height="1"/>
               <MenuItem Header="{DynamicResource pianoroll.menu.part.singer}" Click="OnMenuSingers"/>
               <MenuItem Header="{DynamicResource menu.edit.lockunselectednotes}">
@@ -301,7 +297,7 @@
                   <CheckBox IsChecked="{Binding UseTrackColor}" />
                 </MenuItem.Icon>
               </MenuItem>
-              <MenuItem Header="{DynamicResource menu.tools.fullscreen}" InputGesture="F11" Click="OnMenuFullScreen"/>
+              <MenuItem Header="{DynamicResource menu.tools.fullscreen}" InputGesture="{Binding Hotkeys[menu.tools.fullscreen]}" Click="OnMenuFullScreen"/>
               <MenuItem Header="{DynamicResource prefs.appearance.degree}">
                 <MenuItem Header="{DynamicResource prefs.appearance.degree.off}" Click="OnMenuDegreeStyle" Tag="0">
                   <MenuItem.Icon>
@@ -359,7 +355,7 @@
                     <CheckBox IsChecked="{Binding PianoRollDetached}" />
                   </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{DynamicResource pianoroll.menu.view.pianoroll.hide}" Click="OnMenuHidePianoRoll"/>
+                <MenuItem Header="{DynamicResource pianoroll.menu.view.pianoroll.hide}" InputGesture="{Binding Hotkeys[CloseWindow]}" Click="OnMenuHidePianoRoll"/>
               </MenuItem>
             </MenuItem>
 
@@ -368,17 +364,22 @@
               <MenuItem Header="{DynamicResource pianoroll.menu.lyrics}" ItemsSource="{Binding LyricBatchEdits}" Classes="MenuItemWithSubMenu"/>
               <MenuItem Header="{DynamicResource pianoroll.menu.reset}" ItemsSource="{Binding ResetBatchEdits}" Classes="MenuItemWithSubMenu"/>
               <MenuItem Header="{DynamicResource pianoroll.menu.external}" ItemsSource="{Binding ExternalBatchEdits}" Classes="MenuItemWithSubMenu"/>
-              <MenuItem Header="{DynamicResource pianoroll.menu.part.legacypluginexp}" ItemsSource="{Binding LegacyPlugins}" Name="PluginMenu" Classes="MenuItemWithSubMenu"/>
+              <MenuItem Header="{DynamicResource pianoroll.menu.part.legacypluginexp}" ItemsSource="{Binding LegacyPlugins}" Name="PluginMenu" InputGesture="{Binding Hotkeys[OpenPluginMenu]}" Classes="MenuItemWithSubMenu"/>
             </MenuItem>
-            <MenuItem Header="{DynamicResource pianoroll.menu.lyrics.edit}" Click="OnMenuEditLyrics"/>
+            <MenuItem Header="{DynamicResource pianoroll.menu.lyrics.edit}" InputGesture="{Binding Hotkeys[EditLyrics]}" Click="OnMenuEditLyrics"/>
             <MenuItem Header="{DynamicResource pianoroll.menu.notedefaults}" Click="OnMenuNoteDefaults"/>
           </Menu>
         </Border>
 
         <Border Grid.Column="2">
           <StackPanel Orientation="Horizontal">
-            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowTips}"
-                          ToolTip.Tip="{DynamicResource pianoroll.toggle.tips}">
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowTips}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.toggle.tips}"/>
+                  <TextBlock Text="{Binding Hotkeys[ToggleTips], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Grid Width="18" Height="18">
                 <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="?" FontWeight="Bold"
                            Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
@@ -392,31 +393,121 @@
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
                 <ListBox.Items>
-                  <ListBoxItem Classes="toolbar cursorTool" ToolTip.Tip="{DynamicResource pianoroll.tool.selectionv2}"/>
-                  <ListBoxItem Classes="toolbar hasSubTool" ToolTip.Tip="{DynamicResource pianoroll.tool.penv2}"
-                               Name="penTool" PointerReleased="OnToolButtonPointerReleased">
+                  <ListBoxItem Classes="toolbar cursorTool">
+                    <ToolTip.Tip>
+                      <StackPanel>
+                        <TextBlock Text="{DynamicResource pianoroll.tool.selectionv2}"/>
+                        <TextBlock Text="{Binding Hotkeys[ToolSelect1], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                      </StackPanel>
+                    </ToolTip.Tip>
+                  </ListBoxItem>
+
+                  <ListBoxItem Classes="toolbar hasSubTool" Name="penTool" PointerReleased="OnToolButtonPointerReleased">
+                    <ToolTip.Tip>
+                      <StackPanel>
+                        <TextBlock Text="{DynamicResource pianoroll.tool.penv2}"/>
+                        <TextBlock Text="{Binding Hotkeys[ToolSelect2Main], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                      </StackPanel>
+                    </ToolTip.Tip>
                       <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="Bottom" ShowMode="Transient">
                             <Border BorderThickness="0">
                                 <ListBox SelectedIndex="{Binding PenToolIndex}" Background="Transparent" PointerReleased="PenToolListBox_PointerReleased">
-                                    <ListBoxItem Classes="toolbar penTool" ToolTip.Tip="{DynamicResource pianoroll.tool.penv2}"/>
-                                    <ListBoxItem Classes="toolbar penPlusTool" ToolTip.Tip="{DynamicResource pianoroll.tool.penplus}"/>
+                                    <ListBoxItem Classes="toolbar penTool">
+                                      <ToolTip.Tip>
+                                        <StackPanel>
+                                          <TextBlock Text="{DynamicResource pianoroll.tool.penv2}"/>
+                                          <TextBlock Text="{Binding Hotkeys[ToolSelect2Main], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                                        </StackPanel>
+                                      </ToolTip.Tip>
+                                    </ListBoxItem>
+                                    <ListBoxItem Classes="toolbar penPlusTool">
+                                      <ToolTip.Tip>
+                                        <StackPanel>
+                                          <TextBlock Text="{DynamicResource pianoroll.tool.penplus}"/>
+                                          <TextBlock Text="{Binding Hotkeys[ToolSelect2Alt], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                                        </StackPanel>
+                                      </ToolTip.Tip>
+                                    </ListBoxItem>
                                 </ListBox>
                             </Border>
                         </Flyout>
                     </FlyoutBase.AttachedFlyout>
                   </ListBoxItem>
-                  <ListBoxItem Classes="toolbar eraserTool" ToolTip.Tip="{DynamicResource pianoroll.tool.eraser}"/>
-                  <ListBoxItem Classes="toolbar knifeTool" ToolTip.Tip="{DynamicResource pianoroll.tool.knife}"/>
-                  <ListBoxItem Classes="toolbar drawPitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawpitch}"/>
-                  <ListBoxItem Classes="toolbar pitchLineTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchline}"/>
-                  <ListBoxItem Classes="toolbar pitchSCurveTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchscurve}"/>
-                  <ListBoxItem Classes="toolbar pitchSineWaveTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchesinewave}"/>
-                  <ListBoxItem Classes="toolbar pitchSmoothenTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchsmoothen}"/>
+
+                  <ListBoxItem Classes="toolbar eraserTool">
+                    <ToolTip.Tip>
+                      <StackPanel>
+                        <TextBlock Text="{DynamicResource pianoroll.tool.eraser}"/>
+                        <TextBlock Text="{Binding Hotkeys[ToolSelect3], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                      </StackPanel>
+                    </ToolTip.Tip>
+                  </ListBoxItem>
+                  
+                  <ListBoxItem Classes="toolbar drawPitchTool">
+                    <ToolTip.Tip>
+                      <StackPanel>
+                        <TextBlock Text="{DynamicResource pianoroll.tool.drawpitch}"/>
+                        <TextBlock Text="{Binding Hotkeys[ToolSelect4Main], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                      </StackPanel>
+                    </ToolTip.Tip>
+                  </ListBoxItem>
+
+                  <ListBoxItem Classes="toolbar pitchLineTool">
+                    <ToolTip.Tip>
+                      <StackPanel>
+                        <TextBlock Text="{DynamicResource pianoroll.tool.pitchline}"/>
+                        <TextBlock Text="{Binding Hotkeys[ToolSelect4Line], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                      </StackPanel>
+                    </ToolTip.Tip>
+                  </ListBoxItem>
+
+                  <ListBoxItem Classes="toolbar pitchSCurveTool">
+                    <ToolTip.Tip>
+                      <StackPanel>
+                        <TextBlock Text="{DynamicResource pianoroll.tool.pitchscurve}"/>
+                        <TextBlock Text="{Binding Hotkeys[ToolSelectSCurve], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                      </StackPanel>
+                    </ToolTip.Tip>
+                  </ListBoxItem>
+
+                  <ListBoxItem Classes="toolbar pitchSineWaveTool">
+                    <ToolTip.Tip>
+                      <StackPanel>
+                        <TextBlock Text="{DynamicResource pianoroll.tool.pitchesinewave}"/>
+                        <TextBlock Text="{Binding Hotkeys[ToolSelectSine], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                      </StackPanel>
+                    </ToolTip.Tip>
+                  </ListBoxItem>
+
+                  <ListBoxItem Classes="toolbar pitchSmoothenTool">
+                    <ToolTip.Tip>
+                      <StackPanel>
+                        <TextBlock Text="{DynamicResource pianoroll.tool.pitchsmoothen}"/>
+                        <TextBlock Text="{Binding Hotkeys[ToolSelectSmoothen], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                      </StackPanel>
+                    </ToolTip.Tip>
+                  </ListBoxItem>
+
+                  <ListBoxItem Classes="toolbar knifeTool">
+                    <ToolTip.Tip>
+                      <StackPanel>
+                        <TextBlock Text="{DynamicResource pianoroll.tool.knife}"/>
+                        <TextBlock Text="{Binding Hotkeys[ToolSelect5], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                      </StackPanel>
+                    </ToolTip.Tip>
+                  </ListBoxItem>
+
                 </ListBox.Items>
             </ListBox>
-            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding PitchOverwrite}"
-                    ToolTip.Tip="{DynamicResource pianoroll.toggle.overwritepitch}">
+
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding PitchOverwrite}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.tool.overwritepitch}"/>
+                  <TextBlock Text="{Binding Hotkeys[ToolSelect4Overwrite], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Grid Width="18" Height="18">
                 <Path Classes="filled" Data="M 19.540126 3.1598821 C 19.330126 2.9498825 18.969979 2.9502481 18.759981 3.1602475 L 17.740128 4.1801 L 19.820028 6.2599998 L 20.840246 5.2500134 C 21.060246 5.0300138 21.060246 4.6700018 20.840246 4.4600022 L 19.540126 3.1598821 Z  M 17.149995 4.7702332 L 11.000186 10.920042 L 11.000186 12.999942 L 13.080086 12.999942 L 19.229895 6.8501331 L 17.149995 4.7702332 Z  M 19.879589 13.222841 L 17.879714 13.222475 L 17.879714 16.222471 L 14.879718 16.222471 L 14.879718 18.222712 L 17.879714 18.222712 L 17.879714 21.222708 L 19.879955 21.222708 L 19.879955 18.222712 L 22.879951 18.222712 L 22.879585 16.222837 L 19.879589 16.222837 L 19.879589 13.222841 Z  M 10.059992 11.260237 C 8.4999952 10.230239 6.499898 9.3198861 4.6399018 9.0498865 C 3.5799038 8.8898869 2.4599531 9.1097532 2.0999539 10.259751 C 1.7799545 11.249749 2.2898688 12.249906 2.8698676 13.029906 C 4.2398648 14.859902 6.369998 15.739794 7.9599948 17.31979 C 8.2999942 17.64979 8.7100549 18.040057 8.9100545 18.500057 C 9.1200541 18.940055 9.0701879 18.969971 8.6001889 18.969971 C 7.3601913 18.969971 5.8099483 17.999985 4.7999503 17.359985 L 3.7899638 19.059861 C 5.3199608 19.999859 7.8801301 21.469991 9.7501265 20.849993 C 11.530123 20.149993 11.139771 18.220057 10.239773 17.000059 C 9.349774 15.750061 8.1202131 14.889988 6.8802155 14.05999 C 6.0002173 13.49999 5.1901443 12.79982 4.5401455 11.999822 C 4.2601461 11.669822 3.6901105 11.059774 4.2701093 10.939774 C 4.8601081 10.819776 5.880071 11.399798 6.40007 11.619798 C 7.3100682 11.999798 8.2100072 12.440113 9.0500056 12.960113 L 10.059992 11.260237 Z" >
                   <Path.RenderTransform>
@@ -430,8 +521,13 @@
             </ToggleButton>
             <Border Width="12"/>
 
-            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowVibrato}"
-                          ToolTip.Tip="{DynamicResource pianoroll.toggle.vibrato}">
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowVibrato}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.toggle.vibrato}"/>
+                  <TextBlock Text="{Binding Hotkeys[ToggleVibrato], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Grid Width="18" Height="18">
                 <Path Classes="stroked" Data="M-6.5 1 L-6 1.5 L-4.5 0 L-2 2.5 L0.5 0 L3 2.5 L6.5 -1 L6 -1.5 L4.5 0 L2 -2.5 L-0.5 0 L-3 -2.5 Z">
                   <Path.RenderTransform>
@@ -440,22 +536,37 @@
                 </Path>
               </Grid>
             </ToggleButton>
-            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowPitch}"
-                          ToolTip.Tip="{DynamicResource pianoroll.toggle.pitch}">
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowPitch}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.toggle.pitch}"/>
+                  <TextBlock Text="{Binding Hotkeys[TogglePitch], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Grid Width="18" Height="18">
                 <Ellipse Classes="stroked" Height="4" Width="4" Margin="2,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
                 <Ellipse Classes="stroked" Height="4" Width="4" Margin="0,5,2,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                 <Path Classes="stroked" Data="M 6.5 11.5 L 8 11.5 L 8.5 11 L 9.5 7 L 10 6.5 L 11.5 6.5"/>
               </Grid>
             </ToggleButton>
-            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowFinalPitch}"
-                          ToolTip.Tip="{DynamicResource pianoroll.toggle.finalpitch}">
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowFinalPitch}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.toggle.finalpitch}"/>
+                  <TextBlock Text="{Binding Hotkeys[ToggleFinalPitch], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Grid Width="18" Height="18">
                 <Path Classes="stroked" Data="M 5.5 11.5 L 8 11.5 L 8.5 11 L 9.5 7 L 10 6.5 L 12.5 6.5"/>
               </Grid>
             </ToggleButton>
-            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowWaveform}"
-                          ToolTip.Tip="{DynamicResource pianoroll.toggle.waveform}">
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowWaveform}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.toggle.waveform}"/>
+                  <TextBlock Text="{Binding Hotkeys[ToggleWaveform], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Grid Width="18" Height="18">
                 <Path Classes="filled" Data="M22 12L20 13L19 14L18 13L17 16L16 13L15 21L14 13L13 15L12 13L11 17L10 13L9 22L8 13L7 19L6 13L5 14L4 13L2 12L4 11L5 10L6 11L7 5L8 11L9 2L10 11L11 7L12 11L13 9L14 11L15 3L16 11L17 8L18 11L19 10L20 11L22 12Z">
                   <Path.RenderTransform>
@@ -467,14 +578,24 @@
                 </Path>
               </Grid>
             </ToggleButton>
-            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowPhoneme}"
-                          ToolTip.Tip="{DynamicResource pianoroll.toggle.phoneme}">
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowPhoneme}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.toggle.phoneme}"/>
+                  <TextBlock Text="{Binding Hotkeys[TogglePhoneme], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Grid Width="18" Height="18">
                 <Path Classes="stroked" Data="M 3 13 L 6 5.5 L 12 5.5 L 15 13"/>
               </Grid>
             </ToggleButton>
-            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" IsChecked="{Binding NotesViewModel.ShowExpressions}"
-                          ToolTip.Tip="{DynamicResource pianoroll.toggle.expressions}">
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" IsChecked="{Binding NotesViewModel.ShowExpressions}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.toggle.expressions}"/>
+                  <TextBlock Text="{Binding Hotkeys[ToggleExpressions], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Grid Width="18" Height="18">
                 <Ellipse Classes="stroked" Height="4" Width="4" Margin="4,4,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                 <Ellipse Classes="stroked" Height="4" Width="4" Margin="0,6,4,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
@@ -497,8 +618,13 @@
             </ToggleButton>
             <Border Width="12"/>
 
-            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.PlayTone}"
-                          ToolTip.Tip="{DynamicResource pianoroll.toggle.tone}">
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.PlayTone}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.toggle.tone}"/>
+                  <TextBlock Text="{Binding Hotkeys[TogglePlayTone], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Grid Width="18" Height="18">
                 <Path Classes="filled" Data="M21,3V15.5A3.5,3.5 0 0,1 17.5,19A3.5,3.5 0 0,1 14,15.5A3.5,3.5 0 0,1 17.5,12C18.04,12 18.55,12.12 19,12.34V6.47L9,8.6V17.5A3.5,3.5 0 0,1 5.5,21A3.5,3.5 0 0,1 2,17.5A3.5,3.5 0 0,1 5.5,14C6.04,14 6.55,14.12 7,14.34V6L21,3Z" >
                   <Path.RenderTransform>
@@ -510,14 +636,24 @@
                 </Path>
               </Grid>
             </ToggleButton>
-            <ToggleButton Name="SnapToggle" Classes="toolbar" Margin="0" Padding="1" Height="20" IsChecked="{Binding NotesViewModel.IsSnapOn}"
-                          ToolTip.Tip="{DynamicResource pianoroll.toggle.snap}">
+            <ToggleButton Name="SnapToggle" Classes="toolbar" Margin="0" Padding="1" Height="20" IsChecked="{Binding NotesViewModel.IsSnapOn}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.toggle.snap}"/>
+                  <TextBlock Text="{Binding Hotkeys[ToggleSnap], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Border Width="18" Height="18">
                 <Path Classes="stroked" Data="M 4.5 13.5 L 7.5 13.5 L 7.5 9.5 A 1,1 0 1 1 10.5,9.5 L 10.5 13.5 L 13.5 13.5 L 13.5 8.5 A 1,1 0 1 0 4.5,8.5 Z"/>
               </Border>
             </ToggleButton>
-            <Button Margin="0" Padding="0,1" Height="20" Width="40" Background="Transparent" Click="OnSnapDivMenuButton"
-              ToolTip.Tip="{DynamicResource pianoroll.snapdiv}">
+            <Button Margin="0" Padding="0,1" Height="20" Width="40" Background="Transparent" Click="OnSnapDivMenuButton">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.snapdiv}"/>
+                  <TextBlock Text="{Binding Hotkeys[OpenSnapMenu], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <TextBlock Grid.Column="0" Text="{Binding NotesViewModel.SnapDivText}"
                          TextAlignment="Right" FontSize="10" FontFamily="monospace"
                          Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
@@ -526,8 +662,12 @@
                              ItemsSource="{Binding NotesViewModel.SnapDivs}" KeyDown="OnSnapDivKeyDown"/>
               </Button.ContextMenu>
             </Button>
-            <Button Margin="0" Padding="0,1" Height="20" Width="40" Background="Transparent" Click="OnKeyMenuButton"
-              ToolTip.Tip="{DynamicResource pianoroll.key}">
+            <Button Margin="0" Padding="0,1" Height="20" Width="40" Background="Transparent" Click="OnKeyMenuButton">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.key}"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <TextBlock Grid.Column="0" Text="{Binding NotesViewModel.KeyText}"
                           TextAlignment="Right" FontSize="10" FontFamily="monospace"
                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
@@ -540,8 +680,13 @@
         </Border>
         <Border Grid.Column="4">
           <StackPanel Orientation="Horizontal">
-            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowNoteParams}"
-                          ToolTip.Tip="{DynamicResource pianoroll.toggle.noteparams}">
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowNoteParams}">
+              <ToolTip.Tip>
+                <StackPanel>
+                  <TextBlock Text="{DynamicResource pianoroll.toggle.noteparams}"/>
+                  <TextBlock Text="{Binding Hotkeys[ToggleNoteParams], StringFormat='[ {0} ]'}" Opacity="0.6"/>
+                </StackPanel>
+              </ToolTip.Tip>
               <Grid Width="18" Height="18">
                 <Path Classes="filled" Data="M3,17V19H9V17H3M3,5V7H13V5H3M13,21V19H21V17H13V15H11V21H13M7,9V11H3V13H7V15H9V9H7M21,13V11H11V13H21M15,9H17V7H21V5H17V3H15V9Z">
                   <Path.RenderTransform>
@@ -611,7 +756,6 @@
         <ListBox.Items>
           <ListBoxItem Classes="toolbar cursorTool"/>
           <ListBoxItem Classes="toolbar penTool"/>
-          <!-- CurveLineTool -->
           <ListBoxItem Classes="toolbar eraserTool"/>
         </ListBox.Items>
       </ListBox>

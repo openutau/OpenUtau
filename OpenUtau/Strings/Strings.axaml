@@ -115,8 +115,7 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="dialogs.merge.caption">Merging Parts</system:String>
   <system:String x:Key="dialogs.merge.multitracks">Parts on different tracks cannot be merged.</system:String>
   <system:String x:Key="dialogs.splitpart.caption">Splitting Part</system:String>
-  <system:String x:Key="dialogs.splitpart.intheway">There are one or more note(s) overlapping with the playhead.
-Do you want to continue by splitting at the nearest position after current playhead with no notes in the way?</system:String>
+  <system:String x:Key="dialogs.splitpart.intheway">There are one or more note(s) overlapping with the playhead. Do you want to continue by splitting at the nearest position after current playhead with no notes in the way?</system:String>
   <system:String x:Key="dialogs.exportds.caption">Export DiffSinger Scripts</system:String>
   <system:String x:Key="dialogs.exportds.curves">Curves</system:String>
   <system:String x:Key="dialogs.exportds.pitch">Pitch (f0)</system:String>
@@ -128,8 +127,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="dialogs.noresampler.message">No resampler! Put your favourite resampler exe or dll in the Resamplers folder and choose it in Preferences!</system:String>
   <system:String x:Key="dialogs.recovery">Previously, OpenUtau terminated abnormally. Click here to recover.</system:String>
   <system:String x:Key="dialogs.recovery.caption">Recovery project</system:String>
-  <system:String x:Key="dialogs.remaptimeaxis.message">This tool will change the tempo of the project without changing the actual positions and durations (in seconds) of notes.
-  New BPM:</system:String>
+  <system:String x:Key="dialogs.remaptimeaxis.message">This tool will change the tempo of the project without changing the actual positions and durations (in seconds) of notes. New BPM:</system:String>
   <system:String x:Key="dialogs.timesig.caption">Time Signature</system:String>
   <system:String x:Key="dialogs.tracksettings.caption">Track Settings</system:String>
   <system:String x:Key="dialogs.tracksettings.location">Location</system:String>
@@ -344,8 +342,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="mergevoicebank.selectsinger">This tool will merge another voicebank into current voicebank as new voice colors.
 Choose the voicebank that you want to merge into current voicebank</system:String>
   <system:String x:Key="mergevoicebank.setfolder">Set new names for copied folders.</system:String>
-  <system:String x:Key="mergevoicebank.setsubbank">Set new prefix and suffix for subbanks.
-Syntax: prefix,suffix</system:String>
+  <system:String x:Key="mergevoicebank.setsubbank">Set new prefix and suffix for subbanks. Syntax: prefix,suffix</system:String>
   <system:String x:Key="mergevoicebank.setvoicecolor">Set new names for voice colors (shown in CLR expression).</system:String>
   <system:String x:Key="mergevoicebank.title">Merge voicebanks</system:String>
 
@@ -360,8 +357,7 @@ Syntax: prefix,suffix</system:String>
   <system:String x:Key="notedefaults.preset.remove.tooltip">Removes last applied preset.</system:String>
   <system:String x:Key="notedefaults.preset.save.tooltip">Save current settings to a new preset.</system:String>
   <system:String x:Key="notedefaults.reset">Reset All Settings</system:String>
-  <system:String x:Key="notedefaults.reset.tooltip">Reset every setting to default values.
-Warning: this option removes custom presets.</system:String>
+  <system:String x:Key="notedefaults.reset.tooltip">Reset every setting to default values. Warning: this option removes custom presets.</system:String>
   <system:String x:Key="notedefaults.vibrato">Vibrato</system:String>
   <system:String x:Key="notedefaults.vibrato.autominlength">Minimum Length</system:String>
   <system:String x:Key="notedefaults.vibrato.autotoggle">Automatic Vibrato by Length</system:String>
@@ -487,7 +483,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.pitchbends">Reset pitch bends</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.vibratos">Reset vibratos</system:String>
   <system:String x:Key="pianoroll.menu.part">Part</system:String>
-  <system:String x:Key="pianoroll.menu.part.legacypluginexp">Legacy Plugin (Experimental)</system:String>
+  <system:String x:Key="pianoroll.menu.part.legacypluginexp">Legacy Plugin</system:String>
   <system:String x:Key="pianoroll.menu.part.singer">Singer and Oto settings</system:String>
   <system:String x:Key="pianoroll.menu.plugin.openfolder">Open folder</system:String>
   <system:String x:Key="pianoroll.menu.plugin.reload">Reload</system:String>
@@ -502,52 +498,70 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.menu.searchnote.prev">Prev</system:String>
   <system:String x:Key="pianoroll.menu.searchnote.searchalias">Search Alias</system:String>
   <system:String x:Key="pianoroll.snapdiv">Snap Division</system:String>
-  <system:String x:Key="pianoroll.toggle.finalpitch">View Final Pitch to Render (R)</system:String>
-  <system:String x:Key="pianoroll.toggle.noteparams">View Note Parameters (\)</system:String>
-  <system:String x:Key="pianoroll.toggle.phoneme">View Phonemes (O)</system:String>
-  <system:String x:Key="pianoroll.toggle.pitch">View Pitch Bend (I)</system:String>
-  <system:String x:Key="pianoroll.toggle.snap">Toggle Snap (P)</system:String>
+  <system:String x:Key="pianoroll.toggle.finalpitch">View Final Pitch to Render</system:String>
+  <system:String x:Key="pianoroll.toggle.noteparams">View Note Parameters</system:String>
+  <system:String x:Key="pianoroll.toggle.phoneme">View Phonemes</system:String>
+  <system:String x:Key="pianoroll.toggle.pitch">View Pitch Bend</system:String>
+  <system:String x:Key="pianoroll.toggle.snap">Toggle Snap</system:String>
   <system:String x:Key="pianoroll.toggle.snap.auto">Auto</system:String>
   <system:String x:Key="pianoroll.toggle.snap.autotriplet">Auto (triplet)</system:String>
   <system:String x:Key="pianoroll.toggle.phonemizer">View Phonemizer Tags</system:String>
-  <system:String x:Key="pianoroll.toggle.tips">View Tips (T)</system:String>
-  <system:String x:Key="pianoroll.toggle.tone">Toggle Note Tone (Y)</system:String>
-  <system:String x:Key="pianoroll.toggle.overwritepitch">Toggle Overwrite Pitch Mode</system:String>
-  <system:String x:Key="pianoroll.toggle.vibrato">View Vibrato (U)</system:String>
-  <system:String x:Key="pianoroll.toggle.waveform">View Waveform (W)</system:String>
-  <system:String x:Key="pianoroll.toggle.expressions">View Expressions (L)</system:String>
-  <system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (Shift + 1)
+  <system:String x:Key="pianoroll.toggle.tips">View Tips</system:String>
+  <system:String x:Key="pianoroll.toggle.tone">Toggle Note Tone</system:String>
+  <system:String x:Key="pianoroll.toggle.vibrato">View Vibrato</system:String>
+  <system:String x:Key="pianoroll.toggle.waveform">View Waveform</system:String>
+  <system:String x:Key="pianoroll.toggle.expressions">View Expressions</system:String>
+
+  <system:String x:Key="pianoroll.tool.pitchline">Line Pitch Tool
     Left click to draw
     Right click to reset
     Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.eraser">Eraser Tool (3)</system:String>
-  <system:String x:Key="pianoroll.tool.knife">Knife Tool (4)</system:String>
-  <system:String x:Key="pianoroll.tool.pitchline">Pitch Line Tool (Shift + 2)
-    Left click to draw straight line
+  <system:String x:Key="pianoroll.tool.pitchscurve">S-Curve Pitch Tool
+    Left click to draw
     Right click to reset
     Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.pitchscurve">Pitch S-Curve Tool (Shift + 3)
-    Drag to draw S-curve, release to enter adjusting mode
-    Move mouse to tune S-curve strength, click to apply
+  <system:String x:Key="pianoroll.tool.pitchesinewave">Sine Wave Pitch Tool
+    Left click to draw
     Right click to reset
     Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.pitchesinewave">Pitch Sine Wave Tool (Shift + 4)
-    Drag to draw sine wave, release to enter adjusting mode
-    Move mouse to adjust wavelength and amplitude, click to apply
+  <system:String x:Key="pianoroll.tool.pitchsmoothen">Smoothen Pitch Tool
+    Left click to smoothen
     Right click to reset
     Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.pitchsmoothen">Pitch Smoothen Tool (Shift + 5)
-    Left click to smoothen pitch
+
+  <system:String x:Key="pianoroll.tool.drawlinepitch">Line Draw Pitch Tool
+    Left click to draw (draw straight line)
     Right click to reset
-    Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.penplus">Pen Plus Tool (Ctrl + 2)
+    Hold Ctrl to select
+    Hold Alt to smoothen</system:String>
+  <system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool
+    Left click to draw
+    Right click to reset
+    Hold Ctrl to select
+    Hold Alt to smoothen</system:String>
+  <system:String x:Key="pianoroll.tool.eraser">Eraser Tool</system:String>
+  <system:String x:Key="pianoroll.tool.knife">Knife Tool</system:String>
+  <system:String x:Key="pianoroll.tool.overwritepitch">Overwrite Pitch Tool
+    Left click to draw (overwrites vibrato or mod+)
+    Right click to reset
+    Hold Ctrl to select
+    Hold Alt to smoothen</system:String>
+  <system:String x:Key="pianoroll.tool.overwritelinepitch">Overwrite Line Pitch Tool
+    Left click to draw (draw straight line overwrites the vibrato or mod+)
+    Hold Ctrl to draw sine curve
+    Hold Alt + Shift to tune S-curve
+    Hold Alt to draw S-curve
+    Right click to reset
+    Hold Ctrl to select
+    Hold Alt to smoothen</system:String>
+  <system:String x:Key="pianoroll.tool.penplus">Pen Plus Tool
     Left click to draw
     Right click to delete
     Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.penv2">Pen Tool (2)
+  <system:String x:Key="pianoroll.tool.penv2">Pen Tool
     Left click to draw
     Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.selectionv2">Selection Tool (1)</system:String>
+  <system:String x:Key="pianoroll.tool.selectionv2">Selection Tool</system:String>
   <system:String x:Key="pianoroll.tooltip.attack">Attack time delta</system:String>
   <system:String x:Key="pianoroll.tooltip.overlap">Overlap</system:String>
   <system:String x:Key="pianoroll.tooltip.preutter">Preutter</system:String>
@@ -563,6 +577,96 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.advanced.stable">Stable</system:String>
   <system:String x:Key="prefs.advanced.vlabelerpath">vLabeler Path</system:String>
   <system:String x:Key="prefs.advanced.winepath">Wine Path (set to enable wine for compatibility)</system:String>
+  
+  <system:String x:Key="prefs.shortcuts">Keyboard Shortcuts</system:String>
+  <system:String x:Key="prefs.shortcuts.listening">Press keys...</system:String>
+  <system:String x:Key="shortcut.PlayOrPause">Play / Pause</system:String>
+  <system:String x:Key="shortcut.PlaySelection">Play Selection</system:String>
+  <system:String x:Key="shortcut.ClearSelection">Clear Selection</system:String>
+  <system:String x:Key="shortcut.SelectAll">Select All</system:String>
+  <system:String x:Key="shortcut.DeselectAll">Deselect All</system:String>
+  <system:String x:Key="shortcut.CloseWindow">Close Window</system:String>
+  <system:String x:Key="shortcut.OpenPluginMenu">Open Plugin Menu</system:String>
+  <system:String x:Key="shortcut.EditLyrics">Edit Lyrics</system:String>
+  <system:String x:Key="shortcut.ToolSelect1">Selection Tool</system:String>
+  <system:String x:Key="shortcut.ToolSelect2Main">Pen Tool</system:String>
+  <system:String x:Key="shortcut.ToolSelect2Alt">Pen Tool (Alt)</system:String>
+  <system:String x:Key="shortcut.ToolSelect3">Eraser Tool</system:String>
+  <system:String x:Key="shortcut.ToolSelect4Main">Draw Pitch Tool</system:String>
+  <system:String x:Key="shortcut.ToolSelect4Overwrite">Overwrite Pitch Tool</system:String>
+  <system:String x:Key="shortcut.ToolSelect4Line">Draw Line Pitch Tool</system:String>
+  <system:String x:Key="shortcut.ToolSelect4LineOverwrite">Overwrite Line Pitch Tool</system:String>
+  <system:String x:Key="shortcut.ToolSelectSCurve">S-Curve Pitch Tool</system:String>
+  <system:String x:Key="shortcut.ToolSelectSine">Sine Wave Pitch Tool</system:String>
+  <system:String x:Key="shortcut.ToolSelectSmoothen">Smoothen Pitch Tool</system:String>
+  <system:String x:Key="shortcut.ToolSelect5">Knife Tool</system:String>
+  <system:String x:Key="shortcut.ExpSelect1">Select Expression 1</system:String>
+  <system:String x:Key="shortcut.ExpSelect2">Select Expression 2</system:String>
+  <system:String x:Key="shortcut.ExpSelect3">Select Expression 3</system:String>
+  <system:String x:Key="shortcut.ExpSelect4">Select Expression 4</system:String>
+  <system:String x:Key="shortcut.ExpSelect5">Select Expression 5</system:String>
+  <system:String x:Key="shortcut.ExpSelect6">Select Expression 6</system:String>
+  <system:String x:Key="shortcut.ExpSelect7">Select Expression 7</system:String>
+  <system:String x:Key="shortcut.ExpSelect8">Select Expression 8</system:String>
+  <system:String x:Key="shortcut.ExpSelect9">Select Expression 9</system:String>
+  <system:String x:Key="shortcut.ExpSelect10">Select Expression 10</system:String>
+  <system:String x:Key="shortcut.ToggleFinalPitch">Toggle Final Pitch View</system:String>
+  <system:String x:Key="shortcut.ToggleTips">Toggle Tips View</system:String>
+  <system:String x:Key="shortcut.ToggleVibrato">Toggle Vibrato View</system:String>
+  <system:String x:Key="shortcut.TogglePitch">Toggle Pitch View</system:String>
+  <system:String x:Key="shortcut.TogglePhoneme">Toggle Phoneme View</system:String>
+  <system:String x:Key="shortcut.ToggleExpressions">Toggle Expressions View</system:String>
+  <system:String x:Key="shortcut.ToggleSnap">Toggle Snap</system:String>
+  <system:String x:Key="shortcut.OpenSnapMenu">Open Snap Menu</system:String>
+  <system:String x:Key="shortcut.ToggleNoteParams">Toggle Note Parameters View</system:String>
+  <system:String x:Key="shortcut.TogglePlayTone">Toggle Play Tone</system:String>
+  <system:String x:Key="shortcut.ToggleWaveform">Toggle Waveform View</system:String>
+  <system:String x:Key="shortcut.TransposeUp">Transpose Up</system:String>
+  <system:String x:Key="shortcut.TransposeOctaveUp">Transpose Octave Up</system:String>
+  <system:String x:Key="shortcut.TransposeDown">Transpose Down</system:String>
+  <system:String x:Key="shortcut.TransposeOctaveDown">Transpose Octave Down</system:String>
+  <system:String x:Key="shortcut.MoveCursorLeft">Move Cursor Left</system:String>
+  <system:String x:Key="shortcut.ResizeNotesLeft">Resize Notes Left</system:String>
+  <system:String x:Key="shortcut.MoveNotesLeft">Move Notes Left</system:String>
+  <system:String x:Key="shortcut.ExtendSelectionLeft">Extend Selection Left</system:String>
+  <system:String x:Key="shortcut.MoveCursorRight">Move Cursor Right</system:String>
+  <system:String x:Key="shortcut.ResizeNotesRight">Resize Notes Right</system:String>
+  <system:String x:Key="shortcut.MoveNotesRight">Move Notes Right</system:String>
+  <system:String x:Key="shortcut.ExtendSelectionRight">Extend Selection Right</system:String>
+  <system:String x:Key="shortcut.PastePlain">Paste as Plain Notes</system:String>
+  <system:String x:Key="shortcut.PasteParameters">Paste Parameters</system:String>
+  <system:String x:Key="shortcut.InsertNote">Insert Note</system:String>
+  <system:String x:Key="shortcut.MergeNotes">Merge Selected Notes</system:String>
+  <system:String x:Key="shortcut.PlayheadHome">Move Playhead to Start</system:String>
+  <system:String x:Key="shortcut.SelectToStart">Extend Selection to Start</system:String>
+  <system:String x:Key="shortcut.PlayheadEnd">Move Playhead to End</system:String>
+  <system:String x:Key="shortcut.SelectToEnd">Extend Selection to End</system:String>
+  <system:String x:Key="shortcut.PlayheadLeft">Move Playhead Left</system:String>
+  <system:String x:Key="shortcut.PlayheadToSelectionStart">Move Playhead to Selection Start</system:String>
+  <system:String x:Key="shortcut.PlayheadToViewStart">Move Playhead to View Start</system:String>
+  <system:String x:Key="shortcut.PlayheadRight">Move Playhead Right</system:String>
+  <system:String x:Key="shortcut.PlayheadToSelectionEnd">Move Playhead to Selection End</system:String>
+  <system:String x:Key="shortcut.PlayheadToViewEnd">Move Playhead to View End</system:String>
+  <system:String x:Key="shortcut.ScrollLeft">Scroll Left</system:String>
+  <system:String x:Key="shortcut.ScrollRight">Scroll Right</system:String>
+  <system:String x:Key="shortcut.ScrollUp">Scroll Up</system:String>
+  <system:String x:Key="shortcut.ScrollDown">Scroll Down</system:String>
+  <system:String x:Key="shortcut.ZoomIn">Zoom In</system:String>
+  <system:String x:Key="shortcut.ZoomOut">Zoom Out</system:String>
+  <system:String x:Key="shortcut.SaveProject">Save Project</system:String>
+  <system:String x:Key="shortcut.SaveProjectAs">Save Project As</system:String>
+  <system:String x:Key="shortcut.NewProject">New Project</system:String>
+  <system:String x:Key="shortcut.OpenProject">Open Project</system:String>
+  <system:String x:Key="shortcut.SoloTrack">Solo Track</system:String>
+  <system:String x:Key="shortcut.MuteTrack">Mute Track</system:String>
+  <system:String x:Key="shortcut.FocusSelection">Focus Selection</system:String>
+  <system:String x:Key="shortcut.SearchNote">Search Note</system:String>
+  <system:String x:Key="shortcut.MoveToNextPart">Move to Next Track's Part</system:String>
+  <system:String x:Key="shortcut.MoveToPrevPart">Move to Previous Track's Part</system:String>
+  <system:String x:Key="prefs.shortcut.tooltip">Left click to change. Right click to reset.</system:String>
+  <system:String x:Key="prefs.shortcut.search.watermark">Search by name or key...</system:String>
+  <system:String x:Key="prefs.shortcuts.duplicate">The shortcut '{0}' is already assigned to '{1}'.</system:String>
+
   <system:String x:Key="prefs.appearance">Appearance</system:String>
   <system:String x:Key="prefs.appearance.degree">Scale degree display style</system:String>
   <system:String x:Key="prefs.appearance.degree.numbered">Numbered (1 2 3 4 5 6 7)</system:String>
@@ -659,8 +763,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="singererror.cutoffoverlap">Cutoff must be to the right of overlap.</system:String>
   <system:String x:Key="singererror.cutoffpreutter">Cutoff must be to the right of preutter.</system:String>
   <system:String x:Key="singererror.duplicatealias">There are duplicate aliases.{0}</system:String>
-  <system:String x:Key="singererror.duplicatename">Duplicated file names found when ignoreing case in oto set "{0}": {1}.
-The voicebank may not work on another OS with case-sensitivity.</system:String>
+  <system:String x:Key="singererror.duplicatename">Duplicated file names found when ignoreing case in oto set "{0}": {1}. The voicebank may not work on another OS with case-sensitivity.</system:String>
   <system:String x:Key="singererror.failedload">Failed to load voicebank.</system:String>
   <system:String x:Key="singererror.invalidduration">Invalid duration {0}.</system:String>
   <system:String x:Key="singererror.invalidoto">Invalid oto format.</system:String>
@@ -827,7 +930,6 @@ General
   <system:String x:Key="welcome.start">Start</system:String>
   <system:String x:Key="welcome.template">Template</system:String>
 
-  <!-- Mix Effects (post-processing) -->
   <system:String x:Key="mixfx.caption">Track Polish</system:String>
   <system:String x:Key="mixfx.enabled">Enable on this track</system:String>
   <system:String x:Key="mixfx.preset">Preset</system:String>

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
+using Avalonia.Input;
 using Avalonia.Threading;
 using DynamicData.Binding;
 using OpenUtau.App.Views;
@@ -87,16 +88,27 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool CanRedo { get; set; } = false;
         [Reactive] public string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
         [Reactive] public string RedoText { get; set; } = ThemeManager.GetString("menu.edit.redo");
+        [Reactive] public Dictionary<string, KeyGesture> Hotkeys { get; set; } = new Dictionary<string, KeyGesture>();
 
         private ObservableCollectionExtended<MenuItemViewModel> openRecentMenuItems
             = new ObservableCollectionExtended<MenuItemViewModel>();
         private ObservableCollectionExtended<MenuItemViewModel> openTemplatesMenuItems
             = new ObservableCollectionExtended<MenuItemViewModel>();
 
+        public void ReloadShortcuts() {
+            KeyTranslator.LoadShortcuts();
+            var newHotkeys = new Dictionary<string, KeyGesture>();
+            foreach (var sc in KeyTranslator.Shortcuts) {
+                newHotkeys.TryAdd(sc.ActionId, sc.Gesture);
+            }
+            Hotkeys = newHotkeys;
+        }
+
         // view will set this to the real AskIfSaveAndContinue implementation
         public Func<Task<bool>>? AskIfSaveAndContinue { get; set; }
 
         public MainWindowViewModel() {
+            ReloadShortcuts();
             PlaybackViewModel = new PlaybackViewModel();
             TracksViewModel = new TracksViewModel();
             ClearCacheHeader = string.Empty;
@@ -136,6 +148,8 @@ namespace OpenUtau.App.ViewModels {
                     PianoRollMaxHeight = x ? double.PositiveInfinity : 0;
                     PianoRollMinHeight = x ? ViewConstants.PianoRollMinHeight : 0;
                 });
+            MessageBus.Current.Listen<ShortcutsRefreshEvent>()
+                .Subscribe(_ => ReloadShortcuts());
         }
 
         public void Undo() {

@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
+using Avalonia.Input;
 using OpenUtau.Audio;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.Editing;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Util;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
-using OpenUtau.Core.Render;
 using Serilog;
 
 namespace OpenUtau.App.ViewModels {
@@ -24,7 +28,95 @@ namespace OpenUtau.App.ViewModels {
             return klass.Name;
         }
     }
+    public class ShortcutsRefreshEvent { }
+    public class ShortcutItemViewModel : ViewModelBase {
+        public string ActionName { get; } = string.Empty;
+        public string ActionId { get; } = string.Empty;
 
+        public List<KeyGesture> Gestures { get; set; } = new List<KeyGesture>();
+        public bool IsListening { get; set; } = false;
+        public bool IsAdding { get; set; } = false;
+
+        public ObservableCollection<MenuItemViewModel> ContextMenuItems { get; set; } = new ObservableCollection<MenuItemViewModel>();
+
+        public string DisplayString {
+            get {
+                if (IsListening) return ThemeManager.GetString("prefs.shortcuts.listening");
+                var text = string.Join(", ", Gestures.Select(g => KeyTranslator.GetFriendlyName(g.Key, g.KeyModifiers)));
+                return Gestures.Count == 0 ? "(None)" : text;
+            }
+        }
+
+        public Action? Save;
+        public Action<ShortcutItemViewModel>? ListenForShortcut;
+
+        public ShortcutItemViewModel() {}
+        public ShortcutItemViewModel(Preferences.ShortcutBinding binding, Action save, Action<ShortcutItemViewModel>? listenForShortcut, string prefix = "") {
+            ActionId = binding.ActionId;
+            ActionName = $"{prefix}{GetDisplayName(binding.ActionId)}";
+            Gestures = binding.Shortcuts.Select(KeyTranslator.StringToGesture).ToList();
+            Save = save;
+            ListenForShortcut = listenForShortcut;
+        }
+        public ShortcutItemViewModel(string actionId, Action save, Action<ShortcutItemViewModel>? listenForShortcut, string prefix = "") {
+            ActionId = actionId;
+            ActionName = $"{prefix}{GetDisplayName(ActionId)}";
+            Save = save;
+            ListenForShortcut = listenForShortcut;
+        }
+        private string GetDisplayName(string actionId) {
+            string lookupKey = "shortcut." + actionId;
+            string displayName = ThemeManager.GetString(lookupKey);
+            if (string.IsNullOrEmpty(displayName) || displayName == lookupKey) {
+                displayName = ThemeManager.GetString(actionId);
+            }
+            if (string.IsNullOrEmpty(displayName)) {
+                displayName = actionId;
+            }
+            if (displayName.StartsWith("shortcut.")) {
+                displayName = displayName.Substring(9);
+            }
+            return displayName;
+        }
+
+        public void CreateMenuItem() {
+            ContextMenuItems.Clear();
+            ContextMenuItems.Add(new MenuItemViewModel() { Header = "Add", Command = ReactiveCommand.Create(() => {
+                IsAdding = true;
+                ListenForShortcut?.Invoke(this);
+            })});
+            foreach (var gesture in Gestures) {
+                var text = $"Delete \"{KeyTranslator.GetFriendlyName(gesture.Key, gesture.KeyModifiers)}\"";
+                ContextMenuItems.Add(new MenuItemViewModel() { Header = text, Command = ReactiveCommand.Create(() => Delete(gesture)) });
+            }
+            ContextMenuItems.Add(new MenuItemViewModel() { Header = "Reset", Command = ReactiveCommand.Create(() => Reset()) });
+        }
+
+        public void Delete(KeyGesture gesture) {
+            Gestures.Remove(gesture);
+            IsAdding = false;
+            IsListening = false;
+            RefreshDisplay();
+            Save?.Invoke();
+        }
+
+        public void Reset() {
+            var binding = KeyTranslator.DefShortcuts.FirstOrDefault(s => s.ActionId == ActionId);
+            if (binding == null) {
+                Gestures.Clear();
+            } else {
+                Gestures = binding.Shortcuts.Select(KeyTranslator.StringToGesture).ToList();
+            }
+            IsAdding = false;
+            IsListening = false;
+            RefreshDisplay();
+            Save?.Invoke();
+        }
+
+        public void RefreshDisplay() {
+            this.RaisePropertyChanged(nameof(DisplayString));
+        }
+    }
     public class PreferencesViewModel : ViewModelBase {
         // General
         private CultureInfo? language;
@@ -129,6 +221,13 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool RememberVsqx { get; set; }
         public string WinePath => Preferences.Default.WinePath;
 
+        // Shortcuts
+        [Reactive] public ShortcutItemViewModel? ActiveShortcut { get; set; }
+        private List<ShortcutItemViewModel> allShortcuts = new List<ShortcutItemViewModel>();
+        public ObservableCollection<ShortcutItemViewModel> FilteredShortcuts { get; } = new ObservableCollection<ShortcutItemViewModel>();
+        [Reactive] public string ShortcutSearchText { get; set; } = string.Empty;
+        public ReactiveCommand<ShortcutItemViewModel, Unit> ListenForShortcutCommand { get; }
+
         public PreferencesViewModel() {
             var audioOutput = PlaybackManager.Inst.AudioOutput;
             if (audioOutput != null) {
@@ -192,6 +291,8 @@ namespace OpenUtau.App.ViewModels {
             RememberUst = Preferences.Default.RememberUst;
             RememberVsqx = Preferences.Default.RememberVsqx;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
+            ListenForShortcutCommand = ReactiveCommand.Create<ShortcutItemViewModel>(ListenForShortcut);
+            LoadShortcuts();
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
                 .Subscribe(_ => this.RaisePropertyChanged(nameof(IsThemeEditorOpen)));
@@ -404,6 +505,18 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks;
                     Preferences.Save();
                 });
+            this.WhenAnyValue(vm => vm.ShortcutSearchText)
+                .Subscribe(text => {
+                    FilteredShortcuts.Clear();
+                    var lowerText = text?.ToLowerInvariant() ?? string.Empty;
+                    foreach (var sc in allShortcuts) {
+                        if (string.IsNullOrEmpty(lowerText) || 
+                            sc.ActionName.ToLowerInvariant().Contains(lowerText) || 
+                            sc.DisplayString.ToLowerInvariant().Contains(lowerText)) {
+                            FilteredShortcuts.Add(sc);
+                        }
+                    }
+                });
         }
 
         public void TestAudioOutputDevice() {
@@ -458,6 +571,87 @@ namespace OpenUtau.App.ViewModels {
 
         public void ToggleOnnxGpuDisplay(bool show) {
             ShowOnnxGpu = show;
+        }
+
+        private void LoadShortcuts() {
+            var shortcuts = KeyTranslator.GetMergedShortcuts().Select(binding => new ShortcutItemViewModel(binding, () => SaveShortcuts(), item => ListenForShortcut(item)));
+            allShortcuts.AddRange(shortcuts);
+
+            // external batch edits
+            var prefix = $"{ThemeManager.GetString("pianoroll.menu.external")}: ";
+            foreach (var type in DocManager.Inst.ExternalBatchEditTypes) {
+                if (Activator.CreateInstance(type) is BatchEdit edit) {
+                    var customized = Preferences.Default.PluginShortcuts.FirstOrDefault(pref => pref.ActionId == edit.Name);
+                    if (customized != null) {
+                        allShortcuts.Add(new ShortcutItemViewModel(customized, () => SaveShortcuts(), item => ListenForShortcut(item), prefix));
+                    } else if (!allShortcuts.Any(s => s.ActionId == edit.Name)) {
+                        allShortcuts.Add(new ShortcutItemViewModel(edit.Name, () => SaveShortcuts(), item => ListenForShortcut(item), prefix));
+                    }
+                }
+            }
+            // legacy plugins
+            prefix = $"{ThemeManager.GetString("pianoroll.menu.part.legacypluginexp")}: ";
+            foreach (var plugin in DocManager.Inst.Plugins) {
+                var customized = Preferences.Default.PluginShortcuts.FirstOrDefault(pref => pref.ActionId == plugin.Name);
+                if (customized != null) {
+                    allShortcuts.Add(new ShortcutItemViewModel(customized, () => SaveShortcuts(), item => ListenForShortcut(item), prefix));
+                } else if (!allShortcuts.Any(s => s.ActionId == plugin.Name)) {
+                    allShortcuts.Add(new ShortcutItemViewModel(plugin.Name, () => SaveShortcuts(), item => ListenForShortcut(item), prefix));
+                }
+            }
+        }
+
+        public void ListenForShortcut(ShortcutItemViewModel item) {
+            // Cancel any existing listening item
+            if (ActiveShortcut != null) {
+                ActiveShortcut.IsAdding = false;
+                ActiveShortcut.IsListening = false;
+                ActiveShortcut.RefreshDisplay();
+            }
+
+            ActiveShortcut = item;
+            ActiveShortcut.IsListening = true;
+            ActiveShortcut.RefreshDisplay();
+        }
+
+        private void SaveShortcuts() {
+            KeyTranslator.SaveShortcuts(allShortcuts);
+            MessageBus.Current.SendMessage(new ShortcutsRefreshEvent());
+        }
+
+        public void AssignShortcut(Key key, KeyModifiers modifiers) {
+            if (ActiveShortcut == null) return;
+            if (key == Key.LeftCtrl || key == Key.RightCtrl || key == Key.LeftShift || key == Key.RightShift || key == Key.LeftAlt || key == Key.RightAlt || key == Key.LWin || key == Key.RWin) {
+                return;
+            }
+
+            var duplicate = allShortcuts.FirstOrDefault(s => s != ActiveShortcut && s.Gestures.Any(g => g.Key == key && g.KeyModifiers == modifiers));
+            
+            if (duplicate != null) {
+                ActiveShortcut.IsAdding = false;
+                ActiveShortcut.IsListening = false;
+                ActiveShortcut.RefreshDisplay();
+                ActiveShortcut = null;
+
+                var e = new MessageCustomizableException("The shortcut is already assigned.", "<translate:prefs.shortcuts.duplicate>", new ArgumentException(), false, [duplicate.DisplayString, duplicate.ActionName]);
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+                return; 
+            }
+            if (!ActiveShortcut.IsAdding) {
+                ActiveShortcut.Gestures.Clear();
+            }
+            ActiveShortcut.Gestures.Add(new KeyGesture(key, modifiers));
+            ActiveShortcut.IsAdding = false;
+            ActiveShortcut.IsListening = false;
+            ActiveShortcut.RefreshDisplay();
+            ActiveShortcut = null;
+            SaveShortcuts();
+        }
+
+        public void ResetAllShortcuts() {
+            KeyTranslator.ResetShortcuts();
+            LoadShortcuts();
+            MessageBus.Current.SendMessage(new ShortcutsRefreshEvent());
         }
     }
 }
