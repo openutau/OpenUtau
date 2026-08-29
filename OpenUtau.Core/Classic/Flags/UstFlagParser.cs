@@ -5,9 +5,12 @@ namespace OpenUtau.Classic.Flags {
     public class UstFlagParser {
         public IList<UstFlag> Parse(string text) {
             List<UstFlag> flags = new List<UstFlag>();
+            if (string.IsNullOrEmpty(text)) return flags;
+
             var keyBuilder = new StringBuilder();
             var valueBuilder = new StringBuilder();
             bool wasDigit = false;
+
             for (int i = 0; i <= text.Length; ++i) {
                 if (i == text.Length || (char.IsLetter(text[i]) || text[i] == '/') && wasDigit) {
                     string key = keyBuilder.ToString();
