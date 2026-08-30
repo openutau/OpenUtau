@@ -60,6 +60,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool ShowWaveform { get; set; }
         [Reactive] public bool ShowPhoneme { get; set; }
         [Reactive] public bool ShowNoteParams { get; set; }
+        [Reactive] public bool ShowDictionaryEditor { get; set; }
         [Reactive] public bool ShowExpressions { get; set; }
         [Reactive] public bool IsSnapOn { get; set; }
         [Reactive] public string SnapDivText { get; set; }
@@ -266,8 +267,22 @@ namespace OpenUtau.App.ViewModels {
             .Subscribe(showNoteParams => {
                 Preferences.Default.ShowNoteParams = showNoteParams;
                 Preferences.Save();
+                
+                if (showNoteParams) {
+                    ShowDictionaryEditor = false;
+                }
             });
-
+            
+            ShowDictionaryEditor = Preferences.Default.ShowDictionaryEditor;
+            this.WhenAnyValue(x => x.ShowDictionaryEditor)
+            .Subscribe(show => {
+                Preferences.Default.ShowDictionaryEditor = show;
+                Preferences.Save();
+                
+                if (show) {
+                    ShowNoteParams = false;
+                }
+            });
             TickWidth = ViewConstants.PianoRollTickWidthDefault;
             TrackHeight = ViewConstants.NoteHeightDefault;
             TrackOffset = 4 * 12 + 6;

@@ -535,9 +535,26 @@
             </Button>
           </StackPanel>
         </Border>
+
         <Border Grid.Column="3" Background="Transparent" DoubleTapped="OnHidePianoRoll"/>
         <Border Grid.Column="4">
           <StackPanel Orientation="Horizontal">
+            
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" 
+                          IsChecked="{Binding NotesViewModel.ShowDictionaryEditor}"
+                          ToolTip.Tip="{DynamicResource pianoroll.toggle.dictionary}">
+              <Grid Width="18" Height="18">
+                <Path Classes="filled" Data="M3,3 H21 V21 H3 V3 Z M5,5 V19 H19 V5 H5 Z M7,7 H17 V9 H7 Z M7,11 H17 V13 H7 Z M7,15 H13 V17 H7 Z">
+                  <Path.RenderTransform>
+                    <TransformGroup>
+                      <ScaleTransform ScaleX=".65" ScaleY=".65" />
+                      <TranslateTransform X="-2" Y="-2"/>
+                    </TransformGroup>
+                  </Path.RenderTransform>
+                </Path>
+              </Grid>
+            </ToggleButton>
+
             <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowNoteParams}"
                           ToolTip.Tip="{DynamicResource pianoroll.toggle.noteparams}">
               <Grid Width="18" Height="18">
@@ -626,6 +643,14 @@
               IsVisible="{Binding NotesViewModel.ShowNoteParams}"
               Background="{DynamicResource SystemRegionBrush}" Padding="0">
         <c:NotePropertiesControl/>
+      </Border>
+
+      <Border Grid.Column="3" Grid.Row="0" Grid.RowSpan="6"
+              IsEnabled="{Binding NotesViewModel.ShowDictionaryEditor}"
+              IsVisible="{Binding NotesViewModel.ShowDictionaryEditor}"
+              Background="{DynamicResource SystemRegionBrush}" Padding="0"
+              BorderThickness="1,0,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+          <c:DictionaryEditorControl Part="{Binding NotesViewModel.Part}" />
       </Border>
 
       <Button Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4"

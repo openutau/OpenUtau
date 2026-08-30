@@ -1644,6 +1644,20 @@ namespace OpenUtau.App.Controls {
                 case Key.OemPipe:
                     if (isNone) {
                         notesVm.ShowNoteParams = !notesVm.ShowNoteParams;
+                        if (notesVm.ShowNoteParams) {
+                            notesVm.ShowDictionaryEditor = false;
+                        }
+                        return true;
+                    }
+                    break;
+                case Key.Oem2:
+                case Key.Divide:
+                    if (isNone) {
+                        notesVm.ShowDictionaryEditor = !notesVm.ShowDictionaryEditor;
+                        if (notesVm.ShowDictionaryEditor) {
+                            notesVm.ShowNoteParams = false;
+                        }
+                        
                         return true;
                     }
                     break;

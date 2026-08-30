@@ -503,6 +503,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.snapdiv">Snap Division</system:String>
   <system:String x:Key="pianoroll.toggle.finalpitch">View Final Pitch to Render (R)</system:String>
   <system:String x:Key="pianoroll.toggle.noteparams">View Note Parameters (\)</system:String>
+  <system:String x:Key="pianoroll.toggle.dictionary">View Dictionary Editor (/)</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">View Phonemes (O)</system:String>
   <system:String x:Key="pianoroll.toggle.pitch">View Pitch Bend (I)</system:String>
   <system:String x:Key="pianoroll.toggle.snap">Toggle Snap (P)</system:String>
@@ -747,8 +748,6 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singersetup.textfileencoding.prompt">Choose an encoding that make file contents look right.</system:String>
   <system:String x:Key="singersetup.title">Singer Setup</system:String>
 
-  <system:String x:Key="themeeditor.title">Theme Editor</system:String>
-
   <system:String x:Key="tip.aliasbox">Override Alias</system:String>
   <system:String x:Key="tip.exps">Numerical,Options Type
     Left Button Draw: Set expressions
@@ -829,6 +828,90 @@ General
   <system:String x:Key="welcome.recent">Recent</system:String>
   <system:String x:Key="welcome.start">Start</system:String>
   <system:String x:Key="welcome.template">Template</system:String>
+
+  <system:String x:Key="themeeditor.title">Theme Editor</system:String>
+  <system:String x:Key="themeeditor.save">Save</system:String>
+  <system:String x:Key="themeeditor.cancel">Cancel</system:String>
+
+  <system:String x:Key="dict.setup">Dictionary Setup</system:String>
+  <system:String x:Key="dict.file">File</system:String>
+  <system:String x:Key="dict.file.none">None</system:String>
+  <system:String x:Key="dict.file.delete.tooltip">Delete File</system:String>
+  <system:String x:Key="dict.file.new.tooltip">New File</system:String>
+  <system:String x:Key="dict.file.refresh.tooltip">Refresh Folder</system:String>
+  <system:String x:Key="dict.file.new.title">Create New YAML File</system:String>
+  <system:String x:Key="dict.file.new.filename">Filename (e.g., my_dictionary.yaml)</system:String>
+  <system:String x:Key="dict.file.new.create">Create File</system:String>
+  <system:String x:Key="dict.file.new.create.tooltip">Creates a new blank YAML file</system:String>
+  <system:String x:Key="dict.file.delete.title">Delete File?</system:String>
+  <system:String x:Key="dict.object.delete.title">Delete Object?</system:String>
+  <system:String x:Key="dict.file.delete.confirm">Are you sure you want to permanently delete:</system:String>
+  <system:String x:Key="dict.cancel">Cancel</system:String>
+  <system:String x:Key="dict.delete">Delete</system:String>
+  <system:String x:Key="dict.object">Object</system:String>
+  <system:String x:Key="dict.manage.object">Manage Objects (Drag to reorder)</system:String>
+  <system:String x:Key="dict.object.delete.tooltip">Delete Object</system:String>
+  <system:String x:Key="dict.object.new.tooltip">Adds new Object</system:String>
+  <system:String x:Key="dict.cols.manage">cols</system:String>
+  <system:String x:Key="dict.cols.manage.tooltip">Manage Columns</system:String>
+  <system:String x:Key="dict.object.new.title">Create New Object</system:String>
+  <system:String x:Key="dict.object.new.name">Object Name (e.g., replacements)</system:String>
+  <system:String x:Key="dict.object.new.columns">Columns (e.g., from, to)</system:String>
+  <system:String x:Key="dict.object.new.create">Create Object</system:String>
+  <system:String x:Key="dict.object.new.create.tooltip">Generates the new object category</system:String>
+  <system:String x:Key="dict.cols.manage.title">Manage Columns</system:String>
+  <system:String x:Key="dict.cols.manage.name">Target Column Name (e.g., where)</system:String>
+
+  <system:String x:Key="dict.objs.manage">objs</system:String>
+  <system:String x:Key="dict.objs.manage.tooltip">Manage Objects</system:String>
+  <system:String x:Key="dict.add">Add</system:String>
+  <system:String x:Key="dict.add.tooltip">Adds the column to the grid</system:String>
+  <system:String x:Key="dict.remove">Remove</system:String>
+  <system:String x:Key="dict.remove.tooltip">Removes the column and its data</system:String>
+  <system:String x:Key="dict.file.open">Open YAML</system:String>
+  <system:String x:Key="dict.file.open.tooltip">Open in Text Editor</system:String>
+  <system:String x:Key="dict.file.save">Save YAML</system:String>
+  <system:String x:Key="dict.file.copy">Copy to VB</system:String>
+  <system:String x:Key="dict.file.copy.tooltip">Copy the selected plugin file to your Voicebank folder</system:String>
+  <system:String x:Key="dict.file.save.tooltip">Saves the YAML file</system:String>
+  <system:String x:Key="dict.file.save.ini">Save Presamp</system:String>
+  <system:String x:Key="dict.file.save.ini.tooltip">Save changes to presamp.ini</system:String>
+  <system:String x:Key="dict.file.open.ini">Open Presamp</system:String>
+  <system:String x:Key="dict.file.open.ini.tooltip">Browse for an existing presamp.ini file</system:String>
+  <system:String x:Key="dict.editor">Editor</system:String>
+  <system:String x:Key="dict.entry.comment">Add Comment</system:String>
+  <system:String x:Key="dict.entry.delete">Delete Entry</system:String>
+  <system:String x:Key="dict.entry.delete.tooltip">Deletes the selected row</system:String>
+  <system:String x:Key="dict.entry.add">Add Entry</system:String>
+  <system:String x:Key="dict.entry.add.tooltip">Adds a new blank row</system:String>
+  <system:String x:Key="dict.replace.title">Find &amp; Replace</system:String>
+  <system:String x:Key="dict.replace.column">Target Column:</system:String>
+  <system:String x:Key="dict.replace.column.tooltip">Select the column to search in</system:String>
+  <system:String x:Key="dict.replace.find">Find...</system:String>
+  <system:String x:Key="dict.replace.find.tooltip">Text to search for</system:String>
+  <system:String x:Key="dict.replace.replace">Replace With...</system:String>
+  <system:String x:Key="dict.replace.replace.tooltip">Text to replace the found text with</system:String>
+  <system:String x:Key="dict.replace.regex">Use Regular Expressions (Regex)</system:String>
+  <system:String x:Key="dict.replace.regex.tooltip">Enable to use Regular Expressions for searching</system:String>
+  <system:String x:Key="dict.replace.findbtn">Find Next</system:String>
+  <system:String x:Key="dict.replace.findbtn.tooltip">Find and highlight the next occurrence</system:String>
+  <system:String x:Key="dict.replace.replacebtn">Replace</system:String>
+  <system:String x:Key="dict.replace.replacebtn.tooltip">Replace the highlighted occurrence, or replace ALL if nothing is selected</system:String>
+  <system:String x:Key="dict.replace.findall">Find All</system:String>
+  <system:String x:Key="dict.replace.finddups">Finds and selects duplicate entries</system:String>
+  <system:String x:Key="dict.replace.findall.tooltip">Highlight all matching occurrences</system:String>
+  <system:String x:Key="dict.replace.findprev.tooltip">Find previous occurrence (Up)</system:String>
+  <system:String x:Key="dict.replace.replaceall">Replace All</system:String>
+  <system:String x:Key="dict.replace.replaceall.tooltip">Replace every matching occurrence in the column at once</system:String>
+  <system:String x:Key="dict.menu.deselect">Deselect</system:String>
+  <system:String x:Key="dict.menu.cut">Cut</system:String>
+  <system:String x:Key="dict.menu.copy">Copy</system:String>
+  <system:String x:Key="dict.menu.paste">Paste</system:String>
+  <system:String x:Key="dict.error.syntax">Syntax Error</system:String>
+  <system:String x:Key="dict.error.line.error">Error at Line</system:String>
+  <system:String x:Key="dict.error.error.loading">Could not load file context to display the exact line.</system:String>
+  <system:String x:Key="dict.error.save.reload">Save and Reload</system:String>
+
 
   <!-- Mix Effects (post-processing) -->
   <system:String x:Key="mixfx.caption">Track Polish</system:String>
