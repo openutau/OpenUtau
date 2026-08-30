@@ -457,6 +457,9 @@ namespace OpenUtau.App.Views {
             if (newNote == null) {
                 return;
             }
+            foreach (var exp in note.phonemeExpressions.OrderBy(exp => exp.index)) {
+                DocManager.Inst.ExecuteCmd(new SetNoteExpressionCommand(project, project.tracks[part.trackNo], part, newNote, exp.abbr, new float?[] { exp.value }));
+            }
             DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(part, newNote, NotePresets.Default.SplittedLyric));
         }
 
