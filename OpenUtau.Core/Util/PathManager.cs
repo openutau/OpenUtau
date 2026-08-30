@@ -44,7 +44,11 @@ namespace OpenUtau.Core {
                 string exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
                 IsInstalled = File.Exists(Path.Combine(exePath, "installed.txt"));
                 if (!IsInstalled) {
-                    DataPath = exePath;
+                    // AppContext.BaseDirectory correctly resolves to the application's output
+                    // directory in both normal execution (portable mode) and during dotnet test,
+                    // unlike Process.MainModule which points to testhost.exe during tests.
+                    DataPath = AppContext.BaseDirectory.TrimEnd(
+                        Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                 } else {
                     string dataHome = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
                     DataPath = Path.Combine(dataHome, "OpenUtau");
