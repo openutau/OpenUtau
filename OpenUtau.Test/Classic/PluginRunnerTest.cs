@@ -71,7 +71,7 @@ namespace OpenUtau.Classic {
                     Parent = second
                 };
                 secondUpnoneme.SetExpression(project, project.tracks[0], Ustx.GEN, 30);
-                // requierd Expression
+                // required Expression
                 secondUpnoneme.SetExpression(project, project.tracks[0], Ustx.VEL, 40);
                 secondUpnoneme.SetExpression(project, project.tracks[0], Ustx.VOL, 50);
                 secondUpnoneme.SetExpression(project, project.tracks[0], Ustx.MOD, 60);
