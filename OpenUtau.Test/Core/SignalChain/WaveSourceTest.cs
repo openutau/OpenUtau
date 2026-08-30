@@ -73,5 +73,24 @@ namespace OpenUtau.Core.SignalChain {
             Assert.True(source.IsReady(len - 100 + 1, 100));
             Assert.True(source.IsReady(len * 2 - 1, 100));
         }
+
+        [Fact]
+        public void MasterAdapterFadesAndStopsAtEndTest() {
+            var source = new WaveSource(0, 20, 0, 2);
+            var samples = new float[44100 * 20 / 1000 * 2];
+            System.Array.Fill(samples, 1f);
+            source.SetSamples(samples);
+            var adapter = new MasterAdapter(source, endMs: 10);
+            adapter.SetPosition(0);
+            var buffer = new float[2048];
+
+            int read = adapter.Read(buffer, 0, buffer.Length);
+
+            Assert.Equal(44100 * 10 / 1000 * 2, read);
+            Assert.Equal(0, buffer[0]);
+            Assert.Equal(1, buffer[440]);
+            Assert.Equal(0, buffer[read - 2]);
+            Assert.Equal(0, adapter.Read(buffer, 0, buffer.Length));
+        }
     }
 }
