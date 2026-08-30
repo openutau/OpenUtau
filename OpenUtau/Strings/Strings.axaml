@@ -158,6 +158,11 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="dialogs.transcribe.game.batchduration">Max Batch Duration (s)</system:String>
   <system:String x:Key="dialogs.transcribe.longchunk.message">One or more audio segments are very long and may consume large amount of memory when transcribing. This usually happens when the audio contains accompaniment. Still proceed?</system:String>
 
+  <system:String x:Key="easythemeeditor.isdarkmode">Is Dark Mode</system:String>
+  <system:String x:Key="easythemeeditor.maincolora">Main Color A</system:String>
+  <system:String x:Key="easythemeeditor.maincolorb">Main Color B</system:String>
+  <system:String x:Key="easythemeeditor.switch">Switch to Accurate Mode</system:String>
+
   <system:String x:Key="errors.caption">Error</system:String>
   <system:String x:Key="errors.details">Error Details</system:String>
   <system:String x:Key="errors.diffsinger.downloadvocoder">Error loading vocoder "{0}". Please download vocoder from {1}</system:String>
@@ -580,6 +585,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.theme.dark">Dark</system:String>
   <system:String x:Key="prefs.appearance.theme.light">Light</system:String>
   <system:String x:Key="prefs.appearance.customtheme.edit.title">Edit Custom Theme</system:String>
+  <system:String x:Key="prefs.appearance.customtheme.easyedit.title">Edit Custom Theme Colorsets</system:String>
   <system:String x:Key="prefs.appearance.customtheme.delete.title">Delete Custom Theme</system:String>
   <system:String x:Key="prefs.appearance.customtheme.delete.message">Are you sure you want to delete this theme?</system:String>
   <system:String x:Key="prefs.appearance.customtheme.create.title">Create Custom Theme</system:String>
@@ -748,7 +754,42 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singersetup.textfileencoding.prompt">Choose an encoding that make file contents look right.</system:String>
   <system:String x:Key="singersetup.title">Singer Setup</system:String>
 
+  <system:String x:Key="themeeditor.accentcolora">Accent Color 1</system:String>
+  <system:String x:Key="themeeditor.accentcolorb">Accent Color 2</system:String>
+  <system:String x:Key="themeeditor.accentcolorc">Accent Color 3</system:String>
+  <system:String x:Key="themeeditor.backgroundcolor">Background Color</system:String>
+  <system:String x:Key="themeeditor.backgroundcolordisabled">Background Color Disabled</system:String>
+  <system:String x:Key="themeeditor.backgroundcolorpointerover">Background Color Pointer Over</system:String>
+  <system:String x:Key="themeeditor.backgroundcolorpressed">Background Color Pressed</system:String>
+  <system:String x:Key="themeeditor.barnumbercolor">Bar Number Color</system:String>
+  <system:String x:Key="themeeditor.blackkeycolorleft">Black Key Color Left</system:String>
+  <system:String x:Key="themeeditor.blackkeycolorright">Black Key Color Right</system:String>
+  <system:String x:Key="themeeditor.blackkeynamecolor">Black Key Name Color</system:String>
+  <system:String x:Key="themeeditor.bordercolor">Border Color</system:String>
+  <system:String x:Key="themeeditor.bordercolorpointerover">Border Color Pointer Over</system:String>
+  <system:String x:Key="themeeditor.cancel">Cancel</system:String>
+  <system:String x:Key="themeeditor.centerkeycolorleft">Center Key Color Left</system:String>
+  <system:String x:Key="themeeditor.centerkeycolorright">Center Key Color Right</system:String>
+  <system:String x:Key="themeeditor.centerkeynamecolor">Center Key Name Color</system:String>
+  <system:String x:Key="themeeditor.finalpitchcolor">Final Pitch Color</system:String>
+  <system:String x:Key="themeeditor.foregroundcolor">Foreground Color</system:String>
+  <system:String x:Key="themeeditor.foregroundcolordisabled">Foreground Color Disabled</system:String>
+  <system:String x:Key="themeeditor.foregroundcolorpointerover">Foreground Color Pointer Over</system:String>
+  <system:String x:Key="themeeditor.foregroundcolorpressed">Foreground Color Pressed</system:String>
+  <system:String x:Key="themeeditor.isdarkmode">Is Darkmode</system:String>
+  <system:String x:Key="themeeditor.neutralaccentcolor">Neutral Accent Color</system:String>
+  <system:String x:Key="themeeditor.neutralaccentcolorpointerover">Neutral Accent Color Pointer Over</system:String>
+  <system:String x:Key="themeeditor.save">Save</system:String>
+  <system:String x:Key="themeeditor.switch">Switch to Easy Modemer</system:String>
+  <system:String x:Key="themeeditor.systemaccentcolor">System Accent Color</system:String>
+  <system:String x:Key="themeeditor.systemaccentcolordark">System Accent Color Light</system:String>
+  <system:String x:Key="themeeditor.systemaccentcolorlight">System Accent Color Dark</system:String>
+  <system:String x:Key="themeeditor.trackbackgroundaltcolor">Track Background Alt Color</system:String>
+  <system:String x:Key="themeeditor.ticklinecolor">Tick Line Color</system:String>
   <system:String x:Key="themeeditor.title">Theme Editor</system:String>
+  <system:String x:Key="themeeditor.whitekeycolorleft">White Key Color Left</system:String>
+  <system:String x:Key="themeeditor.whitekeycolorright">White Key Color Right</system:String>
+  <system:String x:Key="themeeditor.whitekeynamecolor">White Key Name Color</system:String>
 
   <system:String x:Key="tip.aliasbox">Override Alias</system:String>
   <system:String x:Key="tip.exps">Numerical,Options Type

@@ -45,4 +45,9 @@
   <Color x:Key="BlackKeyColorLeft">#FF71A3</Color>
   <Color x:Key="BlackKeyColorRight">#FF347C</Color>
   <Color x:Key="BlackKeyNameColor">#FFFFFF</Color>
+    
+  <!--Easy Color Themes-->
+  <system:Boolean x:Key="IsDarkModeEasy">False</system:Boolean>
+  <Color x:Key="MainColorA">#4EA6EA</Color>
+  <Color x:Key="MainColorB">#FF347C</Color>
 </ResourceDictionary>
