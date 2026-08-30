@@ -8,10 +8,10 @@ using System.Text.RegularExpressions;
 using OpenUtau.Audio;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Util;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
-using OpenUtau.Core.Render;
 using Serilog;
 
 namespace OpenUtau.App.ViewModels {
@@ -61,6 +61,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public double PlayPosMarkerMargin { get; set; }
 
         // Paths
+        public string DataPath => PathManager.Inst.DataPath;
         public string SingerPath => PathManager.Inst.SingersPath;
         public string AdditionalSingersPath => !string.IsNullOrWhiteSpace(PathManager.Inst.AdditionalSingersPath) ? PathManager.Inst.AdditionalSingersPath : "(None)";
         [Reactive] public bool InstallToAdditionalSingersPath { get; set; }
@@ -448,6 +449,30 @@ namespace OpenUtau.App.ViewModels {
             }
         }
 
+        public bool SetCustomDataPath(string path) {
+            if (Preferences.Default.CustomDataPath == path || PathManager.Inst.DataPath == path) {
+                return false;
+            }
+
+            try {
+                PathManager.Inst.SetCustomDataPath(path);
+            } catch (Exception e) {
+                if (string.IsNullOrEmpty(path)) {
+                    path = "default path";
+                }
+                Exception customEx;
+                if (e is UnauthorizedAccessException) {
+                    customEx = new MessageCustomizableException("Failed to set data path", "<translate:prefs.paths.datapath.unauthorized>", e, true, [path]);
+                } else {
+                    customEx = new MessageCustomizableException("Failed to set data path", "<translate:prefs.paths.datapath.error>", e, true, [path]);
+                }
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
+                return false;
+            }
+            this.RaisePropertyChanged(nameof(DataPath));
+            return true;
+        }
+        
         public void SetAddlSingersPath(string path) {
             Preferences.Default.AdditionalSingerPath = path;
             Preferences.Save();

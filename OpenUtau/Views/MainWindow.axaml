@@ -88,9 +88,12 @@
         <Grid Margin="60,50,60,40" RowDefinitions="Auto,Auto,Auto,*" ColumnDefinitions="*,*">
           <!--Startup warnings-->
           <StackPanel Grid.Row="0" Grid.ColumnSpan="2">
-            <Button Click="OnWelcomeRecovery" Height="40" Content="{Binding RecoveryString}"
+            <Button Click="OnWelcomeRecovery" Height="40" Padding="4" Margin="0,0,0,10" Content="{Binding RecoveryString}"
                     IsVisible="{Binding HasRecovery}" Background="{DynamicResource WarningBrush}">
             </Button>
+            <Border BorderThickness="1" Background="{DynamicResource WarningBrush}" IsVisible="{Binding HasStartupError}" Margin="0,0,0,10">
+              <TextBlock Text="{Binding StartupErrorString}" Margin="4" TextWrapping="Wrap"/>
+            </Border> 
           </StackPanel>
           <!--Create new project or open existing project-->
           <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Spacing="8">

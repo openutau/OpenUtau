@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using DynamicData.Binding;
@@ -58,8 +59,10 @@ namespace OpenUtau.App.ViewModels {
         ObservableCollectionExtended<RecentFileInfo> RecentFiles { get; } = new ObservableCollectionExtended<RecentFileInfo>();
         ObservableCollectionExtended<RecentFileInfo> TemplateFiles { get; } = new ObservableCollectionExtended<RecentFileInfo>();
         [Reactive] public bool HasRecovery { get; set; } = false;
-        [Reactive] public string RecoveryPath { get; set; } = String.Empty;
-        [Reactive] public string RecoveryString { get; set; } = String.Empty;
+        [Reactive] public string RecoveryPath { get; set; } = string.Empty;
+        [Reactive] public string RecoveryString { get; set; } = string.Empty;
+        [Reactive] public bool HasStartupError { get; set; } = false;
+        [Reactive] public string StartupErrorString { get; set; } = string.Empty;
 
         [Reactive] public PlaybackViewModel PlaybackViewModel { get; set; }
         [Reactive] public TracksViewModel TracksViewModel { get; set; }
@@ -162,32 +165,29 @@ namespace OpenUtau.App.ViewModels {
         public void InitProject(MainWindow window) {
             var recPath = Preferences.Default.RecoveryPath;
             if (!string.IsNullOrWhiteSpace(recPath) && File.Exists(recPath)) {
-                /*
-                var result = await MessageBox.Show(
-                    window,
-                    $"{ThemeManager.GetString("dialogs.recovery")}\n{recPath}",
-                    ThemeManager.GetString("dialogs.recovery.caption"),
-                    MessageBox.MessageBoxButtons.YesNo);
-                if (result == MessageBox.MessageBoxResult.Yes) {
-                    DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), true, "project"));
-                    try {
-                        Core.Format.Formats.RecoveryProject(new string[] { recPath });
-                        Page = 1;
-                        DocManager.Inst.ExecuteCmd(new VoiceColorRemappingNotification(-1, true));
-                        DocManager.Inst.Recovered = true;
-                        this.RaisePropertyChanged(nameof(Title));
-                    } finally {
-                        DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), false, "project"));
-                    }
-                    return;
-                }
-                */
                 RecoveryPath = recPath;
                 RecoveryString = ThemeManager.GetString("dialogs.recovery") + "\n" + recPath;
                 HasRecovery = true;
-                return;
             }
-          
+            if (Preferences.LoadingErrors.Count > 0) {
+                HasStartupError = true;
+                var messages = Preferences.LoadingErrors.Select(e => {
+                    var text = e.TranslatableMessage;
+                    var matches = Regex.Matches(e.TranslatableMessage, "<translate:(.*?)>");
+                    foreach (Match match in matches) {
+                        if (ThemeManager.TryGetString(match.Groups[1].Value, out string translated)) {
+                            text = text.Replace(match.Value, translated);
+                        } else {
+                            text = e.Message;
+                            break;
+                        }
+                    }
+                    return text;
+                }).ToList();
+                StartupErrorString = string.Join("\n", messages);
+            }
+            if (HasRecovery || HasStartupError) return;
+
             var args = Environment.GetCommandLineArgs();
             if (args.Length == 2 && File.Exists(args[1])) {
                 try {
@@ -198,7 +198,6 @@ namespace OpenUtau.App.ViewModels {
                     var customEx = new MessageCustomizableException($"Failed to open file {args[1]}", $"<translate:errors.failed.openfile>: {args[1]}", e);
                     DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
                 }
-                return;
             }
         }
 

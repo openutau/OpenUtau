@@ -599,6 +599,21 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.paths">Paths</system:String>
   <system:String x:Key="prefs.paths.addlsinger">Additional Singer Path</system:String>
   <system:String x:Key="prefs.paths.addlsinger.install">Install to Additional Singer Path</system:String>
+  <system:String x:Key="prefs.paths.datapath">OpenUtau Data Path</system:String>
+  <system:String x:Key="prefs.paths.datapath.error">Failed to set data path: cannot access "{0}".</system:String>
+  <system:String x:Key="prefs.paths.datapath.unauthorized">Failed to set data path: cannot access the protected folder "{0}".</system:String>
+  <system:String x:Key="prefs.paths.datapath.note">Note: This folder contains folders such as Singers, Resamplers, Plugins, Themes, etc.</system:String>
+  <system:String x:Key="prefs.paths.datapath.warning">Folder contents will not be moved automatically. If you had the following data in the previous folder, please move them to the new folder.
+- Singers
+- Resamplers
+- Wavtools
+- Dependencies
+- Plugins
+- Dictionaries
+- Themes
+- Templates
+
+Please restart OpenUtau.</system:String>
   <system:String x:Key="prefs.paths.detect">Detect</system:String>
   <system:String x:Key="prefs.paths.loaddeepfolders">Load all depth folders</system:String>
   <system:String x:Key="prefs.paths.singer">Singer Path</system:String>
@@ -746,6 +761,15 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singersetup.textfileencoding">Text File Encoding</system:String>
   <system:String x:Key="singersetup.textfileencoding.prompt">Choose an encoding that make file contents look right.</system:String>
   <system:String x:Key="singersetup.title">Singer Setup</system:String>
+  
+  <system:String x:Key="startuperror.saveprefs">Failed to save prefs</system:String>
+  <system:String x:Key="startuperror.loaddefprefs">Failed to load prefs-default.json</system:String>
+  <system:String x:Key="startuperror.customdatapath.notexist">Using the default data folder because the custom data folder does not exist</system:String>
+  <system:String x:Key="startuperror.customdatapath.unauthorized">Using the default data folder because there is no write permission for the custom data folder</system:String>
+  <system:String x:Key="startuperror.defaultdatapath.notexist">Default data folder does not exist</system:String>
+  <system:String x:Key="startuperror.defaultdatapath.unauthorized">There is no permission to write to the default data folder</system:String>
+  <system:String x:Key="startuperror.loadprefs">Failed to load preferences</system:String>
+  <system:String x:Key="startuperror.cloudfolder">This folder is located in cloud storage, so OpenUtau may not work properly</system:String>
 
   <system:String x:Key="themeeditor.title">Theme Editor</system:String>
 

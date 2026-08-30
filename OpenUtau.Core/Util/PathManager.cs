@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -17,12 +16,12 @@ namespace OpenUtau.Core {
             RootPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             if (OS.IsMacOS()) {
                 string userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                DataPath = Path.Combine(userHome, "Library", "OpenUtau");
+                _dataPath = Path.Combine(userHome, "Library", "OpenUtau");
                 CachePath = Path.Combine(userHome, "Library", "Caches", "OpenUtau");
                 HomePathIsAscii = true;
                 try {
                     // Deletes old cache.
-                    string oldCache = Path.Combine(DataPath, "Cache");
+                    string oldCache = Path.Combine(_dataPath, "Cache");
                     if (Directory.Exists(oldCache)) {
                         Directory.Delete(oldCache, true);
                     }
@@ -33,7 +32,7 @@ namespace OpenUtau.Core {
                 if (string.IsNullOrEmpty(dataHome)) {
                     dataHome = Path.Combine(userHome, ".local", "share");
                 }
-                DataPath = Path.Combine(dataHome, "OpenUtau");
+                _dataPath = Path.Combine(dataHome, "OpenUtau");
                 string cacheHome = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
                 if (string.IsNullOrEmpty(cacheHome)) {
                     cacheHome = Path.Combine(userHome, ".cache");
@@ -41,17 +40,17 @@ namespace OpenUtau.Core {
                 CachePath = Path.Combine(cacheHome, "OpenUtau");
                 HomePathIsAscii = true;
             } else {
-                string exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                string exePath = Path.GetDirectoryName(Environment.ProcessPath);
                 IsInstalled = File.Exists(Path.Combine(exePath, "installed.txt"));
                 if (!IsInstalled) {
-                    DataPath = exePath;
+                    _dataPath = exePath;
                 } else {
                     string dataHome = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                    DataPath = Path.Combine(dataHome, "OpenUtau");
+                    _dataPath = Path.Combine(dataHome, "OpenUtau");
                 }
-                CachePath = Path.Combine(DataPath, "Cache");
+                CachePath = Path.Combine(_dataPath, "Cache");
                 HomePathIsAscii = true;
-                var etor = StringInfo.GetTextElementEnumerator(DataPath);
+                var etor = StringInfo.GetTextElementEnumerator(_dataPath);
                 while (etor.MoveNext()) {
                     string s = etor.GetTextElement();
                     if (s.Length != 1 || s[0] >= 128) {
@@ -62,11 +61,13 @@ namespace OpenUtau.Core {
             }
         }
 
-        public string RootPath { get; private set; }
-        public string DataPath { get; private set; }
-        public string CachePath { get; private set; }
-        public bool HomePathIsAscii { get; private set; }
-        public bool IsInstalled { get; private set; }
+        private string _dataPath;
+        public string RootPath { get; }
+        public string CachePath { get; }
+        public bool HomePathIsAscii { get; }
+        public bool IsInstalled { get; }
+        public string CustomDataPath => Preferences.Default.CustomDataPath;
+        public string DataPath => string.IsNullOrEmpty(CustomDataPath) ? _dataPath : CustomDataPath;
         public string SingersPathOld => Path.Combine(DataPath, "Content", "Singers");
         public string SingersPath => Path.Combine(DataPath, "Singers");
         public string AdditionalSingersPath => Preferences.Default.AdditionalSingerPath;
@@ -80,12 +81,48 @@ namespace OpenUtau.Core {
         public string PluginsPath => Path.Combine(DataPath, "Plugins");
         public string DictionariesPath => Path.Combine(DataPath, "Dictionaries");
         public string TemplatesPath => Path.Combine(DataPath, "Templates");
-        public string LogsPath => Path.Combine(DataPath, "Logs");
-        public string LogFilePath => Path.Combine(DataPath, "Logs", "log.txt");
-        public string PrefsFilePath => Path.Combine(DataPath, "prefs.json");
         public string ThemesPath => Path.Combine(DataPath, "Themes");
-        public string NotePresetsFilePath => Path.Combine(DataPath, "notepresets.json");
-        public string BackupsPath => Path.Combine(DataPath, "Backups");
+        public string LogsPath => Path.Combine(_dataPath, "Logs");
+        public string LogFilePath => Path.Combine(_dataPath, "Logs", "log.txt");
+        public string PrefsFilePath => Path.Combine(_dataPath, "prefs.json");
+        public string NotePresetsFilePath => Path.Combine(_dataPath, "notepresets.json");
+        public string BackupsPath => Path.Combine(_dataPath, "Backups");
+
+        public void ValidatePaths() {
+            // Default data path authorization check
+            var tempPath = Path.Combine(_dataPath, "temp.txt");
+            try {
+                File.WriteAllText(tempPath, "default data directory");
+            } catch (Exception e) {
+                Preferences.LoadingErrors.Add(new MessageCustomizableException($"Cannot access default data directory: {_dataPath}", $"<translate:startuperror.defaultdatapath.unauthorized>: {_dataPath}", e));
+            } finally {
+                File.Delete(tempPath);
+            }
+
+            // Cloud folder check
+            try {
+                List<string> paths = new List<string> { _dataPath, Path.GetDirectoryName(Environment.ProcessPath)! };
+                if (!string.IsNullOrEmpty(CustomDataPath)) {
+                    paths.Add(CustomDataPath);
+                }
+                paths = paths.Distinct().ToList();
+                foreach (var path in paths) {
+                    string fullPath = Path.GetFullPath(path);
+                    string lowerPath = fullPath.ToLowerInvariant();
+                    if (lowerPath.Contains("onedrive") ||
+                        lowerPath.Contains("googledrive") || lowerPath.Contains("google drive") ||
+                        lowerPath.Contains("dropbox") ||
+                        lowerPath.Contains("mobile documents")) { // iCloud
+                        Preferences.LoadingErrors.Add(new MessageCustomizableException($"This folder may be located on a cloud storage: {fullPath}", $"<translate:startuperror.cloudfolder>: {fullPath}", new ArgumentException()));
+                    } else {
+                        DriveInfo drive = new DriveInfo(Path.GetPathRoot(path)!);
+                        if (drive.VolumeLabel.Contains("Google Drive")) {
+                            Preferences.LoadingErrors.Add(new MessageCustomizableException($"This folder may be located on a cloud storage: {fullPath}", $"<translate:startuperror.cloudfolder>: {fullPath}", new ArgumentException()));
+                        }
+                    }
+                }
+            } catch { }
+        }
 
         public List<string> SingersPaths {
             get {
@@ -97,6 +134,21 @@ namespace OpenUtau.Core {
                     list.Add(AdditionalSingersPath);
                 }
                 return list.Distinct().ToList();
+            }
+        }
+
+        public void SetCustomDataPath(string path) {
+            if (string.IsNullOrWhiteSpace(path) || path == _dataPath) {
+                Preferences.Default.CustomDataPath = string.Empty;
+                Preferences.Save();
+                return;
+            }
+            try {
+                File.WriteAllText(Path.Combine(path, "temp.txt"), "custom data directory");
+                Preferences.Default.CustomDataPath = path;
+                Preferences.Save();
+            } finally {
+                File.Delete(Path.Combine(path, "temp.txt"));
             }
         }
 

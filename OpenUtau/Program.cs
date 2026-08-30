@@ -11,6 +11,7 @@ using Avalonia.Media;
 using Avalonia.ReactiveUI;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
+using OpenUtau.Core.Util;
 using Serilog;
 
 namespace OpenUtau.App {
@@ -38,6 +39,11 @@ namespace OpenUtau.App {
                 $"{RuntimeInformation.RuntimeIdentifier}");
             Log.Information($"Data path = {PathManager.Inst.DataPath}");
             Log.Information($"Cache path = {PathManager.Inst.CachePath}");
+            foreach (var error in Preferences.LoadingErrors) {
+                Log.Error(error.Message);
+            }
+            var cusomDataPath = string.IsNullOrEmpty(PathManager.Inst.CustomDataPath) ? "none" : PathManager.Inst.CustomDataPath;
+            Log.Information($"Custom Data path = {cusomDataPath}");
             Log.Information($"System encoding = {Encoding.GetEncoding(0)?.WebName ?? "null"}");
             try {
                 Run(args);

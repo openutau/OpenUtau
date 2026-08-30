@@ -17,6 +17,42 @@ namespace OpenUtau.App.Views {
             InitializeComponent();
         }
 
+        void OpenCustomDataFolder(object sender, RoutedEventArgs e) {
+            try {
+                OS.OpenFolder(viewModel!.DataPath);
+            } catch (Exception ex) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(ex));
+            }
+        }
+
+        async void ResetCustomDataPath(object sender, RoutedEventArgs e) {
+            var result = viewModel!.SetCustomDataPath(string.Empty);
+            if (result) {
+                await MessageBox.Show(
+                    this,
+                    ThemeManager.GetString("prefs.paths.datapath.warning"),
+                    ThemeManager.GetString("warning"),
+                    MessageBox.MessageBoxButtons.Ok);
+            }
+        }
+
+        async void SelectCustomDataPath(object sender, RoutedEventArgs e) {
+            var path = await FilePicker.OpenFolder(this, "prefs.paths.datapath", PathManager.Inst.DataPath);
+            if (string.IsNullOrEmpty(path)) {
+                return;
+            }
+            if (Directory.Exists(path)) {
+                var result = viewModel!.SetCustomDataPath(path);
+                if (result) {
+                    await MessageBox.Show(
+                        this,
+                        ThemeManager.GetString("prefs.paths.datapath.warning"),
+                        ThemeManager.GetString("warning"),
+                        MessageBox.MessageBoxButtons.Ok);
+                }
+            }
+        }
+      
         void OpenSingersFolder(object sender, RoutedEventArgs e) {
             try {
                 Directory.CreateDirectory(viewModel!.SingerPath);
