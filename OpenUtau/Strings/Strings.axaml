@@ -320,6 +320,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.tools">Tools</system:String>
   <system:String x:Key="menu.tools.clearcache">Clear Cache</system:String>
   <system:String x:Key="menu.tools.debugwindow">Debug Window</system:String>
+  <system:String x:Key="menu.tools.dependency.install">Install Dependency (.oudep)...</system:String>
   <system:String x:Key="menu.tools.fullscreen">Full Screen</system:String>
   <system:String x:Key="menu.tools.layout">Layout</system:String>
   <system:String x:Key="menu.tools.layout.hsplit11">Horizontal 1:1</system:String>

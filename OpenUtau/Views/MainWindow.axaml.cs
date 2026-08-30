@@ -635,7 +635,7 @@ namespace OpenUtau.App.Views {
                 : new[] { FilePicker.EXE, FilePicker.UnixExecutable };
 
             var file = await FilePicker.OpenFile(
-                this, "menu.tools.dependency.install", filter);
+                this, "menu.tools.wavtoolresampler.install", filter);
             if (file == null) {
                 return;
             }
