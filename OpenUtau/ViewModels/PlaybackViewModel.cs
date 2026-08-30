@@ -19,6 +19,15 @@ namespace OpenUtau.App.ViewModels {
         public bool HasRangeSelection => DocManager.Inst.rangeEndTick > DocManager.Inst.rangeStartTick;
         public bool IsPlaying => PlaybackManager.Inst.PlayingMaster;
         public bool ShowPlayPosHighlight => !IsPlaying || HasRangeSelection;
+        public bool LoopPlayback {
+            get => PlaybackManager.Inst.LoopPlayback;
+            set {
+                if (PlaybackManager.Inst.LoopPlayback != value) {
+                    PlaybackManager.Inst.LoopPlayback = value;
+                    this.RaisePropertyChanged(nameof(LoopPlayback));
+                }
+            }
+        }
 
         public PlaybackViewModel() {
             DocManager.Inst.AddSubscriber(this);

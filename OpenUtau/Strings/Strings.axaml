@@ -777,6 +777,7 @@ General
     Space: Play</system:String>
   <system:String x:Key="tip.notes.zoomx">◀ Scroll here to zoom horizontally ▶</system:String>
   <system:String x:Key="tip.notes.zoomy">Scroll here to zoom vertically ▶</system:String>
+  <system:String x:Key="tip.playback.loop">Loop playback</system:String>
 
   <system:String x:Key="tracks.duplicate">Duplicate Track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>

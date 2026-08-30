@@ -241,7 +241,7 @@
                 </TextBlock>
               </Grid>
             </Border>
-            <Border Classes="playback" Width="88" HorizontalAlignment="Center">
+            <Border Classes="playback" Width="109" HorizontalAlignment="Center">
               <StackPanel Orientation="Horizontal">
                 <Button Command="{Binding PlaybackViewModel.SeekStart}">
                   <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
@@ -259,6 +259,11 @@
                   <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Data="M 0 0 L 5 4.5 L 0 9 Z M 5 0 L 7 0 L 7 9 L 5 9 Z"/>
                 </Button>
+                <ToggleButton IsChecked="{Binding PlaybackViewModel.LoopPlayback}"
+                              ToolTip.Tip="{DynamicResource tip.playback.loop}">
+                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Data="M 1 2 L 8 2 L 8 0 L 11 3 L 8 6 L 8 4 L 2 4 L 2 6 L 0 6 L 0 4 C 0 2.9 0.4 2 1 2 Z M 10 10 L 3 10 L 3 12 L 0 9 L 3 6 L 3 8 L 9 8 L 9 6 L 11 6 L 11 8 C 11 9.1 10.6 10 10 10 Z"/>
+                </ToggleButton>
               </StackPanel>
             </Border>
             <Border Classes="playback" Width="72" HorizontalAlignment="Right" Margin="4,0">

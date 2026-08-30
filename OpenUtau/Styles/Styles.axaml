@@ -302,12 +302,15 @@
     <Setter Property="VerticalAlignment" Value="Center"/>
     <Setter Property="HorizontalAlignment" Value="Center"/>
   </Style>
-  <Style Selector="Border.playback Button">
+  <Style Selector="Border.playback Button, Border.playback ToggleButton">
     <Setter Property="Margin" Value="0"/>
     <Setter Property="Padding" Value="0"/>
     <Setter Property="Width" Value="21"/>
     <Setter Property="Height" Value="19"/>
     <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="Border.playback ToggleButton:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi}"/>
   </Style>
 
   <Style Selector="Border.tips">
