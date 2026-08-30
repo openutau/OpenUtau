@@ -303,7 +303,7 @@ namespace OpenUtau.Core.Ustx {
             return TryGetOto(phoneme, out oto);
         }
 
-        public virtual IEnumerable<UOto> GetSuggestions(string text) { return emptyOtos; }
+        public virtual Dictionary<string, UOto> GetSuggestions(string text, bool isAlias) { return new Dictionary<string, UOto>(); }
         public virtual byte[] LoadPortrait() => null;
         public virtual byte[] LoadSample() => null;
         public override string ToString() => LocalizedName;
