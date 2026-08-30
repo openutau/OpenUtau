@@ -526,6 +526,10 @@ Warning: this option removes custom presets.</system:String>
     Left click to draw straight line
     Right click to reset
     Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.pitchpoint">Pitch Point Tool (5)
+    Left click to add point
+    Drag to move only the point
+    Hold Ctrl to select</system:String>
   <system:String x:Key="pianoroll.tool.pitchscurve">Pitch S-Curve Tool (Shift + 3)
     Drag to draw S-curve, release to enter adjusting mode
     Move mouse to tune S-curve strength, click to apply
