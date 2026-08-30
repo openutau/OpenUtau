@@ -92,7 +92,7 @@ namespace OpenUtau.App.Views {
             PartGotoFileCommand = ReactiveCommand.Create<UPart>(part => GotoFile(part));
             PartReplaceAudioCommand = ReactiveCommand.Create<UPart>(part => ReplaceAudio(part));
             PartTranscribeCommand = ReactiveCommand.Create<UPart>(part => Transcribe(part));
-            PartMergeCommand = ReactiveCommand.Create<UPart>(part => MergePart(part));
+            PartMergeCommand = ReactiveCommand.Create<UPart>(async part => await MergePart(part));
             PartSplitCommand = ReactiveCommand.Create<UPart>(async part =>  await SplitPart(part));
 
             AddHandler(DragDrop.DropEvent, OnDrop);
@@ -1629,17 +1629,17 @@ namespace OpenUtau.App.Views {
             viewModel.Page = 1;
         }
 
-        void MergePart(UPart part) {
+        async Task MergePart(UPart part) {
             List<UPart> selectedParts = viewModel.TracksViewModel.SelectedParts;
-            if (!selectedParts.All(p => p.trackNo.Equals(part.trackNo))) {
+            if (selectedParts.Count <= 1) { return; }
+            if (selectedParts.Any(p => p.trackNo != part.trackNo)) {
                 _ = MessageBox.Show(
                     this,
-                    ThemeManager.GetString("dialogs.merge.multitracks"),
-                    ThemeManager.GetString("dialogs.merge.caption"),
+                    ThemeManager.GetString("dialogs.mergeparts.multitracks"),
+                    ThemeManager.GetString("dialogs.mergeparts.caption"),
                     MessageBox.MessageBoxButtons.Ok);
                 return;
             }
-            if (selectedParts.Count() <= 1) { return; }
             List<UVoicePart> voiceParts = [];
             foreach (UPart p in selectedParts) {
                 if (p is UVoicePart vp) {
@@ -1686,6 +1686,14 @@ namespace OpenUtau.App.Views {
                 SkipPhonemizer = false
             };
             mergedPart.Validate(options, DocManager.Inst.Project, DocManager.Inst.Project.tracks[part.trackNo]);
+            if (mergedPart.notes.Any(n => n.OverlapError)) {
+                var res = await MessageBox.Show(
+                    this,
+                    ThemeManager.GetString("dialogs.mergeparts.overlap"),
+                    ThemeManager.GetString("dialogs.mergeparts.caption"),
+                    MessageBox.MessageBoxButtons.YesNo);
+                if (res == MessageBox.MessageBoxResult.No) { return; }
+            }
             DocManager.Inst.StartUndoGroup("command.part.edit");
             for (int i = selectedParts.Count - 1; i >= 0; i--) {
                 // The index will shift by removing a part on each loop

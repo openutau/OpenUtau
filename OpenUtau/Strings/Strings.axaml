@@ -112,8 +112,9 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="dialogs.installdependency.message">Installing </system:String>
   <system:String x:Key="dialogs.installdll.caption">Installing phonemizer</system:String>
   <system:String x:Key="dialogs.installdll.message">Installing </system:String>
-  <system:String x:Key="dialogs.merge.caption">Merging Parts</system:String>
-  <system:String x:Key="dialogs.merge.multitracks">Parts on different tracks cannot be merged.</system:String>
+  <system:String x:Key="dialogs.mergeparts.caption">Merging Parts</system:String>
+  <system:String x:Key="dialogs.mergeparts.multitracks">Parts on different tracks cannot be merged.</system:String>
+  <system:String x:Key="dialogs.mergeparts.overlap">Merged part will contain overlapping notes. Are you sure to continue?</system:String>
   <system:String x:Key="dialogs.splitpart.caption">Splitting Part</system:String>
   <system:String x:Key="dialogs.splitpart.intheway">There are one or more note(s) overlapping with the playhead.
 Do you want to continue by splitting at the nearest position after current playhead with no notes in the way?</system:String>
