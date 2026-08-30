@@ -45,8 +45,7 @@ namespace OpenUtau.Core {
                 // directory in both normal execution (portable/installed mode) and during
                 // dotnet test, unlike Process.MainModule which points to testhost.exe
                 // during tests.
-                string appDir = AppContext.BaseDirectory.TrimEnd(
-                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                string appDir = Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
                 IsInstalled = File.Exists(Path.Combine(appDir, "installed.txt"));
                 if (!IsInstalled) {
                     DataPath = appDir;
