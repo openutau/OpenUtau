@@ -1,17 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
+using OpenUtau.App;
 using OpenUtau.App.Controls;
+using OpenUtau.Classic;
+using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
+using Serilog;
 
 namespace OpenUtau.App {
+
     class ThemeChangedEvent { }
 
-    class ThemeManager {
+    public class ThemeManager {
         public static bool IsDarkMode = false;
         public static IBrush ForegroundBrush = Brushes.Black;
         public static IBrush BackgroundBrush = Brushes.White;
@@ -54,7 +61,7 @@ namespace OpenUtau.App {
         public static IBrush ExpActiveBrush = Brushes.Black;
         public static IBrush ExpActiveNameBrush = Brushes.White;
 
-        public static List<TrackColor> TrackColors = new List<TrackColor>(){
+        private static readonly List<TrackColor> DefaultTrackColors = new List<TrackColor>(){
                 new TrackColor("Pink", "#F06292", "#EC407A", "#F48FB1", "#FAC7D8"),
                 new TrackColor("Red", "#EF5350", "#E53935", "#E57373", "#F2B9B9"),
                 new TrackColor("Orange", "#FF8A65", "#FF7043", "#FFAB91", "#FFD5C8"),
@@ -74,6 +81,30 @@ namespace OpenUtau.App {
                 new TrackColor("Blue2", "#3949AB", "#283593", "#5C6BC0", "#AEB5E0"),
                 new TrackColor("Purple2", "#7B1FA2", "#4A148C", "#AB47BC", "#D5A3DE"),
             };
+        public static List<TrackColor> TrackColors = DefaultTrackColors;
+        public static void LoadSingerTrackColor(USinger singer) { 
+            try {
+            var yamlFile = Path.Combine(singer.Location, "character.yaml");
+                if (File.Exists(yamlFile)) {
+                    using var stream = File.OpenRead(yamlFile);
+                    var config = VoicebankConfig.Load(stream);
+                    var Colors = config.TrackColor;
+                    for (int i = 0; i < Colors.Length; i++) {
+                        if (TrackColors[i].Name != (Colors[i].ColorName)) {                        
+                            var appTrackColor = new TrackColor(Colors[i].ColorName,
+                                Colors[i].AccentColor,
+                                Colors[i].AccentColorDark,
+                                Colors[i].AccentColorLight,
+                                Colors[i].AccentColorCenterKey);
+                            TrackColors.Add(appTrackColor);
+                        }
+
+                    }
+                }
+            } catch (Exception e) { 
+                Log.Error($"{e}");}
+        }
+        
 
         public static List<string> GetAvailableThemes() {
             Colors.CustomTheme.ListThemes();
