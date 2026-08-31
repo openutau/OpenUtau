@@ -113,6 +113,7 @@ namespace OpenUtau.Core.Util {
                     if (!ValidString(new Action(() => CultureInfo.GetCultureInfo(Default.SortingOrder)))) Default.SortingOrder = string.Empty;
                     if (!Renderers.getRendererOptions().Contains(Default.DefaultRenderer)) Default.DefaultRenderer = string.Empty;
                     if (!Onnx.getRunnerOptions().Contains(Default.OnnxRunner)) Default.OnnxRunner = string.Empty;
+                    if (OS.IsWindows()) Default.WinePath = string.Empty;
                     if (Default.Theme != null) {
                         Default.ThemeName = Default.Theme switch {
                             1 => "Dark",

@@ -9,10 +9,12 @@ namespace OpenUtau.Classic {
     internal class WorldlineResampler : IResampler {
         public const string name = "worldline";
         public string FilePath { get; private set; }
+        public bool CallDirectly { get; private set; }
 
         public WorldlineResampler() {
             string ext = OS.IsWindows() ? ".dll" : OS.IsMacOS() ? ".dylib" : ".so";
             FilePath = Path.Join(PathManager.Inst.RootPath, name + ext);
+            CallDirectly = true;
         }
 
         public float[] DoResampler(ResamplerItem item, ILogger logger) {
