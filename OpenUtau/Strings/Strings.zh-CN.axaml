@@ -422,7 +422,7 @@
   <system:String x:Key="packages.caption">插件</system:String>
   <system:String x:Key="packages.col.action">操作</system:String>
   <system:String x:Key="packages.col.developer">开发者</system:String>
-  <system:String x:Key="packages.col.id">Id</system:String>
+  <!--<system:String x:Key="packages.col.id">Id</system:String>-->
   <system:String x:Key="packages.col.installed">已安装</system:String>
   <system:String x:Key="packages.col.name">名称</system:String>
   <system:String x:Key="packages.col.version">版本</system:String>
@@ -606,7 +606,7 @@
   <system:String x:Key="prefs.cache.clearonquit">退出时清空缓存</system:String>
   <system:String x:Key="prefs.cache.diffsingertensorcache">DiffSinger 张量缓存</system:String>
   <system:String x:Key="prefs.caption">使用偏好</system:String>
-  <system:String x:Key="prefs.diffsinger">DiffSinger</system:String>
+  <!--<system:String x:Key="prefs.diffsinger">DiffSinger</system:String>-->
   <system:String x:Key="prefs.editing">编辑</system:String>
   <system:String x:Key="prefs.general">常规</system:String>
   <system:String x:Key="prefs.note.restart">注意: 修改本项后请重启OpenUtau</system:String>
@@ -627,7 +627,7 @@
   <system:String x:Key="prefs.playback.autoscrollmode.stationarycursor">固定播放标记</system:String>
   <system:String x:Key="prefs.playback.backend">音频后端</system:String>
   <system:String x:Key="prefs.playback.backend.auto">自动</system:String>
-  <system:String x:Key="prefs.playback.backend.mini">MiniAudio</system:String>
+  <!--<system:String x:Key="prefs.playback.backend.mini">MiniAudio</system:String>-->
   <system:String x:Key="prefs.playback.cursorposition">自动滚动边界</system:String>
   <system:String x:Key="prefs.playback.device">回放设备</system:String>
   <system:String x:Key="prefs.playback.lockstarttime">暂停时</system:String>
@@ -644,7 +644,7 @@
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger 音色渲染步数</system:String>
   <system:String x:Key="prefs.rendering.diffsingervariancelocalpitchpatch">音高编辑时的 DiffSinger 局部音色更新</system:String>
   <system:String x:Key="prefs.rendering.gamebackend">GAME 推理后端</system:String>
-  <system:String x:Key="prefs.rendering.onnxgpu">GPU</system:String>
+  <!--<system:String x:Key="prefs.rendering.onnxgpu">GPU</system:String>-->
   <system:String x:Key="prefs.rendering.onnxrunner">机器学习运行器</system:String>
   <system:String x:Key="prefs.rendering.phasecomp">相位修正</system:String>
   <system:String x:Key="prefs.rendering.prerender">预渲染</system:String>
@@ -663,8 +663,8 @@
     警告：渲染线程过多可能会导致OpenUtau运行缓慢
   </system:String>
   <system:String x:Key="prefs.rendering.threads.numthreads">最大渲染线程数</system:String>
-  <system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>
-  <system:String x:Key="prefs.utau">UTAU</system:String>
+  <!--<system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>-->
+  <!--<system:String x:Key="prefs.utau">UTAU</system:String>-->
 
   <system:String x:Key="progress.cachecleared">缓存已清除</system:String>
   <system:String x:Key="progress.clearingcache">正在清除缓存...</system:String>
@@ -835,7 +835,7 @@
 
   <system:String x:Key="updater.caption">检查更新</system:String>
   <system:String x:Key="updater.description">开放歌声合成平台</system:String>
-  <system:String x:Key="updater.github">GitHub</system:String>
+  <!--<system:String x:Key="updater.github">GitHub</system:String>-->
   <system:String x:Key="updater.status.available">有新更新 v{0} !</system:String>
   <system:String x:Key="updater.status.checking">检查更新中...</system:String>
   <system:String x:Key="updater.status.notavailable">已更新至最新</system:String>
