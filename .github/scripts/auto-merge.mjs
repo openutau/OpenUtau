@@ -4,10 +4,11 @@
 // GITHUB_TOKEN cannot stand in for. Prints the full decision trail and
 // appends it to the job summary.
 //
-// This file and RULES_FILE are checked out from the base branch, and any PR
-// touching .github/ is refused below, so a PR cannot influence its own
-// decision. Never read policy out of the environment: the workflow file that
-// sets it is taken from the PR's own merge commit.
+// This file and RULES_FILE are checked out from the base branch, the workflow
+// triggers on pull_request_target so it is read from the base branch too, and
+// any PR touching .github/ is refused below: a PR cannot influence its own
+// decision. Keep policy in RULES_FILE rather than in the environment, so that
+// stays true even if the trigger is ever changed back to pull_request.
 import fs from 'node:fs';
 
 const TOKEN = process.env.GITHUB_TOKEN;
@@ -142,7 +143,7 @@ const CHECKLIST_LINK =
 // what they require, based on the diff at that moment. Posted at most once
 // (marker comment), no matter how the diff changes afterwards.
 const becameReady =
-  EVENT.name === 'pull_request' &&
+  EVENT.name === 'pull_request_target' &&
   ((EVENT.action === 'opened' && !pr.draft) || EVENT.action === 'ready_for_review');
 if (becameReady) {
   const alreadyCommented = await (async () => {
@@ -187,7 +188,7 @@ if (becameReady) {
       `Reviewing this PR? Please work through the ${CHECKLIST_LINK} — it covers what to check ` +
         'before approving, and when to leave the call to the maintainers.'
     );
-    await fetch(`https://api.github.com/repos/${REPO}/issues/${PR}/comments`, {
+    const posted = await fetch(`https://api.github.com/repos/${REPO}/issues/${PR}/comments`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${TOKEN}`,
@@ -196,7 +197,10 @@ if (becameReady) {
       },
       body: JSON.stringify({ body: lines.join('\n') }),
     });
-    report('posted auto-merge rules comment');
+    // Non-fatal: the comment is informational, the decision below stands
+    // either way. But say so, rather than claiming a post that never landed.
+    if (posted.ok) report('posted auto-merge rules comment');
+    else report(`failed to post rules comment (${posted.status}): ${(await posted.text()).slice(0, 300)}`);
   } else {
     report('rules comment already exists, skipping');
   }

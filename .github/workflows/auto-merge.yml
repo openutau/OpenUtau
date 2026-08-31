@@ -20,11 +20,13 @@
 # are, based on the diff at that moment. It is never posted twice, even if
 # the diff changes afterwards.
 #
-# The decision script AND the rules (.github/auto-merge-rules.json) are checked
-# out from the BASE branch, and any PR touching .github/ is refused outright, so
-# a PR can never modify the rules that decide its own fate. Nothing configured
-# in this file may affect the decision: for pull_request events GitHub reads
-# this workflow from the PR's own merge commit.
+# A PR can never influence the decision made about it:
+#   - the trigger is pull_request_target, so THIS file is read from the base
+#     branch, not from the PR (that is the whole reason for _target here; note
+#     it is safe only because nothing below ever checks out or runs PR code)
+#   - the decision script and the rules (.github/auto-merge-rules.json) are
+#     checked out from the base branch too
+#   - any PR touching .github/ is refused outright
 #
 # The merge additionally requires all CI check runs on the head commit
 # (pr-test.yml) to be completed and passing; it never merges over red or
@@ -32,7 +34,9 @@
 name: Auto-merge small PRs
 
 on:
-  pull_request:
+  # pull_request_target, not pull_request: the workflow definition, the token
+  # and the secrets must not come from the PR under evaluation.
+  pull_request_target:
     branches: [ master ]
     types: [ opened, synchronize, reopened, ready_for_review, closed ]
   pull_request_review:
@@ -51,15 +55,15 @@ permissions:
 
 concurrency:
   # github.event.pull_request exists at the top level for BOTH the
-  # pull_request and pull_request_review events.
+  # pull_request_target and pull_request_review events.
   group: auto-merge-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
   auto-merge:
-    # github.event.action: opened/synchronize/... for pull_request events,
-    # submitted/dismissed for pull_request_review events.
-    if: github.event_name == 'pull_request' || github.event.action == 'submitted' || github.event.action == 'dismissed'
+    # github.event.action: opened/synchronize/... for pull_request_target
+    # events, submitted/dismissed for pull_request_review events.
+    if: github.event_name == 'pull_request_target' || github.event.action == 'submitted' || github.event.action == 'dismissed'
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -68,10 +72,10 @@ jobs:
       EVENT_ACTION: ${{ github.event.action }}
       # Team-membership lookups only; see the permissions note above.
       TEAM_TOKEN: ${{ secrets.AUTO_MERGE_TEAM_TOKEN }}
-      # NOTE: the rules themselves live in .github/auto-merge-rules.json, which
-      # is read from the base checkout below. They are deliberately NOT set
-      # here: for pull_request events GitHub reads this workflow file from the
-      # PR's own merge commit, so anything configured here is PR-controlled.
+      # NOTE: the rules themselves live in .github/auto-merge-rules.json, read
+      # from the base checkout below. Keeping them out of this file means the
+      # policy stays put even if the trigger above is ever changed back to
+      # pull_request, which would make everything here PR-controlled.
     steps:
       - name: Checkout base branch
         uses: actions/checkout@v4
