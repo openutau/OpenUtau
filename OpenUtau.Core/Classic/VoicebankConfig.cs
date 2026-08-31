@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using OpenUtau.Core;
+using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Classic {
     public enum SymbolSetPreset { unknown, hiragana, arpabet }
@@ -53,6 +54,8 @@ namespace OpenUtau.Classic {
         public SymbolSet SymbolSet { get; set; }
         public Subbank[] Subbanks { get; set; }
         public bool? UseFilenameAsAlias = null;
+        public UExpressionDescriptor[] expressions;
+
 
         public void Save(Stream stream) {
             using (var writer = new StreamWriter(stream, Encoding.UTF8)) {
