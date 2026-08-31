@@ -146,13 +146,16 @@ jobs:
         if: ${{ matrix.arch.os == 'linux' }}
 
       - name: Create appimage
+        env:
+          ARCH: ${{ matrix.arch.linuxarch }}
+          LINUXDEPLOY_OUTPUT_APP_NAME: OpenUtau-linux
         run: |
           cp OpenUtau/Assets/OpenUtau.desktop bin/${{ matrix.arch.name }}
           cp OpenUtau/Assets/OpenUtau.png bin/${{ matrix.arch.name }}
-          cp OpenUtau/Assets/OpenUtau.png bin/${{ matrix.arch.name }}/.DirIcon
           cp OpenUtau/Assets/AppRun bin/${{ matrix.arch.name }}
+          ln -rs bin/${{ matrix.arch.name }}/OpenUtau.png bin/${{ matrix.arch.name }}/.DirIcon
           chmod 755 bin/${{ matrix.arch.name }}/AppRun
-          ARCH=${{ matrix.arch.linuxarch }} linuxdeploy --appdir bin/${{ matrix.arch.name }} --output appimage
+          linuxdeploy --appdir bin/${{ matrix.arch.name }} --output appimage
         if: ${{ matrix.arch.os == 'linux' }}
 
       # Upload Artifacts
@@ -202,6 +205,7 @@ jobs:
       - name: Appcast Linux
         run: |
           python appcast.py -v=${{ inputs.version }} -o=linux -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.tar.gz
+          python appcast.py -v=${{ inputs.version }} -o=linux -r=${{ matrix.arch.name }}-appimage -f=OpenUtau-linux-${{ matrix.arch.linuxarch }}.AppImage
         if: ${{ inputs.release && matrix.arch.os == 'linux' }}
 
       # Release
@@ -214,6 +218,7 @@ jobs:
           draft: ${{ inputs.draft }}
           files: |
             appcast.${{ matrix.arch.name }}*.xml
+            OpenUtau-linux-${{ matrix.arch.linuxarch }}.AppImage
             OpenUtau-${{ matrix.arch.name }}.*
           body: |
             See [Getting Started](https://github.com/stakira/OpenUtau/wiki/Getting-Started) for how to use.

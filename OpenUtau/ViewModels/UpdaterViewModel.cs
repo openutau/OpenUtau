@@ -98,7 +98,9 @@ namespace OpenUtau.App.ViewModels {
         }
 
         static GithubReleaseAsset? SelectAppcast(GithubRelease release) {
-            string suffix = PathManager.Inst.IsInstalled ? "-installer" : "";
+            string suffix = PathManager.Inst.IsInstalled ? "-installer" 
+                                : PathManager.Inst.IsAppImage ? "-appimage"
+                                : "";
             return release.assets
                 .Where(a => a.name == $"appcast.{OS.GetUpdaterRid()}{suffix}.xml")
                 .FirstOrDefault();
@@ -240,6 +242,36 @@ namespace OpenUtau.App.ViewModels {
                 return $"{unzipperPath} \"{downloadFilePath}\" \"{restart}\"";
             }
             return downloadFilePath;
+        }
+
+        protected override async Task RunDownloadedInstaller(string downloadFilePath) {
+            if (OS.IsLinux() && Path.GetExtension(downloadFilePath) == ".AppImage" && PathManager.Inst.IsAppImage) {
+                string batchFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".sh");
+                string updateScript = $@"
+                        COUNTER=0;
+                        while ps -p {Environment.ProcessId} > /dev/null;
+                            do sleep 1;
+                            COUNTER=$((++COUNTER));
+                            if [ $COUNTER -eq 90 ] 
+                            then
+                                exit -1;
+                            fi;
+                        done;
+                        
+                        mv -f ""{downloadFilePath}"" ""{PathManager.Inst.AppImagePath}""
+
+                        chmod +x ""{PathManager.Inst.AppImagePath}""
+
+                        ""{PathManager.Inst.AppImagePath}""";
+                
+                await File.WriteAllTextAsync(batchFilePath, updateScript.Replace("\r\n", "\n"));
+
+                Exec($"chmod +x '{batchFilePath}' && '{batchFilePath}'", false);
+
+                await QuitApplication();
+            } else {
+                await base.RunDownloadedInstaller(downloadFilePath);
+            }
         }
     }
 }
