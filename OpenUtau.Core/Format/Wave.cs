@@ -24,6 +24,11 @@ namespace OpenUtau.Core.Format {
                 }
             }
             if (tag == "RIFF") {
+#if WINDOWS
+                if (OS.IsWindows()) {
+                    return new MediaFoundationReader(filepath);
+                }
+#endif
                 return new WaveFileReader(filepath);
             }
             if (ext == ".mp3") {
