@@ -1,13 +1,21 @@
 // Auto-merge decision for small PRs. See .github/workflows/auto-merge.yml.
-// Runs with the workflow GITHUB_TOKEN (needs pull-requests:write,
-// organization:read). Prints the full decision trail and appends it to the
-// job summary.
+// Runs with the workflow GITHUB_TOKEN (needs contents:write and
+// pull-requests:write); the approvers-team lookup needs TEAM_TOKEN, which
+// GITHUB_TOKEN cannot stand in for. Prints the full decision trail and
+// appends it to the job summary.
+//
+// This file and RULES_FILE are checked out from the base branch, and any PR
+// touching .github/ is refused below, so a PR cannot influence its own
+// decision. Never read policy out of the environment: the workflow file that
+// sets it is taken from the PR's own merge commit.
 import fs from 'node:fs';
 
 const TOKEN = process.env.GITHUB_TOKEN;
+const TEAM_TOKEN = process.env.TEAM_TOKEN;
 const REPO = process.env.GITHUB_REPOSITORY;
 const PR = Number(process.env.PR_NUMBER);
-const CFG = JSON.parse(process.env.RULES_JSON);
+const RULES_FILE = '.github/auto-merge-rules.json';
+const CFG = JSON.parse(fs.readFileSync(RULES_FILE, 'utf8'));
 const org = REPO.split('/')[0];
 const EVENT = { name: process.env.EVENT_NAME, action: process.env.EVENT_ACTION };
 const MARKER = '<!-- auto-merge-rules -->';
@@ -52,8 +60,10 @@ async function getAll(path) {
 const pr = await getJSON(`/repos/${REPO}/pulls/${PR}`);
 if (pr.state !== 'open') notEligible(`PR is ${pr.state}`);
 if (pr.draft) notEligible('PR is a draft');
-if (!CFG.allow_forks && pr.head.repo && pr.head.repo.full_name !== REPO)
-  notEligible('PR comes from a fork');
+// head.repo is null when the source fork was deleted or is invisible to the
+// token; that is not this repo, so it must be rejected too.
+if (!CFG.allow_forks && pr.head.repo?.full_name !== REPO)
+  notEligible('PR does not come from a branch of this repository');
 
 const [commits, reviews, files] = await Promise.all([
   getAll(`/repos/${REPO}/pulls/${PR}/commits`),
@@ -71,12 +81,14 @@ for (const c of commits) {
   if (c.author && c.author.login) authors.add(c.author.login);
 }
 
-// Reviews only count if submitted after the last push (a push voids
-// earlier approvals, mirroring the UI).
-const lastPush = new Date(commits[commits.length - 1].commit.committer.date);
+// Reviews only count if they were made against the current head commit (a
+// push voids earlier reviews, mirroring the UI). Commit dates are NOT usable
+// for this: committer dates are client-supplied and can be backdated, and the
+// commits endpoint truncates, so the last listed commit need not be the head.
+const onHead = (r) => r.commit_id === pr.head.sha;
 
-if (reviews.some((r) => r.state === 'CHANGES_REQUESTED' && new Date(r.submitted_at) > lastPush))
-  notEligible('changes requested after the last push');
+if (reviews.some((r) => r.state === 'CHANGES_REQUESTED' && onHead(r)))
+  notEligible('changes requested on the current head commit');
 
 const approvals = [
   ...new Map(
@@ -84,7 +96,7 @@ const approvals = [
       .filter(
         (r) =>
           r.state === 'APPROVED' &&
-          new Date(r.submitted_at) > lastPush &&
+          onHead(r) &&
           r.user &&
           !r.user.login.endsWith('[bot]') &&
           !authors.has(r.user.login)
@@ -99,12 +111,19 @@ const approvals = [
 const inRule = (filename, rule) =>
   rule.paths.some((p) => (p.endsWith('/') ? filename.startsWith(p) : filename === p));
 
+// GitHub reports additions/deletions as 0 for binary blobs, pure renames and
+// mode-only changes, so line counts cannot bound them. Such files are never
+// auto-mergeable, whichever rule they fall under.
+const opaque = (f) =>
+  f.status === 'renamed' || (f.additions || 0) + (f.deletions || 0) === 0;
+
 const perRule = CFG.rules.map((rule) => {
   const rs = files.filter((f) => inRule(f.filename, rule));
   return {
     rule,
     files: rs.length,
     lines: rs.reduce((s, f) => s + (f.additions || 0) + (f.deletions || 0), 0),
+    opaque: rs.filter(opaque).map((f) => f.filename),
   };
 });
 
@@ -113,6 +132,11 @@ const perRule = CFG.rules.map((rule) => {
 const touched = perRule.filter((p) => p.files > 0);
 const withinLimits = (p) =>
   (p.rule.max_files === undefined || p.files < p.rule.max_files) && p.lines < p.rule.max_lines;
+
+// Team pages are org-members-only, so spell the team out as well as link it.
+const TEAM_LINK = `[@${org}/${CFG.approvers_team}](https://github.com/orgs/${org}/teams/${CFG.approvers_team})`;
+const CHECKLIST_LINK =
+  `[PR review checklist](https://github.com/${REPO}/blob/${pr.base.ref}/.github/PR_REVIEW_CHECKLIST.md)`;
 
 // One-shot comment: when the PR becomes ready, explain which rules apply and
 // what they require, based on the diff at that moment. Posted at most once
@@ -150,13 +174,19 @@ if (becameReady) {
       if (allOk) {
         const required = Math.max(...touched.map((p) => p.rule.required_approvals));
         lines.push(
-          `- Auto-merges once **${required} approval${required > 1 ? 's' : ''}** from @${org}/${CFG.approvers_team} ` +
-            `(excluding the PR author) ${required > 1 ? 'are' : 'is'} in place.`
+          `- Auto-merges once **${required} approval${required > 1 ? 's' : ''}** ${required > 1 ? 'are' : 'is'} in place, ` +
+            `from members of ${TEAM_LINK}. Approvals from anyone who authored a commit here never count, ` +
+            'and only reviews of the latest commit count — a new push voids earlier approvals.'
         );
       } else {
         lines.push('- Size limits not met — a maintainer will merge this PR.');
       }
     }
+    lines.push(
+      '',
+      `Reviewing this PR? Please work through the ${CHECKLIST_LINK} — it covers what to check ` +
+        'before approving, and when to leave the call to the maintainers.'
+    );
     await fetch(`https://api.github.com/repos/${REPO}/issues/${PR}/comments`, {
       method: 'POST',
       headers: {
@@ -172,11 +202,19 @@ if (becameReady) {
   }
 }
 
+// Belt and braces: this workflow, its script and its rules must never be
+// auto-merged, whatever the rules happen to say.
+const ci = files.filter((f) => f.filename.startsWith('.github/'));
+if (ci.length > 0)
+  notEligible(`PR modifies CI configuration: ${ci.map((f) => f.filename).join(', ')}`);
+
 // Every changed file must be covered by at least one rule.
 if (!files.every((f) => perRule.some((p) => inRule(f.filename, p.rule))))
   notEligible('changes outside all rule paths');
 
 for (const p of touched) {
+  if (p.opaque.length > 0)
+    notEligible(`rule "${p.rule.name}": binary or renamed files cannot be size-checked: ${p.opaque.join(', ')}`);
   if (p.rule.max_files !== undefined && p.files >= p.rule.max_files)
     notEligible(`rule "${p.rule.name}": touches ${p.files} files (must be < ${p.rule.max_files})`);
   if (p.lines >= p.rule.max_lines)
@@ -191,18 +229,27 @@ report(
     `; required approvals: ${required}`
 );
 
-// Count approvals that come from members of the approvers team.
+// Count approvals that come from members of the approvers team. GITHUB_TOKEN
+// has no org scope and always fails here, so this needs TEAM_TOKEN.
+if (!TEAM_TOKEN)
+  notEligible('AUTO_MERGE_TEAM_TOKEN is not configured, cannot verify approvers-team membership');
 const teamApprovals = [];
 for (const r of approvals) {
   const res = await fetch(`https://api.github.com/orgs/${org}/teams/${CFG.approvers_team}/memberships/${r.user.login}`, {
-    headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/vnd.github+json' },
+    headers: { Authorization: `Bearer ${TEAM_TOKEN}`, Accept: 'application/vnd.github+json' },
   });
-  if (res.status === 200) teamApprovals.push(r.user.login);
-  else if (res.status !== 404)
-    throw new Error(`team membership check failed: ${res.status} for ${r.user.login}`);
+  // A 200 also covers invitations that have not been accepted yet; only
+  // "active" membership makes someone an approver.
+  if (res.status === 200) {
+    const m = await res.json();
+    if (m.state === 'active') teamApprovals.push(r.user.login);
+    else report(`ignoring ${r.user.login}: team membership is "${m.state}"`);
+  } else if (res.status !== 404) {
+    notEligible(`team membership check failed: ${res.status} for ${r.user.login}`);
+  }
 }
 report(
-  `approvals after last push: ${approvals.map((r) => r.user.login).join(', ') || 'none'}; ` +
+  `approvals on ${pr.head.sha.slice(0, 7)}: ${approvals.map((r) => r.user.login).join(', ') || 'none'}; ` +
     `from @${org}/${CFG.approvers_team}: ${teamApprovals.join(', ') || 'none'}`
 );
 
@@ -214,7 +261,7 @@ if (teamApprovals.length < required)
 // NOT this auto-merge workflow's own check run, which is in_progress while
 // we are deciding and would deadlock the merge. Runs are re-created on each
 // push, so this always reflects the latest head.
-const GATING_WORKFLOW = process.env.GATING_WORKFLOW || 'pr-test';
+const GATING_WORKFLOW = CFG.gating_workflow || 'pr-test';
 async function getCheckRuns(sha) {
   let runs = [];
   for (let page = 1; page <= 5; page++) {
@@ -243,7 +290,9 @@ const res = await fetch(`https://api.github.com/repos/${REPO}/pulls/${PR}/merge`
     Accept: 'application/vnd.github+json',
     'Content-Type': 'application/json',
   },
-  body: JSON.stringify({ merge_method: CFG.merge_method }),
+  // sha pins the merge to the commit whose approvals and CI we just checked;
+  // GitHub refuses the merge if the head moved while we were deciding.
+  body: JSON.stringify({ merge_method: CFG.merge_method, sha: pr.head.sha }),
 });
 if (res.ok) {
   report('merged');

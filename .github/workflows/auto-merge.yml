@@ -3,9 +3,12 @@
 #   - for each rule touched: changed lines < max_lines AND (if the rule has a
 #     max_files) changed files < max_files — counted per rule over the files
 #     in that rule's paths only
-#   - no CHANGES_REQUESTED review after the last push
+#   - no CHANGES_REQUESTED review on the current head commit
 #   - at least `required_approvals` distinct approvals (max over all touched rules)
-#     from members of the approvers team, excluding the PR author(s)
+#     of the current head commit, from active members of the approvers team,
+#     excluding the PR author(s)
+#   - no binary, renamed or mode-only file changes (their size cannot be bounded)
+#   - nothing under .github/ is touched
 #   - PR is open, not a draft, and not from a fork
 #
 # When a PR touches multiple rules, it is mergeable once the strictest of the
@@ -17,8 +20,11 @@
 # are, based on the diff at that moment. It is never posted twice, even if
 # the diff changes afterwards.
 #
-# The decision script is checked out from the BASE branch so a PR can never
-# modify the rules that decide its own fate.
+# The decision script AND the rules (.github/auto-merge-rules.json) are checked
+# out from the BASE branch, and any PR touching .github/ is refused outright, so
+# a PR can never modify the rules that decide its own fate. Nothing configured
+# in this file may affect the decision: for pull_request events GitHub reads
+# this workflow from the PR's own merge commit.
 #
 # The merge additionally requires all CI check runs on the head commit
 # (pr-test.yml) to be completed and passing; it never merges over red or
@@ -33,10 +39,14 @@ on:
     branches: [ master ]
     types: [ submitted, dismissed ]
 
+# The merge REST endpoint writes to the repo, so contents:write is required.
+# Reading org team membership is NOT expressible as a workflow permission and
+# GITHUB_TOKEN cannot do it at all; that one call uses AUTO_MERGE_TEAM_TOKEN
+# (a PAT or GitHub App token with org "Members: read"). Without that secret the
+# workflow refuses to merge.
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
-  organization: read
   checks: read
 
 concurrency:
@@ -56,24 +66,12 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number }}
       EVENT_NAME: ${{ github.event_name }}
       EVENT_ACTION: ${{ github.event.action }}
-      # Workflow whose check runs gate the merge (job name prefix).
-      GATING_WORKFLOW: pr-test
-      # ---- rules live here; add as many as you like ------------------------
-      # paths: a trailing "/" means "this directory and everything below",
-      #        otherwise it must be the exact file name
-      # max_lines: strict upper bound of added+removed lines, counted per rule
-      #        over the files inside that rule's paths only
-      # max_files: optional, same counting; omit for no file-count limit
-      # NOTE: keep this as one folded expression (newlines fold to spaces).
-      RULES_JSON: '${{ toJSON({
-        merge_method: "squash",
-        approvers_team: "approvers",
-        allow_forks: false,
-        rules: [
-          { name: "translations", paths: ["OpenUtau/Strings/"], max_lines: 64, required_approvals: 1 },
-          { name: "phonemizers", paths: ["OpenUtau.Plugin.Builtin/"], max_files: 4, max_lines: 128, required_approvals: 2 }
-        ]
-      }) }}'
+      # Team-membership lookups only; see the permissions note above.
+      TEAM_TOKEN: ${{ secrets.AUTO_MERGE_TEAM_TOKEN }}
+      # NOTE: the rules themselves live in .github/auto-merge-rules.json, which
+      # is read from the base checkout below. They are deliberately NOT set
+      # here: for pull_request events GitHub reads this workflow file from the
+      # PR's own merge commit, so anything configured here is PR-controlled.
     steps:
       - name: Checkout base branch
         uses: actions/checkout@v4
@@ -81,4 +79,9 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
 
       - name: Evaluate and auto-merge
-        run: node .github/scripts/auto-merge.mjs
+        run: |
+          if [ ! -f .github/scripts/auto-merge.mjs ] || [ ! -f .github/auto-merge-rules.json ]; then
+            echo "auto-merge script/rules not present on the base commit - skipping."
+            exit 0
+          fi
+          node .github/scripts/auto-merge.mjs
