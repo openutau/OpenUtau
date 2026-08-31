@@ -38,19 +38,19 @@
     </Style>
     <Style Selector="Slider.fader">
       <Setter Property="Foreground" Value="{Binding TrackColor.AccentColor}"/>
-      
+
       <Style Selector="^:pointerover">
-        <!--<Style Selector="^ /template/ Thumb">
-          <Setter Property="Background" Value="{Binding TrackColor.AccentColorLight}" />
-        </Style>-->
-        <Style Selector="^ /template/ RepeatButton#PART_DecreaseButton">
-          <Setter Property="Background" Value="{Binding TrackColor.AccentColorLight}" />
-        </Style>
+      <Style Selector="^ /template/ Thumb">
+        <Setter Property="Background" Value="{Binding DataContext.TrackColor.AccentColorLight, RelativeSource={RelativeSource AncestorType=Slider}}"/>
       </Style>
+      <Style Selector="^ /template/ RepeatButton#PART_DecreaseButton">
+        <Setter Property="Background" Value="{Binding TrackColor.AccentColorLight}" />
+      </Style>
+    </Style>
       <Style Selector="^:pressed">
-        <!--<Style Selector="^ /template/ Thumb">
-          <Setter Property="Background" Value="{Binding TrackColor.AccentColorDark}" />
-        </Style>-->
+        <Style Selector="^ /template/ Thumb">
+          <Setter Property="Background" Value="{Binding DataContext.TrackColor.AccentColorDark, RelativeSource={RelativeSource AncestorType=Slider}}"/>
+        </Style>
         <Style Selector="^ /template/ RepeatButton#PART_DecreaseButton">
           <Setter Property="Background" Value="{Binding TrackColor.AccentColorDark}" />
         </Style>
