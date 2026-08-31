@@ -52,6 +52,7 @@ jobs:
     if: github.event_name == 'pull_request' || github.event.action == 'submitted' || github.event.action == 'dismissed'
     runs-on: ubuntu-latest
     env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       EVENT_NAME: ${{ github.event_name }}
       EVENT_ACTION: ${{ github.event.action }}
