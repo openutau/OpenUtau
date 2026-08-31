@@ -72,13 +72,13 @@ namespace OpenUtau.Core.Render {
         public readonly bool direct;
         public readonly Vector2[] envelope;
 
-        // voicevox & enunu args
+        // voicevox & enunu & neutrino args
         public readonly int toneShift;
 
         public readonly UOto oto;
         public readonly ulong hash;
 
-        internal RenderPhone(UProject project, UTrack track, UVoicePart part, UNote note, UPhoneme phoneme, int phrasePosition) {
+        internal RenderPhone(UProject project, UTrack track, UVoicePart part, UNote note, UPhoneme phoneme, int phrasePosition, int noteIndex) {
             position = part.position + phoneme.position - phrasePosition;
             duration = phoneme.Duration;
             end = position + duration;
@@ -90,6 +90,7 @@ namespace OpenUtau.Core.Render {
 
             this.phoneme = phoneme.phoneme;
             tone = note.tone;
+            this.noteIndex = noteIndex;
             tempos = project.timeAxis.TemposBetweenTicks(part.position + phoneme.position - leading, part.position + phoneme.End);
             UTempo[] noteTempos = project.timeAxis.TemposBetweenTicks(part.position + phoneme.position, part.position + phoneme.End);
             tempo = noteTempos.Length > 0 ? noteTempos[0].bpm : project.tempos[0].bpm;
@@ -211,12 +212,10 @@ namespace OpenUtau.Core.Render {
                 uNotes.Add(next);
                 next = next.Next;
             }
-            if (uNotes.First().Prev != null && uNotes.First().Prev.End == uNotes.First().position) {
-                uNotes.Insert(0, uNotes.First().Prev);
-            }
-            if (uNotes.Last().Next != null && uNotes.Last().End == uNotes.Last().Next.position) {
-                uNotes.Add(uNotes.Last().Next);
-            }
+
+            var noteIndexes = uNotes
+                .Select((note, index) => new { note, index })
+                .ToDictionary(x => x.note, x => x.index);
 
             singer = track.Singer;
             renderer = track.RendererSettings.Renderer;
@@ -231,7 +230,7 @@ namespace OpenUtau.Core.Render {
                 .Select(n => new RenderNote(project, part, n, position))
                 .ToArray();
             phones = phonemes
-                .Select(p => new RenderPhone(project, track, part, p.Parent, p, position))
+                .Select(p => new RenderPhone(project, track, part, p.Parent, p, position, noteIndexes[p.Parent]))
                 .ToArray();
 
             leading = phones.First().leading;
