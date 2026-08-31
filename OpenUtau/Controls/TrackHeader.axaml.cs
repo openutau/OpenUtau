@@ -116,17 +116,9 @@ namespace OpenUtau.App.Controls {
             args.Handled = true;
         }
 
-        void SingerButtonContextRequested(object sender, ContextRequestedEventArgs args) {
-            args.Handled = true;
-        }
-
         void PhonemizerButtonClicked(object sender, RoutedEventArgs args) {
             ViewModel?.RefreshPhonemizers();
             PhonemizersMenu.Open((Control)sender);
-            args.Handled = true;
-        }
-
-        void PhonemizerButtonContextRequested(object sender, ContextRequestedEventArgs args) {
             args.Handled = true;
         }
 
@@ -135,10 +127,6 @@ namespace OpenUtau.App.Controls {
             if (ViewModel?.RenderersMenuItems?.Count > 0) {
                 RenderersMenu.Open((Control)sender);
             }
-            args.Handled = true;
-        }
-
-        void RendererButtonContextRequested(object sender, ContextRequestedEventArgs args) {
             args.Handled = true;
         }
 

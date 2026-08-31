@@ -102,12 +102,11 @@
   </UserControl.Resources>
   <Border Margin="1,1,1,1" BorderThickness="1" BorderBrush="{Binding HeaderBorderBrush}"
            CornerRadius="2" PointerPressed="HeaderPointerPressed">
-    <Grid ColumnDefinitions="auto,*,auto" Background="Transparent">
-      <Panel Grid.Column="0" VerticalAlignment="Stretch">
-        <Border BorderThickness="0,0,1,1" MaxHeight="101" VerticalAlignment="Top" CornerRadius="0,0,2,0"
+    <Grid ColumnDefinitions="auto,*,auto" RowDefinitions="auto,auto,auto,auto,auto,*" Background="Transparent">
+      <Panel Grid.Column="0" Grid.RowSpan="6" VerticalAlignment="Stretch">
+        <Border BorderThickness="0,0,1,0" MaxHeight="100" VerticalAlignment="Top"
                 BorderBrush="{DynamicResource NeutralAccentBrushSemi}" ClipToBounds="True">
-          <Image Source="{Binding Avatar}" Stretch="Uniform" VerticalAlignment="Top" ToolTip.Tip="{Binding Singer}"
-                RenderOptions.BitmapInterpolationMode="HighQuality"/>
+          <Image Source="{Binding Avatar}" Stretch="Uniform" VerticalAlignment="Top" ToolTip.Tip="{Binding Singer}" />
         </Border>
         <Border Background="{Binding TrackAccentColor}" Height="16" Width="22" CornerRadius="1,0,2,0"
                 HorizontalAlignment="Left" VerticalAlignment="Top">
@@ -115,137 +114,150 @@
                      Text="{Binding TrackNo}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
         </Border>
       </Panel>
-      <Grid ColumnDefinitions="*,auto" RowDefinitions="auto,auto" Grid.Column="1">
-        <StackPanel Grid.Column="0" Grid.Row="0">
-          <Button Classes="clear" Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Margin="1" Padding="2,1,0,0" Height="17"
-                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
-                  Content="{Binding TrackName}" Click="TrackNameButtonClicked"/>
-          <Button Classes="clear" Margin="1" Padding="2,1,0,0" Height="17" IsVisible="{Binding IsSingerVisible}"
-                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
-                  Content="{Binding Singer, TargetNullValue={StaticResource tracks.selectsinger}}" Click="SingerButtonClicked"
-                  ContextRequested="SingerButtonContextRequested" ToolTip.Tip="{Binding Singer}" ContextMenu="{StaticResource SingersMenuRes}"/>
-          <Button Classes="clear" Margin="1" Padding="2,1,0,0" Height="17" IsVisible="{Binding IsPhonemizerVisible}"
-                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
-                  Content="{Binding PhonemizerTag}" Click="PhonemizerButtonClicked" ContextRequested="PhonemizerButtonContextRequested"
-                  ToolTip.Tip="{Binding Phonemizer}" ContextMenu="{StaticResource PhonemizerMenuRes}"/>
-          <Button Classes="clear" Margin="1" Padding="2,1,0,0" Height="17" IsVisible="{Binding IsRendererVisible}"
-                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
-                  Content="{Binding Renderer}" Click="RendererButtonClicked" ContextRequested="RendererButtonContextRequested"
-                  ToolTip.Tip="{DynamicResource tracks.selectrenderer}" ContextMenu="{StaticResource RendererMenuRes}"/>
-        </StackPanel>
-        <Grid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="3,2*,2,28,5,*,2,26">
-          <Grid.Styles>
-            <Style Selector="Slider, TextBlock, TextBox">
-              <Setter Property="VerticalAlignment" Value="Center"/>
-              <Setter Property="MinHeight" Value="0"/>
-              <Setter Property="Height" Value="NaN"/>
-            </Style>
-          </Grid.Styles>
-          <Slider Grid.Column="1" Name="VolumeSlider" HorizontalAlignment="Stretch" Classes="fader" Minimum="-24" Maximum="12" Value="{Binding Volume}"
-                  PointerPressed="VolumeFaderPointerPressed" ValueChanged="VolumeOrPanSliderValueChanged"
-                  ContextRequested="VolumeFaderContextRequested" IsEnabled="{Binding !Muted}"/>
-          <TextBlock Grid.Column="3" HorizontalAlignment="Left" Background="Transparent"
-                    TextAlignment="Center" FontSize="9" FontFamily="monospace" PointerPressed="VolumePointerPressed">
-            <TextBlock.Text>
-              <MultiBinding StringFormat="{}{0:+#00.0;-#00.0}">
-                <Binding Path="Volume"/>
-              </MultiBinding>
-            </TextBlock.Text>
-          </TextBlock>
-          <TextBox Grid.Column="3" Name="VolumeTextBox" MinWidth="28"
-                  HorizontalAlignment="Left" BorderThickness="0" IsVisible="False" IsEnabled="False"
-                  TextAlignment="Right" FontSize="9" FontFamily="monospace"
-                  KeyDown="VolumeOrPanTextBoxKeyDown" LostFocus="VolumeOrPanTextBoxLostFocus"/>
-          <Slider Grid.Column="5" Name="PanSlider" HorizontalAlignment="Stretch"
-                  Classes="fader" Minimum="-100" Maximum="100" Value="{Binding Pan}"
-                  PointerPressed="PanFaderPointerPressed" ValueChanged="VolumeOrPanSliderValueChanged"
-                  ContextRequested="PanFaderContextRequested" IsEnabled="{Binding !Muted}"/>
-          <TextBlock Grid.Column="7" HorizontalAlignment="Stretch" Background="Transparent"
-                    TextAlignment="Center" FontSize="9" FontFamily="monospace" PointerPressed="PanPointerPressed">
-            <TextBlock.Text>
-              <MultiBinding StringFormat="{}{0:00R;00L;C}">
-                <Binding Path="Pan"/>
-              </MultiBinding>
-            </TextBlock.Text>
-          </TextBlock>
-          <TextBox Grid.Column="7" Name="PanTextBox" MinWidth="26" HorizontalAlignment="Center"
-                  BorderThickness="0" IsVisible="False" IsEnabled="False" TextAlignment="Center" FontSize="9"
-                  FontFamily="monospace" KeyDown="VolumeOrPanTextBoxKeyDown" LostFocus="VolumeOrPanTextBoxLostFocus"/>
-        </Grid>
-        <Button Grid.Column="1" Grid.Row="0" Classes="clear" Height="17" Width="17" Margin="1" Padding="0"
-                VerticalAlignment="Top" Content="⋯" IsVisible="{Binding !IsRendererVisible}">
-          <Button.Flyout>
-            <Flyout>
-              <StackPanel Spacing="2">
-                <Button Classes="clear" Margin="1" Height="18" IsVisible="{Binding !IsSingerVisible}"
-                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
-                        Content="{Binding Singer, TargetNullValue={StaticResource tracks.selectsinger}}" Click="SingerButtonClicked" 
-                        ContextRequested="SingerButtonContextRequested" ToolTip.Tip="{Binding Singer}" ContextMenu="{StaticResource SingersMenuRes}"/>
-                <Button Classes="clear" Margin="1" Height="18" IsVisible="{Binding !IsPhonemizerVisible}"
-                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
-                        Content="{Binding PhonemizerTag}" Click="PhonemizerButtonClicked" ContextRequested="PhonemizerButtonContextRequested"
-                        ToolTip.Tip="{Binding Phonemizer}" ContextMenu="{StaticResource PhonemizerMenuRes}"/>
-                <Grid ColumnDefinitions="*,auto" IsVisible="{Binding !IsRendererVisible}">
-                  <Button Grid.Column="0" Classes="clear" Margin="1"
-                          Height="18" HorizontalContentAlignment="Left" Focusable="False"
-                          Content="{Binding Renderer}" Click="RendererButtonClicked" ContextRequested="RendererButtonContextRequested"
-                          ToolTip.Tip="{DynamicResource tracks.selectrenderer}" ContextMenu="{StaticResource RendererMenuRes}"/>
-                  <Button Grid.Column="1" Margin="1" Padding="0" Height="18" Background="Transparent"
-                          HorizontalAlignment="Right" Click="TrackSettingsButtonClicked"
-                          ToolTip.Tip="{DynamicResource tracks.tracksettings}">
-                    <Path Classes="clear" Width="24" Height="24"
-                          Data="m 12.001453,14.34 a 2.35,2.35 0 0 1 -2.34,-2.34 2.35,2.35 0 0 1 2.34,-2.34 2.35,2.35 0 0 1 2.35,2.34 2.35,2.35 0 0 1 -2.35,2.35 m 4.98,-1.7 a 5.2,5.2 0 0 0 0,-1.32 l 1.41,-1.1 c 0.13,-0.1 0.16,-0.27 0.08,-0.42 l -1.34,-2.32 a 0.33,0.33 0 0 0 -0.4,-0.15 l -1.67,0.67 a 4.86,4.86 0 0 0 -1.14,-0.65 l -0.25,-1.78 a 0.34,0.34 0 0 0 -0.33,-0.28 h -2.68 c -0.17,0 -0.3,0.12 -0.33,0.28 l -0.25,1.78 c -0.42,0.16 -0.79,0.4 -1.14,0.65 l -1.66,-0.67 a 0.33,0.33 0 0 0 -0.41,0.15 l -1.34,2.32 a 0.33,0.33 0 0 0 0.08,0.43 l 1.41,1.09 a 5.73,5.73 0 0 0 0,1.32 l -1.41,1.11 a 0.33,0.33 0 0 0 -0.08,0.43 l 1.34,2.32 c 0.08,0.15 0.26,0.2 0.4,0.15 l 1.67,-0.68 c 0.35,0.27 0.71,0.5 1.14,0.66 l 0.25,1.78 c 0.02,0.16 0.16,0.28 0.33,0.28 h 2.68 c 0.17,0 0.3,-0.12 0.33,-0.28 l 0.25,-1.78 c 0.42,-0.17 0.79,-0.4 1.14,-0.66 l 1.66,0.68 c 0.15,0.05 0.33,0 0.41,-0.15 l 1.34,-2.32 a 0.34,0.34 0 0 0 -0.08,-0.43 l -1.41,-1.1 z"
-                          Fill="{StaticResource NeutralAccentBrush}"/>
-                  </Button>
-                </Grid>
-              </StackPanel>
-            </Flyout>
-          </Button.Flyout>
-        </Button>
+      <Button Classes="clear" Classes.shrink="{Binding !IsRendererVisible}" Grid.Row="0" Grid.Column="1" Padding="2,1,0,0"
+              Height="18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
+              Content="{Binding TrackName}" Click="TrackNameButtonClicked">
+        <Button.Styles>
+          <Style Selector="Button:not(.shrink)">
+            <Setter Property="Margin" Value="1,1,1,1"/>
+          </Style>
+          <Style Selector="Button.shrink">
+            <Setter Property="Margin" Value="1,1,20,1"/>
+          </Style>
+        </Button.Styles>
+      </Button>
+      <Button Classes="clear" Grid.Row="1" Grid.Column="1" Margin="1" Padding="2,1,0,0" Height="18" IsVisible="{Binding IsSingerVisible}"
+              HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
+              Content="{Binding Singer, TargetNullValue={StaticResource tracks.selectsinger}}"
+              Click="SingerButtonClicked" ToolTip.Tip="{Binding Singer}"/>
+      <Button Classes="clear" Grid.Row="2" Grid.Column="1" Margin="1" Padding="2,1,0,0" Height="18" IsVisible="{Binding IsPhonemizerVisible}"
+              HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
+              Content="{Binding PhonemizerTag}" Click="PhonemizerButtonClicked" ToolTip.Tip="{Binding Phonemizer}"/>
+      <Button Classes="clear" Grid.Row="3" Grid.Column="1" Margin="1" Padding="2,1,0,0" Height="18" IsVisible="{Binding IsRendererVisible}"
+              HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
+              Content="{Binding Renderer}" Click="RendererButtonClicked"
+              ToolTip.Tip="{DynamicResource tracks.selectrenderer}"/>
+      <Grid Classes.shrink="{Binding !IsSingerVisible}"  Grid.Column="1" ColumnDefinitions="3,2*,2,28,5,*,2,26">
+        <Grid.Styles>
+          <Style Selector="Slider, TextBlock, TextBox">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Height" Value="NaN"/>
+          </Style>
+          <Style Selector="Grid">
+            <Setter Property="Grid.Row" Value="4"/>
+            <Setter Property="Grid.ColumnSpan" Value="2"/>
+          </Style>
+          <Style Selector="Grid.shrink">
+            <Setter Property="Grid.Row" Value="1"/>
+            <Setter Property="Grid.ColumnSpan" Value="1"/>
+          </Style>
+        </Grid.Styles>
+        <Slider Grid.Column="1" Name="VolumeSlider" HorizontalAlignment="Stretch" Classes="fader" Minimum="-24" Maximum="12" Value="{Binding Volume}"
+                PointerPressed="VolumeFaderPointerPressed" ValueChanged="VolumeOrPanSliderValueChanged"
+                ContextRequested="VolumeFaderContextRequested" IsEnabled="{Binding !Muted}"/>
+        <TextBlock Grid.Column="3" HorizontalAlignment="Left" Background="Transparent"
+                  TextAlignment="Center" FontSize="9" FontFamily="monospace" PointerPressed="VolumePointerPressed">
+          <TextBlock.Text>
+            <MultiBinding StringFormat="{}{0:+#00.0;-#00.0}">
+              <Binding Path="Volume"/>
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+        <TextBox Grid.Column="3" Name="VolumeTextBox" MinWidth="28"
+                HorizontalAlignment="Left" BorderThickness="0" IsVisible="False" IsEnabled="False"
+                TextAlignment="Right" FontSize="9" FontFamily="monospace"
+                KeyDown="VolumeOrPanTextBoxKeyDown" LostFocus="VolumeOrPanTextBoxLostFocus"/>
+        <Slider Grid.Column="5" Name="PanSlider" HorizontalAlignment="Stretch"
+                Classes="fader" Minimum="-100" Maximum="100" Value="{Binding Pan}"
+                PointerPressed="PanFaderPointerPressed" ValueChanged="VolumeOrPanSliderValueChanged"
+                ContextRequested="PanFaderContextRequested" IsEnabled="{Binding !Muted}"/>
+        <TextBlock Grid.Column="7" HorizontalAlignment="Stretch" Background="Transparent"
+                  TextAlignment="Center" FontSize="9" FontFamily="monospace" PointerPressed="PanPointerPressed">
+          <TextBlock.Text>
+            <MultiBinding StringFormat="{}{0:00R;00L;C}">
+              <Binding Path="Pan"/>
+            </MultiBinding>
+          </TextBlock.Text>
+        </TextBlock>
+        <TextBox Grid.Column="7" Name="PanTextBox" MinWidth="26" HorizontalAlignment="Center"
+                BorderThickness="0" IsVisible="False" IsEnabled="False" TextAlignment="Center" FontSize="9"
+                FontFamily="monospace" KeyDown="VolumeOrPanTextBoxKeyDown" LostFocus="VolumeOrPanTextBoxLostFocus"/>
       </Grid>
-      <StackPanel Grid.Column="2">
-        <ToggleButton Classes="toolbar" Grid.Row="1" Grid.Column="3" Margin="1" Padding="0" Height="17"
-                      HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.mute}"
-                      IsChecked="{Binding Mute, Mode=OneWay}" Command="{Binding ToggleMute}">
-          <Path Classes="filled" Width="24" Height="24"
-                Data="M 15.31,17 A 0.51,0.56 0 0 1 14.81,16.44 V 9.2 A 0.07,0.08 0 0 0 14.66,9.17 L 12.39,14.5 a 0.29,0.32 0 0 1 -0.26,0.19 h -0.35 a 0.29,0.32 0 0 1 -0.26,-0.19 L 9.27,9.17 9.12,9.2 V 16.44 A 0.51,0.56 0 0 1 8.62,17 H 8.51 A 0.51,0.56 0 0 1 8,16.44 V 7.56 A 0.51,0.56 0 0 1 8.51,7 h 0.84 a 0.43,0.48 0 0 1 0.39,0.28 l 2.23,5.2 a 0.04,0.05 0 0 0 0.07,0 l 2.16,-5.2 a 0.43,0.48 0 0 1 0.41,-0.28 h 0.88 A 0.51,0.56 0 0 1 16,7.56 V 16.44 A 0.51,0.56 0 0 1 15.5,17 Z"/>
-          <ToggleButton.ContextMenu>
-            <ContextMenu>
-              <MenuItem Classes="context" Header="{StaticResource tracks.mute}" Command="{Binding ToggleMute}"/>
-              <MenuItem Classes="context" Header="{StaticResource tracks.mute.only}" Command="{Binding MuteOnly}"/>
-              <MenuItem Classes="context" Header="{StaticResource tracks.mute.allothers}" Command="{Binding MuteAllOthers}"/>
-              <MenuItem Classes="context" Header="{StaticResource tracks.mute.unmuteall}" Command="{Binding UnmuteAll}"/>
-            </ContextMenu>
-          </ToggleButton.ContextMenu>
-        </ToggleButton>
-        <ToggleButton Classes="toolbar" Grid.Row="2" Grid.Column="3" Margin="1" Padding="0" Height="17"
-                      HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.solo}"
-                      IsChecked="{Binding Solo, Mode=OneWay}" Command="{Binding ToggleSolo}">
-          <Path Classes="filled" Width="24" Height="24"
-                Data="m 15.99,14.08 c 0,-0.7 -0.2,-1.23 -0.58,-1.62 C 15.03,12.07 14.44,11.79 13.68,11.6 13.29,11.51 12.84,11.43 12.28,11.33 11.74,11.24 11.31,11.18 11.01,11.12 10.46,11 10.06,10.82 9.84,10.6 9.61,10.36 9.51,10.04 9.51,9.64 c 0,-0.45 0.22,-0.82 0.67,-1.1 0.45,-0.28 1.04,-0.43 1.78,-0.43 0.67,0 1.33,0.1 1.97,0.31 0.64,0.2 1.58,0.49 1.99,0.81 H 16 V 7.71 C 15.53,7.51 14.58,7.33 13.97,7.2 13.37,7.07 12.69,7 11.96,7 10.84,7 9.91,7.26 9.17,7.78 8.44,8.28 8.07,8.95 8.07,9.76 c 0,0.71 0.21,1.27 0.65,1.72 0.45,0.44 1.13,0.75 2.06,0.93 0.45,0.09 0.88,0.16 1.29,0.21 0.41,0.06 0.79,0.13 1.13,0.22 0.47,0.11 0.79,0.28 1.03,0.47 0.23,0.21 0.34,0.52 0.34,0.95 0,0.5 -0.24,0.89 -0.71,1.19 -0.47,0.3 -1.14,0.43 -1.99,0.43 -0.61,0 -1.24,-0.11 -1.94,-0.33 C 9.23,15.32 8.62,15.02 8.09,14.61 H 8 v 1.61 C 8.61,16.48 9.22,16.68 9.82,16.81 10.41,16.93 11.08,17 11.83,17 c 0.7,0 1.29,-0.07 1.78,-0.23 0.5,-0.16 0.94,-0.38 1.3,-0.65 0.33,-0.26 0.6,-0.56 0.79,-0.93 C 15.89,14.82 15.99,14.45 15.99,14.07 Z"/>
-          <ToggleButton.ContextMenu>
-            <ContextMenu>
-              <MenuItem Classes="context" Header="{StaticResource tracks.solo.only}" Command="{Binding ToggleSolo}"/>
-              <MenuItem Classes="context" Header="{StaticResource tracks.solo.add}" Command="{Binding SoloAdditionally}"/>
-              <MenuItem Classes="context" Header="{StaticResource tracks.solo.unsoloall}" Command="{Binding UnsoloAll}"/>
-            </ContextMenu>
-          </ToggleButton.ContextMenu>
-        </ToggleButton>
-        <Button Grid.Row="3" Grid.Column="3" Classes="toolbar fxButton" Margin="1" Height="17"
+      <Button Grid.Column="1" Grid.Row="0" Classes="clear" Height="18" Width="18" Margin="1" Padding="0"
+              VerticalAlignment="Top" Content="⋯" IsVisible="{Binding !IsRendererVisible}" HorizontalAlignment="Right">
+        <Button.Flyout>
+          <Flyout>
+            <Grid RowDefinitions="auto,auto,auto" ColumnDefinitions="*,auto">
+              <Button Grid.Row="0" Classes="clear" Margin="1" Height="18" IsVisible="{Binding !IsSingerVisible}"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
+                      Content="{Binding Singer, TargetNullValue={StaticResource tracks.selectsinger}}"
+                      Click="SingerButtonClicked" ToolTip.Tip="{Binding Singer}"/>
+              <Button Grid.Row="1" Classes="clear" Margin="1" Height="18" IsVisible="{Binding !IsPhonemizerVisible}"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
+                      Content="{Binding PhonemizerTag}" Click="PhonemizerButtonClicked"
+                      ToolTip.Tip="{Binding Phonemizer}"/>
+              <Button Grid.Row="1" Grid.Column="1" Classes="toolbar fxButton" Margin="1" Height="17"
                       HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.mixfx}"
-                      Classes.fxOn="{Binding MixFxEnabled}"
+                      Classes.fxOn="{Binding MixFxEnabled}" IsVisible="{Binding !IsPhonemizerVisible}"
                       Command="{Binding OpenMixFxDialog}">
-          <TextBlock Text="fx" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-        </Button>
-        <Separator Background="Transparent" Height="17" Margin="1" IsVisible="{Binding IsRendererVisible}"/>
-        <Button Grid.Row="4" Grid.Column="3" Margin="1" Padding="0" Height="17" Background="Transparent"
-                      HorizontalAlignment="Stretch" Click="TrackSettingsButtonClicked" IsVisible="{Binding IsRendererVisible}"
+                <TextBlock Text="fx" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+              </Button>
+              <Button Grid.Row="2" Classes="clear" Margin="1"
+                      Height="18" HorizontalContentAlignment="Left" Focusable="False"
+                      Content="{Binding Renderer}" Click="RendererButtonClicked"
+                      ToolTip.Tip="{DynamicResource tracks.selectrenderer}"/>
+              <Button Grid.Row="2" Grid.Column="1" Margin="1" Padding="0" Height="18" Background="Transparent"
+                      HorizontalAlignment="Right" Click="TrackSettingsButtonClicked"
                       ToolTip.Tip="{DynamicResource tracks.tracksettings}">
-          <Path Classes="clear" Width="24" Height="24"
-                Data="m 12.001453,14.34 a 2.35,2.35 0 0 1 -2.34,-2.34 2.35,2.35 0 0 1 2.34,-2.34 2.35,2.35 0 0 1 2.35,2.34 2.35,2.35 0 0 1 -2.35,2.35 m 4.98,-1.7 a 5.2,5.2 0 0 0 0,-1.32 l 1.41,-1.1 c 0.13,-0.1 0.16,-0.27 0.08,-0.42 l -1.34,-2.32 a 0.33,0.33 0 0 0 -0.4,-0.15 l -1.67,0.67 a 4.86,4.86 0 0 0 -1.14,-0.65 l -0.25,-1.78 a 0.34,0.34 0 0 0 -0.33,-0.28 h -2.68 c -0.17,0 -0.3,0.12 -0.33,0.28 l -0.25,1.78 c -0.42,0.16 -0.79,0.4 -1.14,0.65 l -1.66,-0.67 a 0.33,0.33 0 0 0 -0.41,0.15 l -1.34,2.32 a 0.33,0.33 0 0 0 0.08,0.43 l 1.41,1.09 a 5.73,5.73 0 0 0 0,1.32 l -1.41,1.11 a 0.33,0.33 0 0 0 -0.08,0.43 l 1.34,2.32 c 0.08,0.15 0.26,0.2 0.4,0.15 l 1.67,-0.68 c 0.35,0.27 0.71,0.5 1.14,0.66 l 0.25,1.78 c 0.02,0.16 0.16,0.28 0.33,0.28 h 2.68 c 0.17,0 0.3,-0.12 0.33,-0.28 l 0.25,-1.78 c 0.42,-0.17 0.79,-0.4 1.14,-0.66 l 1.66,0.68 c 0.15,0.05 0.33,0 0.41,-0.15 l 1.34,-2.32 a 0.34,0.34 0 0 0 -0.08,-0.43 l -1.41,-1.1 z"
-                Fill="{StaticResource NeutralAccentBrush}"/>
-        </Button>
-      </StackPanel>
+                <Path Classes="clear" Width="24" Height="24"
+                      Data="m 12.001453,14.34 a 2.35,2.35 0 0 1 -2.34,-2.34 2.35,2.35 0 0 1 2.34,-2.34 2.35,2.35 0 0 1 2.35,2.34 2.35,2.35 0 0 1 -2.35,2.35 m 4.98,-1.7 a 5.2,5.2 0 0 0 0,-1.32 l 1.41,-1.1 c 0.13,-0.1 0.16,-0.27 0.08,-0.42 l -1.34,-2.32 a 0.33,0.33 0 0 0 -0.4,-0.15 l -1.67,0.67 a 4.86,4.86 0 0 0 -1.14,-0.65 l -0.25,-1.78 a 0.34,0.34 0 0 0 -0.33,-0.28 h -2.68 c -0.17,0 -0.3,0.12 -0.33,0.28 l -0.25,1.78 c -0.42,0.16 -0.79,0.4 -1.14,0.65 l -1.66,-0.67 a 0.33,0.33 0 0 0 -0.41,0.15 l -1.34,2.32 a 0.33,0.33 0 0 0 0.08,0.43 l 1.41,1.09 a 5.73,5.73 0 0 0 0,1.32 l -1.41,1.11 a 0.33,0.33 0 0 0 -0.08,0.43 l 1.34,2.32 c 0.08,0.15 0.26,0.2 0.4,0.15 l 1.67,-0.68 c 0.35,0.27 0.71,0.5 1.14,0.66 l 0.25,1.78 c 0.02,0.16 0.16,0.28 0.33,0.28 h 2.68 c 0.17,0 0.3,-0.12 0.33,-0.28 l 0.25,-1.78 c 0.42,-0.17 0.79,-0.4 1.14,-0.66 l 1.66,0.68 c 0.15,0.05 0.33,0 0.41,-0.15 l 1.34,-2.32 a 0.34,0.34 0 0 0 -0.08,-0.43 l -1.41,-1.1 z"
+                      Fill="{StaticResource NeutralAccentBrush}"/>
+              </Button>
+            </Grid>
+          </Flyout>
+        </Button.Flyout>
+      </Button>
+      <ToggleButton Classes="toolbar" Grid.Row="0" Grid.Column="2" Margin="1" Padding="0" Height="18"
+                    HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.mute}"
+                    IsChecked="{Binding Mute, Mode=OneWay}" Command="{Binding ToggleMute}">
+        <Path Classes="filled" Width="24" Height="24"
+              Data="M 15.31,17 A 0.51,0.56 0 0 1 14.81,16.44 V 9.2 A 0.07,0.08 0 0 0 14.66,9.17 L 12.39,14.5 a 0.29,0.32 0 0 1 -0.26,0.19 h -0.35 a 0.29,0.32 0 0 1 -0.26,-0.19 L 9.27,9.17 9.12,9.2 V 16.44 A 0.51,0.56 0 0 1 8.62,17 H 8.51 A 0.51,0.56 0 0 1 8,16.44 V 7.56 A 0.51,0.56 0 0 1 8.51,7 h 0.84 a 0.43,0.48 0 0 1 0.39,0.28 l 2.23,5.2 a 0.04,0.05 0 0 0 0.07,0 l 2.16,-5.2 a 0.43,0.48 0 0 1 0.41,-0.28 h 0.88 A 0.51,0.56 0 0 1 16,7.56 V 16.44 A 0.51,0.56 0 0 1 15.5,17 Z"/>
+        <ToggleButton.ContextMenu>
+          <ContextMenu>
+            <MenuItem Classes="context" Header="{StaticResource tracks.mute}" Command="{Binding ToggleMute}"/>
+            <MenuItem Classes="context" Header="{StaticResource tracks.mute.only}" Command="{Binding MuteOnly}"/>
+            <MenuItem Classes="context" Header="{StaticResource tracks.mute.allothers}" Command="{Binding MuteAllOthers}"/>
+            <MenuItem Classes="context" Header="{StaticResource tracks.mute.unmuteall}" Command="{Binding UnmuteAll}"/>
+          </ContextMenu>
+        </ToggleButton.ContextMenu>
+      </ToggleButton>
+      <ToggleButton Classes="toolbar" Grid.Row="1" Grid.Column="2" Margin="1" Padding="0" Height="18"
+                    HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.solo}"
+                    IsChecked="{Binding Solo, Mode=OneWay}" Command="{Binding ToggleSolo}">
+        <Path Classes="filled" Width="24" Height="24"
+              Data="m 15.99,14.08 c 0,-0.7 -0.2,-1.23 -0.58,-1.62 C 15.03,12.07 14.44,11.79 13.68,11.6 13.29,11.51 12.84,11.43 12.28,11.33 11.74,11.24 11.31,11.18 11.01,11.12 10.46,11 10.06,10.82 9.84,10.6 9.61,10.36 9.51,10.04 9.51,9.64 c 0,-0.45 0.22,-0.82 0.67,-1.1 0.45,-0.28 1.04,-0.43 1.78,-0.43 0.67,0 1.33,0.1 1.97,0.31 0.64,0.2 1.58,0.49 1.99,0.81 H 16 V 7.71 C 15.53,7.51 14.58,7.33 13.97,7.2 13.37,7.07 12.69,7 11.96,7 10.84,7 9.91,7.26 9.17,7.78 8.44,8.28 8.07,8.95 8.07,9.76 c 0,0.71 0.21,1.27 0.65,1.72 0.45,0.44 1.13,0.75 2.06,0.93 0.45,0.09 0.88,0.16 1.29,0.21 0.41,0.06 0.79,0.13 1.13,0.22 0.47,0.11 0.79,0.28 1.03,0.47 0.23,0.21 0.34,0.52 0.34,0.95 0,0.5 -0.24,0.89 -0.71,1.19 -0.47,0.3 -1.14,0.43 -1.99,0.43 -0.61,0 -1.24,-0.11 -1.94,-0.33 C 9.23,15.32 8.62,15.02 8.09,14.61 H 8 v 1.61 C 8.61,16.48 9.22,16.68 9.82,16.81 10.41,16.93 11.08,17 11.83,17 c 0.7,0 1.29,-0.07 1.78,-0.23 0.5,-0.16 0.94,-0.38 1.3,-0.65 0.33,-0.26 0.6,-0.56 0.79,-0.93 C 15.89,14.82 15.99,14.45 15.99,14.07 Z"/>
+        <ToggleButton.ContextMenu>
+          <ContextMenu>
+            <MenuItem Classes="context" Header="{StaticResource tracks.solo.only}" Command="{Binding ToggleSolo}"/>
+            <MenuItem Classes="context" Header="{StaticResource tracks.solo.add}" Command="{Binding SoloAdditionally}"/>
+            <MenuItem Classes="context" Header="{StaticResource tracks.solo.unsoloall}" Command="{Binding UnsoloAll}"/>
+          </ContextMenu>
+        </ToggleButton.ContextMenu>
+      </ToggleButton>
+      <Button Grid.Row="2" Grid.Column="2" Classes="toolbar fxButton" Margin="1" Height="18"
+                    HorizontalAlignment="Stretch" ToolTip.Tip="{DynamicResource tracks.mixfx}"
+                    Classes.fxOn="{Binding MixFxEnabled}" IsVisible="{Binding IsPhonemizerVisible}"
+                    Command="{Binding OpenMixFxDialog}">
+        <TextBlock Text="fx" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+      </Button>
+      <Button Grid.Row="3" Grid.Column="2" Margin="1" Padding="0" Height="18" Background="Transparent"
+                    HorizontalAlignment="Stretch" Click="TrackSettingsButtonClicked" IsVisible="{Binding IsRendererVisible}"
+                    ToolTip.Tip="{DynamicResource tracks.tracksettings}">
+        <Path Classes="clear" Width="24" Height="24"
+              Data="m 12.001453,14.34 a 2.35,2.35 0 0 1 -2.34,-2.34 2.35,2.35 0 0 1 2.34,-2.34 2.35,2.35 0 0 1 2.35,2.34 2.35,2.35 0 0 1 -2.35,2.35 m 4.98,-1.7 a 5.2,5.2 0 0 0 0,-1.32 l 1.41,-1.1 c 0.13,-0.1 0.16,-0.27 0.08,-0.42 l -1.34,-2.32 a 0.33,0.33 0 0 0 -0.4,-0.15 l -1.67,0.67 a 4.86,4.86 0 0 0 -1.14,-0.65 l -0.25,-1.78 a 0.34,0.34 0 0 0 -0.33,-0.28 h -2.68 c -0.17,0 -0.3,0.12 -0.33,0.28 l -0.25,1.78 c -0.42,0.16 -0.79,0.4 -1.14,0.65 l -1.66,-0.67 a 0.33,0.33 0 0 0 -0.41,0.15 l -1.34,2.32 a 0.33,0.33 0 0 0 0.08,0.43 l 1.41,1.09 a 5.73,5.73 0 0 0 0,1.32 l -1.41,1.11 a 0.33,0.33 0 0 0 -0.08,0.43 l 1.34,2.32 c 0.08,0.15 0.26,0.2 0.4,0.15 l 1.67,-0.68 c 0.35,0.27 0.71,0.5 1.14,0.66 l 0.25,1.78 c 0.02,0.16 0.16,0.28 0.33,0.28 h 2.68 c 0.17,0 0.3,-0.12 0.33,-0.28 l 0.25,-1.78 c 0.42,-0.17 0.79,-0.4 1.14,-0.66 l 1.66,0.68 c 0.15,0.05 0.33,0 0.41,-0.15 l 1.34,-2.32 a 0.34,0.34 0 0 0 -0.08,-0.43 l -1.41,-1.1 z"
+              Fill="{StaticResource NeutralAccentBrush}"/>
+      </Button>
       <Grid.ContextMenu>
         <ContextMenu>
           <MenuItem Classes="context" Header="{DynamicResource tracks.remove}" Command="{Binding Remove}"/>
