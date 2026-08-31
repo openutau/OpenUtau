@@ -40,17 +40,23 @@ permissions:
   checks: read
 
 concurrency:
-  group: auto-merge-${{ github.event.pull_request.number || github.event.review.pull_request.number }}
+  # github.event.pull_request exists at the top level for BOTH the
+  # pull_request and pull_request_review events.
+  group: auto-merge-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
   auto-merge:
-    if: github.event_name == 'pull_request' || github.event.review.action == 'submitted' || github.event.review.action == 'dismissed'
+    # github.event.action: opened/synchronize/... for pull_request events,
+    # submitted/dismissed for pull_request_review events.
+    if: github.event_name == 'pull_request' || github.event.action == 'submitted' || github.event.action == 'dismissed'
     runs-on: ubuntu-latest
     env:
-      PR_NUMBER: ${{ github.event.pull_request.number || github.event.review.pull_request.number }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
       EVENT_NAME: ${{ github.event_name }}
       EVENT_ACTION: ${{ github.event.action }}
+      # Workflow whose check runs gate the merge (job name prefix).
+      GATING_WORKFLOW: pr-test
       # ---- rules live here; add as many as you like ------------------------
       # paths: a trailing "/" means "this directory and everything below",
       #        otherwise it must be the exact file name
@@ -71,7 +77,7 @@ jobs:
       - name: Checkout base branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha || github.event.review.pull_request.base.sha }}
+          ref: ${{ github.event.pull_request.base.sha }}
 
       - name: Evaluate and auto-merge
         run: node .github/scripts/auto-merge.mjs

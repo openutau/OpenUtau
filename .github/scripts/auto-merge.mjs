@@ -62,6 +62,7 @@ const [commits, reviews, files] = await Promise.all([
 ]);
 if (commits === null) notEligible('PR has more than 300 commits');
 if (files === null) notEligible('PR changes more than 300 files');
+if (reviews === null) notEligible('PR has more than 300 reviews');
 
 // Who wrote the PR: the head author plus every commit author. Their
 // approvals never count.
@@ -92,11 +93,11 @@ const approvals = [
   ).values(),
 ];
 
-// A file belongs to a rule if it equals a path, or is below a directory path.
+// A file belongs to a rule if it equals a path, or is below a directory
+// path. Only paths with a trailing "/" act as directory prefixes; anything
+// else must be the exact file name.
 const inRule = (filename, rule) =>
-  rule.paths.some(
-    (p) => p === filename || (p.endsWith('/') && filename.startsWith(p)) || filename.startsWith(p + '/')
-  );
+  rule.paths.some((p) => (p.endsWith('/') ? filename.startsWith(p) : filename === p));
 
 const perRule = CFG.rules.map((rule) => {
   const rs = files.filter((f) => inRule(f.filename, rule));
@@ -208,8 +209,12 @@ report(
 if (teamApprovals.length < required)
   notEligible(`needs ${required} approval(s) from @${org}/${CFG.approvers_team}, has ${teamApprovals.length}`);
 
-// CI gate: every check run on the head commit must be completed and passing.
-// Runs are re-created on each push, so this always reflects the latest head.
+// CI gate: every pr-test check run on the head commit must be completed and
+// passing. Only the gating workflow's runs are considered — in particular
+// NOT this auto-merge workflow's own check run, which is in_progress while
+// we are deciding and would deadlock the merge. Runs are re-created on each
+// push, so this always reflects the latest head.
+const GATING_WORKFLOW = process.env.GATING_WORKFLOW || 'pr-test';
 async function getCheckRuns(sha) {
   let runs = [];
   for (let page = 1; page <= 5; page++) {
@@ -217,14 +222,15 @@ async function getCheckRuns(sha) {
     runs = runs.concat(data.check_runs);
     if (data.check_runs.length < 100 || runs.length >= data.total_count) break;
   }
-  return runs;
+  // Check-run names are "<job id> (<matrix summary>)".
+  return runs.filter((r) => r.name.startsWith(`${GATING_WORKFLOW} `) || r.name === GATING_WORKFLOW);
 }
 const runs = await getCheckRuns(pr.head.sha);
 if (runs.length === 0) notEligible('no CI check runs on the head commit yet — waiting for CI');
 const pending = runs.filter((r) => r.status !== 'completed');
 if (pending.length > 0)
   notEligible(`CI still running: ${pending.map((r) => r.name).join(', ')}`);
-const failing = runs.filter((r) => !['success', 'neutral'].includes(r.conclusion));
+const failing = runs.filter((r) => !['success', 'neutral', 'skipped'].includes(r.conclusion));
 if (failing.length > 0)
   notEligible(`CI failing: ${failing.map((r) => `${r.name} (${r.conclusion})`).join(', ')}`);
 report(`CI ok: ${runs.length} check(s) passed on ${pr.head.sha.slice(0, 7)}`);
