@@ -30,8 +30,7 @@ namespace OpenUtau.Core.Util {
 
         public static void Reset() {
             Default = new SerializablePreferences();
-            try
-            {
+            try {
                 string exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
                 string shippedPrefsPath = Path.Combine(exePath, "prefs-default.json");
                 if (File.Exists(shippedPrefsPath)) {
@@ -41,7 +40,7 @@ namespace OpenUtau.Core.Util {
                         Default = shippedPrefs;
                     }
                 }
-            } catch(Exception e){
+            } catch (Exception e) {
                 Log.Error(e, "failed to load prefs-default.json");
             }
             Save();
@@ -56,26 +55,26 @@ namespace OpenUtau.Core.Util {
             Save();
         }
 
-        public static void AddRecentFileIfEnabled(string filePath){
+        public static void AddRecentFileIfEnabled(string filePath) {
             //Users can choose adding .ust, .vsqx and .mid files to recent files or not
             string ext = Path.GetExtension(filePath);
-            switch(ext){
+            switch (ext) {
                 case ".ustx":
                     AddRecentFile(filePath);
                     break;
                 case ".mid":
                 case ".midi":
-                    if(Preferences.Default.RememberMid){
+                    if (Preferences.Default.RememberMid) {
                         AddRecentFile(filePath);
                     }
                     break;
                 case ".ust":
-                    if(Preferences.Default.RememberUst){
+                    if (Preferences.Default.RememberUst) {
                         AddRecentFile(filePath);
                     }
                     break;
                 case ".vsqx":
-                    if(Preferences.Default.RememberVsqx){
+                    if (Preferences.Default.RememberVsqx) {
                         AddRecentFile(filePath);
                     }
                     break;
@@ -105,7 +104,7 @@ namespace OpenUtau.Core.Util {
                 if (File.Exists(PathManager.Inst.PrefsFilePath)) {
                     Default = JsonConvert.DeserializeObject<SerializablePreferences>(
                         File.ReadAllText(PathManager.Inst.PrefsFilePath, Encoding.UTF8));
-                    if(Default == null) {
+                    if (Default == null) {
                         Reset();
                         return;
                     }
@@ -202,6 +201,7 @@ namespace OpenUtau.Core.Util {
             public uint AudioBackEnd = 0; // 0 = Automatic, 1 = MiniAudio, 2 = SDL
             public bool UseSystemDefaultAudioDevice = true;
             public double PlayPosMarkerMargin = 0.9;
+            public float MetronomVolume = 0.5f;
             public int LockStartTime = 0;
             public int PlaybackAutoScroll = 2;
             public bool ReverseLogOrder = true;

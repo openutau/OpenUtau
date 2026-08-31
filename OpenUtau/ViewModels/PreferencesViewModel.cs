@@ -63,6 +63,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial int LockStartTime { get; set; }
         [Reactive] public partial int PlaybackAutoScroll { get; set; }
         [Reactive] public partial double PlayPosMarkerMargin { get; set; }
+        [Reactive] public partial float MetronomVolume { get; set; }
 
         // Paths
         public string SingerPath => PathManager.Inst.SingersPath;
@@ -157,6 +158,7 @@ namespace OpenUtau.App.ViewModels {
             AudioBackEnd = Preferences.Default.AudioBackEnd;
             PlaybackAutoScroll = Preferences.Default.PlaybackAutoScroll;
             PlayPosMarkerMargin = Preferences.Default.PlayPosMarkerMargin;
+            MetronomVolume = Preferences.Default.MetronomVolume;
             LockStartTime = Preferences.Default.LockStartTime;
             InstallToAdditionalSingersPath = Preferences.Default.InstallToAdditionalSingersPath;
             LoadDeepFolders = Preferences.Default.LoadDeepFolderSinger;
@@ -225,7 +227,7 @@ namespace OpenUtau.App.ViewModels {
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
                 .Subscribe(_ => this.RaisePropertyChanged(nameof(IsThemeEditorOpen)));
-            
+
             this.WhenAnyValue(vm => vm.UseSystemDefaultDevice)
                 .Subscribe(useDefault => {
                     Preferences.Default.UseSystemDefaultAudioDevice = useDefault;
@@ -259,6 +261,11 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.PlayPosMarkerMargin)
                 .Subscribe(playPosMarkerMargin => {
                     Preferences.Default.PlayPosMarkerMargin = playPosMarkerMargin;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.MetronomVolume)
+                .Subscribe(metronomVolume => {
+                    Preferences.Default.MetronomVolume = MetronomVolume;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LockStartTime)

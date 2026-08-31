@@ -265,7 +265,6 @@ namespace OpenUtau.Core {
             int count) {
 
             const double clickLengthMs = 50.0;
-            const float volume = 0.5f;
 
             int clickLength = (int)(SampleRate * clickLengthMs / 1000.0);
             double frequency = accent ? 1600.0 : 1000.0;
@@ -287,7 +286,7 @@ namespace OpenUtau.Core {
                 float sample = (float)(
                     Math.Sin(2.0 * Math.PI * frequency * t)
                     * envelope
-                    * volume);
+                    * Preferences.Default.MetronomVolume);
 
                 buffer[offset + targetFrame * 2] += sample;
                 buffer[offset + targetFrame * 2 + 1] += sample;
