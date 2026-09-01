@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
@@ -10,11 +10,12 @@ namespace OpenUtau.Core.Util {
         PenPlusTool = 11,
         EraserTool = 20,
         KnifeTool = 30,
-        DrawPitchTool = 40,
-        PitchLineTool = 50,
-        PitchSCurveTool = 60,
-        PitchSineWaveTool = 70,
-        PitchSmoothenTool = 80
+        PitchPointTool = 40,
+        DrawPitchTool = 50,
+        PitchLineTool = 60,
+        PitchSCurveTool = 70,
+        PitchSineWaveTool = 80,
+        PitchSmoothenTool = 90
     }
 
     public class EditTool {
@@ -33,7 +34,7 @@ namespace OpenUtau.Core.Util {
                 }
             }
         }
-        [JsonIgnore] public bool IsPitchTool => BaseTool >= 4 && BaseTool <= 8;
+        [JsonIgnore] public bool IsPitchTool => BaseTool >= 5 && BaseTool <= 9;
         public bool IsMatch(IEnumerable<EditTools> tools) => tools.Contains(CurrentTool);
     }
 }

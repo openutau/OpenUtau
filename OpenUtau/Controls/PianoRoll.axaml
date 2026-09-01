@@ -405,6 +405,7 @@
                   </ListBoxItem>
                   <ListBoxItem Classes="toolbar eraserTool" ToolTip.Tip="{DynamicResource pianoroll.tool.eraser}"/>
                   <ListBoxItem Classes="toolbar knifeTool" ToolTip.Tip="{DynamicResource pianoroll.tool.knife}"/>
+                  <ListBoxItem Classes="toolbar pitchPointTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchpoint}"/>
                   <ListBoxItem Classes="toolbar drawPitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawpitch}"/>
                   <ListBoxItem Classes="toolbar pitchLineTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchline}"/>
                   <ListBoxItem Classes="toolbar pitchSCurveTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchscurve}"/>

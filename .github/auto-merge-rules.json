@@ -1,0 +1,21 @@
+{
+  "_comment": [
+    "Rules for .github/workflows/auto-merge.yml. This file is read from the BASE",
+    "branch checkout, so a PR cannot change the rules that decide its own fate.",
+    "Any PR touching .github/ is refused auto-merge outright (see auto-merge.mjs).",
+    "",
+    "paths:      a trailing '/' means 'this directory and everything below',",
+    "            otherwise it must be the exact file name",
+    "max_lines:  strict upper bound of added+removed lines, counted per rule",
+    "            over the files inside that rule's paths only",
+    "max_files:  strict upper bound on file count, same counting"
+  ],
+  "merge_method": "squash",
+  "approvers_team": "approvers",
+  "allow_forks": false,
+  "gating_workflow": "pr-test",
+  "rules": [
+    { "name": "translations", "paths": ["OpenUtau/Strings/"], "max_files": 8, "max_lines": 64, "required_approvals": 1 },
+    { "name": "phonemizers", "paths": ["OpenUtau.Plugin.Builtin/"], "max_files": 4, "max_lines": 128, "required_approvals": 2 }
+  ]
+}

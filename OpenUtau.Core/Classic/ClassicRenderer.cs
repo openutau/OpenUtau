@@ -33,7 +33,6 @@ namespace OpenUtau.Classic {
         public USingerType SingerType => USingerType.Classic;
 
         public bool SupportsRenderPitch => false;
-
         public bool SupportsExpression(UExpressionDescriptor descriptor) {
             return descriptor.isFlag
                 || !string.IsNullOrEmpty(descriptor.flag)
@@ -89,6 +88,8 @@ namespace OpenUtau.Classic {
                 result.samples = wavtool.Concatenate(resamplerItems, string.Empty, cancellation);
                 if (result.samples != null) {
                     Renderers.ApplyDynamics(phrase, result);
+                    PlaybackManager.Inst.LiveWaveformCache[phrase.hash.ToString()] = (trackNo, phrase.positionMs - phrase.leadingMs, result.samples, DateTime.Now);
+                    DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
                 }
                 return result;
             });
@@ -128,6 +129,8 @@ namespace OpenUtau.Classic {
                 progress.Complete(phrase.phones.Length, progressInfo);
                 if (result.samples != null) {
                     Renderers.ApplyDynamics(phrase, result);
+                    PlaybackManager.Inst.LiveWaveformCache[phrase.hash.ToString()] = (trackNo, phrase.positionMs - phrase.leadingMs, result.samples, DateTime.Now);
+                    DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
                 }
                 return result;
             });

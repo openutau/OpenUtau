@@ -144,7 +144,7 @@ namespace OpenUtau.App.ViewModels {
             return hits;
         }
 
-        public PitchPointHitInfo HitTestPitchPoint(Point point) {
+        public PitchPointHitInfo HitTestPitchPoint(Point point, bool pitchPointTool) {
             if (viewModel.Part == null || !viewModel.ShowPitch) {
                 return default;
             }
@@ -178,7 +178,17 @@ namespace OpenUtau.App.ViewModels {
                         // Hit test curve
                         double castY;
                         CubicSplineSegment? curve = null;
-                        if (note.pitch.data.Count > 2 && note.pitch.data[i - 1].shape == PitchPointShape.sp) {
+                        if (pitchPointTool) {
+                            double msX = timeAxis.TickPosToMsPos(viewModel.PointToTick(point) + viewModel.Part.position) - note.PositionMs;
+                            double decCentY = (viewModel.PointToToneDouble(point) - note.AdjustedTone) * 10;
+                            return new PitchPointHitInfo() {
+                                Note = note,
+                                Index = i - 1,
+                                OnPoint = false,
+                                X = (float)msX,
+                                Y = (float)decCentY,
+                            };
+                        } else if (note.pitch.data.Count > 2 && note.pitch.data[i - 1].shape == PitchPointShape.sp) {
                             double x2 = x, y2 = y;
                             if (i == 1) {
                                 if (note.pitch.data[0].X > 0) {

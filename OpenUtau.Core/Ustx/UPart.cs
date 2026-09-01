@@ -54,10 +54,10 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] private long notesTimestamp;
         [YamlIgnore] private long phonemesTimestamp;
 
-        [YamlIgnore] private ISignalSource mix;
+        [YamlIgnore] private ISignalSource? mix;
 
         [YamlIgnore] public bool PhonemesUpToDate => notesTimestamp == phonemesTimestamp;
-        [YamlIgnore] public ISignalSource Mix => mix;
+        [YamlIgnore] public ISignalSource? Mix { get => mix; set => mix = value; }
 
         public override string DisplayName => name;
         public override int Duration { get => duration; set => duration = value; }

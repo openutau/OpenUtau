@@ -973,6 +973,12 @@ namespace OpenUtau.App.ViewModels {
                     phrase.DeleteCacheFiles();
                 }
                 DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, ThemeManager.GetString("progress.cachecleared")));
+                foreach (var phrase in phrases) {
+                    PlaybackManager.Inst.LiveWaveformCache.TryRemove(phrase.hash.ToString(), out _);
+                }
+                // can't clear individual phrases :'(
+                Part.Mix = null;
+                DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
             }
         }
 

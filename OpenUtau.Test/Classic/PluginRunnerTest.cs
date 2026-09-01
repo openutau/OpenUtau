@@ -71,7 +71,7 @@ namespace OpenUtau.Classic {
                     Parent = second
                 };
                 secondUpnoneme.SetExpression(project, project.tracks[0], Ustx.GEN, 30);
-                // requierd Expression
+                // required Expression
                 secondUpnoneme.SetExpression(project, project.tracks[0], Ustx.VEL, 40);
                 secondUpnoneme.SetExpression(project, project.tracks[0], Ustx.VOL, 50);
                 secondUpnoneme.SetExpression(project, project.tracks[0], Ustx.MOD, 60);
@@ -241,27 +241,15 @@ PreUtterance=
 
         [Theory]
         [ClassData(typeof(ExecuteTestData))]
-        public void ExecuteTest(ExecuteArgument given, Action<StreamWriter, string> when, Action<ReplaceNoteEventArgs> then, Action<PluginErrorEventArgs> error) {
-            // When
-            var action = new Action<PluginRunner>(async (runner) => {
-                await runner.Execute(given.Project, given.Part, given.First, given.Last, new PluginStub(when));
-            });
-
-            // Then (Assert in ClassData)
-            action(new PluginRunner(PathManager.Inst, then, error));
+        public async Task ExecuteTest(ExecuteArgument given, Action<StreamWriter, string> when, Action<ReplaceNoteEventArgs> then, Action<PluginErrorEventArgs> error) {
+            await new PluginRunner(PathManager.Inst, then, error)
+                .Execute(given.Project, given.Part, given.First, given.Last, new PluginStub(when));
         }
 
         [Fact]
-        public void ExecuteErrorTest() {
+        public async Task ExecuteErrorTest() {
             // Given
             var given = ExecuteTestData.BasicUProject();
-
-            // When
-            var action = new Action<PluginRunner>(async (runner) => {
-                await runner.Execute(given.Project, given.Part, given.First, given.Last, new PluginStub((writer, text) => {
-                    // return empty text (invoke error)
-                }));
-            });
 
             // Then
             var then = new Action<ReplaceNoteEventArgs>((args) => {
@@ -270,7 +258,10 @@ PreUtterance=
             var error = new Action<PluginErrorEventArgs>((args) => {
                 Assert.True(true);
             });
-            action(new PluginRunner(PathManager.Inst, then, error));
+            await new PluginRunner(PathManager.Inst, then, error)
+                .Execute(given.Project, given.Part, given.First, given.Last, new PluginStub((writer, text) => {
+                    // return empty text (invoke error)
+                }));
         }
     }
 

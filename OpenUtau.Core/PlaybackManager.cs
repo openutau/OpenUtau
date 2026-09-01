@@ -12,6 +12,7 @@ using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using OpenUtau.Core.Format;
 using Serilog;
+using System.Collections.Concurrent;
 
 namespace OpenUtau.Core {
     public class SineGenerator : ISampleProvider {
@@ -167,6 +168,8 @@ namespace OpenUtau.Core {
     }
 
     public class PlaybackManager : SingletonBase<PlaybackManager>, ICmdSubscriber {
+        public ConcurrentDictionary<string, (int trackNo, double posMs, float[] samples, DateTime renderTime)> LiveWaveformCache = new ConcurrentDictionary<string, (int, double, float[], DateTime)>();
+        public bool IsWaveformBlanked { get; set; } = false;
         private PlaybackManager() {
             DocManager.Inst.AddSubscriber(this);
             try {
@@ -318,11 +321,15 @@ namespace OpenUtau.Core {
         private void Render(UProject project, int tick, int endTick, int trackNo) {
             Task.Run(() => {
                 try {
+                    LiveWaveformCache.Clear();
+                    IsWaveformBlanked = false;
+                    DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
                     RenderEngine engine = new RenderEngine(project, startTick: tick, endTick: endTick, trackNo: trackNo);
                     var result = engine.RenderProject(DocManager.Inst.MainScheduler, ref renderCancellation);
                     faders = result.Item2;
                     StartingToPlay = false;
                     StartPlayback(project.timeAxis.TickPosToMsPos(tick), result.Item1);
+                    DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
                 } catch (Exception e) {
                     Log.Error(e, "Failed to render.");
                     StopPlayback();
@@ -465,6 +472,8 @@ namespace OpenUtau.Core {
             } else if (cmd is LoadProjectNotification) {
                 StopPlayback();
                 renderCancellation?.Cancel();
+                LiveWaveformCache.Clear();
+                DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
                 DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(0));
             }
             if (cmd is PreRenderNotification || cmd is LoadProjectNotification) {
@@ -475,5 +484,8 @@ namespace OpenUtau.Core {
         }
 
         #endregion
+    }
+    public class WaveformReadyNotification : UNotification {
+        public override string ToString() => "Waveform rendered and ready";
     }
 }
