@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using OpenUtau.Core.DawIntegration;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.SignalChain;
 using OpenUtau.Core.Ustx;
@@ -477,7 +478,8 @@ namespace OpenUtau.Core {
                 DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(0));
             }
             if (cmd is PreRenderNotification || cmd is LoadProjectNotification) {
-                if (Util.Preferences.Default.PreRender) {
+                // Always prerender when it's connected to daw
+                if (Util.Preferences.Default.PreRender || DawManager.Inst.IsConnected) {
                     SchedulePreRender();
                 }
             }

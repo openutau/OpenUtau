@@ -124,6 +124,9 @@
     <Compile Update="Views\TrackColorDialog.axaml.cs">
       <DependentUpon>TrackColorDialog.axaml</DependentUpon>
     </Compile>
+    <Compile Update="Views\DawIntegrationTerminalDialog.axaml.cs">
+      <DependentUpon>DawIntegrationTerminalDialog.axaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="Resources\Resources.resx">

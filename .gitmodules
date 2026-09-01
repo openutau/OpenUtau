@@ -1,0 +1,24 @@
+[submodule "DawPlugin/deps/dpf"]
+	path = DawPlugin/deps/dpf
+	url = https://github.com/distrho/DPF.git
+[submodule "DawPlugin/deps/asio"]
+	path = DawPlugin/deps/asio
+	url = https://github.com/chriskohlhoff/asio
+[submodule "DawPlugin/deps/dpf_widgets"]
+	path = DawPlugin/deps/dpf_widgets
+	url = https://github.com/rokujyushi/DPF-Widgets.git
+[submodule "DawPlugin/deps/choc"]
+	path = DawPlugin/deps/choc
+	url = https://github.com/Tracktion/choc
+[submodule "DawPlugin/deps/uuid-v4"]
+	path = DawPlugin/deps/uuid-v4
+	url = https://github.com/rkg82/uuid-v4.git
+[submodule "DawPlugin/deps/yamc"]
+	path = DawPlugin/deps/yamc
+	url = https://github.com/yohhoy/yamc.git
+[submodule "DawPlugin/deps/zlib"]
+	path = DawPlugin/deps/zlib
+	url = https://github.com/madler/zlib.git
+[submodule "DawPlugin/deps/gzip-hpp"]
+	path = DawPlugin/deps/gzip-hpp
+	url = https://github.com/mapbox/gzip-hpp.git

@@ -20,6 +20,7 @@ using OpenUtau.App.ViewModels;
 using OpenUtau.Classic;
 using OpenUtau.Core;
 using OpenUtau.Core.Analysis;
+using OpenUtau.Core.DawIntegration;
 using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
@@ -498,6 +499,25 @@ namespace OpenUtau.App.Views {
                 MidiWriter.Save(file, project);
             }
         }
+
+        async void OnMenuDawIntegrationTerminal(object sender, RoutedEventArgs args) {
+            if (!DocManager.Inst.ChangesSaved && !await AskIfSaveAndContinue()) {
+                return;
+            }
+            DawIntegrationTerminalViewModel dataContext;
+            dataContext = new DawIntegrationTerminalViewModel();
+            var dialog = new DawIntegrationTerminalDialog() {
+                DataContext = dataContext
+            };
+            await dialog.ShowDialog(this);
+            if (dialog.Position.Y < 0) {
+                dialog.Position = dialog.Position.WithY(0);
+            }
+        }
+        async void OnMenuDisconnectFromDaw(object sender, RoutedEventArgs args) {
+            await DawManager.Inst.Disconnect();
+        }
+
 
         private async Task<bool> WarnToSave(UProject project) {
             if (string.IsNullOrEmpty(project.FilePath)) {
@@ -1933,6 +1953,14 @@ namespace OpenUtau.App.Views {
                         VoiceColorRemapping(track, oldColors, newColors);
                     }
                 }
+            } else if (cmd is DawConnectedNotification) {
+                DocManager.Inst.ExecuteCmd(new ProgressBarNotification(1,
+                    ThemeManager.GetString("dawintegration.status.connected")
+                ));
+            } else if (cmd is DawDisconnectedNotification) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
+                    ThemeManager.GetString("dawintegration.status.disconnected")
+                ));
             }
         }
     }

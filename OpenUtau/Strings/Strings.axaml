@@ -309,6 +309,8 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.file.save">Save</system:String>
   <system:String x:Key="menu.file.saveas">Save As...</system:String>
   <system:String x:Key="menu.file.savetemplate">Save Template...</system:String>
+  <system:String x:Key="menu.file.connectdaw">Connect to DAW...</system:String>
+  <system:String x:Key="menu.file.disconnectdaw">Disconnect from DAW</system:String>
   <system:String x:Key="menu.help">Help</system:String>
   <system:String x:Key="menu.help.about">About OpenUtau</system:String>
   <system:String x:Key="menu.help.checkupdate">Check Update</system:String>
@@ -825,6 +827,18 @@ General
   <system:String x:Key="tracks.solo.unsoloall">Unsolo all</system:String>
   <system:String x:Key="tracks.trackcolor">Change track color</system:String>
   <system:String x:Key="tracks.tracksettings">Track Settings</system:String>
+
+  <system:String x:Key="dawintegrationterminal.captions">Connect to DAW</system:String>
+  <system:String x:Key="dawintegrationterminal.description">Download Plugin, show UI and connect (temporary text)</system:String>
+  <system:String x:Key="dawintegrationterminal.downloadplugin">Download Plugin</system:String>
+  <system:String x:Key="dawintegrationterminal.notfound">No plugin host found.</system:String>
+  <system:String x:Key="dawintegrationterminal.column">Name</system:String>
+  <system:String x:Key="dawintegrationterminal.refresh">Refresh</system:String>
+  <system:String x:Key="dawintegrationterminal.connect">Connect</system:String>
+
+  <system:String x:Key="dawintegration.status.connected">Connected to DAW</system:String>
+  <system:String x:Key="dawintegration.status.disconnected">Disconnected from DAW</system:String>
+  <system:String x:Key="dawintegration.active"> (Connected to DAW)</system:String>
 
   <FontFamily x:Key="ui.fontfamily">Segoe UI,San Francisco,Helvetica Neue</FontFamily>
 

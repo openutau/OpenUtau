@@ -263,4 +263,11 @@ namespace OpenUtau.Core {
         }
         public override string ToString() => "Note preset changed.";
     }
+
+    public class DawConnectedNotification : UNotification {
+        public override string ToString() => $"Connected to DAW.";
+    }
+    public class DawDisconnectedNotification : UNotification {
+        public override string ToString() => $"Disconnected from DAW.";
+    }
 }

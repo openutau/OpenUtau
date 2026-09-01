@@ -464,7 +464,7 @@ namespace OpenUtau.Core.Ustx {
 
         public override void AfterLoad(UProject project, UTrack track) {
             try {
-                FilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(project.FilePath), relativePath ?? ""));
+                FilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(project.FilePath) ?? string.Empty, relativePath ?? ""));
             } catch {
                 if (string.IsNullOrWhiteSpace(FilePath)) {
                     throw;

@@ -47,6 +47,9 @@
               <MenuItem Header="{DynamicResource menu.file.exportds}" Click="OnMenuExportDsTo"/>
             </MenuItem>
             <MenuItem Header="{DynamicResource menu.file.openexportlocation}" Click="OnMenuOpenProjectLocation"/>
+            <MenuItem Header="-" Height="1"/>
+            <MenuItem Header="{DynamicResource menu.file.connectdaw}" Click="OnMenuDawIntegrationTerminal" IsVisible="{Binding !IsConnectedToDaw}"/>
+            <MenuItem Header="{DynamicResource menu.file.disconnectdaw}" Click="OnMenuDisconnectFromDaw" IsVisible="{Binding IsConnectedToDaw}"/>
           </MenuItem>
           <MenuItem Header="{DynamicResource menu.edit}" IsEnabled="{Binding Page}">
             <MenuItem Header="{Binding UndoText}" InputGesture="Ctrl+Z" Command="{Binding Undo}" IsEnabled="{Binding CanUndo}"/>

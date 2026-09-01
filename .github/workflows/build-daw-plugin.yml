@@ -1,0 +1,155 @@
+name: Build DAW Plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag"
+        default: "0.0.0"
+        required: true
+        type: string
+      release:
+        description: "Upload to GitHub Release"
+        default: false
+        type: boolean
+      beta:
+        description: "Pre-release"
+        default: true
+        type: boolean
+      draft:
+        description: "Draft release"
+        default: true
+        type: boolean
+  workflow_call:
+    inputs:
+      version:
+        description: "Release tag"
+        required: true
+        type: string
+      release:
+        description: "Upload to GitHub Release"
+        default: false
+        type: boolean
+      beta:
+        description: "Pre-release"
+        default: true
+        type: boolean
+      draft:
+        description: "Draft release"
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+env:
+  release-name: ${{ inputs.version }}${{ inputs.beta && ' Beta' || '' }}
+
+jobs:
+  build:
+    runs-on: ${{ matrix.arch.runs-on }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - { name: win-x64, os: win, runs-on: windows-latest, cmake-arch: x64 }
+          - { name: win-arm64, os: win, runs-on: windows-latest, cmake-arch: ARM64 }
+          - { name: osx-x64, os: osx, runs-on: macos-15-intel, cmake-arch: x86_64 }
+          - { name: osx-arm64, os: osx, runs-on: macos-15, cmake-arch: arm64 }
+          - { name: linux-x64, os: linux, runs-on: ubuntu-latest }
+          - { name: linux-arm64, os: linux, runs-on: ubuntu-24.04-arm }
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build (Windows)
+        if: ${{ matrix.arch.os == 'win' }}
+        shell: pwsh
+        run: |
+          cd DawPlugin
+
+          New-Item -ItemType Directory -Force deps/dpf/khronos/GL, deps/dpf/khronos/KHR
+          curl.exe --fail --location --retry 5 --retry-all-errors `
+            https://raw.githubusercontent.com/KhronosGroup/OpenGL-Registry/main/api/GL/glext.h `
+            --output deps/dpf/khronos/GL/glext.h
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to download glext.h."
+          }
+          curl.exe --fail --location --retry 5 --retry-all-errors `
+            https://raw.githubusercontent.com/KhronosGroup/EGL-Registry/main/api/KHR/khrplatform.h `
+            --output deps/dpf/khronos/KHR/khrplatform.h
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to download khrplatform.h."
+          }
+          if (-not (Select-String -Quiet -Path deps/dpf/khronos/GL/glext.h -Pattern "PFNGLACTIVETEXTUREPROC")) {
+            throw "Downloaded glext.h is invalid."
+          }
+
+          cmake -B build -S . -A ${{ matrix.arch.cmake-arch }} -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - name: Build (macOS)
+        if: ${{ matrix.arch.os == 'osx' }}
+        run: |
+          cd DawPlugin
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER="$(xcrun --find clang)" \
+            -DCMAKE_CXX_COMPILER="$(xcrun --find clang++)" \
+            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch.cmake-arch }}
+          cmake --build build --config Release
+
+      - name: Build (Linux)
+        if: ${{ matrix.arch.os == 'linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev
+          cd DawPlugin
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc-14 \
+            -DCMAKE_CXX_COMPILER=g++-14
+          cmake --build build --config Release
+
+      - name: Package VST3
+        shell: bash
+        run: |
+          cd DawPlugin/build/bin
+          7z a openutau_daw_plugin-${{ matrix.arch.name }}.vst3.zip openutau_daw_plugin.vst3
+
+      - name: Package Audio Unit
+        if: ${{ matrix.arch.os == 'osx' }}
+        shell: bash
+        run: |
+          cd DawPlugin/build/bin
+          7z a openutau_daw_plugin-${{ matrix.arch.name }}.au.zip openutau_daw_plugin.component
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openutau_daw_plugin-${{ matrix.arch.name }}
+          path: |
+            DawPlugin/build/bin/openutau_daw_plugin-${{ matrix.arch.name }}.vst3.zip
+            DawPlugin/build/bin/openutau_daw_plugin-${{ matrix.arch.name }}.au.zip
+          if-no-files-found: error
+
+  release:
+    if: ${{ inputs.release }}
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: openutau_daw_plugin-*
+          path: release
+          merge-multiple: true
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: ${{ env.release-name }}
+          prerelease: ${{ inputs.beta }}
+          draft: ${{ inputs.draft }}
+          files: release/*

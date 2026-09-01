@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using DynamicData.Binding;
 using OpenUtau.App.Views;
 using OpenUtau.Core;
+using OpenUtau.Core.DawIntegration;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
@@ -44,13 +45,28 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public partial class MainWindowViewModel : ViewModelBase, ICmdSubscriber {
-        public string Title => !ProjectSaved
-            ? $"{AppVersion}"
-            : $"{(DocManager.Inst.ChangesSaved ? "" : "*")}{AppVersion} [{DocManager.Inst.Project.FilePath}]";
+    public partial class MainWindowViewModel : ViewModelBase, ICmdSubscriber
+    {
+        public string Title
+        {
+            get
+            {
+                if (IsConnectedToDaw)
+                {
+                    return $"{AppVersion} [{DawManager.Inst.Client!.server.Name}] (Attached to DAW)";
+                }
+                else
+                {
+                    var baseTitle = !ProjectSaved
+                        ? $"{AppVersion}"
+                        : $"{(DocManager.Inst.ChangesSaved ? "" : "*")}{AppVersion} [{DocManager.Inst.Project.FilePath}]";
+                    return baseTitle;
+                }
+            }
+        }
         public double Width => Preferences.Default.MainWindowSize.Width;
         public double Height => Preferences.Default.MainWindowSize.Height;
-
+        public bool IsConnectedToDaw => DawManager.Inst.IsConnected;
         /// <summary>
         ///0: welcome page, 1: tracks page
         /// </summary>
@@ -314,7 +330,7 @@ namespace OpenUtau.App.ViewModels {
                 var track = new UTrack(project);
                 track.TrackNo = project.tracks.Count;
                 part.trackNo = track.TrackNo;
-                if(part.name != "New Part"){
+                if (part.name != "New Part") {
                     track.TrackName = part.name;
                 }
                 part.AfterLoad(project, track);
@@ -400,7 +416,7 @@ namespace OpenUtau.App.ViewModels {
         /// Remap a tick position from the old time axis to the new time axis without changing its absolute position (in ms).
         /// Note that this can only be used on positions, not durations.
         /// </summary>
-        private int RemapTickPos(int tickPos, TimeAxis oldTimeAxis, TimeAxis newTimeAxis){
+        private int RemapTickPos(int tickPos, TimeAxis oldTimeAxis, TimeAxis newTimeAxis) {
             double msPos = oldTimeAxis.TickPosToMsPos(tickPos);
             return newTimeAxis.MsPosToTickPos(msPos);
         }
@@ -409,12 +425,12 @@ namespace OpenUtau.App.ViewModels {
         /// Remap the starting and ending positions of all the notes and parts in the whole project 
         /// from the old time axis to the new time axis, without changing their absolute positions in ms.
         /// </summary>
-        public void RemapTimeAxis(TimeAxis oldTimeAxis, TimeAxis newTimeAxis){
+        public void RemapTimeAxis(TimeAxis oldTimeAxis, TimeAxis newTimeAxis) {
             var project = DocManager.Inst.Project;
-            foreach(var part in project.parts){
+            foreach (var part in project.parts) {
                 var partOldStartTick = part.position;
                 var partNewStartTick = RemapTickPos(part.position, oldTimeAxis, newTimeAxis);
-                if(partNewStartTick != partOldStartTick){
+                if (partNewStartTick != partOldStartTick) {
                     DocManager.Inst.ExecuteCmd(new MovePartCommand(
                         project, part, partNewStartTick, part.trackNo));
                 }
@@ -426,24 +442,24 @@ namespace OpenUtau.App.ViewModels {
                             project, voicePart, partNewDuration - partOldDuration, false));
                     }
                     var noteCommands = new List<UCommand>();
-                    foreach(var note in voicePart.notes){
+                    foreach (var note in voicePart.notes) {
                         var noteOldStartTick = note.position + partOldStartTick;
                         var noteOldEndTick = note.End + partOldStartTick;
                         var noteOldDuration = note.duration;
                         var noteNewStartTick = RemapTickPos(noteOldStartTick, oldTimeAxis, newTimeAxis);
                         var noteNewEndTick = RemapTickPos(noteOldEndTick, oldTimeAxis, newTimeAxis);
                         var deltaPosTickInPart = (noteNewStartTick - partNewStartTick) - (noteOldStartTick - partOldStartTick);
-                        if(deltaPosTickInPart != 0){
+                        if (deltaPosTickInPart != 0) {
                             noteCommands.Add(new MoveNoteCommand(voicePart, note, deltaPosTickInPart, 0));
                         }
                         var noteNewDuration = noteNewEndTick - noteNewStartTick;
                         var deltaDur = noteNewDuration - noteOldDuration;
-                        if(deltaDur != 0){
+                        if (deltaDur != 0) {
                             noteCommands.Add(new ResizeNoteCommand(voicePart, note, deltaDur));
                         }
                         //TODO: expression curve remapping, phoneme timing remapping
                     }
-                    foreach(var command in noteCommands){
+                    foreach (var command in noteCommands) {
                         DocManager.Inst.ExecuteCmd(command);
                     }
                 }
@@ -461,7 +477,9 @@ namespace OpenUtau.App.ViewModels {
             } else if (cmd is LoadProjectNotification loadProject) {
                 Preferences.AddRecentFileIfEnabled(loadProject.project.FilePath);
             } else if (cmd is SaveProjectNotification saveProject) {
-                Preferences.AddRecentFileIfEnabled(saveProject.Path);
+                Core.Util.Preferences.AddRecentFileIfEnabled(saveProject.Path);
+            } else if (cmd is DawConnectedNotification ||cmd is DawDisconnectedNotification) {
+                this.RaisePropertyChanged(nameof(IsConnectedToDaw));
             }
             SetUndoState();
             this.RaisePropertyChanged(nameof(Title));

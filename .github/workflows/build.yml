@@ -1,3 +1,5 @@
+name: Build OpenUtau
+
 on:
   workflow_dispatch:
     inputs:
@@ -19,6 +21,9 @@ on:
         default: true
         description: "Draft"
 
+permissions:
+  contents: write
+
 env:
   release-name: ${{ inputs.version }}${{ inputs.beta && ' Beta' || '' }}
 
@@ -35,12 +40,14 @@ jobs:
           - { name: win-arm64, rid: win-arm64, arch: arm64, os: win, runs-on: windows-latest }
           - { name: osx-x64, rid: osx-x64, arch: x64, os: osx, runs-on: macos-15-intel }
           - { name: osx-arm64, rid: osx-arm64, arch: arm64, os: osx, runs-on: macos-15-intel }
-          - { name: linux-x64, rid: linux-x64, arch: x64, os: linux, runs-on: ubuntu-latest, linuxarch: x86_64}
-          - { name: linux-arm64, rid: linux-arm64, arch: arm64, os: linux, runs-on: ubuntu-latest, linuxarch: aarch64}
+          - { name: linux-x64, rid: linux-x64, arch: x64, os: linux, runs-on: ubuntu-latest, linuxarch: x86_64 }
+          - { name: linux-arm64, rid: linux-arm64, arch: arm64, os: linux, runs-on: ubuntu-latest, linuxarch: aarch64 }
 
     steps:
       # Setup
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
@@ -62,7 +69,7 @@ jobs:
       - name: Test
         run: dotnet test OpenUtau.Test
 
-      # Build
+      # Build: Main
       - name: Restore
         run: dotnet restore OpenUtau -r ${{ matrix.arch.rid }}
 
@@ -223,3 +230,12 @@ jobs:
             ## macOS says "This app is damaged"
             Open a terminal and run `xattr -rc /Applications/OpenUtau.app`. Try opening OpenUtau again.
         if: ${{ inputs.release }}
+
+  daw-plugin:
+    needs: build
+    uses: ./.github/workflows/build-daw-plugin.yml
+    with:
+      version: ${{ inputs.version }}
+      release: ${{ inputs.release }}
+      beta: ${{ inputs.beta }}
+      draft: ${{ inputs.draft }}
