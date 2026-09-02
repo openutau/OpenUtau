@@ -6,21 +6,29 @@ on:
         default: "0.0.0"
         required: true
         type: string
+      channel:
+        description: 'Channel'
+        type: choice
+        required: true
+        default: 'beta'
+        options:
+          - 'stable'
+          - 'beta'
+          - 'nightly'
       release:
         type: boolean
         default: false
         description: "Release"
-      beta:
-        type: boolean
-        default: true
-        description: "Beta"
       draft:
         type: boolean
         default: true
         description: "Draft"
 
+run-name: Build ${{ inputs.version }}
+
 env:
-  release-name: ${{ inputs.version }}${{ inputs.beta && ' Beta' || '' }}
+  release-name: ${{ inputs.version }}${{ inputs.channel == 'beta' && ' Beta' || '' }}
+  release-tag: ${{ inputs.channel == 'nightly' && 'nightly' || inputs.version }}
 
 jobs:
   build:
@@ -52,7 +60,7 @@ jobs:
           node-version: 20
       - name: Install NSIS via Chocolatey
         run: choco install nsis --version=3.11 --no-progress
-        if: ${{ matrix.arch.os == 'win' }}
+        if: ${{ matrix.arch.os == 'win' &&  inputs.channel != 'nightly' }}
       - uses: justalemon/VersionPatcher@v0.7.1
         with:
           version: ${{ inputs.version }}
@@ -67,11 +75,11 @@ jobs:
         run: dotnet restore OpenUtau -r ${{ matrix.arch.rid }}
 
       - name: Build (Windows and Linux)
-        run: dotnet publish OpenUtau -c Release -r ${{ matrix.arch.rid }} --self-contained true -o bin/${{ matrix.arch.name }}/
+        run: dotnet publish OpenUtau -c Release -r ${{ matrix.arch.rid }} --self-contained true -o bin/${{ matrix.arch.name }}/ -p:Nightly=${{ inputs.channel == 'nightly' }}
         if: ${{ matrix.arch.os != 'osx' }}
 
       - name: Build (MacOS)
-        run: dotnet msbuild OpenUtau -t:BundleApp -p:Configuration=Release -p:RuntimeIdentifier=${{ matrix.arch.rid }} -p:UseAppHost=true -p:SelfContained=true -p:OutputPath=../bin/${{ matrix.arch.name }}/
+        run: dotnet msbuild OpenUtau -t:BundleApp -p:Configuration=Release -p:RuntimeIdentifier=${{ matrix.arch.rid }} -p:UseAppHost=true -p:SelfContained=true -p:OutputPath=../bin/${{ matrix.arch.name }}/ -p:Nightly=${{ inputs.channel == 'nightly' }}
         if: ${{ matrix.arch.os == 'osx' }}
       
       - name: Add Liquid Glass icon (macOS)
@@ -85,7 +93,7 @@ jobs:
         if: ${{ matrix.arch.os == 'osx' }}
       
       - name: Write release channel info
-        run: "@{Beta=$${{ inputs.beta }}} | ConvertTo-Json > bin/${{ matrix.arch.name }}/prefs-default.json"
+        run: "@{Beta=$${{ inputs.channel == 'beta' }}} | ConvertTo-Json > bin/${{ matrix.arch.name }}/prefs-default.json"
         shell: pwsh
 
       # Create Zip
@@ -125,7 +133,7 @@ jobs:
         with:
           script-file: OpenUtau.nsi
           arguments: "-DPRODUCT_VERSION=${{ inputs.version }} -DARCH=${{ matrix.arch.arch }}"
-        if: ${{ matrix.arch.os == 'win' }}
+        if: ${{ matrix.arch.os == 'win' &&  inputs.channel != 'nightly' }}
 
       # Create Dmg
       - name: Create Dmg
@@ -172,7 +180,7 @@ jobs:
         with:
           name: OpenUtau-${{ matrix.arch.name }}.exe
           path: OpenUtau-${{ matrix.arch.name }}.exe
-        if: ${{ !inputs.release && matrix.arch.os == 'win' }}
+        if: ${{ !inputs.release && matrix.arch.os == 'win' &&  inputs.channel != 'nightly' }}
       
       - uses: actions/upload-artifact@v4
         with:
@@ -188,33 +196,34 @@ jobs:
 
       # Appcast
       - name: Appcast Windows
-        shell: cmd
+        shell: bash
         run: |
-          python appcast.py -v=${{ inputs.version }} -o=windows -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.zip
-          python appcast.py -v=${{ inputs.version }} -o=windows -r=${{ matrix.arch.name }}-installer -f=OpenUtau-${{ matrix.arch.name }}.exe
+          python appcast.py -v=${{ inputs.version }} -o=windows -r=${{ matrix.arch.name }} -t ${{ env.release-tag }} -f=OpenUtau-${{ matrix.arch.name }}.zip
+          if ${{ inputs.channel != 'nightly' }}; then
+            python appcast.py -v=${{ inputs.version }} -o=windows -r=${{ matrix.arch.name }}-installer -f=OpenUtau-${{ matrix.arch.name }}.exe
+          fi
         if: ${{ inputs.release && matrix.arch.os == 'win' }}
 
       - name: Appcast MacOS
         run: |
-          python appcast.py -v=${{ inputs.version }} -o=macos -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.dmg
+          python appcast.py -v=${{ inputs.version }} -o=macos -r=${{ matrix.arch.name }} -t ${{ env.release-tag }} -f=OpenUtau-${{ matrix.arch.name }}.dmg
         if: ${{ inputs.release && matrix.arch.os == 'osx' }}
 
       - name: Appcast Linux
         run: |
-          python appcast.py -v=${{ inputs.version }} -o=linux -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.tar.gz
+          python appcast.py -v=${{ inputs.version }} -o=linux -r=${{ matrix.arch.name }} -t ${{ env.release-tag }} -f=OpenUtau-${{ matrix.arch.name }}.tar.gz
         if: ${{ inputs.release && matrix.arch.os == 'linux' }}
 
       # Release
-      - name: Release
-        uses: softprops/action-gh-release@v2
+      - name: Regular Release
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ inputs.version }}
+          tag: ${{ inputs.version }}
           name: ${{ env.release-name }}
-          prerelease: ${{ inputs.beta }}
+          prerelease: ${{ inputs.channel != 'stable' }}
+          allowUpdates: true
           draft: ${{ inputs.draft }}
-          files: |
-            appcast.${{ matrix.arch.name }}*.xml
-            OpenUtau-${{ matrix.arch.name }}.*
+          artifacts: "appcast.${{ matrix.arch.name }}*.xml,OpenUtau-${{ matrix.arch.name }}.*"
           body: |
             See [Getting Started](https://github.com/stakira/OpenUtau/wiki/Getting-Started) for how to use.
 
@@ -222,4 +231,26 @@ jobs:
 
             ## macOS says "This app is damaged"
             Open a terminal and run `xattr -rc /Applications/OpenUtau.app`. Try opening OpenUtau again.
-        if: ${{ inputs.release }}
+        if: ${{ inputs.release && inputs.channel != 'nightly' }}
+
+      - name: Nightly Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: nightly
+          name: Nightly
+          prerelease: true
+          allowUpdates: true
+          draft: ${{ inputs.draft }}
+          artifacts: "appcast.${{ matrix.arch.name }}*.xml,OpenUtau-${{ matrix.arch.name }}.*"
+          body: |
+            > [!WARNING]
+            > Nightly builds are for testing purposes only and must not use for production.
+            > If you encounter bugs, check the [FAQ](https://github.com/stakira/OpenUtau/wiki/FAQ) first, then open an issue if needed.
+            
+            | Build Version         | Commit            |
+            | --------------------- | ----------------- |
+            | ${{ inputs.version }} | ${{ github.sha }} |
+
+            ## macOS says "This app is damaged"
+            Open a terminal and run `xattr -rc /Applications/OpenUtau.app`. Try opening OpenUtau again.
+        if: ${{ inputs.release && inputs.channel == 'nightly' }}

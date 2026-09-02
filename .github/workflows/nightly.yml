@@ -1,0 +1,42 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check for changes
+        id: check_changes
+        run: |
+          # Only trigger nightly from these folders
+          REGEX="^(OpenUtau(.Plugin.Builtin|.Core|)|runtimes)"
+          echo "changes=$(git log --since="yesterday" --name-only --oneline --pretty=format:"" | grep -m1 -E "$REGEX")" >> $GITHUB_OUTPUT
+      - name: Get Version
+        id: get_version
+        if: ${{ steps.check_changes.outputs.changes != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: openutau/OpenUtau # Please modify if you want to release your fork
+        run: |
+            latest=$(gh release list --repo $REPO --json tagName --jq 'first(.[] | select(.tagName | test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))).tagName')
+            nextver=$(npx -y semver -i patch ${latest})
+            echo fullver=${nextver}-nightly.`date +%Y%m%d` >> $GITHUB_OUTPUT
+      - name: Trigger Build
+        if: ${{ steps.check_changes.outputs.changes != '' }}
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: build.yml
+          inputs: '{ "channel": "nightly", "version": "${{ steps.get_version.outputs.fullver }}", "release": true, "draft": false }'
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          retain_days: 5
+          keep_minimum_runs: 5
+          delete_workflow_pattern: nightly

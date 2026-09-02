@@ -610,6 +610,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.editing">Editing</system:String>
   <system:String x:Key="prefs.general">General</system:String>
   <system:String x:Key="prefs.note.restart">Note: please restart OpenUtau after changing this item.</system:String>
+  <system:String x:Key="prefs.note.nightly">Note: Switching between channels is not supported in nightly builds.</system:String>
   <system:String x:Key="prefs.otoeditor">Oto Editor</system:String>
   <system:String x:Key="prefs.otoeditor.select">Default Oto Editor</system:String>
   <system:String x:Key="prefs.otoeditor.setparampath">setParam Path</system:String>

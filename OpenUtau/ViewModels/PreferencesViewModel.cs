@@ -138,6 +138,12 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool Wayland { get; set; }
         public string WinePath => Preferences.Default.WinePath;
 
+        #if NIGHTLY
+        public bool IsNightly => true;
+        #else
+        public bool IsNightly => false;
+        #endif
+
         public PreferencesViewModel() {
             var audioOutput = PlaybackManager.Inst.AudioOutput;
             if (audioOutput != null) {
