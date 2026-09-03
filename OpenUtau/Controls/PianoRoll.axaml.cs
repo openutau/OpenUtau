@@ -737,6 +737,7 @@ namespace OpenUtau.App.Controls {
 
         private void NotesCanvasLeftPointerPressed(Control control, PointerPoint point, PointerPressedEventArgs args) {
             EditTools tool = ViewModel.EditTool.CurrentTool;
+            // Pitch Tools (PITD)
             if (ViewModel.EditTool.IsPitchTool) {
                 ViewModel.NotesViewModel.DeselectNotes();
                 if (args.KeyModifiers != cmdKey) {
@@ -755,13 +756,14 @@ namespace OpenUtau.App.Controls {
                     return;
                 }
             }
+            // Eraser Tool
             if (tool == EditTools.EraserTool && args.KeyModifiers != cmdKey) {
                 ViewModel.NotesViewModel.DeselectNotes();
                 editState = new NoteEraseEditState(control, ViewModel, this, MouseButton.Left);
                 Cursor = ViewConstants.cursorNo;
                 return;
             }
-
+            // Pitch Point Tool
             var pitchPointTool = tool == EditTools.PitchPointTool && args.KeyModifiers != cmdKey;
             var pitHitInfo = ViewModel.NotesViewModel.HitTest.HitTestPitchPoint(point.Position, pitchPointTool);
             if (pitHitInfo.Note != null) {
@@ -770,7 +772,7 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             if (pitchPointTool) return;
-
+            // Other Tools or holding cmdKey
             var vbrHitInfo = ViewModel.NotesViewModel.HitTest.HitTestVibrato(point.Position);
             if (vbrHitInfo.hit) {
                 if (vbrHitInfo.hitToggle) {
@@ -852,10 +854,12 @@ namespace OpenUtau.App.Controls {
                 ViewModel.NotesContextMenuItems.Clear();
             }
             var selectedNotes = ViewModel.NotesViewModel.Selection.ToList();
+            // Pitch Tools (PITD)
             if (ViewModel.EditTool.IsPitchTool) {
                 editState = new ResetPitchState(control, ViewModel, this);
                 return;
             }
+            // Pitch point context menu
             if (ViewModel.NotesViewModel.ShowPitch) {
                 var pitHitInfo = ViewModel.NotesViewModel.HitTest.HitTestPitchPoint(point.Position, false);
                 if (pitHitInfo.Note != null) {
@@ -916,6 +920,7 @@ namespace OpenUtau.App.Controls {
                     return;
                 }
             }
+            // Note context menu
             if (ViewModel.EditTool.IsMatch([EditTools.CursorTool, EditTools.PenTool, EditTools.KnifeTool]) || args.KeyModifiers == cmdKey) {
                 var hitInfo = ViewModel.NotesViewModel.HitTest.HitTestNote(point.Position);
                 var vibHitInfo = ViewModel.NotesViewModel.HitTest.HitTestVibrato(point.Position);
@@ -994,6 +999,7 @@ namespace OpenUtau.App.Controls {
             if (ValueTipCanvas != null) {
                 valueTipPointerPosition = args.GetCurrentPoint(ValueTipCanvas!).Position;
             }
+            // Edit Status update (while dragging)
             if (editState != null) {
                 editState.altShiftHeld = args.KeyModifiers == (KeyModifiers.Alt | KeyModifiers.Shift);
                 editState.shiftHeld = args.KeyModifiers == KeyModifiers.Shift;
@@ -1005,6 +1011,14 @@ namespace OpenUtau.App.Controls {
             if (ViewModel?.NotesViewModel?.HitTest == null) {
                 return;
             }
+            // For note hover glow
+            var noteHitInfo = ViewModel.NotesViewModel.HitTest.HitTestNote(point.Position);
+            if (noteHitInfo.hitBody && (ViewModel.EditTool.IsMatch([EditTools.CursorTool, EditTools.PenTool, EditTools.PenPlusTool, EditTools.EraserTool, EditTools.KnifeTool]) || args.KeyModifiers == cmdKey)) {
+                ViewModel.NotesViewModel.SelectableNote = noteHitInfo.note;
+            } else {
+                ViewModel.NotesViewModel.SelectableNote = null;
+            }
+            // Mouse cursor changes
             if (ViewModel.EditTool.IsMatch([EditTools.DrawPitchTool, EditTools.PitchLineTool, EditTools.PitchSCurveTool, EditTools.PitchSineWaveTool, EditTools.PitchSmoothenTool, EditTools.EraserTool]) && args.KeyModifiers != cmdKey) {
                 Cursor = null;
                 return;
@@ -1029,7 +1043,6 @@ namespace OpenUtau.App.Controls {
                 }
                 return;
             }
-            var noteHitInfo = ViewModel.NotesViewModel.HitTest.HitTestNote(point.Position);
             if (noteHitInfo.hitResizeArea) {
                 Cursor = ViewConstants.cursorSizeWE;
                 return;

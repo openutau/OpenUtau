@@ -105,6 +105,7 @@ namespace OpenUtau.App.ViewModels {
         private readonly ObservableAsPropertyHelper<double> smallChangeY;
 
         public readonly NoteSelectionViewModel Selection = new NoteSelectionViewModel();
+        public UNote? SelectableNote;
 
         internal NotesViewModelHitTest HitTest;
         private int _lastNoteLength = 480;
