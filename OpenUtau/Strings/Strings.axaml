@@ -186,6 +186,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.failed.openfile">Failed to open</system:String>
   <system:String x:Key="errors.failed.openlocation">Failed to open location</system:String>
   <system:String x:Key="errors.failed.opennewerproject">Project file is newer than software! Upgrade OpenUtau!</system:String>
+  <system:String x:Key="errors.failed.prerender">Failed to render in the background.</system:String>
   <system:String x:Key="errors.failed.render">Failed to render.</system:String>
   <system:String x:Key="errors.failed.runeditingmacro">Failed to run editing macro</system:String>
   <system:String x:Key="errors.failed.save">Failed to save</system:String>
@@ -199,6 +200,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.lyrics.regex">Character not allowed in regular expression</system:String>
   <system:String x:Key="errors.lyrics.regexpreview">- regular expression error -</system:String>
   <system:String x:Key="errors.resampler.failed.message">Resampler failed to create output file(s). Resampler errors like this are often caused by oto.ini configuration issues. Consider generating a singer error report to check for such issues.</system:String>
+  <system:String x:Key="errors.toast.details">(Click here for details)</system:String>
 
   <system:String x:Key="exesetup.installing">Installing "{0}"...</system:String>
   <system:String x:Key="exesetup.linux">To use exe resamplers or wavtools on Linux:

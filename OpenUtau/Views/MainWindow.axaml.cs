@@ -8,13 +8,12 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Notifications;
 using Avalonia.Controls.Primitives;
-using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Platform.Storage;
-using Avalonia.VisualTree;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using OpenUtau.App.Controls;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Classic;
@@ -40,6 +39,7 @@ namespace OpenUtau.App.Views {
 
         private PianoRollDetachedWindow? pianoRollWindow;
         private PianoRoll? pianoRoll;
+        private WindowNotificationManager notificationManager;
 
         private PartEditState? partEditState;
 
@@ -92,6 +92,11 @@ namespace OpenUtau.App.Views {
                 DispatcherPriority.Normal,
                 (sender, args) => DocManager.Inst.AutoSave());
             autosaveTimer.Start();
+
+            notificationManager = new WindowNotificationManager(this) {
+                Position = NotificationPosition.BottomCenter,
+                MaxItems = 3
+            };
 
             PartRenameCommand = ReactiveCommand.Create<UPart>(part => RenamePart(part));
             PartGotoFileCommand = ReactiveCommand.Create<UPart>(part => GotoFile(part));
@@ -1939,6 +1944,11 @@ namespace OpenUtau.App.Views {
                         MessageBox.ShowError(this, notif.e, notif.message, true);
                         break;
                 }
+            } else if (cmd is ToastNotification toast) {
+                if (toast.windowType == "Pianoroll" && pianoRollWindow != null) {
+                    if (pianoRollWindow.Toast(toast)) return;
+                }
+                notificationManager.Show(ToastControl.GetNotification(toast, this));
             } else if (cmd is VoiceColorRemappingNotification voicecolorNotif) {
                 if (voicecolorNotif.TrackNo < 0 || DocManager.Inst.Project.tracks.Count <= voicecolorNotif.TrackNo) {
                     // Verify whether remapping is required when the voice color lineup changes

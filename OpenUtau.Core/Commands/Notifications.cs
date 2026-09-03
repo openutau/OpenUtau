@@ -37,6 +37,40 @@ namespace OpenUtau.Core {
             }
         }
     }
+    public class ToastNotification : UNotification {
+        public readonly string windowType;
+        public readonly string message;
+        public readonly string translationKey;
+
+        /// <summary>
+        /// Not currently in use
+        /// </summary>
+        public string? title;
+        /// <summary>
+        /// Not currently in use (The color of the toast might change in the future).
+        /// </summary>
+        public string type = "Warning";
+        /// <summary>
+        /// Toast display time. If 0 is specified, it will not close automatically.
+        /// </summary>
+        public long durationSec = 4;
+        public Exception? e;
+
+        /// <summary>
+        /// Displays a toast message in the window that does not interfere with the user's operations.
+        /// </summary>
+        /// <param name="windowType">"MainWindow" or "Pianoroll" (If the specified window is not on top, a toast will always appear in the main window).</param>
+        /// <param name="message">This is not displayed in the UI. The actual text is specified by translationKey.</param>
+        /// <param name="translationKey">The key for the text that actually appears on the toast.</param>
+        /// <param name="e">If there are any associated exceptions, clicking the toast notification will display a standard error dialog.</param>
+        public ToastNotification(string windowType, string message, string translationKey, Exception? e = null) {
+            this.windowType = windowType;
+            this.message = message;
+            this.translationKey = translationKey;
+            this.e = e;
+        }
+        public override string ToString() => $"Toast notification: {message}";
+    }
 
     public class LoadingNotification : UNotification {
         public readonly Type window;
