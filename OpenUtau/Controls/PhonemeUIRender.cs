@@ -16,6 +16,8 @@ namespace OpenUtau.App.Controls {
                 langCode = g2pPhonemizer.GetLangCode();
             } else if (track.Phonemizer is DiffSingerBasePhonemizer basePhonemizer) {
                 langCode = basePhonemizer.GetLangCode();
+            } else if (track.Phonemizer is DiffSingerRefinedPhonemizer refinedPhonemizer) {
+                langCode = refinedPhonemizer.GetLangCode();
             }
             return langCode;
         }
