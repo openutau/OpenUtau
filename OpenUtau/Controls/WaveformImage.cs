@@ -5,8 +5,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
+using OpenUtau.Core.Util;
 using ReactiveUI;
 using ReactiveUI.Primitives;
 using Serilog;
@@ -34,12 +36,12 @@ namespace OpenUtau.App.Controls {
             set => SetAndRaise(TickWidthProperty, ref tickWidth, value);
         }
         public double TickOffset {
-            get { return tickOffset; }
-            set { SetAndRaise(TickOffsetProperty, ref tickOffset, value); }
+            get => tickOffset;
+            set => SetAndRaise(TickOffsetProperty, ref tickOffset, value);
         }
         public bool ShowWaveform {
-            get { return showWaveform; }
-            set { SetAndRaise(ShowWaveformProperty, ref showWaveform, value); }
+            get => showWaveform;
+            set => SetAndRaise(ShowWaveformProperty, ref showWaveform, value);
         }
 
         private double tickWidth;
@@ -50,8 +52,8 @@ namespace OpenUtau.App.Controls {
         private float[] sampleData = new float[0];
         private int sampleCount;
         private int[] bitmapData = new int[0];
-        private DateTime mixUnlockTime = DateTime.MinValue;
-        private bool wasRendering = false;
+        private const double AnimDurationMs = 280.0;
+        private bool isFrameRequested = false;
 
         public WaveformImage() {
             MessageBus.Current.Listen<WaveformRefreshEvent>()
@@ -71,6 +73,8 @@ namespace OpenUtau.App.Controls {
         }
 
         public override void Render(DrawingContext context) {
+            isFrameRequested = false;
+
             if (DataContext == null || double.IsNaN(((NotesViewModel)DataContext).TickOffset)) {
                 return;
             }
@@ -87,67 +91,71 @@ namespace OpenUtau.App.Controls {
                         double rightMs = project.timeAxis.TickPosToMsPos(viewModel.TickOrigin + viewModel.TickOffset + viewModel.ViewportTicks);
                         int samplePos = (int)(leftMs * 44100 / 1000) * 2;
                         sampleCount = (int)((rightMs - leftMs) * 44100 / 1000) * 2;
-                        
+
                         if (sampleData.Length < sampleCount) {
                             Array.Resize(ref sampleData, sampleCount);
                         }
-                        
+
                         bool needsAnotherFrame = false;
                         Array.Clear(sampleData, 0, sampleData.Length);
-                        
+
+                        bool animate = Preferences.Default.AnimateWaveform;
+
                         if (OpenUtau.Core.PlaybackManager.Inst.IsWaveformBlanked) {
-                            // sampleData is already empty, so the screen draws a perfect flat line.
+                            // Leave clean
                         }
-                        else if (OpenUtau.Core.PlaybackManager.Inst.StartingToPlay || part.Mix == null) {
-                            foreach (var cacheItem in PlaybackManager.Inst.LiveWaveformCache.Values) {
-                                if (cacheItem.trackNo != part.trackNo) continue;
-                                
+                        else {
+                            if (part.Mix != null) {
+                                part.Mix.Mix(samplePos, sampleData, 0, sampleCount);
+                            }
+
+                            var now = DateTime.Now;
+                            var liveItems = PlaybackManager.Inst.LiveWaveformCache.Values
+                                .Where(c => c.trackNo == part.trackNo);
+
+                            foreach (var cacheItem in liveItems) {
+                                double ageMs = (now - cacheItem.renderTime).TotalMilliseconds;
+
                                 double phraseStartMs = cacheItem.posMs;
                                 float[] phraseSamples = cacheItem.samples;
                                 int phraseStartSampleIdx = (int)((phraseStartMs - leftMs) * 44100 / 1000);
-                                
-                                double ageMs = (DateTime.Now - cacheItem.renderTime).TotalMilliseconds;
-                                double animProgress = Math.Clamp(ageMs / 300.0, 0.0, 1.0); 
-                                
-                                if (animProgress < 1.0) needsAnotherFrame = true; 
-                                
-                                float ease = 1.0f - (float)Math.Pow(1.0 - animProgress, 3);
-                                float visualScale = 1.0f * ease; 
-                                
+
+                                float visualScale = 1.0f;
+                                if (animate && ageMs < AnimDurationMs) {
+                                    needsAnotherFrame = true;
+                                    double progress = Math.Clamp(ageMs / AnimDurationMs, 0.0, 1.0);
+                                    // Smooth exponential ease-out
+                                    visualScale = (float)(1.0 - Math.Pow(1.0 - progress, 3));
+                                }
+
                                 int startJ = Math.Max(0, -phraseStartSampleIdx);
                                 int endJ = Math.Min(phraseSamples.Length, (sampleCount / 2) - phraseStartSampleIdx);
-                                
+
                                 for (int j = startJ; j < endJ; j++) {
-                                    int targetIdx = (phraseStartSampleIdx + j) * 2; 
-                                    float scaledSample = phraseSamples[j] * visualScale;
-                                    sampleData[targetIdx] += scaledSample;     
-                                    sampleData[targetIdx + 1] += scaledSample; 
+                                    int targetIdx = (phraseStartSampleIdx + j) * 2;
+                                    float val = phraseSamples[j] * visualScale;
+
+                                    // If part.Mix already rendered this audio and the phrase is finished animating,
+                                    // we do not need to rewrite it.
+                                    if (part.Mix != null && ageMs >= AnimDurationMs) {
+                                        continue;
+                                    }
+
+                                    sampleData[targetIdx] = val;
+                                    sampleData[targetIdx + 1] = val;
                                 }
                             }
                         }
-                        // THE FINAL MIX 
-                        else {
-                            part.Mix.Mix(samplePos, sampleData, 0, sampleCount);
-                        }
-
-                        bool isRendering = PlaybackManager.Inst.StartingToPlay;
-                        if (wasRendering && !isRendering) {
-                            mixUnlockTime = DateTime.Now;
-                        }
-                        wasRendering = isRendering;
-                        
-                        double snapAgeMs = (DateTime.Now - mixUnlockTime).TotalMilliseconds;
-                        double snapProgress = Math.Clamp(snapAgeMs / 300.0, 0.0, 1.0);
-                        float snapEase = 1.0f - (float)Math.Pow(1.0 - snapProgress, 3);
-
-                        if (snapProgress < 1.0) needsAnotherFrame = true;
 
                         int startSample = 0;
-                        for (int i = 0; i < bitmap.PixelSize.Width; ++i) {
+                        int pixelWidth = bitmap.PixelSize.Width;
+                        int pixelHeight = bitmap.PixelSize.Height;
+
+                        for (int i = 0; i < pixelWidth; ++i) {
                             double endTick = viewModel.TickOrigin + viewModel.TickOffset + (i + 1.0) / viewModel.TickWidth;
                             double endMs = project.timeAxis.TickPosToMsPos(endTick);
                             int endSample = Math.Clamp((int)((endMs - leftMs) * 44100 / 1000) * 2, 0, sampleCount);
-                            
+
                             if (endSample > startSample) {
                                 float rawMin = float.MaxValue;
                                 float rawMax = float.MinValue;
@@ -158,19 +166,19 @@ namespace OpenUtau.App.Controls {
                                 }
                                 if (rawMin == float.MaxValue) rawMin = 0;
                                 if (rawMax == float.MinValue) rawMax = 0;
-                                rawMin *= snapEase;
-                                rawMax *= snapEase;
+
                                 float min = 0.5f + rawMin * 0.5f;
                                 float max = 0.5f + rawMax * 0.5f;
-                                float yMax = Math.Clamp(max * bitmap.PixelSize.Height, 0, bitmap.PixelSize.Height - 1);
-                                float yMin = Math.Clamp(min * bitmap.PixelSize.Height, 0, bitmap.PixelSize.Height - 1);
-                                DrawPeak(bitmapData, bitmap.PixelSize.Width, i, (int)Math.Round(yMin), (int)Math.Round(yMax));
+                                float yMax = Math.Clamp(max * pixelHeight, 0, pixelHeight - 1);
+                                float yMin = Math.Clamp(min * pixelHeight, 0, pixelHeight - 1);
+                                DrawPeak(bitmapData, pixelWidth, i, (int)Math.Round(yMin), (int)Math.Round(yMax));
                             }
                             startSample = endSample;
                         }
 
-                        if (needsAnotherFrame) {
-                            Avalonia.Threading.Dispatcher.UIThread.Post(InvalidateVisual, Avalonia.Threading.DispatcherPriority.Background);
+                        if (needsAnotherFrame && !isFrameRequested) {
+                            isFrameRequested = true;
+                            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
                         }
                     }
                 }

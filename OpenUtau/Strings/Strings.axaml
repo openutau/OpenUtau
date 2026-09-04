@@ -587,6 +587,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.degree.off">Off</system:String>
   <system:String x:Key="prefs.appearance.degree.solfege">Solfège (do re mi fa sol la ti)</system:String>
   <system:String x:Key="prefs.appearance.detachpianoroll">Show piano roll in separate window</system:String>
+  <system:String x:Key="prefs.appearance.animatewaveform">Animate Waveform</system:String>
   <system:String x:Key="prefs.appearance.diffsingerlangcodehide">Hide language prefix from phoneme editor</system:String>
   <system:String x:Key="prefs.appearance.lang">Language</system:String>
   <system:String x:Key="prefs.appearance.showghostnotes">Show other tracks' notes on piano roll</system:String>

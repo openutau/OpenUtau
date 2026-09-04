@@ -217,6 +217,7 @@ namespace OpenUtau.Core.Util {
             public bool ShowPitch = true;
             public bool ShowFinalPitch = true;
             public bool ShowWaveform = true;
+            public bool AnimateWaveform = true;
             public bool ShowPhoneme = true;
             public bool ShowExpressions = true;
             public bool ShowPhonemizerTags = true;

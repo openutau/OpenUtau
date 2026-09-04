@@ -112,6 +112,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool DetachPianoRoll { get; set; }
+        [Reactive] public partial bool AnimateWaveform { get; set; }
         [Reactive] public partial bool ThemeEditable { get; set; }
         public List<string> ThemeItems => ThemeManager.GetAvailableThemes();
         public bool IsThemeEditorOpen => Views.ThemeEditorWindow.IsOpen;
@@ -222,6 +223,7 @@ namespace OpenUtau.App.ViewModels {
             RememberVsqx = Preferences.Default.RememberVsqx;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
             Wayland = Preferences.Default.UseWayland;
+            AnimateWaveform = Preferences.Default.AnimateWaveform;
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
                 .Subscribe(_ => this.RaisePropertyChanged(nameof(IsThemeEditorOpen)));
@@ -361,6 +363,12 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.DetachPianoRoll = detachPianoRoll;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Attachment"));
+                });
+            this.WhenAnyValue(vm => vm.AnimateWaveform)
+                .Subscribe(animateWaveform => {
+                    Preferences.Default.AnimateWaveform = animateWaveform;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new WaveformRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.Channel)
                 .Subscribe(channel => {
