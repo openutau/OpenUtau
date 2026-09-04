@@ -29,34 +29,15 @@ namespace OpenUtau.App.ViewModels {
 
     public partial class PreferencesViewModel : ViewModelBase {
         // General
-        private CultureInfo? language;
-        private CultureInfo? sortingOrder;
-
         public List<CultureInfo>? Languages { get; }
-        public CultureInfo? Language {
-            get => language;
-            set => this.RaiseAndSetIfChanged(ref language, value);
-        }
+        [Reactive] public partial CultureInfo? Language { get; set; }
         public List<CultureInfo>? SortingOrders { get; }
-        public CultureInfo? SortingOrder {
-            get => sortingOrder;
-            set => this.RaiseAndSetIfChanged(ref sortingOrder, value);
-        }
-        // Release channel index: 0 = stable, 1 = beta, 2 = alpha.
+        [Reactive] public partial CultureInfo? SortingOrder { get; set; }
         [Reactive] public partial int Channel { get; set; }
 
         // Playback
-        private List<AudioOutputDevice>? audioOutputDevices;
-        private AudioOutputDevice? audioOutputDevice;
-
-        public List<AudioOutputDevice>? AudioOutputDevices {
-            get => audioOutputDevices;
-            set => this.RaiseAndSetIfChanged(ref audioOutputDevices, value);
-        }
-        public AudioOutputDevice? AudioOutputDevice {
-            get => audioOutputDevice;
-            set => this.RaiseAndSetIfChanged(ref audioOutputDevice, value);
-        }
+        [Reactive] public partial List<AudioOutputDevice>? AudioOutputDevices { get; set; }
+        [Reactive] public partial AudioOutputDevice? AudioOutputDevice { get; set; }
         [Reactive] public partial bool UseSystemDefaultDevice { get; set; }
         [Reactive] public partial int PreferPortAudio { get; set; }
         [Reactive] public partial uint AudioBackEnd { get; set; }
@@ -82,23 +63,19 @@ namespace OpenUtau.App.ViewModels {
         // Render
         [Reactive] public partial bool PreRender { get; set; }
         [Reactive] public partial int NumRenderThreads { get; set; }
-        public int LogicalCoreCount {
-            get => Environment.ProcessorCount;
-        }
-        [Reactive] public partial bool HighThreads { get; set; }
-        public int SafeMaxThreadCount {
-            get => Math.Min(8, LogicalCoreCount / 2);
-        }
+        public int LogicalCoreCount => Environment.ProcessorCount;
+        public int SafeMaxThreadCount => Math.Min(8, LogicalCoreCount / 2);
+        public bool HighThreads => NumRenderThreads > SafeMaxThreadCount;
         [Reactive] public partial bool SkipRenderingMutedTracks { get; set; }
         [Reactive] public partial bool ClearCacheOnQuit { get; set; }
         public List<string> OnnxRunnerOptions { get; set; }
         [Reactive] public partial string OnnxRunner { get; set; }
         public List<GpuInfo> OnnxGpuOptions { get; set; }
         [Reactive] public partial GpuInfo OnnxGpu { get; set; }
-        [Reactive] public partial bool ShowOnnxGpu { get; set; }
+        public bool ShowOnnxGpu => OnnxRunner == "DirectML";
 
         // GAME backend (onnx / ggml)
-        public List<string> GameBackendOptions { get; } = new() { "ONNX", "GGML" };
+        public string[] GameBackendOptions => [ "ONNX", "GGML" ];
         [Reactive] public partial string GameBackend { get; set; }
 
         // Appearance
@@ -112,7 +89,8 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool DetachPianoRoll { get; set; }
-        [Reactive] public partial bool ThemeEditable { get; set; }
+        public bool ThemeEditable => ThemeName is not ("Light" or "Dark")
+            && !Colors.CustomTheme.IsPackageTheme(ThemeName);
         public List<string> ThemeItems => ThemeManager.GetAvailableThemes();
         public bool IsThemeEditorOpen => Views.ThemeEditorWindow.IsOpen;
 
@@ -183,7 +161,6 @@ namespace OpenUtau.App.ViewModels {
                OnnxRunnerOptions[0] : Preferences.Default.OnnxRunner;
             OnnxGpuOptions = Onnx.getGpuInfo();
             OnnxGpu = OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0]);
-            ShowOnnxGpu = OnnxRunner == "DirectML";
             // GAME backend: ONNX is the default, GGML is available when installed.
             // The options list always includes both so the ComboBox UX is stable.
             GameBackend = Preferences.Default.GameBackend switch {
@@ -225,13 +202,15 @@ namespace OpenUtau.App.ViewModels {
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
                 .Subscribe(_ => this.RaisePropertyChanged(nameof(IsThemeEditorOpen)));
-            
+
             this.WhenAnyValue(vm => vm.UseSystemDefaultDevice)
+                .Skip(1)
                 .Subscribe(useDefault => {
                     Preferences.Default.UseSystemDefaultAudioDevice = useDefault;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.AudioOutputDevice)
+                .Skip(1)
                 .OfType<AudioOutputDevice>()
                 .SubscribeOn(AvaloniaScheduler.Instance)
                 .Subscribe(device => {
@@ -247,26 +226,31 @@ namespace OpenUtau.App.ViewModels {
                     }
                 });
             this.WhenAnyValue(vm => vm.AudioBackEnd)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.AudioBackEnd = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.PlaybackAutoScroll)
+                .Skip(1)
                 .Subscribe(autoScroll => {
                     Preferences.Default.PlaybackAutoScroll = autoScroll;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.PlayPosMarkerMargin)
+                .Skip(1)
                 .Subscribe(playPosMarkerMargin => {
                     Preferences.Default.PlayPosMarkerMargin = playPosMarkerMargin;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LockStartTime)
+                .Skip(1)
                 .Subscribe(lockStartTime => {
                     Preferences.Default.LockStartTime = lockStartTime;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.InstallToAdditionalSingersPath)
+                .Skip(1)
                 .Subscribe(additionalSingersPath => {
                     Preferences.Default.InstallToAdditionalSingersPath = additionalSingersPath;
                     Preferences.Save();
@@ -277,16 +261,19 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LoadDeepFolders)
+                .Skip(1)
                 .Subscribe(loadDeepFolders => {
                     Preferences.Default.LoadDeepFolderSinger = loadDeepFolders;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.PreRender)
+                .Skip(1)
                 .Subscribe(preRender => {
                     Preferences.Default.PreRender = preRender;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.Language)
+                .Skip(1)
                 .OfType<CultureInfo>()
                 .Subscribe(lang => {
                     Preferences.Default.Language = lang?.Name ?? string.Empty;
@@ -294,14 +281,16 @@ namespace OpenUtau.App.ViewModels {
                     App.SetLanguage(Preferences.Default.Language);
                 });
             this.WhenAnyValue(vm => vm.SortingOrder)
+                .Skip(1)
                 .OfType<CultureInfo>()
                 .Subscribe(so => {
                     Preferences.Default.SortingOrder = so?.Name ?? null;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.ThemeName)
+                .Skip(1)
                 .Subscribe(themeName => {
-                    ThemeEditable = themeName != "Light" && themeName != "Dark" && !Colors.CustomTheme.IsPackageTheme(themeName);
+                    this.RaisePropertyChanged(nameof(ThemeEditable));
                     if (!IsThemeEditorOpen) {
                         Preferences.Default.ThemeName = themeName;
                         Preferences.Save();
@@ -309,30 +298,35 @@ namespace OpenUtau.App.ViewModels {
                     }
                 });
             this.WhenAnyValue(vm => vm.DegreeStyle)
+                .Skip(1)
                 .Subscribe(degreeStyle => {
                     Preferences.Default.DegreeStyle = degreeStyle;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
                 });
             this.WhenAnyValue(vm => vm.UseTrackColor)
+                .Skip(1)
                 .Subscribe(trackColor => {
                     Preferences.Default.UseTrackColor = trackColor;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("TrackColor"));
                 });
             this.WhenAnyValue(vm => vm.ShowPortrait)
+                .Skip(1)
                 .Subscribe(showPortrait => {
                     Preferences.Default.ShowPortrait = showPortrait;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Portrait"));
                 });
             this.WhenAnyValue(vm => vm.ShowIcon)
+                .Skip(1)
                 .Subscribe(showIcon => {
                     Preferences.Default.ShowIcon = showIcon;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Portrait"));
                 });
             this.WhenAnyValue(vm => vm.ShowGhostNotes)
+                .Skip(1)
                 .Subscribe(showGhostNotes => {
                     Preferences.Default.ShowGhostNotes = showGhostNotes;
                     Preferences.Save();
@@ -363,6 +357,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Attachment"));
                 });
             this.WhenAnyValue(vm => vm.Channel)
+                .Skip(1)
                 .Subscribe(channel => {
                     Preferences.Default.Channel = channel switch {
                         1 => "beta",
@@ -372,6 +367,7 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LyricsHelper)
+                .Skip(1)
                 .OfType<LyricsHelperOption>()
                 .Subscribe(option => {
                     ActiveLyricsHelper.Inst.Set(option?.klass);
@@ -379,83 +375,99 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LyricsHelperBrackets)
+                .Skip(1)
                 .Subscribe(brackets => {
                     Preferences.Default.LyricsHelperBrackets = brackets;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.OtoEditor)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.OtoEditor = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.NumRenderThreads)
+                .Skip(1)
                 .Subscribe(index => {
+                    this.RaisePropertyChanged(nameof(HighThreads));
                     Preferences.Default.NumRenderThreads = index;
-                    HighThreads = index > SafeMaxThreadCount ? true : false;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DefaultRenderer)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.DefaultRenderer = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.OnnxRunner)
+                .Skip(1)
                 .Subscribe(index => {
+                    this.RaisePropertyChanged(nameof(ShowOnnxGpu));
                     Preferences.Default.OnnxRunner = index;
                     Preferences.Save();
-                    ToggleOnnxGpuDisplay(index == "DirectML");
                 });
             this.WhenAnyValue(vm => vm.OnnxGpu)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.OnnxGpu = index.deviceId;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.GameBackend)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.GameBackend = index == "GGML" ? "ggml" : "onnx";
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.RememberMid)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.RememberMid = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.RememberUst)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.RememberUst = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.RememberVsqx)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.RememberVsqx = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.ClearCacheOnQuit)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.ClearCacheOnQuit = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerSteps)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.DiffSingerSteps = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerStepsVariance)
-                 .Subscribe(index => {
-                     Preferences.Default.DiffSingerStepsVariance = index;
-                     Preferences.Save();
-                 });
+                .Skip(1)
+                .Subscribe(index => {
+                    Preferences.Default.DiffSingerStepsVariance = index;
+                    Preferences.Save();
+                });
             this.WhenAnyValue(vm => vm.DiffSingerStepsPitch)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.DiffSingerStepsPitch = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerDepth)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.DiffSingerDepth = index / 100;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerTensorCache)
+                .Skip(1)
                 .Subscribe(useCache => {
                     Preferences.Default.DiffSingerTensorCache = useCache;
                     Preferences.Save();
@@ -466,6 +478,7 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerLangCodeHide)
+                .Skip(1)
                 .Subscribe(useCache => {
                     Preferences.Default.DiffSingerLangCodeHide = useCache;
                     Preferences.Save();
@@ -476,6 +489,7 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.SkipRenderingMutedTracks)
+                .Skip(1)
                 .Subscribe(skipRenderingMutedTracks => {
                     Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks;
                     Preferences.Save();
@@ -530,10 +544,6 @@ namespace OpenUtau.App.ViewModels {
             Colors.CustomTheme.ListThemes();
             _ = OudepLoaderRegistry.LoadAllAsync();
             this.RaisePropertyChanged(nameof(ThemeItems));
-        }
-
-        public void ToggleOnnxGpuDisplay(bool show) {
-            ShowOnnxGpu = show;
         }
     }
 }
