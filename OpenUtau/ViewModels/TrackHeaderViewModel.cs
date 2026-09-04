@@ -322,6 +322,23 @@ namespace OpenUtau.App.ViewModels {
                 Height = 1
             });
             items.Add(new MenuItemViewModel() {
+                Header = ThemeManager.GetString("tracks.selectsinger") + " ...",
+                Command = ReactiveCommand.Create(async () => {
+                    var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+                        ?.MainWindow as MainWindow;
+                    if (mainWindow == null) {
+                        return;
+                    }
+                    var dialog = new SingerSelectorDialog() {
+                        DataContext = new SingerSelectorViewModel(track.Singer),
+                    };
+                    await dialog.ShowDialog(mainWindow);
+                    if (dialog.SelectedSinger != null) {
+                        SelectSingerCommand.Execute(dialog.SelectedSinger).Subscribe();
+                    }
+                })
+            });
+            items.Add(new MenuItemViewModel() {
                 Header = ThemeManager.GetString("tracks.installsinger"),
                 Command = ReactiveCommand.Create(async () => {
                     var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)

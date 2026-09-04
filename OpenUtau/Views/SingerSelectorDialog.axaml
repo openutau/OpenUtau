@@ -1,0 +1,207 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1080" d:DesignHeight="680"
+        x:Class="OpenUtau.App.Views.SingerSelectorDialog"
+        Icon="/Assets/open-utau.ico"
+        Title="{DynamicResource tracks.selectsinger}" Width="1080" Height="680"
+        MinWidth="940" MinHeight="560" WindowStartupLocation="CenterOwner"
+        KeyDown="OnKeyDown">
+  <Window.Styles>
+    <Style Selector="ListBox#SingerList ListBoxItem">
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Margin" Value="8"/>
+      <Setter Property="MinHeight" Value="138"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter Background="Transparent"
+                            BorderBrush="#00000000"
+                            BorderThickness="0"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="Border.singer-card">
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+      <Setter Property="CornerRadius" Value="3"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+      <Setter Property="Width" Value="116"/>
+      <Setter Property="Height" Value="138"/>
+      <Setter Property="Padding" Value="8"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="ListBox#SingerList ListBoxItem:selected Border.singer-card">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltMediumBrush}"/>
+    </Style>
+    <Style Selector="ListBox#SingerList ListBoxItem:pointerover Border.singer-card">
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltMediumBrush}"/>
+    </Style>
+    <Style Selector="ToggleButton.favorite">
+      <Setter Property="Padding" Value="2"/>
+      <Setter Property="Width" Value="22"/>
+      <Setter Property="Height" Value="22"/>
+      <Setter Property="CornerRadius" Value="3"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter Background="Transparent"
+                            BorderBrush="#00000000"
+                            BorderThickness="0"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="ToggleButton.favorite Path">
+      <Setter Property="Fill" Value="#00000000"/>
+      <Setter Property="Stroke" Value="{DynamicResource SystemAccentColor}"/>
+      <Setter Property="StrokeThickness" Value="1.6"/>
+    </Style>
+    <Style Selector="ToggleButton.favorite:checked Path">
+      <Setter Property="Fill" Value="{DynamicResource SystemAccentColor}"/>
+    </Style>
+  </Window.Styles>
+  <Grid Margin="{Binding $parent.WindowDecorationMargin}">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="3.3*"/>
+      <ColumnDefinition Width="12"/>
+      <ColumnDefinition Width="1.7*"/>
+    </Grid.ColumnDefinitions>
+
+    <Border Grid.Row="0" Grid.Column="0" Margin="12,12,0,8"
+            BorderThickness="1" CornerRadius="3"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid Margin="12" RowDefinitions="Auto,Auto,Auto,*">
+        <TextBlock Text="{DynamicResource tracks.selectsinger}" FontSize="22" FontWeight="SemiBold" />
+        <Grid Grid.Row="1" Margin="0,10,0,10" ColumnDefinitions="Auto,*,Auto">
+          <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0" Text="Engine"/>
+          <ComboBox Grid.Column="1" HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding EngineGroups}" SelectedItem="{Binding SelectedEngine}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding Header}"/>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Grid.Column="2" Margin="10,0,0,0" MinWidth="80"
+                  Content="{DynamicResource singers.refresh}" Click="OnRefresh"/>
+        </Grid>
+        <Grid Grid.Row="2" Margin="0,0,0,10" ColumnDefinitions="Auto,*">
+          <ToggleButton Grid.Column="0" Classes="favorite" Width="40" Height="26"
+                        Margin="0,0,10,0" Padding="0" Focusable="False"
+                        IsChecked="{Binding ShowFavoritesOnly}"
+                        ToolTip.Tip="{DynamicResource tracks.favorite}">
+            <Path Data="M12,21.35L10.55,20.03C5.4,15.36,2,12.28,2,8.5C2,5.42,4.42,3,7.5,3C9.24,3,10.91,3.81,12,5.09C13.09,3.81,14.76,3,16.5,3C19.58,3,22,5.42,22,8.5C22,12.28,18.6,15.36,13.45,20.04L12,21.35Z"
+                  RenderTransformOrigin="0.5,0.5">
+              <Path.RenderTransform>
+                <ScaleTransform ScaleX="0.65" ScaleY="0.65"/>
+              </Path.RenderTransform>
+            </Path>
+          </ToggleButton>
+          <TextBox Grid.Column="1" Text="{Binding SearchText}"
+                   Watermark="Search singer name / id"/>
+        </Grid>
+        <Grid Grid.Row="3">
+          <TextBlock IsVisible="{Binding !HasFilteredSingers}" Text="{DynamicResource tracks.nosinger}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          <ScrollViewer VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled"
+                        IsVisible="{Binding HasFilteredSingers}">
+            <ListBox Name="SingerList" BorderThickness="0" Background="Transparent"
+                     ItemsSource="{Binding FilteredCurrentSingers}" SelectedItem="{Binding SelectedSingerOption}"
+                     DoubleTapped="OnSingerDoubleTapped">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel Orientation="Horizontal" ItemWidth="132" ItemHeight="154"/>
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="singer-card" ToolTip.Tip="{Binding Location}">
+                    <Grid Width="100" HorizontalAlignment="Center" RowDefinitions="88,8,34">
+                      <Grid Grid.Row="0" Width="88" Height="88" HorizontalAlignment="Center">
+                        <Border Width="88" Height="88" CornerRadius="3" ClipToBounds="True" Background="#22000000"
+                                BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+                          <Image Width="88" Height="88" Source="{Binding Avatar}" Stretch="UniformToFill"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ToggleButton Classes="favorite" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                      Focusable="False"
+                                      IsChecked="{Binding IsFavourite, Mode=TwoWay}"
+                                      ToolTip.Tip="{DynamicResource tracks.favorite}">
+                          <Path Data="M12,21.35L10.55,20.03C5.4,15.36,2,12.28,2,8.5C2,5.42,4.42,3,7.5,3C9.24,3,10.91,3.81,12,5.09C13.09,3.81,14.76,3,16.5,3C19.58,3,22,5.42,22,8.5C22,12.28,18.6,15.36,13.45,20.04L12,21.35Z"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Path.RenderTransform>
+                              <ScaleTransform ScaleX="0.6" ScaleY="0.6"/>
+                            </Path.RenderTransform>
+                          </Path>
+                        </ToggleButton>
+                      </Grid>
+                      <TextBlock Grid.Row="2" HorizontalAlignment="Stretch"
+                                 Text="{Binding Name}" TextAlignment="Center"
+                                 TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </ScrollViewer>
+        </Grid>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="0" Grid.Column="2" Margin="0,12,12,8"
+            BorderThickness="1" CornerRadius="3"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Grid Margin="16" RowDefinitions="Auto,12,*,10,Auto" ColumnDefinitions="*,Auto">
+        <StackPanel Grid.Row="0" Grid.Column="0" Spacing="3">
+          <TextBlock Text="{Binding SelectedSingerName}" FontSize="38" FontWeight="SemiBold"
+                     TextTrimming="CharacterEllipsis"/>
+          <TextBlock Text="{Binding SelectedSingerSubtitle}" Opacity="0.75"
+                     TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+        <Button Grid.Row="0" Grid.Column="1" MinWidth="96" HorizontalAlignment="Right"
+                VerticalAlignment="Top" IsEnabled="{Binding HasSelectedSinger}"
+                Content="{DynamicResource singers.playsample}" Click="OnPlaySample"/>
+        <Border Grid.Row="2" Grid.ColumnSpan="2" CornerRadius="3" ClipToBounds="True"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+          <Grid>
+            <Image Source="{Binding SelectedSingerPortrait}" Stretch="Uniform"/>
+            <TextBlock IsVisible="{Binding !HasSelectedSinger}" Text="{DynamicResource tracks.nosinger}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Grid>
+        </Border>
+        <Border Grid.Row="4" Grid.ColumnSpan="2" BorderThickness="1" CornerRadius="3"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+          <ScrollViewer Height="92" VerticalScrollBarVisibility="Auto">
+            <TextBlock Margin="8" Text="{Binding SelectedSingerInfo}" TextWrapping="Wrap"/>
+          </ScrollViewer>
+        </Border>
+      </Grid>
+    </Border>
+
+    <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="12,0,12,12"
+                Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button MinWidth="86" Content="{DynamicResource dialogs.messagebox.cancel}" Click="OnCancel"/>
+      <Button MinWidth="86" IsEnabled="{Binding HasSelectedSinger}"
+              Content="{DynamicResource dialogs.messagebox.ok}" Click="OnConfirm"/>
+    </StackPanel>
+  </Grid>
+</Window>
