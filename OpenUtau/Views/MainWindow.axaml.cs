@@ -956,29 +956,64 @@ namespace OpenUtau.App.Views {
             //If multiple project/audio files are dropped, open/import them all.
             if (ProjectExts.Contains(FirstExt) || AudioExts.Contains(FirstExt)) {
                 var projectFiles = supportedFiles.Where(file => ProjectExts.Contains(Path.GetExtension(file).ToLower())).ToArray();
-                viewModel.Page = 1;
                 if (projectFiles.Length > 0) {
-                    try {
-                        var loadedProjects = Formats.ReadProjects(files);
-                        // Imports tempo for new projects, otherwise asks the user.
-                        bool importTempo = DocManager.Inst.Project.parts.Count == 0;
-                        if (!importTempo && loadedProjects[0].tempos.Count > 0) {
-                            var tempoString = string.Join("\n",
-                                loadedProjects[0].tempos
-                                    .Select(tempo => $"position: {tempo.position}, tempo: {tempo.bpm}")
-                                );
-                            // Ask the user
-                            var result = await MessageBox.Show(
-                                this,
-                                ThemeManager.GetString("dialogs.importtracks.importtempo") + "\n" + tempoString,
-                                ThemeManager.GetString("dialogs.importtracks.caption"),
-                                MessageBox.MessageBoxButtons.YesNo);
-                            importTempo = result == MessageBox.MessageBoxResult.Yes;
+                    bool asNewProject = true;
+
+                    if (viewModel.Page == 1) {
+                        var cancelTcs = new TaskCompletionSource<bool>();
+                        var openAs = new ImportProjectDialog(projectFiles) {
+                            onFinish = async res => {
+                                bool cancelled = res == ImportProjectDialog.Result.Cancelled;
+                                if (!cancelled) {
+                                    asNewProject = res == ImportProjectDialog.Result.AsNewProject;
+                                    if (asNewProject && await AskIfSaveAndContinue() == false) {
+                                        cancelled = true;
+                                        return;
+                                    }
+                                }
+                                cancelTcs.SetResult(cancelled);
+                            }
+                        };
+
+                        openAs.Show(this);
+
+                        if (await cancelTcs.Task) {
+                            return;
                         }
-                        viewModel.ImportTracks(loadedProjects, importTempo);
-                    } catch (Exception e) {
-                        Log.Error(e, "Failed to import project");
-                        _ = await MessageBox.ShowError(this, new MessageCustomizableException("Failed to import files", "<translate:errors.failed.importfiles>", e));
+                    }
+
+                    if (asNewProject) {
+                        try {
+                            viewModel.OpenProject(projectFiles);
+                        } catch (Exception e) {
+                            Log.Error(e, $"Failed to open files {string.Join("\n", projectFiles)}");
+                            _ = await MessageBox.ShowError(this, 
+                                        new MessageCustomizableException($"Failed to open files {string.Join("\n", projectFiles)}",
+                                        $"<translate:errors.failed.openfile>:\n{string.Join("\n", projectFiles)}", e));
+                        }
+                    } else {
+                        try {
+                            var loadedProjects = Formats.ReadProjects(projectFiles);
+                            // Imports tempo for new projects, otherwise asks the user.
+                            bool importTempo = DocManager.Inst.Project.parts.Count == 0;
+                            if (!importTempo && loadedProjects[0].tempos.Count > 0) {
+                                var tempoString = string.Join("\n",
+                                    loadedProjects[0].tempos
+                                        .Select(tempo => $"position: {tempo.position}, tempo: {tempo.bpm}")
+                                    );
+                                // Ask the user
+                                var result = await MessageBox.Show(
+                                    this,
+                                    ThemeManager.GetString("dialogs.importtracks.importtempo") + "\n" + tempoString,
+                                    ThemeManager.GetString("dialogs.importtracks.caption"),
+                                    MessageBox.MessageBoxButtons.YesNo);
+                                importTempo = result == MessageBox.MessageBoxResult.Yes;
+                            }
+                            viewModel.ImportTracks(loadedProjects, importTempo);
+                        } catch (Exception e) {
+                            Log.Error(e, "Failed to import project");
+                            _ = await MessageBox.ShowError(this, new MessageCustomizableException("Failed to import files", "<translate:errors.failed.importfiles>", e));
+                        }
                     }
                 }
                 var audioFiles = supportedFiles.Where(file => AudioExts.Contains(Path.GetExtension(file).ToLower())).ToArray();
@@ -990,6 +1025,7 @@ namespace OpenUtau.App.Views {
                         _ = await MessageBox.ShowError(this, new MessageCustomizableException("Failed to import audio", "<translate:errors.failed.importaudio>", e));
                     }
                 }
+                viewModel.Page = 1;
                 return;
             }
             // Otherwise, only one installer file is handled at a time.
