@@ -362,7 +362,7 @@ namespace OpenUtau.Core {
 
             toneGenerator = new ToneGenerator();
             metronomeGenerator = new MetronomeGenerator();
-            editingMix = new MasterAdapter(toneGenerator, metronome: metronomeGenerator);
+            editingMix = new MasterAdapter(toneGenerator);
         }
 
         public readonly ToneGenerator toneGenerator;
@@ -519,7 +519,7 @@ namespace OpenUtau.Core {
                 try {
                     LiveWaveformCache.Clear();
                     IsWaveformBlanked = false;
-                    
+
                     Task.Factory.StartNew(() => {
                         DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
                     }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
