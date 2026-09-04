@@ -629,10 +629,14 @@
             </ItemsPanelTemplate>
         </ListBox.ItemsPanel>
         <ListBox.Items>
-          <ListBoxItem Classes="toolbar cursorTool"/>
-          <ListBoxItem Classes="toolbar penTool"/>
-          <!-- CurveLineTool -->
-          <ListBoxItem Classes="toolbar eraserTool"/>
+          <ListBoxItem Classes="toolbar cursorTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.cursor}"/>
+          <ListBoxItem Classes="toolbar penTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.pen}"/>
+          <ListBoxItem Classes="toolbar pitchLineTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.line}"/>
+          <ListBoxItem Classes="toolbar eraserTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.eraser}"/>
+          <ListBoxItem Classes="toolbar verticalStretchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.verticalstretch}"/>
+          <ListBoxItem Classes="toolbar horizontalStretchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.horizontalstretch}"/>
+          <ListBoxItem Classes="toolbar verticalShiftTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.verticalshift}"/>
+          <ListBoxItem Classes="toolbar horizontalShiftTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.horizontalshift}"/>
         </ListBox.Items>
       </ListBox>
       <TextBlock Classes="tips" Grid.Row="5" Grid.Column="1"
