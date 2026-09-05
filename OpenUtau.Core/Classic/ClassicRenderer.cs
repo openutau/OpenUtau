@@ -68,9 +68,9 @@ namespace OpenUtau.Classic {
                 }, body: item => {
                     if (!cancellation.IsCancellationRequested && !File.Exists(item.outputFile)) {
                         if (!(item.resampler is WorldlineResampler)) {
-                            VoicebankFiles.Inst.CopySourceTemp(item.inputFile, item.inputTemp);
+                            VoicebankFiles.Inst.CopySourceTemp(item.inputFile, item.inputTemp, item.resampler);
                         }
-                        if(!item.phone.direct){
+                        if (!item.phone.direct) {
                             lock (Renderers.GetCacheLock(item.outputFile)) {
                                 item.resampler.DoResamplerReturnsFile(item, Log.Logger);
                             }
@@ -80,7 +80,7 @@ namespace OpenUtau.Classic {
                             }
                         }
                         if (!(item.resampler is WorldlineResampler)) {
-                            VoicebankFiles.Inst.CopyBackMetaFiles(item.inputFile, item.inputTemp);
+                            VoicebankFiles.Inst.CopyBackMetaFiles(item.inputFile, item.inputTemp, item.resampler);
                         }
                     }
                     progress.Complete(1, $"Track {trackNo + 1}: {item.resampler} \"{item.phone.phoneme}\"");
@@ -122,12 +122,12 @@ namespace OpenUtau.Classic {
                 }
                 if (result.samples == null) {
                     foreach (var item in resamplerItems) {
-                        VoicebankFiles.Inst.CopySourceTemp(item.inputFile, item.inputTemp);
+                        VoicebankFiles.Inst.CopySourceTemp(item.inputFile, item.inputTemp, item.resampler);
                     }
                     var wavtool = ToolsManager.Inst.GetWavtool(phrase.wavtool);
                     result.samples = wavtool.Concatenate(resamplerItems, wavPath, cancellation);
                     foreach (var item in resamplerItems) {
-                        VoicebankFiles.Inst.CopyBackMetaFiles(item.inputFile, item.inputTemp);
+                        VoicebankFiles.Inst.CopyBackMetaFiles(item.inputFile, item.inputTemp, item.resampler);
                     }
                 }
                 progress.Complete(phrase.phones.Length, progressInfo);
@@ -148,7 +148,7 @@ namespace OpenUtau.Classic {
         }
 
         public UExpressionDescriptor[] GetSuggestedExpressions(USinger singer, URenderSettings renderSettings) {
-            var manifest= renderSettings.Resampler.Manifest;
+            var manifest = renderSettings.Resampler.Manifest;
             if (manifest == null) {
                 return new UExpressionDescriptor[] { };
             }
