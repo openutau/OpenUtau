@@ -305,9 +305,9 @@ namespace OpenUtau.App.Views {
     class NoteResizeEditState : NoteEditState {
         public readonly UNote note;
         public readonly UNote? neighborNote;
-        public readonly bool resizeNeighbor;
         public readonly int neighborNoteLength;
         public readonly bool fromStart;
+        public bool resizeNeighbor;
         protected override string? commandNameKey => "command.note.edit";
 
         public NoteResizeEditState(
@@ -315,7 +315,6 @@ namespace OpenUtau.App.Views {
             PianoRollViewModel vm,
             IValueTip valueTip,
             UNote note,
-            bool resizeNeighbor,
             bool fromStart = false) : base(control, vm, valueTip) {
             this.note = note;
             var notesVm = vm.NotesViewModel;
@@ -324,13 +323,13 @@ namespace OpenUtau.App.Views {
             }
             neighborNote = fromStart ? note.Prev : note.Next;
             neighborNoteLength = neighborNote?.duration ?? 0;
-            this.resizeNeighbor = resizeNeighbor;
             this.fromStart = fromStart;
         }
         public override void Update(IPointer pointer, Point point) {
             var project = DocManager.Inst.Project;
             var notesVm = vm.NotesViewModel;
             var part = notesVm.Part;
+            this.resizeNeighbor = altHeld;
             if (part == null) {
                 return;
             }
@@ -456,6 +455,9 @@ namespace OpenUtau.App.Views {
             newNote = notesVm.MaybeAddNote(point, false);
             if (newNote == null) {
                 return;
+            }
+            foreach (var exp in note.phonemeExpressions.OrderBy(exp => exp.index)) {
+                DocManager.Inst.ExecuteCmd(new SetNoteExpressionCommand(project, project.tracks[part.trackNo], part, newNote, exp.abbr, new float?[] { exp.value }));
             }
             DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(part, newNote, NotePresets.Default.SplittedLyric));
         }

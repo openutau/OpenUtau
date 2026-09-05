@@ -1,4 +1,5 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using OpenUtau.App.ViewModels;
 

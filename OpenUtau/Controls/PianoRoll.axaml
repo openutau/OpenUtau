@@ -12,12 +12,12 @@
     <StyleInclude Source="/Styles/PianoRollStyles.axaml"/>
   </UserControl.Styles>
   <Border>
-    <Grid Margin="{Binding $parent[1].WindowDecorationMargin}" PointerMoved="BackgroundPointerMoved">
+    <Grid Margin="{Binding $parent[1].OffScreenMargin}" PointerMoved="BackgroundPointerMoved">
       <Grid.RowDefinitions>
         <RowDefinition Height="24"/>
         <RowDefinition Height="24"/>
         <RowDefinition Height="24"/>
-        <RowDefinition Height="*"/>
+        <RowDefinition Height="*" MinHeight="60"/>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="150" 
                        MinHeight="{Binding NotesViewModel.ExpHeightMin}"
@@ -170,6 +170,9 @@
                      ShowPitch="{Binding NotesViewModel.ShowPitch}"
                      ShowFinalPitch="{Binding NotesViewModel.ShowFinalPitch}"
                      ShowPhonemizerTags="{Binding ShowPhonemizerTags}"
+                     ShowPlaybackNoteHighlight="{Binding NotesViewModel.ShowPlaybackNoteHighlight}"
+                     ShowPlaybackNoteBounce="{Binding NotesViewModel.ShowPlaybackNoteBounce}"
+                     PlayPosTick="{Binding NotesViewModel.PlayPosTick, Mode=OneWay}"
                      Part="{Binding NotesViewModel.Part}"
                      PointerPressed="NotesCanvasPointerPressed"
                      PointerMoved="NotesCanvasPointerMoved"
@@ -296,6 +299,11 @@
                   <CheckBox IsChecked="{Binding ShowGhostNotes}" />
                 </MenuItem.Icon>
               </MenuItem>
+              <MenuItem Header="{DynamicResource prefs.appearance.detachpianoroll}" Click="OnMenuDetachPianoRoll">
+                <MenuItem.Icon>
+                  <CheckBox IsChecked="{Binding PianoRollDetached}" />
+                </MenuItem.Icon>
+              </MenuItem>
               <MenuItem Header="{DynamicResource prefs.appearance.trackcolor}" Click="OnMenuUseTrackColor">
                 <MenuItem.Icon>
                   <CheckBox IsChecked="{Binding UseTrackColor}" />
@@ -353,14 +361,6 @@
                   </MenuItem.Icon>
                 </MenuItem>
               </MenuItem>
-              <MenuItem Header="{DynamicResource pianoroll.menu.view.pianoroll}">
-                <MenuItem Header="{DynamicResource pianoroll.menu.view.pianoroll.detach}" Click="OnMenuDetachPianoRoll">
-                  <MenuItem.Icon>
-                    <CheckBox IsChecked="{Binding PianoRollDetached}" />
-                  </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="{DynamicResource pianoroll.menu.view.pianoroll.hide}" Click="OnMenuHidePianoRoll"/>
-              </MenuItem>
             </MenuItem>
 
             <MenuItem Header="{DynamicResource pianoroll.menu.batch}">
@@ -408,6 +408,7 @@
                   </ListBoxItem>
                   <ListBoxItem Classes="toolbar eraserTool" ToolTip.Tip="{DynamicResource pianoroll.tool.eraser}"/>
                   <ListBoxItem Classes="toolbar knifeTool" ToolTip.Tip="{DynamicResource pianoroll.tool.knife}"/>
+                  <ListBoxItem Classes="toolbar pitchPointTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchpoint}"/>
                   <ListBoxItem Classes="toolbar drawPitchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.drawpitch}"/>
                   <ListBoxItem Classes="toolbar pitchLineTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchline}"/>
                   <ListBoxItem Classes="toolbar pitchSCurveTool" ToolTip.Tip="{DynamicResource pianoroll.tool.pitchscurve}"/>
@@ -483,20 +484,20 @@
               </Grid>
             </ToggleButton>
             <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding ShowPhonemizerTags}"
-                          ToolTip.Tip="Show Phonemizer Tags">
+                          ToolTip.Tip="{DynamicResource pianoroll.toggle.phonemizer}">
               <Grid Width="18" Height="18">
-                <Path Classes="filled" Data="M21.41 11.58l-9-9C12.04 2.21 11.54 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.41l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.41zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z">
+                <Path Classes="filled" Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z">
                   <Path.RenderTransform>
                     <TransformGroup>
-                      <ScaleTransform ScaleX=".65" ScaleY=".65" />
-                      <TranslateTransform X="-1" Y="-1"/>
+                      <ScaleTransform ScaleX=".6" ScaleY=".6" />
+                      <TranslateTransform X="-2" Y="-2"/>
                     </TransformGroup>
                   </Path.RenderTransform>
                 </Path>
               </Grid>
             </ToggleButton>
             <Border Width="12"/>
-
+            
             <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.PlayTone}"
                           ToolTip.Tip="{DynamicResource pianoroll.toggle.tone}">
               <Grid Width="18" Height="18">
@@ -536,8 +537,37 @@
                              ItemsSource="{Binding NotesViewModel.Keys}" KeyDown="OnKeyKeyDown"/>
               </Button.ContextMenu>
             </Button>
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.LivePitchNormal}"
+                          IsVisible="{Binding NotesViewModel.IsDiffSinger}"
+                          ToolTip.Tip="{DynamicResource pianoroll.toggle.livepitch.normal}">
+              <Grid Width="18" Height="18">
+                <Path Classes="filled" Data="M12,6V9L16,5L12,1V4A8,8 0 0,0 4,12C4,13.57 4.46,15.03 5.24,16.26L6.7,14.8C6.25,13.97 6,13 6,12A6,6 0 0,1 12,6M18.76,7.74L17.3,9.2C17.74,10.04 18,11 18,12A6,6 0 0,1 12,18V15L8,19L12,23V20A8,8 0 0,0 20,12C20,10.43 19.54,8.97 18.76,7.74Z">
+                  <Path.RenderTransform>
+                    <TransformGroup>
+                      <ScaleTransform ScaleX=".65" ScaleY=".65"/>
+                      <TranslateTransform X="-2" Y="-2"/>
+                    </TransformGroup>
+                  </Path.RenderTransform>
+                </Path>
+              </Grid>
+            </ToggleButton>
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.LivePitchFast}"
+                          IsVisible="{Binding NotesViewModel.IsDiffSinger}"
+                          ToolTip.Tip="{DynamicResource pianoroll.toggle.livepitch.fast}">
+              <Grid Width="18" Height="18">
+                <Path Classes="filled" Data="M11 15H6L13 1V9H18L11 23V15Z">
+                  <Path.RenderTransform>
+                    <TransformGroup>
+                      <ScaleTransform ScaleX=".65" ScaleY=".65"/>
+                      <TranslateTransform X="-2" Y="-2"/>
+                    </TransformGroup>
+                  </Path.RenderTransform>
+                </Path>
+              </Grid>
+            </ToggleButton>
           </StackPanel>
         </Border>
+        <Border Grid.Column="3" Background="Transparent" DoubleTapped="OnHidePianoRoll"/>
         <Border Grid.Column="4">
           <StackPanel Orientation="Horizontal">
             <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowNoteParams}"
@@ -553,6 +583,10 @@
                 </Path>
               </Grid>
             </ToggleButton>
+            <!-- Hide PianoRoll Padding -->
+            <Border IsVisible="{Binding HideMenuItemVisible}">
+              <Border Width="20" IsVisible="{Binding !NotesViewModel.ShowNoteParams}"/>
+            </Border>
           </StackPanel>
         </Border>
       </Grid>
@@ -583,7 +617,20 @@
       <GridSplitter Grid.Row="4" Grid.ColumnSpan="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                     Background="{DynamicResource SystemControlBackgroundAltHighBrush}" IsVisible="{Binding NotesViewModel.ShowExpressions}"
                     Focusable="False" Cursor="SizeNorthSouth"/>
-      <c:ExpressionCanvas Grid.Row="5" Grid.Column="1" Opacity="{Binding NotesViewModel.ExpShadowOpacity}"
+      <c:TrackBackground Grid.Row="5" Grid.Column="1" IsHitTestVisible="False"
+                         IsVisible="{Binding NotesViewModel.ShowExpressions}"
+                         Foreground="{DynamicResource TrackBackgroundAltBrush}"
+                         TrackHeight="{Binding NotesViewModel.ExpTrackHeight}"/>
+      <c:TickBackground Grid.Row="5" Grid.Column="1" IsHitTestVisible="False"
+                        IsVisible="{Binding NotesViewModel.ShowExpressions}"
+                        Foreground="{DynamicResource TickLineBrush}"
+                        Background="{DynamicResource TickLineBrushLow}"
+                        Resolution="{Binding PlaybackViewModel.Resolution}"
+                        TickWidth="{Binding NotesViewModel.TickWidth}"
+                        TickOrigin="{Binding NotesViewModel.TickOrigin}"
+                        TickOffset="{Binding NotesViewModel.TickOffset}"
+                        SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"/>
+      <c:ExpressionCanvas Grid.Row="5" Grid.Column="1" Opacity="0.2"
                           IsVisible="{Binding NotesViewModel.ShowExpressions}"
                           TickWidth="{Binding NotesViewModel.TickWidth}"
                           TickOffset="{Binding NotesViewModel.TickOffset}"
@@ -591,6 +638,7 @@
                           Key="{Binding NotesViewModel.SecondaryKey}"
                           ShowRealCurve="False"/>
       <c:ExpressionCanvas Grid.Row="5" Grid.Column="1"
+                          DisplayMode="Visible"
                           IsVisible="{Binding NotesViewModel.ShowExpressions}"
                           Bounds="{Binding NotesViewModel.ExpBounds, Mode=OneWayToSource}"
                           TickWidth="{Binding NotesViewModel.TickWidth}"
@@ -625,6 +673,18 @@
               Background="{DynamicResource SystemRegionBrush}" Padding="0">
         <c:NotePropertiesControl/>
       </Border>
+
+      <Button Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4"
+              Classes="toolbar clear" Margin="2"
+              HorizontalAlignment="Right" VerticalAlignment="Top"
+              Height="20" Width="20" Padding="1"
+              Click="OnHidePianoRoll"
+              IsVisible="{Binding HideMenuItemVisible}"
+              ToolTip.Tip="{DynamicResource pianoroll.toggle.hidepianoroll}">
+        <Grid Width="18" Height="18">
+          <Path Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1" Data="M 4 4 L 14 14 M 14 4 L 4 14"/>
+        </Grid>
+      </Button>
 
       <Border Grid.Row="2" Grid.RowSpan="2" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
               BoxShadow="inset 0 0 5 1 #3F000000" ClipToBounds="True" IsHitTestVisible="False">

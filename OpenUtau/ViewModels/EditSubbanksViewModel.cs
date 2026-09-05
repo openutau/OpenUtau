@@ -8,12 +8,13 @@ using OpenUtau.Classic;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    class VoiceColor : ReactiveObject {
-        [Reactive] public string Name { get; set; }
-        [Reactive] public ObservableCollectionExtended<VoiceColorRow> Rows { get; set; }
+    partial class VoiceColor : ReactiveObject {
+        [Reactive] public partial string Name { get; set; }
+        [Reactive] public partial ObservableCollectionExtended<VoiceColorRow> Rows { get; set; }
         public VoiceColor(string color, List<Subbank> subbanks) {
             Name = color;
             Rows = new ObservableCollectionExtended<VoiceColorRow>();
@@ -47,11 +48,11 @@ namespace OpenUtau.App.ViewModels {
             string.IsNullOrEmpty(Name) ? "(main)" : Name;
     }
 
-    class VoiceColorRow : ReactiveObject {
+    partial class VoiceColorRow : ReactiveObject {
         public readonly int index;
-        [Reactive] public string Tone { get; private set; }
-        [Reactive] public string Prefix { get; set; }
-        [Reactive] public string Suffix { get; set; }
+        [Reactive] public partial string Tone { get; private set; }
+        [Reactive] public partial string Prefix { get; set; }
+        [Reactive] public partial string Suffix { get; set; }
         public VoiceColorRow(int index, string prefix, string suffix) {
             this.index = index;
             Tone = MusicMath.GetToneName(index);
@@ -60,20 +61,21 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    class EditSubbanksViewModel : ViewModelBase {
-        [Reactive] public ObservableCollectionExtended<VoiceColor> Colors { get; set; }
-        [Reactive] public VoiceColor? SelectedColor { get; set; }
-        [Reactive] public bool IsEditableColor { get; set; }
-        [Reactive] public ObservableCollectionExtended<VoiceColorRow>? Rows { get; set; }
-        [Reactive] public ObservableCollectionExtended<VoiceColorRow>? SelectedRows { get; set; }
-        [Reactive] public string Prefix { get; set; }
-        [Reactive] public string Suffix { get; set; }
+    partial class EditSubbanksViewModel : ViewModelBase {
+        [Reactive] public partial ObservableCollectionExtended<VoiceColor> Colors { get; set; }
+        [Reactive] public partial VoiceColor? SelectedColor { get; set; }
+        [Reactive] public partial bool IsEditableColor { get; set; }
+        [Reactive] public partial ObservableCollectionExtended<VoiceColorRow>? Rows { get; set; }
+        [Reactive] public partial ObservableCollectionExtended<VoiceColorRow>? SelectedRows { get; set; }
+        [Reactive] public partial string Prefix { get; set; }
+        [Reactive] public partial string Suffix { get; set; }
 
         public USinger? Singer { get; private set; }
 
         public EditSubbanksViewModel() {
             Colors = new ObservableCollectionExtended<VoiceColor>();
             this.WhenAnyValue(x => x.SelectedColor)
+                .OfType<VoiceColor>()
                 .Subscribe(color => {
                     Rows = color?.Rows;
                     IsEditableColor = color != null && !string.IsNullOrEmpty(color.Name);

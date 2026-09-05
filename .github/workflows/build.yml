@@ -1,29 +1,82 @@
 on:
   workflow_dispatch:
     inputs:
+      channel:
+        description: "Release channel"
+        type: choice
+        default: beta
+        options:
+          - stable
+          - beta
+          - alpha
       version:
-        description: "Version"
-        default: "0.0.0"
-        required: true
+        description: "Version (required for stable/beta, ignored for alpha)"
+        default: ""
+        required: false
         type: string
       release:
         type: boolean
         default: false
         description: "Release"
-      beta:
-        type: boolean
-        default: true
-        description: "Beta"
       draft:
         type: boolean
         default: true
         description: "Draft"
 
-env:
-  release-name: ${{ inputs.version }}${{ inputs.beta && ' Beta' || '' }}
-
 jobs:
+  next-version:
+    runs-on: ubuntu-latest
+    outputs:
+      channel: ${{ steps.nv.outputs.channel }}
+      version: ${{ steps.nv.outputs.version }}
+      tag: ${{ steps.nv.outputs.tag }}
+      name: ${{ steps.nv.outputs.name }}
+      release: ${{ steps.nv.outputs.release }}
+      draft: ${{ steps.nv.outputs.draft }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - id: nv
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          VERSION: ${{ inputs.version }}
+          RELEASE: ${{ inputs.release }}
+          DRAFT: ${{ inputs.draft }}
+        run: |
+          set -u
+          # Alpha is the only auto-versioned channel; stable and beta take
+          # the version from the dispatch input.
+          if [ "$CHANNEL" = alpha ]; then
+            git ls-remote --tags origin > tags.txt
+            version=$(python .github/scripts/next-version.py < tags.txt)
+            tag="$version-alpha"
+            name="${version%.*} Alpha"
+          else
+            if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+[.][0-9]+[.][0-9]+$'; then
+              echo "::error::version must be X.Y.Z for the $CHANNEL channel (got '$VERSION')"
+              exit 1
+            fi
+            version="$VERSION"
+            if [ "$CHANNEL" = beta ]; then
+              tag="$version-beta"
+              name="$version Beta"
+            else
+              tag="$version"
+              name="$version"
+            fi
+          fi
+          {
+            echo "channel=$CHANNEL"
+            echo "version=$version"
+            echo "tag=$tag"
+            echo "name=$name"
+            echo "release=$RELEASE"
+            echo "draft=$DRAFT"
+          } | tee -a "$GITHUB_OUTPUT" >> "$GITHUB_STEP_SUMMARY"
   build:
+    needs: next-version
     runs-on: ${{ matrix.arch.runs-on }}
 
     strategy:
@@ -31,10 +84,8 @@ jobs:
       matrix:
         arch:
           - { name: win-x64, rid: win-x64, arch: x64, os: win, runs-on: windows-latest }
-          - { name: win-x86, rid: win-x86, arch: x86, os: win, runs-on: windows-latest }
           - { name: win-arm64, rid: win-arm64, arch: arm64, os: win, runs-on: windows-latest }
-          - { name: osx-x64, rid: osx-x64, arch: x64, os: osx, runs-on: macos-15-intel }
-          - { name: osx-arm64, rid: osx-arm64, arch: arm64, os: osx, runs-on: macos-15-intel }
+          - { name: osx-arm64, rid: osx-arm64, arch: arm64, os: osx, runs-on: macos-latest }
           - { name: linux-x64, rid: linux-x64, arch: x64, os: linux, runs-on: ubuntu-latest, linuxarch: x86_64}
           - { name: linux-arm64, rid: linux-arm64, arch: arm64, os: linux, runs-on: ubuntu-latest, linuxarch: aarch64}
 
@@ -46,6 +97,7 @@ jobs:
           dotnet-version: |
             6.0.x
             8.0.x
+            10.0.x
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -54,7 +106,7 @@ jobs:
         if: ${{ matrix.arch.os == 'win' }}
       - uses: justalemon/VersionPatcher@v0.7.1
         with:
-          version: ${{ inputs.version }}
+          version: ${{ needs.next-version.outputs.version }}
           csproj-files: "OpenUtau/*.csproj"
 
       # Test
@@ -72,9 +124,19 @@ jobs:
       - name: Build (MacOS)
         run: dotnet msbuild OpenUtau -t:BundleApp -p:Configuration=Release -p:RuntimeIdentifier=${{ matrix.arch.rid }} -p:UseAppHost=true -p:SelfContained=true -p:OutputPath=../bin/${{ matrix.arch.name }}/
         if: ${{ matrix.arch.os == 'osx' }}
-      
+
+      - name: Add Liquid Glass icon (macOS)
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.2.app
+          chmod +x .github/scripts/add-liquid-glass-icon.sh
+          .github/scripts/add-liquid-glass-icon.sh \
+            bin/${{ matrix.arch.name }}/publish/OpenUtau.app \
+            OpenUtau/Assets/OpenUtau.icon \
+            OpenUtau
+        if: ${{ matrix.arch.os == 'osx' }}
+
       - name: Write release channel info
-        run: "@{Beta=$${{ inputs.beta }}} | ConvertTo-Json > bin/${{ matrix.arch.name }}/prefs-default.json"
+        run: "@{Channel='${{ needs.next-version.outputs.channel }}'} | ConvertTo-Json > bin/${{ matrix.arch.name }}/prefs-default.json"
         shell: pwsh
 
       # Create Zip
@@ -113,7 +175,7 @@ jobs:
         uses: joncloud/makensis-action@v4.1
         with:
           script-file: OpenUtau.nsi
-          arguments: "-DPRODUCT_VERSION=${{ inputs.version }} -DARCH=${{ matrix.arch.arch }}"
+          arguments: "-DPRODUCT_VERSION=${{ needs.next-version.outputs.version }} -DARCH=${{ matrix.arch.arch }}"
         if: ${{ matrix.arch.os == 'win' }}
 
       # Create Dmg
@@ -149,58 +211,58 @@ jobs:
         with:
           name: OpenUtau-${{ matrix.arch.name }}.tar.gz
           path: OpenUtau-${{ matrix.arch.name }}.tar.gz
-        if: ${{ !inputs.release && matrix.arch.os == 'linux' }}
+        if: ${{ needs.next-version.outputs.release != 'true' && matrix.arch.os == 'linux' }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: OpenUtau-${{ matrix.arch.name }}.zip
           path: OpenUtau-${{ matrix.arch.name }}.zip
-        if: ${{ !inputs.release && matrix.arch.os == 'win' }}
+        if: ${{ needs.next-version.outputs.release != 'true' && matrix.arch.os == 'win' }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: OpenUtau-${{ matrix.arch.name }}.exe
           path: OpenUtau-${{ matrix.arch.name }}.exe
-        if: ${{ !inputs.release && matrix.arch.os == 'win' }}
-      
+        if: ${{ needs.next-version.outputs.release != 'true' && matrix.arch.os == 'win' }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: OpenUtau-${{ matrix.arch.name }}.AppImage
           path: OpenUtau-${{ matrix.arch.linuxarch }}.AppImage
-        if: ${{ !inputs.release && matrix.arch.os == 'linux' }}
+        if: ${{ needs.next-version.outputs.release != 'true' && matrix.arch.os == 'linux' }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: OpenUtau-${{ matrix.arch.name }}.dmg
           path: OpenUtau-${{ matrix.arch.name }}.dmg
-        if: ${{ !inputs.release && matrix.arch.os == 'osx' }}
+        if: ${{ needs.next-version.outputs.release != 'true' && matrix.arch.os == 'osx' }}
 
       # Appcast
       - name: Appcast Windows
         shell: cmd
         run: |
-          python appcast.py -v=${{ inputs.version }} -o=windows -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.zip
-          python appcast.py -v=${{ inputs.version }} -o=windows -r=${{ matrix.arch.name }}-installer -f=OpenUtau-${{ matrix.arch.name }}.exe
-        if: ${{ inputs.release && matrix.arch.os == 'win' }}
+          python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=windows -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.zip
+          python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=windows -r=${{ matrix.arch.name }}-installer -f=OpenUtau-${{ matrix.arch.name }}.exe
+        if: ${{ needs.next-version.outputs.release == 'true' && matrix.arch.os == 'win' }}
 
       - name: Appcast MacOS
         run: |
-          python appcast.py -v=${{ inputs.version }} -o=macos -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.dmg
-        if: ${{ inputs.release && matrix.arch.os == 'osx' }}
+          python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=macos -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.dmg
+        if: ${{ needs.next-version.outputs.release == 'true' && matrix.arch.os == 'osx' }}
 
       - name: Appcast Linux
         run: |
-          python appcast.py -v=${{ inputs.version }} -o=linux -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.tar.gz
-        if: ${{ inputs.release && matrix.arch.os == 'linux' }}
+          python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=linux -r=${{ matrix.arch.name }} -f=OpenUtau-${{ matrix.arch.name }}.tar.gz
+        if: ${{ needs.next-version.outputs.release == 'true' && matrix.arch.os == 'linux' }}
 
       # Release
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.version }}
-          name: ${{ env.release-name }}
-          prerelease: ${{ inputs.beta }}
-          draft: ${{ inputs.draft }}
+          tag_name: ${{ needs.next-version.outputs.tag }}
+          name: ${{ needs.next-version.outputs.name }}
+          prerelease: ${{ needs.next-version.outputs.channel != 'stable' }}
+          draft: ${{ needs.next-version.outputs.draft }}
           files: |
             appcast.${{ matrix.arch.name }}*.xml
             OpenUtau-${{ matrix.arch.name }}.*
@@ -211,4 +273,4 @@ jobs:
 
             ## macOS says "This app is damaged"
             Open a terminal and run `xattr -rc /Applications/OpenUtau.app`. Try opening OpenUtau again.
-        if: ${{ inputs.release }}
+        if: ${{ needs.next-version.outputs.release == 'true' }}

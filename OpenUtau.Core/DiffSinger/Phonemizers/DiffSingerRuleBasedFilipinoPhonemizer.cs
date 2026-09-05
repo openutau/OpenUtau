@@ -7,14 +7,15 @@ using OpenUtau.Core.G2p;
 
 namespace OpenUtau.Core.G2p {
     public class RuleBasedFilipinoG2p : IG2p {
-        readonly static Regex kAllPunct = new Regex(@"^[\p{P}]$");
+        static readonly Regex kAllPunct = new Regex(@"^[\p{P}]$");
 
-        private string[] validPhonemes =
-            { "m", "n", "ng", "p", "t", "ty", "k", "q", "b", "d", "dy", "g", "s", "sy", "h", "l", "y", "w", "r", "vf", "a", "e", "i", "o", "u" };
+        private readonly string[] validPhonemes =
+            ["m", "n", "ng", "p", "t", "ty", "k", "q", "b", "d", "dy", "g", "s", "sy", "h", "l", "y", "Y", "w", "W", "r", "vf", "a", "e", "i", "o", "u"
+            ];
 
-        private readonly string[] glides = { "w", "y" };
+        private readonly string[] glides = ["w", "y"];
 
-        private string[] vowels = { "a", "e", "i", "o", "u" };
+        private readonly string[] vowels = ["a", "e", "i", "o", "u"];
 
         public bool IsGlide(string symbol) => glides.Contains(symbol);
 
@@ -49,15 +50,20 @@ namespace OpenUtau.Core.G2p {
                     case 'o':
                     case 'u':
                         if (prev.Equals("c")) phonemes[^1] = "k";
+                        else if (IsVowel(prev)) phonemes.Add("q");
                         phonemes.Add(c.ToString());
                         break;
                     case 'e':
                         if (prev.Equals("c")) phonemes[^1] = "s";
+                        else if (IsVowel(prev)) phonemes.Add("q");
                         phonemes.Add("e");
                         break;
                     case 'i':
                         if (prev.Equals("c")) phonemes[^1] = "sy";
-                        else phonemes.Add("i");
+                        else if (IsVowel(prev)) {
+                            phonemes.Add("q");
+                            phonemes.Add("i");
+                        } else phonemes.Add("i");
                         break;
                     case 'f':
                         phonemes.Add("p");
@@ -67,8 +73,18 @@ namespace OpenUtau.Core.G2p {
                         else phonemes.Add("g");
                         break;
                     case 'h':
-                        if (prev.Equals("c")) phonemes[^1] = "ty";
-                        else phonemes.Add("h");
+                        switch (prev)
+                        {
+                            case "c":
+                                phonemes[^1] = "ty";
+                                break;
+                            case "s":
+                                phonemes[^1] = "sh";
+                                break;
+                            default:
+                                phonemes.Add("h");
+                                break;
+                        }
                         break;
                     case 'j':
                         phonemes.Add("dy");
@@ -101,7 +117,7 @@ namespace OpenUtau.Core.G2p {
                 }
             }
             
-            // glide pass
+            // glide+coda pass
             for (int i = 1; i < phonemes.Count - 1; i++) {
                 string prev = phonemes[i - 1];
                 string curr = phonemes[i];
@@ -109,13 +125,16 @@ namespace OpenUtau.Core.G2p {
                 phonemes[i] = curr switch {
                     "u" when IsConsonant(prev) && IsVowel(next) => "w",
                     "i" when IsConsonant(prev) && IsVowel(next) => "y",
+                    "w" when IsVowel(prev) && IsConsonant(next) => "W",
+                    "y" when IsVowel(prev) && IsConsonant(next) => "Y",
                     _ => phonemes[i]
                 };
             }
             
-            // extra palatalization pass
+            // end coda
             
-
+            if ((phonemes.Count >= 2) && IsVowel(phonemes[^2]) && IsGlide(phonemes[^1])) phonemes[^1] = phonemes[^1].ToUpperInvariant();
+            
             string[] filteredPhonemes = phonemes.Where(x => validPhonemes.Contains(x)).ToArray();
 
             return (filteredPhonemes.Length == 0) ? null : filteredPhonemes;
@@ -137,7 +156,7 @@ namespace OpenUtau.Core.DiffSinger {
         };
 
         protected override string[] GetBaseG2pConsonants() => new string[] {
-            "m", "n", "ng", "p", "t", "ty", "k", "q", "b", "d", "dy", "g", "s", "sy", "h", "l", "y", "w", "r", "vf"
+            "m", "n", "ng", "p", "t", "ty", "k", "q", "b", "d", "dy", "g", "s", "sy", "h", "l", "y", "Y", "w", "W", "r", "vf"
         };
     }
 }

@@ -1,9 +1,9 @@
-﻿using ReactiveUI.Fody.Helpers;
+﻿using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class ExeSetupViewModel : ViewModelBase {
+    public partial class ExeSetupViewModel : ViewModelBase {
         public string filePath;
-        [Reactive] public string message { get; set; }
+        [Reactive] public partial string message { get; set; }
         public ExeSetupViewModel(string filePath) {
             this.filePath = filePath;
             message = string.Format(ThemeManager.GetString("exesetup.installing"), filePath);

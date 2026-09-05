@@ -1,0 +1,149 @@
+{
+  "color-space-for-untagged-svg-colors" : "display-p3",
+  "features" : [
+    "refractivity"
+  ],
+  "fill" : {
+    "solid" : "display-p3:0.26052,0.26052,0.26052,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "Artboard 1 8.svg",
+          "name" : "Artboard 1 8"
+        }
+      ],
+      "lighting" : "individual",
+      "position" : {
+        "scale" : 4.5,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "refractivity" : {
+        "depth" : 0,
+        "enabled" : true,
+        "strength" : 1
+      },
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "blur-material" : null,
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "Artboard 1 9.svg",
+          "name" : "Artboard 1 9",
+          "opacity" : 1
+        },
+        {
+          "glass" : true,
+          "image-name" : "Artboard 1 7.svg",
+          "name" : "Artboard 1 7"
+        }
+      ],
+      "lighting" : "individual",
+      "position" : {
+        "scale" : 4.5,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "refractivity" : {
+        "depth" : 0,
+        "enabled" : true,
+        "strength" : 1
+      },
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "blend-mode" : "normal",
+      "hidden" : false,
+      "layers" : [
+        {
+          "image-name" : "Artboard 1 4.svg",
+          "name" : "Artboard 1 4"
+        }
+      ],
+      "lighting" : "combined",
+      "position" : {
+        "scale" : 4.5,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "refractivity" : {
+        "depth" : 0,
+        "enabled" : true,
+        "strength" : 0.5
+      },
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "fill" : "automatic",
+          "image-name" : "Artboard 1 6.svg",
+          "name" : "Artboard 1 6"
+        }
+      ],
+      "position" : {
+        "scale" : 4.5,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "refractivity" : {
+        "depth" : 0,
+        "enabled" : true,
+        "strength" : 0.5
+      },
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}

@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
+using Serilog;
 
 namespace OpenUtau.App.Controls {
     public partial class LyricBox : UserControl {
@@ -20,13 +21,19 @@ namespace OpenUtau.App.Controls {
             box = PART_Box;
             listBox = PART_Suggestions;
             IsVisible = false;
+            viewModel.Suggestions.CollectionChanged += (_, _) => {
+                Dispatcher.UIThread.Post(() => {
+                    listBox.SelectedIndex = -1;
+                    viewModel.SelectedSuggestion = null;
+                }, DispatcherPriority.Input);
+            };
         }
 
-        private void Box_GotFocus(object? sender, GotFocusEventArgs e) {
+        private void Box_GotFocus(object? sender, FocusChangedEventArgs e) {
             box.SelectAll();
         }
 
-        private void Box_LostFocus(object? sender, RoutedEventArgs e) {
+        private void Box_LostFocus(object? sender, FocusChangedEventArgs e) {
             box.CaretIndex = 0;
         }
 
@@ -44,12 +51,10 @@ namespace OpenUtau.App.Controls {
                     e.Handled = true;
                     break;
                 case Key.Tab:
-                    if (!viewModel.IsAliasBox) {
-                        if (listBox.SelectedItem is LyricBoxViewModel.SuggestionItem item1) {
-                            box.Text = item1.Alias;
-                        }
-                        OnTab(e.KeyModifiers);
+                    if (listBox.SelectedItem is LyricBoxViewModel.SuggestionItem item1) {
+                        box.Text = item1.Alias;
                     }
+                    OnTab(e.KeyModifiers);
                     e.Handled = true;
                     break;
                 case Key.Up:
@@ -101,9 +106,7 @@ namespace OpenUtau.App.Controls {
                     e.Handled = true;
                     break;
                 case Key.Tab:
-                    if (!viewModel.IsAliasBox) {
-                        OnTab(e.KeyModifiers);
-                    }
+                    OnTab(e.KeyModifiers);
                     e.Handled = true;
                     break;
                 case Key.Up:
@@ -128,18 +131,37 @@ namespace OpenUtau.App.Controls {
         }
 
         private void OnTab(KeyModifiers keyModifiers) {
+            Log.Error($"OnTab: tabFrom={viewModel.NoteOrPhoneme}, mods={keyModifiers}");
             UVoicePart? part = viewModel.Part;
-            UNote? tabTo = null;
-            var tabFrom = viewModel.NoteOrPhoneme as LyricBoxNote;
-            if (keyModifiers == KeyModifiers.None) {
-                tabTo = tabFrom?.Unwrap().Next;
-            } else if (keyModifiers == KeyModifiers.Shift) {
-                tabTo = tabFrom?.Unwrap().Prev;
+            var tabFrom = viewModel.NoteOrPhoneme;
+            LyricBoxNoteOrPhoneme? tabTo = null;
+            UNote? focusNote = null;
+            string? text = null;
+            if (tabFrom is LyricBoxNote noteBox) {
+                UNote? note = noteBox.Unwrap();
+                note = keyModifiers == KeyModifiers.None ? note.Next
+                    : keyModifiers == KeyModifiers.Shift ? note.Prev
+                    : null;
+                if (note != null) {
+                    tabTo = new LyricBoxNote(note);
+                    focusNote = note;
+                    text = note.lyric;
+                }
+            } else if (tabFrom is LyricBoxPhoneme phonemeBox) {
+                UPhoneme? phoneme = phonemeBox.Unwrap();
+                phoneme = keyModifiers == KeyModifiers.None ? phoneme.Next
+                    : keyModifiers == KeyModifiers.Shift ? phoneme.Prev
+                    : null;
+                if (phoneme != null) {
+                    tabTo = new LyricBoxPhoneme(phoneme);
+                    focusNote = phoneme.Parent;
+                    text = phoneme.phoneme;
+                }
             }
             EndEdit(true);
-            if (tabTo != null && part != null) {
-                DocManager.Inst.ExecuteCmd(new FocusNoteNotification(part, tabTo));
-                Show(part, new LyricBoxNote(tabTo), tabTo.lyric);
+            if (tabTo != null && focusNote != null && text != null && part != null) {
+                DocManager.Inst.ExecuteCmd(new FocusNoteNotification(part, focusNote));
+                Show(part, tabTo, text);
             }
         }
 
@@ -166,6 +188,7 @@ namespace OpenUtau.App.Controls {
 
         private void FocusTimer_Tick(object? sender, System.EventArgs e) {
             box.Focus();
+            box.SelectAll();
             if (focusTimer != null) {
                 focusTimer.Tick -= FocusTimer_Tick;
                 focusTimer.Stop();

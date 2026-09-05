@@ -7,18 +7,19 @@ using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    class TrackSettingsViewModel : ViewModelBase {
+    partial class TrackSettingsViewModel : ViewModelBase {
         public UTrack Track { get; private set; }
         public ObservableCollectionExtended<IResampler> Resamplers => resamplers;
-        [Reactive] public IResampler? Resampler { get; set; }
-        [Reactive] public bool NeedsResampler { get; set; }
+        [Reactive] public partial IResampler? Resampler { get; set; }
+        [Reactive] public partial bool NeedsResampler { get; set; }
         public ObservableCollectionExtended<IWavtool> Wavtools => wavtools;
-        [Reactive] public IWavtool? Wavtool { get; set; }
-        [Reactive] public bool NeedsWavtool { get; set; }
-        [Reactive] public bool IsNotClassic { get; set; }
+        [Reactive] public partial IWavtool? Wavtool { get; set; }
+        [Reactive] public partial bool NeedsWavtool { get; set; }
+        [Reactive] public partial bool IsNotClassic { get; set; }
 
         ObservableCollectionExtended<IResampler> resamplers =
             new ObservableCollectionExtended<IResampler>();
@@ -51,6 +52,7 @@ namespace OpenUtau.App.ViewModels {
                 IsNotClassic = Renderers.CLASSIC != renderer;
             }
             this.WhenAnyValue(x => x.Resampler)
+                .OfType<IResampler>()
                 .Subscribe(resampler => {
                     resampler?.CheckPermissions();
                     var wavtool = Wavtool;
@@ -63,6 +65,7 @@ namespace OpenUtau.App.ViewModels {
                     }
                 });
             this.WhenAnyValue(x => x.Wavtool)
+                .OfType<IWavtool>()
                 .Subscribe(wavtool => {
                     wavtool?.CheckPermissions();
                 });

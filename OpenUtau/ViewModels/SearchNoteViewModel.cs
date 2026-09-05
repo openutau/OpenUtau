@@ -1,24 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    class SearchNoteViewModel : ViewModelBase, ICmdSubscriber {
-        [Reactive] public bool NoteMode { get; set; }
-        [Reactive] public string SearchWord { get; set; } = "";
+    partial class SearchNoteViewModel : ViewModelBase, ICmdSubscriber {
+        [Reactive] public partial bool NoteMode { get; set; }
+        [Reactive] public partial string SearchWord { get; set; } = "";
         public string Watermark { get => ThemeManager.GetString(NoteMode ? "pianoroll.menu.searchnote" : "pianoroll.menu.searchnote.searchalias"); }
-        [Reactive] public int Count { get; private set; }
-        public ReactiveCommand<string, Unit> SelectCommand { get; }
+        [Reactive] public partial int Count { get; private set; }
+        public ReactiveCommand<string, RxVoid> SelectCommand { get; }
 
         NotesViewModel notesViewModel { get; }
         List<UNote> notes = new List<UNote>();
         int selection = -1;
-        [Reactive]public string ResultCount { get; private set; } = "";
+        [Reactive] public partial string ResultCount { get; private set; } = "";
         bool CaseSensitive{ get; set; } = true;
         bool WholeWord{ get; set; } = false;
 

@@ -3,30 +3,62 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace OpenUtau.Core.DiffSinger {
-    internal readonly struct VariancePatchRange {
-        public readonly int start;
-        public readonly int end;
-
-        public VariancePatchRange(int start, int end) {
-            this.start = start;
-            this.end = end;
-        }
-    }
-
-    internal class VariancePatchState {
+    internal sealed class VariancePatchState {
         public readonly float[] pitch;
+        public readonly float[]? speakerEmbed;
         public readonly VarianceResult result;
 
-        public VariancePatchState(float[] pitch, VarianceResult result) {
+        public VariancePatchState(float[] pitch, float[]? speakerEmbed, VarianceResult result) {
             this.pitch = pitch.ToArray();
+            this.speakerEmbed = speakerEmbed?.ToArray();
             this.result = DiffSingerVariancePatch.CloneResult(result);
         }
     }
 
-    internal static class DiffSingerVariancePatch {
-        const float PitchEpsilon = 1e-4f;
-        const float CrossfadeMs = 50f;
+    internal sealed class VariancePatchStateCache {
+        readonly int capacity;
+        readonly Dictionary<ulong, LinkedListNode<(ulong key, VariancePatchState state)>> entries = new();
+        readonly LinkedList<(ulong key, VariancePatchState state)> recency = new();
 
+        internal VariancePatchStateCache(int capacity) {
+            if (capacity <= 0) {
+                throw new ArgumentOutOfRangeException(nameof(capacity));
+            }
+            this.capacity = capacity;
+        }
+
+        internal int Count => entries.Count;
+
+        internal bool TryGetValue(ulong key, out VariancePatchState state) {
+            if (!entries.TryGetValue(key, out var node)) {
+                state = null!;
+                return false;
+            }
+            recency.Remove(node);
+            recency.AddFirst(node);
+            state = node.Value.state;
+            return true;
+        }
+
+        internal void Set(ulong key, VariancePatchState state) {
+            if (entries.TryGetValue(key, out var existing)) {
+                existing.Value = (key, state);
+                recency.Remove(existing);
+                recency.AddFirst(existing);
+                return;
+            }
+            var node = recency.AddFirst((key, state));
+            entries.Add(key, node);
+            if (entries.Count <= capacity) {
+                return;
+            }
+            var oldest = recency.Last!;
+            recency.RemoveLast();
+            entries.Remove(oldest.Value.key);
+        }
+    }
+
+    internal static class DiffSingerVariancePatch {
         public static ulong BuildStateKey(ulong baseHash, int phrasePosition, int phraseEnd) {
             unchecked {
                 ulong hash = baseHash;
@@ -36,88 +68,156 @@ namespace OpenUtau.Core.DiffSinger {
             }
         }
 
-        public static VarianceResult Merge(
-            VariancePatchState? previous,
-            float[] currentPitch,
-            VarianceResult current) {
-            if (previous == null ||
-                previous.pitch.Length != currentPitch.Length ||
-                !IsMetadataCompatible(previous.result, current)) {
-                return CloneResult(current);
+        internal static bool[] BuildChangedFrameMask(
+            IReadOnlyList<float> previous,
+            IReadOnlyList<float> current,
+            float epsilon) {
+            int length = Math.Max(previous.Count, current.Count);
+            var mask = new bool[length];
+            for (int i = 0; i < length; i++) {
+                mask[i] = i >= previous.Count || i >= current.Count ||
+                    Math.Abs(previous[i] - current[i]) > epsilon;
             }
-            var ranges = FindChangedRanges(previous.pitch, currentPitch, PitchEpsilon);
-            if (ranges.Count == 0) {
-                return CloneResult(previous.result);
+            return mask;
+        }
+
+        internal static bool[] BuildChangedFrameMask(
+            IReadOnlyList<float> previous,
+            IReadOnlyList<float> current,
+            int frameCount,
+            float epsilon) {
+            if (frameCount <= 0) {
+                return Array.Empty<bool>();
             }
-            int crossfadeFrames = Math.Clamp((int)Math.Round(CrossfadeMs / current.frameMs), 1, 20);
-            var weights = BuildWeights(currentPitch.Length, ranges, crossfadeFrames);
+            if (previous.Count != current.Count || previous.Count % frameCount != 0) {
+                return Enumerable.Repeat(true, frameCount).ToArray();
+            }
+            int valuesPerFrame = previous.Count / frameCount;
+            var mask = new bool[frameCount];
+            for (int frame = 0; frame < frameCount; frame++) {
+                int offset = frame * valuesPerFrame;
+                for (int i = 0; i < valuesPerFrame; i++) {
+                    if (Math.Abs(previous[offset + i] - current[offset + i]) > epsilon) {
+                        mask[frame] = true;
+                        break;
+                    }
+                }
+            }
+            return mask;
+        }
+
+        internal static bool[] ExpandToChannels(
+            IReadOnlyList<bool> frameMask,
+            int channelCount) {
+            if (channelCount < 0) {
+                throw new ArgumentOutOfRangeException(nameof(channelCount));
+            }
+            var mask = new bool[frameMask.Count * channelCount];
+            for (int frame = 0; frame < frameMask.Count; frame++) {
+                if (!frameMask[frame]) continue;
+                for (int channel = 0; channel < channelCount; channel++) {
+                    mask[frame * channelCount + channel] = true;
+                }
+            }
+            return mask;
+        }
+
+        internal static VarianceResult HardCompose(
+            VarianceResult previous,
+            VarianceResult predicted,
+            IReadOnlyList<bool> retakeMask,
+            int channelCount) {
+            if (!IsCompatible(previous, predicted) ||
+                retakeMask.Count != previous.totalFrames * channelCount) {
+                return CloneResult(predicted);
+            }
+            int channel = 0;
+            var energy = ComposeEnabledChannel(previous.energy, predicted.energy, retakeMask, previous.totalFrames, ref channel, channelCount);
+            var breathiness = ComposeEnabledChannel(previous.breathiness, predicted.breathiness, retakeMask, previous.totalFrames, ref channel, channelCount);
+            var voicing = ComposeEnabledChannel(previous.voicing, predicted.voicing, retakeMask, previous.totalFrames, ref channel, channelCount);
+            var tension = ComposeEnabledChannel(previous.tension, predicted.tension, retakeMask, previous.totalFrames, ref channel, channelCount);
             return new VarianceResult {
-                energy = Blend(previous.result.energy, current.energy, weights),
-                breathiness = Blend(previous.result.breathiness, current.breathiness, weights),
-                voicing = Blend(previous.result.voicing, current.voicing, weights),
-                tension = Blend(previous.result.tension, current.tension, weights),
-                frameMs = current.frameMs,
-                headFrames = current.headFrames,
-                tailFrames = current.tailFrames,
-                totalFrames = current.totalFrames,
+                energy = energy,
+                breathiness = breathiness,
+                voicing = voicing,
+                tension = tension,
+                frameMs = predicted.frameMs,
+                headFrames = predicted.headFrames,
+                tailFrames = predicted.tailFrames,
+                totalFrames = predicted.totalFrames,
             };
         }
 
-        internal static List<VariancePatchRange> FindChangedRanges(
-            IReadOnlyList<float> previousPitch,
-            IReadOnlyList<float> currentPitch,
-            float epsilon) {
-            var ranges = new List<VariancePatchRange>();
-            int length = Math.Min(previousPitch.Count, currentPitch.Count);
-            int start = -1;
-            for (int i = 0; i < length; ++i) {
-                bool changed = Math.Abs(previousPitch[i] - currentPitch[i]) > epsilon;
-                if (changed && start < 0) {
-                    start = i;
-                } else if (!changed && start >= 0) {
-                    ranges.Add(new VariancePatchRange(start, i));
-                    start = -1;
-                }
+        static float[]? ComposeEnabledChannel(
+            float[]? previous,
+            float[]? predicted,
+            IReadOnlyList<bool> mask,
+            int frameCount,
+            ref int channel,
+            int channelCount) {
+            if (previous == null && predicted == null) {
+                return null;
             }
-            if (start >= 0) {
-                ranges.Add(new VariancePatchRange(start, length));
-            }
-            return ranges;
+            int currentChannel = channel++;
+            return ComposeChannel(previous, predicted, mask, frameCount, currentChannel, channelCount);
         }
 
-        internal static float[] BuildWeights(int length, IReadOnlyList<VariancePatchRange> ranges, int crossfadeFrames) {
-            var weights = new float[length];
-            foreach (var range in ranges) {
-                int start = Math.Clamp(range.start, 0, length);
-                int end = Math.Clamp(range.end, start, length);
-                for (int i = start; i < end; ++i) {
-                    weights[i] = 1f;
-                }
-                int leftStart = Math.Max(0, start - crossfadeFrames);
-                int leftLength = start - leftStart;
-                for (int i = leftStart; i < start; ++i) {
-                    float weight = (float)(i - leftStart + 1) / (leftLength + 1);
-                    weights[i] = Math.Max(weights[i], weight);
-                }
-                int rightEnd = Math.Min(length, end + crossfadeFrames);
-                int rightLength = rightEnd - end;
-                for (int i = end; i < rightEnd; ++i) {
-                    float weight = 1f - (float)(i - end + 1) / (rightLength + 1);
-                    weights[i] = Math.Max(weights[i], weight);
-                }
+        static float[]? ComposeChannel(
+            float[]? previous,
+            float[]? predicted,
+            IReadOnlyList<bool> mask,
+            int frameCount,
+            int channel,
+            int channelCount) {
+            if (previous == null || predicted == null) {
+                return predicted?.ToArray();
             }
-            return weights;
-        }
-
-        internal static float[]? Blend(float[]? previous, float[]? current, IReadOnlyList<float> weights) {
-            if (previous == null || current == null || previous.Length != current.Length || previous.Length != weights.Count) {
-                return current?.ToArray();
+            if (previous.Length != frameCount || predicted.Length != frameCount) {
+                return predicted.ToArray();
             }
-            var result = new float[current.Length];
-            for (int i = 0; i < result.Length; ++i) {
-                result[i] = previous[i] * (1f - weights[i]) + current[i] * weights[i];
+            var result = previous.ToArray();
+            for (int frame = 0; frame < frameCount; frame++) {
+                if (mask[frame * channelCount + channel]) {
+                    result[frame] = predicted[frame];
+                }
             }
             return result;
+        }
+
+        internal static bool IsMetadataCompatible(VarianceResult previous, VarianceResult current) {
+            return previous.totalFrames == current.totalFrames &&
+                previous.headFrames == current.headFrames &&
+                previous.tailFrames == current.tailFrames &&
+                Math.Abs(previous.frameMs - current.frameMs) < 1e-4f;
+        }
+
+        internal static bool IsChannelLayoutCompatible(
+            VarianceResult result,
+            int totalFrames,
+            bool predictEnergy,
+            bool predictBreathiness,
+            bool predictVoicing,
+            bool predictTension) {
+            return ChannelMatches(result.energy, predictEnergy, totalFrames) &&
+                ChannelMatches(result.breathiness, predictBreathiness, totalFrames) &&
+                ChannelMatches(result.voicing, predictVoicing, totalFrames) &&
+                ChannelMatches(result.tension, predictTension, totalFrames);
+        }
+
+        internal static bool IsCompatible(VarianceResult previous, VarianceResult current) {
+            return IsMetadataCompatible(previous, current) &&
+                SameLength(previous.energy, current.energy) &&
+                SameLength(previous.breathiness, current.breathiness) &&
+                SameLength(previous.voicing, current.voicing) &&
+                SameLength(previous.tension, current.tension);
+        }
+
+        static bool ChannelMatches(float[]? values, bool enabled, int totalFrames) {
+            return enabled ? values?.Length == totalFrames : values == null;
+        }
+
+        static bool SameLength(float[]? a, float[]? b) {
+            return (a == null) == (b == null) && (a == null || a.Length == b!.Length);
         }
 
         internal static VarianceResult CloneResult(VarianceResult result) {
@@ -131,13 +231,6 @@ namespace OpenUtau.Core.DiffSinger {
                 tailFrames = result.tailFrames,
                 totalFrames = result.totalFrames,
             };
-        }
-
-        static bool IsMetadataCompatible(VarianceResult previous, VarianceResult current) {
-            return previous.totalFrames == current.totalFrames &&
-                previous.headFrames == current.headFrames &&
-                previous.tailFrames == current.tailFrames &&
-                Math.Abs(previous.frameMs - current.frameMs) < 1e-4f;
         }
     }
 }

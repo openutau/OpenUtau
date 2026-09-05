@@ -7,7 +7,7 @@ using Serilog;
 
 namespace OpenUtau.Plugin.Builtin
 {
-    public abstract class PhonemeBasedPhonemizer : Phonemizer
+    public abstract class PhonemeBasedPhonemizer : Phonemizer, IG2pSymbols
     {
         protected Dictionary<string, string[]> vowelFallback;
         protected USinger singer;
@@ -217,6 +217,10 @@ namespace OpenUtau.Plugin.Builtin
                     position += consonantDuration;
                 }
             }
+        }
+
+        string[] IG2pSymbols.GetSymbols(Note note) {
+            return GetSymbols(note); // public API to allow access to internal plugins.
         }
     }
 }

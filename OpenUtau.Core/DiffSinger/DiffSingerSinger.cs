@@ -52,6 +52,15 @@ namespace OpenUtau.Core.DiffSinger {
         public DsPitch pitchPredictor = null;
         public DiffSingerSpeakerEmbedManager speakerEmbedManager = null;
         public DsVariance variancePredictor = null;
+        /// <summary>
+        /// Guards the lazily created native models above: building one, using one and freeing one
+        /// are mutually exclusive per singer. Locking the model instances themselves cannot do
+        /// that, because the instance to lock does not exist until it has been built and is set to
+        /// null when it is freed — so two threads could build the same model at once, or one could
+        /// go on using a model a concurrent <see cref="FreeMemory"/> had already disposed. The
+        /// result was an access violation inside onnxruntime rather than a managed exception.
+        /// </summary>
+        public object SessionLock { get; } = new object();
         public bool HasPitchPredictor => File.Exists(Path.Join(Location, "dspitch", "dsconfig.yaml"));
         public bool HasVariancePredictor => File.Exists(Path.Join(Location,"dsvariance", "dsconfig.yaml"));
 
@@ -156,14 +165,17 @@ namespace OpenUtau.Core.DiffSinger {
             return true;
         }
 
-        public override IEnumerable<UOto> GetSuggestions(string text) {
+        public override Dictionary<string, UOto> GetSuggestions(string text, bool isAlias) {
             if (text != null) {
                 text = text.ToLowerInvariant().Replace(" ", "");
             }
             bool all = string.IsNullOrEmpty(text);
             return table.Keys
                 .Where(key => all || key.Contains(text))
-                .Select(key => UOto.OfDummy(key));
+                .ToDictionary(
+                    key => key,
+                    key => UOto.OfDummy(key)
+                );
         }
 
         public override byte[] LoadPortrait() {
@@ -173,49 +185,59 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         public InferenceSession getAcousticSession() {
-            if (acousticSession is null) {
-                var acousticPath = Path.Combine(Location, dsConfig.acoustic);
-                var acousticBytes = File.ReadAllBytes(acousticPath);
-                acousticHash = XXH64.DigestOf(acousticBytes);
-                acousticSession = Onnx.getInferenceSession(acousticBytes, OnnxRunnerChoice.Default);
+            lock (SessionLock) {
+                if (acousticSession is null) {
+                    var acousticPath = Path.Combine(Location, dsConfig.acoustic);
+                    var acousticBytes = File.ReadAllBytes(acousticPath);
+                    acousticHash = XXH64.DigestOf(acousticBytes);
+                    acousticSession = Onnx.getInferenceSession(acousticBytes, OnnxRunnerChoice.Default);
+                }
+                return acousticSession;
             }
-            return acousticSession;
         }
 
         public DsVocoder getVocoder() {
-            if(vocoder is null) {
-                if(File.Exists(Path.Join(Location, "dsvocoder", "vocoder.yaml"))) {
-                    vocoder = new DsVocoder(Path.Join(Location, "dsvocoder"));
-                    return vocoder;
+            lock (SessionLock) {
+                if(vocoder is null) {
+                    if(File.Exists(Path.Join(Location, "dsvocoder", "vocoder.yaml"))) {
+                        vocoder = new DsVocoder(Path.Join(Location, "dsvocoder"));
+                        return vocoder;
+                    }
+                    vocoder = new DsVocoder(Path.Combine(PathManager.Inst.DependencyPath, dsConfig.vocoder));
                 }
-                vocoder = new DsVocoder(Path.Combine(PathManager.Inst.DependencyPath, dsConfig.vocoder));
+                return vocoder;
             }
-            return vocoder;
         }
 
         public DsPitch? getPitchPredictor(){
-            if(pitchPredictor is null) {
-                if(HasPitchPredictor){
-                    pitchPredictor = new DsPitch(Path.Join(Location, "dspitch"));
+            lock (SessionLock) {
+                if(pitchPredictor is null) {
+                    if(HasPitchPredictor){
+                        pitchPredictor = new DsPitch(Path.Join(Location, "dspitch"));
+                    }
                 }
+                return pitchPredictor;
             }
-            return pitchPredictor;
         }
-       
+
         public DiffSingerSpeakerEmbedManager getSpeakerEmbedManager(){
-            if(speakerEmbedManager is null) {
-                speakerEmbedManager = new DiffSingerSpeakerEmbedManager(dsConfig, Location);
+            lock (SessionLock) {
+                if(speakerEmbedManager is null) {
+                    speakerEmbedManager = new DiffSingerSpeakerEmbedManager(dsConfig, Location);
+                }
+                return speakerEmbedManager;
             }
-            return speakerEmbedManager;
         }
 
         public DsVariance? getVariancePredictor(){
-            if(variancePredictor is null) {
-                if(HasVariancePredictor){
-                    variancePredictor = new DsVariance(Path.Join(Location, "dsvariance"));
+            lock (SessionLock) {
+                if(variancePredictor is null) {
+                    if(HasVariancePredictor){
+                        variancePredictor = new DsVariance(Path.Join(Location, "dsvariance"));
+                    }
                 }
+                return variancePredictor;
             }
-            return variancePredictor;
         }
 
         public int PhonemeTokenize(string phoneme){
@@ -233,28 +255,16 @@ namespace OpenUtau.Core.DiffSinger {
 
         public override void FreeMemory(){
             Log.Information($"Freeing memory for singer {Id}");
-            if(acousticSession != null) {
-                lock(acousticSession) {
-                    acousticSession?.Dispose();
-                }
+            // The same lock the getters take, so a render already inside one of these models
+            // finishes before it is disposed instead of being left holding a freed handle.
+            lock (SessionLock) {
+                acousticSession?.Dispose();
                 acousticSession = null;
-            }
-            if(vocoder != null) {
-                lock(vocoder) {
-                    vocoder?.Dispose();
-                }
+                vocoder?.Dispose();
                 vocoder = null;
-            }
-            if(pitchPredictor != null) {
-                lock(pitchPredictor) {
-                    pitchPredictor?.Dispose();
-                }
+                pitchPredictor?.Dispose();
                 pitchPredictor = null;
-            }
-            if(variancePredictor != null){
-                lock(variancePredictor) {
-                    variancePredictor?.Dispose();
-                }
+                variancePredictor?.Dispose();
                 variancePredictor = null;
             }
         }

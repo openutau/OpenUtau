@@ -7,14 +7,15 @@ using OpenUtau.App.Controls;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class ExpSelectorViewModel : ViewModelBase, ICmdSubscriber {
-        [Reactive] public int Index { get; set; }
-        [Reactive] public int SelectedIndex { get; set; }
-        [Reactive] public ExpDisMode DisplayMode { get; set; }
-        [Reactive] public UExpressionDescriptor? Descriptor { get; set; }
+    public partial class ExpSelectorViewModel : ViewModelBase, ICmdSubscriber {
+        [Reactive] public partial int Index { get; set; }
+        [Reactive] public partial int SelectedIndex { get; set; }
+        [Reactive] public partial ExpDisMode DisplayMode { get; set; }
+        [Reactive] public partial UExpressionDescriptor? Descriptor { get; set; }
         public string Abbr {
             get{
                 if (Descriptor == null) {
@@ -25,8 +26,8 @@ namespace OpenUtau.App.ViewModels {
         }
         public ObservableCollection<UExpressionDescriptor> Descriptors => descriptors;
         public string Header => header.Value;
-        [Reactive] public IBrush TagBrush { get; set; }
-        [Reactive] public IBrush Background { get; set; }
+        [Reactive] public partial IBrush TagBrush { get; set; }
+        [Reactive] public partial IBrush Background { get; set; }
 
         ObservableCollection<UExpressionDescriptor> descriptors = new ObservableCollection<UExpressionDescriptor>();
         ObservableAsPropertyHelper<string> header;
@@ -39,6 +40,7 @@ namespace OpenUtau.App.ViewModels {
                 .Select(descriptor => descriptor == null ? string.Empty : descriptor.abbr.ToUpperInvariant())
                 .ToProperty(this, x => x.Header, out header);
             this.WhenAnyValue(x => x.Descriptor)
+                .OfType<UExpressionDescriptor>()
                 .Subscribe(SelectionChanged);
             this.WhenAnyValue(x => x.Index, x => x.Descriptors)
                 .Subscribe(tuple => {

@@ -41,6 +41,7 @@ namespace OpenUtau.Core.Ustx {
         public UPhoneme Next { get; set; }
         public bool Error { get; set; } = false;
         public Exception? ErrorException { get; set; }
+        Exception? durationErrorException;
 
         public override string ToString() => $"\"{phoneme}\" pos:{position}";
 
@@ -78,7 +79,17 @@ namespace OpenUtau.Core.Ustx {
             EndMs = project.timeAxis.TickPosToMsPos(part.position + End);
             Error = Duration <= 0;
             if (Error) {
-                ErrorException ??= new Exception("Phoneme duration is not positive.");
+                // The exception is remembered so it does not flicker between
+                // validates, and Validate() keeps the error visible until it
+                // clears again.
+                durationErrorException ??= new Exception("Phoneme duration is not positive.");
+                ErrorException ??= durationErrorException;
+            } else if (ReferenceEquals(ErrorException, durationErrorException)) {
+                // Duration is valid again (e.g. the phoneme offset override was
+                // moved back), so clear the stale duration error. A phonemizer
+                // response error stored in ErrorException is left untouched.
+                durationErrorException = null;
+                ErrorException = null;
             }
         }
 
@@ -126,8 +137,6 @@ namespace OpenUtau.Core.Ustx {
                         if (autoPreutter - autoOverlap > prevDur * 0.5f) {
                             maxPreutter = prevDur * 0.5f / (autoPreutter - autoOverlap) * autoPreutter;
                         }
-                    } else { // Plosive consonants
-                        maxPreutter = Math.Min(maxPreutter, prevDur * 0.9);
                     }
                     maxPreutter = Math.Min(maxPreutter, prevDur);
                     if (Prev.preutter < 5) {
@@ -137,7 +146,7 @@ namespace OpenUtau.Core.Ustx {
                     maxPreutter = gapMs;
                 }
                 if (autoPreutter > maxPreutter) {
-                    double ratio = maxPreutter / autoPreutter;
+                    double ratio = autoPreutter > 0 ? maxPreutter / autoPreutter : 0d;
                     autoPreutter = maxPreutter;
                     autoOverlap *= ratio;
                 }
@@ -148,6 +157,10 @@ namespace OpenUtau.Core.Ustx {
             preutter = Math.Max(0, autoPreutter + (preutterDelta ?? 0));
             overlap = autoOverlap + (overlapDelta ?? 0);
             if (Prev != null) {
+                if (Prev.DurationMs - preutter < 5) {
+                    var minOverlap = 5 - (Prev.DurationMs - preutter);
+                    overlap = Math.Max(overlap, minOverlap);
+                }
                 Prev.tailIntrude = adjacent ? Math.Max(preutter, preutter - overlap) : 0;
                 Prev.tailOverlap = adjacent ? Math.Max(overlap, 0) : 0;
                 overlapped = adjacent && overlap > 0;
@@ -274,6 +287,17 @@ namespace OpenUtau.Core.Ustx {
                 return null;
             }
             return track.VoiceColorExp.options[index];
+        }
+
+        public string GetVoiceColor2(UProject project, UTrack track) {
+            if (track.VoiceColor2Exp == null) {
+                return null;
+            }
+            int index = (int)GetExpression(project, track, Format.Ustx.CLRY).Item1;
+            if (index < 0 || index >= track.VoiceColor2Exp.options.Length) {
+                return null;
+            }
+            return track.VoiceColor2Exp.options[index];
         }
     }
 

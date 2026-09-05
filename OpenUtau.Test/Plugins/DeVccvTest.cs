@@ -1,7 +1,6 @@
 ﻿using OpenUtau.Api;
 using OpenUtau.Plugin.Builtin;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace OpenUtau.Plugins {
     public class DeVccvTest : PhonemizerTestBase {
@@ -23,7 +22,7 @@ namespace OpenUtau.Plugins {
         [InlineData("de_vccv",
             new string[] { "Mond", "+", "+", "+", "Licht", "+" },
             new string[] { "G3", "D3", "G3", "G3", "D3", "G3" },
-            new string[] { "- moG3", "onG3", "nt -G3", "t lG3", "lID3", "ICG3", "Ct -G3" })]
+            new string[] { "- moG3", "onG3", "nt -G3", "t lG3", "lID3", "ICD3", "Ct -G3" })]
         public void PhonemizeTest(string singerName, string[] lyrics, string[] tones, string[] aliases) {
             RunPhonemizeTest(singerName, lyrics, RepeatString(lyrics.Length, ""), tones, RepeatString(lyrics.Length, ""), aliases);
         }

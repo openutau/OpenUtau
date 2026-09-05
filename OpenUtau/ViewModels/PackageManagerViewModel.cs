@@ -4,19 +4,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using OpenUtau.Core;
-using ReactiveUI.Fody.Helpers;
-using System.Reactive;
+using ReactiveUI.SourceGenerators;
 using ReactiveUI;
+using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.ViewModels {
-    public class PackageRowViewModel : ViewModelBase {
+    public partial class PackageRowViewModel : ViewModelBase {
         public RegistrySoftware? Software { get; }
         public string Id { get; }
         public string Name { get; }
         public string Developer { get; }
         public string Version { get; }
-        [Reactive] public bool IsInstalled { get; set; }
-        [Reactive] public string InstalledVersion { get; set; } = string.Empty;
+        [Reactive] public partial bool IsInstalled { get; set; }
+        [Reactive] public partial string InstalledVersion { get; set; } = string.Empty;
 
         public bool HasRegistry => Software != null;
         public bool IsUpToDate => IsInstalled && HasRegistry && !string.IsNullOrEmpty(InstalledVersion) && InstalledVersion == Version;
@@ -32,8 +32,7 @@ namespace OpenUtau.App.ViewModels {
             Developer = (s.developers != null && s.developers.Length > 0) ? string.Join(", ", s.developers) : string.Empty;
             Version = (s.versions != null && s.versions.Length > 0) ? PackageManager.GetLatestVersionString(s.versions) : string.Empty;
 
-            this.WhenAnyValue(x => x.IsInstalled, x => x.InstalledVersion)
-                .Subscribe(_ => {
+            SubscribeExtensions.Subscribe(this.WhenAnyValue(x => x.IsInstalled, x => x.InstalledVersion), _ => {
                     this.RaisePropertyChanged(nameof(IsUpToDate));
                     this.RaisePropertyChanged(nameof(CanInstallOrUpdate));
                     this.RaisePropertyChanged(nameof(PrimaryActionLabel));
@@ -62,12 +61,12 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public class PackageManagerViewModel : ViewModelBase {
+    public partial class PackageManagerViewModel : ViewModelBase {
         public ObservableCollection<PackageRowViewModel> Available { get; } = new ObservableCollection<PackageRowViewModel>();
-        [Reactive] public string Status { get; set; } = string.Empty;
-        public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
-        public ReactiveCommand<PackageRowViewModel, Unit> InstallCommand { get; }
-        public ReactiveCommand<PackageRowViewModel, Unit> UninstallCommand { get; }
+        [Reactive] public partial string Status { get; set; } = string.Empty;
+        public ReactiveCommand<RxVoid, RxVoid> RefreshCommand { get; }
+        public ReactiveCommand<PackageRowViewModel, RxVoid> InstallCommand { get; }
+        public ReactiveCommand<PackageRowViewModel, RxVoid> UninstallCommand { get; }
 
         public PackageManagerViewModel() {
             RefreshCommand = ReactiveCommand.CreateFromTask(RefreshAsync);

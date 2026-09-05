@@ -77,7 +77,6 @@ namespace OpenUtau.Core.Voicevox {
                         using (var stream = File.Open(filePath, FileMode.Create)) {
                             config.Save(stream);
                         }
-                        //Create an empty file to read. May write information in the future?
                         File.WriteAllText(Path.Join(folderPath, "character.txt"), string.Empty);
                     }
                     vvList.Add(voicevoxConfig);

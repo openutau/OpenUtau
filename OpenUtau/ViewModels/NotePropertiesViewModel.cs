@@ -2,42 +2,42 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reactive.Linq;
 using Avalonia.Media;
 using OpenUtau.Core;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 using SharpCompress;
 using OpenUtau.Api;
+using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.ViewModels {
-    public class NotePropertiesViewModel : ViewModelBase, ICmdSubscriber {
+    public partial class NotePropertiesViewModel : ViewModelBase, ICmdSubscriber {
         public string Title { get => ThemeManager.GetString("noteproperty") + " (" + selectedNotes.Count + " notes)"; }
-        [Reactive] public string Lyric { get; set; } = string.Empty;
-        [Reactive] public string Tone { get; set; } = string.Empty;
-        [Reactive] public int Tuning { get; set; }
-        [Reactive] public FontWeight TuningFontWeight { get; set; } = FontWeight.Normal;
-        [Reactive] public float PortamentoLength { get; set; }
-        [Reactive] public float PortamentoStart { get; set; }
-        [Reactive] public int PitchCurveShape { get; set; } = -1;
-        [Reactive] public bool VibratoEnable { get; set; }
-        [Reactive] public float VibratoLength { get; set; }
-        [Reactive] public float VibratoPeriod { get; set; }
-        [Reactive] public float VibratoDepth { get; set; }
-        [Reactive] public float VibratoIn { get; set; }
-        [Reactive] public float VibratoOut { get; set; }
-        [Reactive] public float VibratoShift { get; set; }
-        [Reactive] public float VibratoDrift { get; set; }
-        [Reactive] public float VibratoVolLink { get; set; }
-        [Reactive] public float AutoVibratoNoteLength { get; set; }
-        [Reactive] public bool AutoVibratoToggle { get; set; }
-        [Reactive] public bool IsNoteSelected { get; set; } = false;
-        [Reactive] public IReadOnlyList<MenuItemViewModel>? PhonemizerMenuItems { get; set; }
-        public ReactiveCommand<string?, System.Reactive.Unit> SelectPhonemizerCommand { get; }
-        [Reactive] public bool IsPhonemizerEnabled { get; set; } = true;
+        [Reactive] public partial string Lyric { get; set; } = string.Empty;
+        [Reactive] public partial string Tone { get; set; } = string.Empty;
+        [Reactive] public partial int Tuning { get; set; }
+        [Reactive] public partial FontWeight TuningFontWeight { get; set; } = FontWeight.Normal;
+        [Reactive] public partial float PortamentoLength { get; set; }
+        [Reactive] public partial float PortamentoStart { get; set; }
+        [Reactive] public partial int PitchCurveShape { get; set; } = -1;
+        [Reactive] public partial bool VibratoEnable { get; set; }
+        [Reactive] public partial float VibratoLength { get; set; }
+        [Reactive] public partial float VibratoPeriod { get; set; }
+        [Reactive] public partial float VibratoDepth { get; set; }
+        [Reactive] public partial float VibratoIn { get; set; }
+        [Reactive] public partial float VibratoOut { get; set; }
+        [Reactive] public partial float VibratoShift { get; set; }
+        [Reactive] public partial float VibratoDrift { get; set; }
+        [Reactive] public partial float VibratoVolLink { get; set; }
+        [Reactive] public partial float AutoVibratoNoteLength { get; set; }
+        [Reactive] public partial bool AutoVibratoToggle { get; set; }
+        [Reactive] public partial bool IsNoteSelected { get; set; } = false;
+        [Reactive] public partial IReadOnlyList<MenuItemViewModel>? PhonemizerMenuItems { get; set; }
+        public ReactiveCommand<string?, RxVoid> SelectPhonemizerCommand { get; }
+        [Reactive] public partial bool IsPhonemizerEnabled { get; set; } = true;
         public string PhonemizerOverrideText {
             get {
                 string? targetId = PhonemizerOverride;
@@ -66,12 +66,12 @@ namespace OpenUtau.App.ViewModels {
                 this.RaisePropertyChanged(nameof(PhonemizerOverrideText));
             }
         }
-        [Reactive] public ObservableCollection<NotePresets.PortamentoPreset>? PortamentoPresets { get; private set; }
+        [Reactive] public partial ObservableCollection<NotePresets.PortamentoPreset>? PortamentoPresets { get; private set; }
         public NotePresets.PortamentoPreset? ApplyPortamentoPreset {
             get => appliedPortamentoPreset;
             set => this.RaiseAndSetIfChanged(ref appliedPortamentoPreset, value);
         }
-        [Reactive] public ObservableCollection<NotePresets.VibratoPreset>? VibratoPresets { get; private set; }
+        [Reactive] public partial ObservableCollection<NotePresets.VibratoPreset>? VibratoPresets { get; private set; }
         public NotePresets.VibratoPreset? ApplyVibratoPreset {
             get => appliedVibratoPreset;
             set => this.RaiseAndSetIfChanged(ref appliedVibratoPreset, value);
@@ -90,9 +90,8 @@ namespace OpenUtau.App.ViewModels {
             PortamentoPresets = new ObservableCollection<NotePresets.PortamentoPreset>(NotePresets.Default.PortamentoPresets);
             VibratoPresets = new ObservableCollection<NotePresets.VibratoPreset>(NotePresets.Default.VibratoPresets);
 
-            this.WhenAnyValue(vm => vm.ApplyPortamentoPreset)
-                .WhereNotNull()
-                .Subscribe(portamentoPreset => {
+            SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.ApplyPortamentoPreset)
+                    .OfType<NotePresets.PortamentoPreset>(), portamentoPreset => {
                     if (portamentoPreset != null) {
                         PortamentoLength = portamentoPreset.PortamentoLength;
                         PortamentoStart = portamentoPreset.PortamentoStart;
@@ -101,13 +100,13 @@ namespace OpenUtau.App.ViewModels {
                         PanelControlPressed = true;
                         SetNoteParams("PortamentoLength", portamentoPreset.PortamentoLength);
                         SetNoteParams("PortamentoStart", portamentoPreset.PortamentoStart);
+                        SetNoteParams("PortamentoPoints", portamentoPreset.PitchPoints);
                         PanelControlPressed = false;
                         DocManager.Inst.EndUndoGroup();
                     }
                 });
-            this.WhenAnyValue(vm => vm.ApplyVibratoPreset)
-                .WhereNotNull()
-                .Subscribe(vibratoPreset => {
+            SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.ApplyVibratoPreset)
+                    .OfType<NotePresets.VibratoPreset>(), vibratoPreset => {
                     if (vibratoPreset != null) {
                         DocManager.Inst.StartUndoGroup("command.vibrato.edit");
                         PanelControlPressed = true;
@@ -123,9 +122,8 @@ namespace OpenUtau.App.ViewModels {
                         DocManager.Inst.EndUndoGroup();
                     }
                 });
-            this.WhenAnyValue(vm => vm.PitchCurveShape)
-                .WhereNotNull()
-                .Subscribe(shape => {
+            SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.PitchCurveShape)
+                    .WhereNotNull(), shape => {
                     if (shape >= 0) {
                         DocManager.Inst.StartUndoGroup("command.pitch.editpoint");
                         PanelControlPressed = true;
@@ -142,8 +140,7 @@ namespace OpenUtau.App.ViewModels {
                 DocManager.Inst.EndUndoGroup();
             });
 
-            MessageBus.Current.Listen<NotesSelectionEvent>()
-                .Subscribe(e => {
+            SubscribeExtensions.Subscribe(MessageBus.Current.Listen<NotesSelectionEvent>(), e => {
                     if (PanelControlPressed) {
                         PanelControlPressed = false;
                         DocManager.Inst.EndUndoGroup();
@@ -474,11 +471,11 @@ namespace OpenUtau.App.ViewModels {
                     if (string.IsNullOrEmpty(newOverride)) {
                         newOverride = null;
                     }
-                    
+
                     DocManager.Inst.StartUndoGroup("command.property.edit");
                     foreach (UNote note in selectedNotes) {
                         if (note.PhonemizerOverride != newOverride) {
-                            DocManager.Inst.ExecuteCmd(new ChangeNotePhonemizerCommand(Part, note, newOverride)); 
+                            DocManager.Inst.ExecuteCmd(new ChangeNotePhonemizerCommand(Part, note, newOverride));
                         }
                     }
                     DocManager.Inst.EndUndoGroup();
@@ -546,6 +543,15 @@ namespace OpenUtau.App.ViewModels {
                             foreach (var pitchPoint in note.pitch.data) {
                                 DocManager.Inst.ExecuteCmd(new MovePitchPointCommand(Part, pitchPoint, deltaX, 0));
                             }
+                        }
+                    }
+                } else if (tag == "PortamentoPoints") {
+                    foreach (var note in selectedNotes) {
+                        if (obj is List<PitchPoint> list) {
+                            if (list.Count < 2) {
+                                return;
+                            }
+                            DocManager.Inst.ExecuteCmd(new SetPitchPointsCommand(Part, note, new UPitch() { data = list }));
                         }
                     }
                 } else if (tag == "PitchCurveShape") {
@@ -699,7 +705,16 @@ namespace OpenUtau.App.ViewModels {
             if (string.IsNullOrEmpty(name)) {
                 return;
             }
-            NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, (int)PortamentoLength, (int)PortamentoStart));
+            var note = selectedNotes.FirstOrDefault();
+            if (note != null) {
+                if (note.pitch.data.Count > 2) {
+                    NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, note.pitch.data));
+                } else {
+                    NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, (int)PortamentoLength, (int)PortamentoStart));
+                }
+            } else {
+                NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, (int)PortamentoLength, (int)PortamentoStart));
+            }
             NotePresets.Save();
             PortamentoPresets = new ObservableCollection<NotePresets.PortamentoPreset>(NotePresets.Default.PortamentoPresets);
         }
@@ -729,7 +744,7 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public class NotePropertyExpViewModel : ViewModelBase {
+    public partial class NotePropertyExpViewModel : ViewModelBase {
         public string Name { get; set; }
         public bool IsNumerical { get; set; } = false;
         public bool IsOptions { get; set; } = false;
@@ -739,12 +754,12 @@ namespace OpenUtau.App.ViewModels {
         public string abbr;
         public float defaultValue;
 
-        [Reactive] public bool IsNoteSelected { get; set; } = false;
-        [Reactive] public float Value { get; set; }
-        [Reactive] public int SelectedOption { get; set; }
-        [Reactive] public bool DropDownOpen { get; set; }
-        [Reactive] public bool HasValue { get; set; } = false;
-        [Reactive] public FontWeight NameFontWeight { get; set; }
+        [Reactive] public partial bool IsNoteSelected { get; set; } = false;
+        [Reactive] public partial float Value { get; set; }
+        [Reactive] public partial int SelectedOption { get; set; }
+        [Reactive] public partial bool DropDownOpen { get; set; }
+        [Reactive] public partial bool HasValue { get; set; } = false;
+        [Reactive] public partial FontWeight NameFontWeight { get; set; }
 
         private NotePropertiesViewModel parentViewmodel;
 
@@ -768,16 +783,14 @@ namespace OpenUtau.App.ViewModels {
             parentViewmodel = parent;
 
             if (IsOptions) {
-                this.WhenAnyValue(vm => vm.SelectedOption)
-                    .Subscribe(value => {
+                SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.SelectedOption), value => {
                         if (value >= 0 && DropDownOpen) {
                             parentViewmodel.SetOptionalExpressionsChanges(abbr, value);
                         }
                     });
             }
 
-            this.WhenAnyValue(vm => vm.HasValue)
-                .Subscribe(value => {
+            SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.HasValue), value => {
                     if (value) {
                         NameFontWeight = FontWeight.Bold;
                     } else {

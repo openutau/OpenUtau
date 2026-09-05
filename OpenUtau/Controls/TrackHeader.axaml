@@ -38,19 +38,19 @@
     </Style>
     <Style Selector="Slider.fader">
       <Setter Property="Foreground" Value="{Binding TrackColor.AccentColor}"/>
-      
+
       <Style Selector="^:pointerover">
-        <!--<Style Selector="^ /template/ Thumb">
-          <Setter Property="Background" Value="{Binding TrackColor.AccentColorLight}" />
-        </Style>-->
+        <Style Selector="^ /template/ Thumb">
+          <Setter Property="Background" Value="{Binding DataContext.TrackColor.AccentColorLight, RelativeSource={RelativeSource AncestorType=Slider}}"/>
+        </Style>
         <Style Selector="^ /template/ RepeatButton#PART_DecreaseButton">
           <Setter Property="Background" Value="{Binding TrackColor.AccentColorLight}" />
         </Style>
       </Style>
       <Style Selector="^:pressed">
-        <!--<Style Selector="^ /template/ Thumb">
-          <Setter Property="Background" Value="{Binding TrackColor.AccentColorDark}" />
-        </Style>-->
+        <Style Selector="^ /template/ Thumb">
+          <Setter Property="Background" Value="{Binding DataContext.TrackColor.AccentColorDark, RelativeSource={RelativeSource AncestorType=Slider}}"/>
+        </Style>
         <Style Selector="^ /template/ RepeatButton#PART_DecreaseButton">
           <Setter Property="Background" Value="{Binding TrackColor.AccentColorDark}" />
         </Style>
@@ -103,14 +103,15 @@
   <Border Margin="1,1,1,1" BorderThickness="1" BorderBrush="{Binding HeaderBorderBrush}"
            CornerRadius="2" PointerPressed="HeaderPointerPressed">
     <Grid ColumnDefinitions="auto,*,auto" Background="Transparent">
-      <Panel Grid.Column="0" VerticalAlignment="Stretch">
+      <Panel Grid.Column="0" VerticalAlignment="Stretch" Background="Transparent" PointerWheelChanged="MoveHandleScrolled"
+             PointerMoved="MoveHandleMoved" PointerPressed="MoveHandlePressed" PointerReleased="MoveHandleReleased">
         <Border BorderThickness="0,0,1,1" MaxHeight="101" VerticalAlignment="Top" CornerRadius="0,0,2,0"
-                BorderBrush="{DynamicResource NeutralAccentBrushSemi}" ClipToBounds="True">
+                BorderBrush="{DynamicResource NeutralAccentBrushSemi}" ClipToBounds="True" IsHitTestVisible="false">
           <Image Source="{Binding Avatar}" Stretch="Uniform" VerticalAlignment="Top" ToolTip.Tip="{Binding Singer}"
                 RenderOptions.BitmapInterpolationMode="HighQuality"/>
         </Border>
         <Border Background="{Binding TrackAccentColor}" Height="16" Width="22" CornerRadius="1,0,2,0"
-                HorizontalAlignment="Left" VerticalAlignment="Top">
+                HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="false">
           <TextBlock TextAlignment="Center" FontWeight="Bold"
                      Text="{Binding TrackNo}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
         </Border>

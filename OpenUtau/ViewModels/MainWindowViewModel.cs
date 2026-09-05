@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reactive;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using DynamicData.Binding;
@@ -11,20 +10,21 @@ using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
     public class PartsContextMenuArgs {
         public UPart? Part { get; set; }
         public bool IsVoicePart => Part is UVoicePart;
         public bool IsWavePart => Part is UWavePart;
-        public ReactiveCommand<UPart, Unit>? PartDeleteCommand { get; set; }
-        public ReactiveCommand<UPart, Unit>? PartRenameCommand { get; set; }
-        public ReactiveCommand<UPart, Unit>? PartGotoFileCommand { get; set; }
-        public ReactiveCommand<UPart, Unit>? PartReplaceAudioCommand { get; set; }
-        public ReactiveCommand<UPart, Unit>? PartTranscribeCommand { get; set; }
-        public ReactiveCommand<UPart, Unit>? PartMergeCommand { get; set; }
-        public ReactiveCommand<UPart, Unit>? PartSplitCommand { get; set; }
+        public ReactiveCommand<UPart, RxVoid>? PartDeleteCommand { get; set; }
+        public ReactiveCommand<UPart, RxVoid>? PartRenameCommand { get; set; }
+        public ReactiveCommand<UPart, RxVoid>? PartGotoFileCommand { get; set; }
+        public ReactiveCommand<UPart, RxVoid>? PartReplaceAudioCommand { get; set; }
+        public ReactiveCommand<UPart, RxVoid>? PartTranscribeCommand { get; set; }
+        public ReactiveCommand<UPart, RxVoid>? PartMergeCommand { get; set; }
+        public ReactiveCommand<UPart, RxVoid>? PartSplitCommand { get; set; }
         public IEnumerable<MenuItemViewModel> PartApplyPitchMenuItems { get; set; } = new List<MenuItemViewModel>();
     }
 
@@ -44,7 +44,7 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public class MainWindowViewModel : ViewModelBase, ICmdSubscriber {
+    public partial class MainWindowViewModel : ViewModelBase, ICmdSubscriber {
         public string Title => !ProjectSaved
             ? $"{AppVersion}"
             : $"{(DocManager.Inst.ChangesSaved ? "" : "*")}{AppVersion} [{DocManager.Inst.Project.FilePath}]";
@@ -54,39 +54,46 @@ namespace OpenUtau.App.ViewModels {
         /// <summary>
         ///0: welcome page, 1: tracks page
         /// </summary>
-        [Reactive] public int Page { get; set; } = 0;
+        [Reactive] public partial int Page { get; set; } = 0;
         ObservableCollectionExtended<RecentFileInfo> RecentFiles { get; } = new ObservableCollectionExtended<RecentFileInfo>();
         ObservableCollectionExtended<RecentFileInfo> TemplateFiles { get; } = new ObservableCollectionExtended<RecentFileInfo>();
-        [Reactive] public bool HasRecovery { get; set; } = false;
-        [Reactive] public string RecoveryPath { get; set; } = String.Empty;
-        [Reactive] public string RecoveryString { get; set; } = String.Empty;
+        [Reactive] public partial bool HasRecovery { get; set; } = false;
+        [Reactive] public partial string RecoveryPath { get; set; } = String.Empty;
+        [Reactive] public partial string RecoveryString { get; set; } = String.Empty;
 
-        [Reactive] public PlaybackViewModel PlaybackViewModel { get; set; }
-        [Reactive] public TracksViewModel TracksViewModel { get; set; }
-        [Reactive] public ReactiveCommand<string, Unit>? OpenRecentCommand { get; private set; }
-        [Reactive] public ReactiveCommand<string, Unit>? OpenTemplateCommand { get; private set; }
+        [Reactive] public partial PlaybackViewModel PlaybackViewModel { get; set; }
+        [Reactive] public partial TracksViewModel TracksViewModel { get; set; }
+        [Reactive] public partial ReactiveCommand<string, RxVoid>? OpenRecentCommand { get; private set; }
+        [Reactive] public partial ReactiveCommand<string, RxVoid>? OpenTemplateCommand { get; private set; }
         public ObservableCollectionExtended<MenuItemViewModel> OpenRecentMenuItems => openRecentMenuItems;
         public ObservableCollectionExtended<MenuItemViewModel> OpenTemplatesMenuItems => openTemplatesMenuItems;
         public ObservableCollectionExtended<MenuItemViewModel> TimelineContextMenuItems { get; }
             = new ObservableCollectionExtended<MenuItemViewModel>();
 
-        [Reactive] public string ClearCacheHeader { get; set; }
+        [Reactive] public partial string ClearCacheHeader { get; set; }
         public bool ProjectSaved => !string.IsNullOrEmpty(DocManager.Inst.Project.FilePath) && DocManager.Inst.Project.Saved;
-        public string AppVersion => $"OpenUtau v{System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}";
-        [Reactive] public double Progress { get; set; }
-        [Reactive] public string ProgressText { get; set; }
-        [Reactive] public bool ShowPianoRoll { get; set; }
-        [Reactive] public double PianoRollMaxHeight { get; set; }
-        [Reactive] public double PianoRollMinHeight { get; set; }
-        public ReactiveCommand<UPart, Unit> PartDeleteCommand { get; set; }
-        public ReactiveCommand<int, Unit>? AddTempoChangeCmd { get; set; }
-        public ReactiveCommand<int, Unit>? DelTempoChangeCmd { get; set; }
-        public ReactiveCommand<int, Unit>? AddTimeSigChangeCmd { get; set; }
-        public ReactiveCommand<int, Unit>? DelTimeSigChangeCmd { get; set; }
-        [Reactive] public bool CanUndo { get; set; } = false;
-        [Reactive] public bool CanRedo { get; set; } = false;
-        [Reactive] public string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
-        [Reactive] public string RedoText { get; set; } = ThemeManager.GetString("menu.edit.redo");
+        public string AppVersion {
+            get {
+                Version? version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
+                string suffix = Core.Util.ReleaseChannel.FromVersion(version) is { } channel
+                    ? $" ({channel})" : string.Empty;
+                return $"OpenUtau v{version}{suffix}";
+            }
+        }
+        [Reactive] public partial double Progress { get; set; }
+        [Reactive] public partial string ProgressText { get; set; }
+        [Reactive] public partial bool ShowPianoRoll { get; set; }
+        [Reactive] public partial double PianoRollMaxHeight { get; set; }
+        [Reactive] public partial double PianoRollMinHeight { get; set; }
+        public ReactiveCommand<UPart, RxVoid> PartDeleteCommand { get; set; }
+        public ReactiveCommand<int, RxVoid>? AddTempoChangeCmd { get; set; }
+        public ReactiveCommand<int, RxVoid>? DelTempoChangeCmd { get; set; }
+        public ReactiveCommand<int, RxVoid>? AddTimeSigChangeCmd { get; set; }
+        public ReactiveCommand<int, RxVoid>? DelTimeSigChangeCmd { get; set; }
+        [Reactive] public partial bool CanUndo { get; set; } = false;
+        [Reactive] public partial bool CanRedo { get; set; } = false;
+        [Reactive] public partial string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
+        [Reactive] public partial string RedoText { get; set; } = ThemeManager.GetString("menu.edit.redo");
 
         private ObservableCollectionExtended<MenuItemViewModel> openRecentMenuItems
             = new ObservableCollectionExtended<MenuItemViewModel>();
@@ -133,8 +140,8 @@ namespace OpenUtau.App.ViewModels {
 
             this.WhenAnyValue(vm => vm.ShowPianoRoll)
                 .Subscribe(x => {
-                    PianoRollMaxHeight = x ? double.PositiveInfinity : 0;
-                    PianoRollMinHeight = x ? ViewConstants.PianoRollMinHeight : 0;
+                    PianoRollMaxHeight = x ? double.PositiveInfinity : 0.01;
+                    PianoRollMinHeight = x ? ViewConstants.PianoRollMinHeight : 0.01;
                 });
         }
 

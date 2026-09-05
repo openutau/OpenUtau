@@ -6,58 +6,59 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using OpenUtau.Core;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 using Serilog;
 using OpenUtau.Colors;
 
 namespace OpenUtau.App.ViewModels {
     public class ThemeEditorStateChangedEvent { }
 
-    public class ThemeEditorViewModel : ViewModelBase {
+    public partial class ThemeEditorViewModel : ViewModelBase {
 
         private readonly string customThemePath;
 
         private readonly string Name;
-        [Reactive] public bool IsDarkMode { get; set; }
-        [Reactive] public Color BackgroundColor { get; set; }
-        [Reactive] public Color BackgroundColorPointerOver { get; set; }
-        [Reactive] public Color BackgroundColorPressed { get; set; }
-        [Reactive] public Color BackgroundColorDisabled { get; set; }
+        [Reactive] public partial bool IsDarkMode { get; set; }
+        [Reactive] public partial Color BackgroundColor { get; set; }
+        [Reactive] public partial Color BackgroundColorPointerOver { get; set; }
+        [Reactive] public partial Color BackgroundColorPressed { get; set; }
+        [Reactive] public partial Color BackgroundColorDisabled { get; set; }
 
-        [Reactive] public Color ForegroundColor { get; set; }
-        [Reactive] public Color ForegroundColorPointerOver { get; set; }
-        [Reactive] public Color ForegroundColorPressed { get; set; }
-        [Reactive] public Color ForegroundColorDisabled { get; set; }
+        [Reactive] public partial Color ForegroundColor { get; set; }
+        [Reactive] public partial Color ForegroundColorPointerOver { get; set; }
+        [Reactive] public partial Color ForegroundColorPressed { get; set; }
+        [Reactive] public partial Color ForegroundColorDisabled { get; set; }
 
-        [Reactive] public Color BorderColor { get; set; }
-        [Reactive] public Color BorderColorPointerOver { get; set; }
+        [Reactive] public partial Color BorderColor { get; set; }
+        [Reactive] public partial Color BorderColorPointerOver { get; set; }
 
-        [Reactive] public Color SystemAccentColor { get; set; }
-        [Reactive] public Color SystemAccentColorLight1 { get; set; }
-        [Reactive] public Color SystemAccentColorDark1 { get; set; }
+        [Reactive] public partial Color SystemAccentColor { get; set; }
+        [Reactive] public partial Color SystemAccentColorLight1 { get; set; }
+        [Reactive] public partial Color SystemAccentColorDark1 { get; set; }
 
-        [Reactive] public Color NeutralAccentColor { get; set; }
-        [Reactive] public Color NeutralAccentColorPointerOver { get; set; }
-        [Reactive] public Color AccentColor1 { get; set; }
-        [Reactive] public Color AccentColor2 { get; set; }
-        [Reactive] public Color AccentColor3 { get; set; }
+        [Reactive] public partial Color NeutralAccentColor { get; set; }
+        [Reactive] public partial Color NeutralAccentColorPointerOver { get; set; }
+        [Reactive] public partial Color AccentColor1 { get; set; }
+        [Reactive] public partial Color AccentColor2 { get; set; }
+        [Reactive] public partial Color AccentColor3 { get; set; }
 
-        [Reactive] public Color TickLineColor { get; set; }
-        [Reactive] public Color BarNumberColor { get; set; }
-        [Reactive] public Color FinalPitchColor { get; set; }
-        [Reactive] public Color TrackBackgroundAltColor { get; set; }
+        [Reactive] public partial Color TickLineColor { get; set; }
+        [Reactive] public partial Color BarNumberColor { get; set; }
+        [Reactive] public partial Color FinalPitchColor { get; set; }
+        [Reactive] public partial Color TrackBackgroundAltColor { get; set; }
 
-        [Reactive] public Color WhiteKeyColorLeft { get; set; }
-        [Reactive] public Color WhiteKeyColorRight { get; set; }
-        [Reactive] public Color WhiteKeyNameColor { get; set; }
+        [Reactive] public partial Color WhiteKeyColorLeft { get; set; }
+        [Reactive] public partial Color WhiteKeyColorRight { get; set; }
+        [Reactive] public partial Color WhiteKeyNameColor { get; set; }
 
-        [Reactive] public Color CenterKeyColorLeft { get; set; }
-        [Reactive] public Color CenterKeyColorRight { get; set; }
-        [Reactive] public Color CenterKeyNameColor { get; set; }
+        [Reactive] public partial Color CenterKeyColorLeft { get; set; }
+        [Reactive] public partial Color CenterKeyColorRight { get; set; }
+        [Reactive] public partial Color CenterKeyNameColor { get; set; }
 
-        [Reactive] public Color BlackKeyColorLeft { get; set; }
-        [Reactive] public Color BlackKeyColorRight { get; set; }
-        [Reactive] public Color BlackKeyNameColor { get; set; }
+        [Reactive] public partial Color BlackKeyColorLeft { get; set; }
+        [Reactive] public partial Color BlackKeyColorRight { get; set; }
+        [Reactive] public partial Color BlackKeyNameColor { get; set; }
 
         public ThemeEditorViewModel(string customThemePath) {
             this.customThemePath = customThemePath;

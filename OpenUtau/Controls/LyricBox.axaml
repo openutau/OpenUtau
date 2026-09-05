@@ -6,8 +6,8 @@
              x:Class="OpenUtau.App.Controls.LyricBox" Focusable="False"
              IsVisible="{Binding IsVisible}" IsEnabled="{Binding IsVisible}">
   <Grid RowDefinitions="22,Auto,Auto" Width="360" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
-    <TextBlock Classes="tips" Grid.Row="0" Margin="4" HorizontalAlignment="Left" Text="{DynamicResource tip.lyricbox.prev}" IsVisible="{Binding !IsAliasBox, Mode=OneWay}"/>
-    <TextBlock Classes="tips" Grid.Row="0" Margin="4" HorizontalAlignment="Right" Text="{DynamicResource tip.lyricbox.next}" IsVisible="{Binding !IsAliasBox, Mode=OneWay}"/>
+    <TextBlock Classes="tips" Grid.Row="0" Margin="4" HorizontalAlignment="Left" Text="{DynamicResource tip.lyricbox.prev}"/>
+    <TextBlock Classes="tips" Grid.Row="0" Margin="4" HorizontalAlignment="Right" Text="{DynamicResource tip.lyricbox.next}"/>
     <TextBlock Classes="tips" Grid.Row="0" Margin="4" HorizontalAlignment="Center" Text="{DynamicResource tip.aliasbox}" IsVisible="{Binding IsAliasBox, Mode=OneWay}"/>
     <TextBox Name="PART_Box" Grid.Row="1" Padding="4,3" Margin="0" Height="24"
              Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
@@ -18,7 +18,7 @@
                VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                BorderThickness="0" Background="Transparent"
                Margin="{DynamicResource AutoCompleteListPadding}"
-               ItemsSource="{Binding Suggestions}" SelectedItem="{Binding SelectedSuggestion}"
+               ItemsSource="{Binding Suggestions}" SelectedItem="{Binding SelectedSuggestion}" SelectionMode="Single"
                Focusable="True" KeyDown="ListBox_KeyDown">
         <ListBox.Styles>
           <Style Selector="ListBoxItem">

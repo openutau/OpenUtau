@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using OpenUtau.Core.Ustx;
@@ -73,11 +74,21 @@ namespace OpenUtau.Core.Util {
             public string Name = "Default";
             public int PortamentoLength = 80;
             public int PortamentoStart = -40;
+            public List<PitchPoint> PitchPoints = new List<PitchPoint>(); 
+            public PortamentoPreset() { }
 
             public PortamentoPreset (string name, int length, int start) {
                 Name = name;
                 PortamentoLength = length;
                 PortamentoStart = start;
+            }
+            public PortamentoPreset(string name, List<PitchPoint>points) {
+                Name = name;
+                var start = points.FirstOrDefault()?.X ?? 0;
+                var end = points.LastOrDefault()?.X ?? 0;
+                PortamentoLength = (int)(end - start);
+                PortamentoStart = (int)(start);
+                PitchPoints = points;
             }
 
             public override string ToString() => Name;

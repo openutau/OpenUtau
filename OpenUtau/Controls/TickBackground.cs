@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using OpenUtau.App.ViewModels;
 using ReactiveUI;
+using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.Controls {
     class TickBackground : TemplatedControl {

@@ -34,6 +34,8 @@ namespace OpenUtau.Classic {
             Ustx.DYN,
             Ustx.PITD,
             Ustx.CLR,
+            Ustx.CLRY,
+            Ustx.XSY,
             Ustx.SHFT,
             Ustx.VEL,
             Ustx.VOL,
@@ -63,7 +65,7 @@ namespace OpenUtau.Classic {
             };
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var resamplerItems = new List<ResamplerItem>();
             foreach (var phone in phrase.phones) {
                 resamplerItems.Add(new ResamplerItem(phrase, phone));
@@ -176,13 +178,31 @@ namespace OpenUtau.Classic {
                         }
                     }
                     AddDirects(phrase, resamplerItems, result);
-                    var source = new WaveSource(0, 0, 0, 1);
-                    source.SetSamples(result.samples);
-                    WaveFileWriter.CreateWaveFile16(wavPath, new ExportAdapter(source).ToMono(1, 0));
+                    if (result.samples != null) {
+                        var samplesCopy = (float[])result.samples.Clone();
+                        Task.Run(() => {
+                            try {
+                                var source = new WaveSource(0, 0, 0, 1);
+                                source.SetSamples(samplesCopy);
+                                WaveFileWriter.CreateWaveFile16(wavPath, new ExportAdapter(source).ToMono(1, 0));
+                            } catch (Exception e) {
+                                Serilog.Log.Error(e, $"Failed to write cache file: {wavPath}");
+                            }
+                        });
+                    }
                 }
                 progress.Complete(phrase.phones.Length, progressInfo);
                 if (result.samples != null) {
                     Renderers.ApplyDynamics(phrase, result);
+                    PlaybackManager.Inst.LiveWaveformCache[phrase.hash.ToString()] = (
+                        trackNo, 
+                        phrase.positionMs - phrase.leadingMs, 
+                        result.samples, 
+                        DateTime.Now
+                    );
+                    Task.Factory.StartNew(() => {
+                        DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                    }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
                 }
                 return result;
             });
@@ -242,3 +262,4 @@ namespace OpenUtau.Classic {
         public override string ToString() => version == 1 ? Renderers.WORLDLINE_R : Renderers.WORLDLINE_R2;
     }
 }
+

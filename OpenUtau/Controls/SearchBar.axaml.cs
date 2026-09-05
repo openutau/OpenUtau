@@ -56,7 +56,7 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        private void Box_GotFocus(object? sender, GotFocusEventArgs e) {
+        private void Box_GotFocus(object? sender, FocusChangedEventArgs e) {
             box.SelectAll();
         }
 

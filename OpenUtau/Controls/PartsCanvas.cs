@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
+using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.Controls {
     class PartsCanvas : Canvas {

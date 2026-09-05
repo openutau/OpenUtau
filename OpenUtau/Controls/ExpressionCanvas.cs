@@ -9,6 +9,7 @@ using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.ViewModels;
 using ReactiveUI;
+using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.Controls {
     public enum ExpDisMode { Hidden, Visible, Shadow };
@@ -40,6 +41,10 @@ namespace OpenUtau.App.Controls {
                 o => o.ShowRealCurve,
                 (o, v) => o.ShowRealCurve = v);
 
+        public static readonly DirectProperty<ExpressionCanvas, ExpDisMode> DisplayModeProperty =
+            AvaloniaProperty.RegisterDirect<ExpressionCanvas, ExpDisMode>(
+                nameof(DisplayMode), o => o.DisplayMode, (o, v) => o.DisplayMode = v);
+
         public double TickWidth {
             get => tickWidth;
             private set => SetAndRaise(TickWidthProperty, ref tickWidth, value);
@@ -60,12 +65,18 @@ namespace OpenUtau.App.Controls {
             get => showRealCurve;
             set => SetAndRaise(ShowRealCurveProperty, ref showRealCurve, value);
         }
+        
+        public ExpDisMode DisplayMode {
+            get => displayMode;
+            set => SetAndRaise(DisplayModeProperty, ref displayMode, value);
+        }
 
         private double tickWidth;
         private double tickOffset;
         private UVoicePart? part;
         private string key = string.Empty;
         private bool showRealCurve = true;
+        private ExpDisMode displayMode = ExpDisMode.Visible;
 
         private HashSet<UNote> selectedNotes = new HashSet<UNote>();
         private CurveSelection curveSelection = new CurveSelection();
@@ -78,6 +89,12 @@ namespace OpenUtau.App.Controls {
             circleGeometry = new EllipseGeometry(new Rect(-4.5, -4.5, 9, 9));
             MessageBus.Current.Listen<NotesRefreshEvent>()
                 .Subscribe(_ => InvalidateVisual());
+            MessageBus.Current.Listen<RealCurveRefreshEvent>()
+                .Subscribe(_ => {
+                    if (ShowRealCurve) {
+                        InvalidateVisual();
+                    }
+                });
             MessageBus.Current.Listen<NotesSelectionEvent>()
                 .Subscribe(e => {
                     selectedNotes.Clear();
@@ -99,6 +116,11 @@ namespace OpenUtau.App.Controls {
 
         public override void Render(DrawingContext context) {
             base.Render(context);
+            
+            // Skip rendering if hidden
+            if (DisplayMode == ExpDisMode.Hidden) {
+                return;
+            }
             if (Part == null) {
                 return;
             }
@@ -114,7 +136,11 @@ namespace OpenUtau.App.Controls {
             if (descriptor.max <= descriptor.min) {
                 return;
             }
-            DrawBackgroundForHitTest(context);
+            
+            if (DisplayMode != ExpDisMode.Shadow) {
+                DrawBackgroundForHitTest(context);
+            }
+            
             double leftTick = TickOffset - 480;
             double rightTick = TickOffset + Bounds.Width / TickWidth + 480;
             double optionHeight = descriptor.type == UExpressionType.Options
@@ -123,12 +149,14 @@ namespace OpenUtau.App.Controls {
             if (descriptor.type == UExpressionType.Curve) {
                 var curve = Part.curves.FirstOrDefault(c => c.descriptor == descriptor);
                 double defaultHeight = Math.Round(Bounds.Height - Bounds.Height * (descriptor.defaultValue - descriptor.min) / (descriptor.max - descriptor.min));
-                var lPen = ThemeManager.AccentPen1;
-                var lPen2 = ThemeManager.AccentPen1Thickness2;
-                var lPenSelected = ThemeManager.AccentPen2;
-                var lPen2Selected = ThemeManager.AccentPen2Thickness2;
+                
+                var lPen = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPen : ThemeManager.AccentPen1;
+                var lPen2 = DisplayMode == ExpDisMode.Shadow ? new Pen(ThemeManager.NeutralAccentBrush, 3) : ThemeManager.AccentPen1Thickness3;
+                var lPenSelected = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentPen : ThemeManager.AccentPen2;
+                var lPen2Selected = DisplayMode == ExpDisMode.Shadow ? new Pen(ThemeManager.NeutralAccentBrush, 3) : ThemeManager.AccentPen2Thickness3;
                 var lPen3 = new Pen(ThemeManager.NeutralAccentBrush, 1, new DashStyle(new double[] { 4, 4 }, 0));
-                var brush = ThemeManager.AccentBrush1;
+                var brush = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentBrush : ThemeManager.AccentBrush1;
+                
                 double x3 = Math.Round(viewModel.TickToneToPoint(leftTick, 0).X);
                 double x4 = Math.Round(viewModel.TickToneToPoint(rightTick, 0).X);
                 context.DrawLine(lPen3, new Point(x3, defaultHeight), new Point(x4, defaultHeight));
@@ -161,6 +189,12 @@ namespace OpenUtau.App.Controls {
                     index = -index - 1;
                 }
                 index = Math.Max(0, index) - 1;
+
+                // Create geometry elements for the custom curve fill
+                var fillGeometry = new PathGeometry();
+                var fillFigure = new PathFigure { IsClosed = true };
+                bool fillStarted = false;
+
                 while (index < xs.Count) {
                     float tick1 = index < 0 ? lTick : xs[index];
                     float value1 = index < 0 ? descriptor.defaultValue : ys[index];
@@ -170,6 +204,18 @@ namespace OpenUtau.App.Controls {
                     float value2 = index == xs.Count - 1 ? descriptor.defaultValue : ys[index + 1];
                     double x2 = viewModel.TickToneToPoint(tick2, 0).X;
                     double y2 = defaultHeight - Bounds.Height * (value2 - descriptor.defaultValue) / (descriptor.max - descriptor.min);
+                    
+                    if (!fillStarted) {
+                        fillFigure.StartPoint = new Point(x1, defaultHeight);
+                        fillFigure.Segments!.Add(new LineSegment { Point = new Point(x1, y1), IsStroked = false });
+                        fillStarted = true;
+                    }
+                    fillFigure.Segments!.Add(new LineSegment { Point = new Point(x2, y2), IsStroked = false });
+                    
+                    if (tick2 >= rTick || index == xs.Count - 1) {
+                        fillFigure.Segments!.Add(new LineSegment { Point = new Point(x2, defaultHeight), IsStroked = false });
+                    }
+
                     IPen pen;
                     if (curveSelection.HasValue(descriptor.abbr)) {
                         if (curveSelection.StartPoint.x <= tick1 && tick1 <= curveSelection.EndPoint.x
@@ -182,14 +228,19 @@ namespace OpenUtau.App.Controls {
                         pen = value1 == descriptor.defaultValue && value2 == descriptor.defaultValue ? lPen : lPen2;
                     }
                     context.DrawLine(pen, new Point(x1, y1), new Point(x2, y2));
-                    //using (var state = context.PushTransform(Matrix.CreateTranslation(x1, y1))) {
-                    //    context.DrawGeometry(brush, null, pointGeometry);
-                    //}
                     index++;
                     if (tick2 >= rTick) {
                         break;
                     }
                 }
+                
+                if (fillStarted) {
+                    fillGeometry.Figures!.Add(fillFigure);
+                    using (var state = context.PushOpacity(0.2)) {
+                        context.DrawGeometry(brush, null, fillGeometry);
+                    }
+                }
+
                 if (ShowRealCurve) {
                     int baseIndexL = curve.realXs.BinarySearch(lTick);
                     if (baseIndexL < 0) {
@@ -202,7 +253,6 @@ namespace OpenUtau.App.Controls {
                     }
                     int offset = baseIndexL;
                     while (offset < baseIndexR) {
-                        // negative values are breakpoints
                         int start = offset;
                         while (start < baseIndexR && curve.realYs[start] < 0) ++start;
                         int end = start;
@@ -213,15 +263,16 @@ namespace OpenUtau.App.Controls {
                         }
                         var geometry = new PathGeometry();
                         var figure = new PathFigure {
-                            IsClosed = false
+                            IsClosed = true
                         };
                         for (int i = start; i < end; ++i) {
                             float tick = curve.realXs[i];
                             float value = curve.realYs[i];
                             double x = viewModel.TickToneToPoint(tick, 0).X;
                             double y = Bounds.Height * (1 - value / 1000.0);
+                            
                             if (i == start) {
-                                figure.StartPoint = new Point(x, Bounds.Height);
+                                figure.StartPoint = new Point(x, defaultHeight);
                             }
                             figure.Segments!.Add(new LineSegment {
                                 Point = new Point(x, y),
@@ -229,7 +280,7 @@ namespace OpenUtau.App.Controls {
                             });
                             if (i == end - 1) {
                                 figure.Segments!.Add(new LineSegment {
-                                    Point = new Point(x, Bounds.Height),
+                                    Point = new Point(x, defaultHeight),
                                     IsStroked = false
                                 });
                             }
@@ -241,6 +292,16 @@ namespace OpenUtau.App.Controls {
                 }
                 return;
             }
+            if (descriptor.type == UExpressionType.Numerical) {
+                double p1 = Math.Round(viewModel.TickToneToPoint(leftTick, 0).X);
+                double p2 = Math.Round(viewModel.TickToneToPoint(rightTick, 0).X);
+                var dashedPen = new Pen(ThemeManager.NeutralAccentBrushSemi, 1, new DashStyle(new double[] { 4, 4 }, 0));
+                double defaultHeight = Math.Round(Bounds.Height - Bounds.Height * (descriptor.defaultValue - descriptor.min) / (descriptor.max - descriptor.min));
+                context.DrawLine(dashedPen, new Point(p1, defaultHeight), new Point(p2, defaultHeight));
+            }
+            var shadowHPen = new Pen(ThemeManager.NeutralAccentBrush, 3);
+            var shadowVPen = new Pen(ThemeManager.NeutralAccentBrush, 3);
+
             foreach (var phoneme in Part.phonemes) {
                 if (phoneme.Error || phoneme.Parent == null) {
                     continue;
@@ -251,17 +312,36 @@ namespace OpenUtau.App.Controls {
                     continue;
                 }
                 var note = phoneme.Parent;
-                var hPen = selectedNotes.Contains(note) ? ThemeManager.AccentPen2Thickness2 : ThemeManager.AccentPen1Thickness2;
-                var vPen = selectedNotes.Contains(note) ? ThemeManager.AccentPen2Thickness3 : ThemeManager.AccentPen1Thickness3;
-                var brush = selectedNotes.Contains(note) ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
+                
+                var hPen = DisplayMode == ExpDisMode.Shadow ? shadowHPen : (selectedNotes.Contains(note) ? ThemeManager.AccentPen2Thickness3 : ThemeManager.AccentPen1Thickness3);
+                var vPen = DisplayMode == ExpDisMode.Shadow ? shadowVPen : (selectedNotes.Contains(note) ? ThemeManager.AccentPen2Thickness3 : ThemeManager.AccentPen1Thickness3);
+                var brush = DisplayMode == ExpDisMode.Shadow ? ThemeManager.NeutralAccentBrush : (selectedNotes.Contains(note) ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1);
+                
                 var (value, overriden) = phoneme.GetExpression(project, track, Key);
                 double x1 = Math.Round(viewModel.TickToneToPoint(phoneme.position, 0).X);
                 double x2 = Math.Round(viewModel.TickToneToPoint(phoneme.End, 0).X);
+                
                 if (descriptor.type == UExpressionType.Numerical) {
                     double valueHeight = Math.Round(Bounds.Height - Bounds.Height * (value - descriptor.min) / (descriptor.max - descriptor.min));
                     double zeroHeight = Math.Round(Bounds.Height - Bounds.Height * (0f - descriptor.min) / (descriptor.max - descriptor.min));
+                    
+                    double rectX = x1;
+                    double rectY = Math.Min(zeroHeight, valueHeight);
+                    double rectHeight = Math.Abs(zeroHeight - valueHeight);
+                    double rectWidth = Math.Max(0, Math.Max(x1, x2) - rectX);
+                    var fillRect = new Rect(rectX, rectY, rectWidth, rectHeight);
+                    
+                    // Use 20% opacity if edited, 10% opacity if default
+                    double fillOpacity = overriden ? 0.20 : 0.10;
+
+                    using (var state = context.PushOpacity(fillOpacity)) {
+                        context.DrawRectangle(brush, null, fillRect);
+                    }
+
+                    // Vertical and horizontal lines
                     context.DrawLine(vPen, new Point(x1 + 0.5, zeroHeight + 0.5), new Point(x1 + 0.5, valueHeight + 3));
-                    context.DrawLine(hPen, new Point(x1 + 3, valueHeight), new Point(Math.Max(x1 + 3, x2 - 3), valueHeight));
+                    context.DrawLine(hPen, new Point(x1 + 3, valueHeight), new Point(Math.Max(x1 + 3, x2), valueHeight));
+                    
                     using (var state = context.PushTransform(Matrix.CreateTranslation(x1 + 0.5, valueHeight))) {
                         context.DrawGeometry(overriden ? brush : ThemeManager.BackgroundBrush, vPen, pointGeometry);
                     }
@@ -281,7 +361,8 @@ namespace OpenUtau.App.Controls {
                     }
                 }
             }
-            if (descriptor.type == UExpressionType.Options) {
+            
+            if (descriptor.type == UExpressionType.Options && DisplayMode != ExpDisMode.Shadow) {
                 for (int i = 0; i < descriptor.options.Length; ++i) {
                     string option = descriptor.options[i];
                     if (string.IsNullOrEmpty(option)) {

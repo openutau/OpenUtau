@@ -144,7 +144,7 @@ namespace OpenUtau.App.ViewModels {
             return hits;
         }
 
-        public PitchPointHitInfo HitTestPitchPoint(Point point) {
+        public PitchPointHitInfo HitTestPitchPoint(Point point, bool pitchPointTool) {
             if (viewModel.Part == null || !viewModel.ShowPitch) {
                 return default;
             }
@@ -178,7 +178,17 @@ namespace OpenUtau.App.ViewModels {
                         // Hit test curve
                         double castY;
                         CubicSplineSegment? curve = null;
-                        if (note.pitch.data.Count > 2 && note.pitch.data[i - 1].shape == PitchPointShape.sp) {
+                        if (pitchPointTool) {
+                            double msX = timeAxis.TickPosToMsPos(viewModel.PointToTick(point) + viewModel.Part.position) - note.PositionMs;
+                            double decCentY = (viewModel.PointToToneDouble(point) - note.AdjustedTone) * 10;
+                            return new PitchPointHitInfo() {
+                                Note = note,
+                                Index = i - 1,
+                                OnPoint = false,
+                                X = (float)msX,
+                                Y = (float)decCentY,
+                            };
+                        } else if (note.pitch.data.Count > 2 && note.pitch.data[i - 1].shape == PitchPointShape.sp) {
                             double x2 = x, y2 = y;
                             if (i == 1) {
                                 if (note.pitch.data[0].X > 0) {
@@ -267,7 +277,9 @@ namespace OpenUtau.App.ViewModels {
                 return null;
             }
             double tick = viewModel.PointToTick(point);
-            var phrase = viewModel.Part.renderPhrases.FirstOrDefault(p => p.end >= tick);
+            double absTick = tick + viewModel.Part.position;
+
+            var phrase = viewModel.Part.renderPhrases.FirstOrDefault(p => p.end >= absTick);
             if (phrase == null) {
                 phrase = viewModel.Part.renderPhrases.Last();
             }
@@ -275,7 +287,8 @@ namespace OpenUtau.App.ViewModels {
                 return null;
             }
             var curve = phrase.pitchesBeforeDeviation;
-            var pitchIndex = (int)Math.Round((tick - phrase.position + phrase.leading) / 5);
+            int phraseStartRel = phrase.position - viewModel.Part.position;
+            var pitchIndex = (int)Math.Round((tick - phraseStartRel + phrase.leading) / 5.0);
             pitchIndex = Math.Clamp(pitchIndex, 0, curve.Length - 1);
             return curve[pitchIndex];
         }
@@ -348,53 +361,56 @@ namespace OpenUtau.App.ViewModels {
             result.point = mousePos;
             double leftTick = viewModel.TickOffset - 480;
             double rightTick = leftTick + viewModel.ViewportTicks + 480;
-            foreach (var phoneme in viewModel.Part.phonemes) {
-                double leftBound = timeAxis.MsPosToTickPos(phoneme.PositionMs - phoneme.preutter) - viewModel.Part.position;
-                double rightBound = phoneme.End;
-                var note = phoneme.Parent;
-                if (leftBound >= rightTick || rightBound <= leftTick || note.Error || note.OverlapError) {
-                    continue;
-                }
-                // p0 Preutter
-                int p0Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[0].X) - viewModel.Part.position;
-                double p0x = viewModel.TickToneToPoint(p0Tick, 0).X;
-                var point = new Point(p0x, 60 - phoneme.envelope.data[0].Y * 0.24 - 1);
-                if (WithIn(point, mousePos, 3)) {
-                    result.phoneme = phoneme;
-                    result.hit = true;
-                    result.hitPreutter = true;
-                    return result;
-                }
-                // p1 AttackTime
-                int p1Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[1].X) - viewModel.Part.position;
-                double p1x = viewModel.TickToneToPoint(p1Tick, 0).X;
-                point = new Point(p1x, 60 - phoneme.envelope.data[1].Y * 0.24);
-                if (WithIn(point, mousePos, 3)) {
-                    result.phoneme = phoneme;
-                    result.hit = true;
-                    result.hitAttackTime = true;
-                    return result;
-                }
-                // p3 ReleaseTime
-                int p3Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[3].X) - viewModel.Part.position;
-                double p3x = viewModel.TickToneToPoint(p3Tick, 0).X;
-                point = new Point(p3x, 60 - phoneme.envelope.data[3].Y * 0.24);
-                if (WithIn(point, mousePos, 3)) {
-                    result.phoneme = phoneme;
-                    result.hit = true;
-                    result.hitReleaseTime = true;
-                    return result;
-                }
-                // p4 Overlap
-                if (phoneme.Next == null || phoneme.Next.position != phoneme.End) continue;
-                int p4Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[4].X) - viewModel.Part.position;
-                double p4x = viewModel.TickToneToPoint(p4Tick, 0).X;
-                point = new Point(p4x, 60 - phoneme.envelope.data[4].Y * 0.24 - 1);
-                if (WithIn(point, mousePos, 3)) {
-                    result.phoneme = phoneme;
-                    result.hit = true;
-                    result.hitOverlap = true;
-                    return result;
+            // DiffSinger ignores envelope handles, so skip hit-testing them (position line is still draggable).
+            if (!PhonemeUIRender.IsDiffSinger(viewModel.Part)) {
+                foreach (var phoneme in viewModel.Part.phonemes) {
+                    double leftBound = timeAxis.MsPosToTickPos(phoneme.PositionMs - phoneme.preutter) - viewModel.Part.position;
+                    double rightBound = phoneme.End;
+                    var note = phoneme.Parent;
+                    if (leftBound >= rightTick || rightBound <= leftTick || note.Error || note.OverlapError) {
+                        continue;
+                    }
+                    // p0 Preutter
+                    int p0Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[0].X) - viewModel.Part.position;
+                    double p0x = viewModel.TickToneToPoint(p0Tick, 0).X;
+                    var point = new Point(p0x, 60 - phoneme.envelope.data[0].Y * 0.24 - 1);
+                    if (WithIn(point, mousePos, 3)) {
+                        result.phoneme = phoneme;
+                        result.hit = true;
+                        result.hitPreutter = true;
+                        return result;
+                    }
+                    // p1 AttackTime
+                    int p1Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[1].X) - viewModel.Part.position;
+                    double p1x = viewModel.TickToneToPoint(p1Tick, 0).X;
+                    point = new Point(p1x, 60 - phoneme.envelope.data[1].Y * 0.24);
+                    if (WithIn(point, mousePos, 3)) {
+                        result.phoneme = phoneme;
+                        result.hit = true;
+                        result.hitAttackTime = true;
+                        return result;
+                    }
+                    // p3 ReleaseTime
+                    int p3Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[3].X) - viewModel.Part.position;
+                    double p3x = viewModel.TickToneToPoint(p3Tick, 0).X;
+                    point = new Point(p3x, 60 - phoneme.envelope.data[3].Y * 0.24);
+                    if (WithIn(point, mousePos, 3)) {
+                        result.phoneme = phoneme;
+                        result.hit = true;
+                        result.hitReleaseTime = true;
+                        return result;
+                    }
+                    // p4 Overlap
+                    if (phoneme.Next == null || phoneme.Next.position != phoneme.End) continue;
+                    int p4Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[4].X) - viewModel.Part.position;
+                    double p4x = viewModel.TickToneToPoint(p4Tick, 0).X;
+                    point = new Point(p4x, 60 - phoneme.envelope.data[4].Y * 0.24 - 1);
+                    if (WithIn(point, mousePos, 3)) {
+                        result.phoneme = phoneme;
+                        result.hit = true;
+                        result.hitOverlap = true;
+                        return result;
+                    }
                 }
             }
             foreach (var phoneme in viewModel.Part.phonemes) {
@@ -420,7 +436,7 @@ namespace OpenUtau.App.ViewModels {
                 }
                 var left = timeAxis.MsPosToTickPos(phoneme.PositionMs - phoneme.preutter + (phoneme.overlap / 2)) - viewModel.Part.position;
                 var leftPoint = viewModel.TickToneToPoint(left, 0).X;
-                var right = timeAxis.MsPosToTickPos(phoneme.EndMs - phoneme.tailIntrude + (phoneme.tailOverlap /2)) - viewModel.Part.position;
+                var right = timeAxis.MsPosToTickPos(phoneme.EndMs - phoneme.tailIntrude + (phoneme.tailOverlap / 2)) - viewModel.Part.position;
                 var rightPoint = viewModel.TickToneToPoint(right, 0).X;
                 if (leftPoint <= mousePos.X && mousePos.X <= rightPoint && mousePos.Y >= 36) {
                     result.phoneme = phoneme;
@@ -461,7 +477,7 @@ namespace OpenUtau.App.ViewModels {
                 if (string.IsNullOrEmpty(phonemeText)) {
                     continue;
                 }
-                (double textX, double textY, Size size, TextLayout textLayout) 
+                (double textX, double textY, Size size, TextLayout textLayout)
                     = PhonemeUIRender.AliasPosition(viewModel, phoneme, langCode, ref lastTextEndX, ref raiseText);
                 var rect = new Rect(new Point(textX - 2, textY + 1.5), size);
                 if (rect.Contains(mousePos)) {

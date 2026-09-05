@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Text;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace OpenUtau.Classic {
     public class VoicebankLoaderTest {

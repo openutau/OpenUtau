@@ -7,6 +7,7 @@ using Avalonia.Media;
 using OpenUtau.Core;
 using OpenUtau.Core.Util;
 using ReactiveUI;
+using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.Controls {
     class TrackBackground : TemplatedControl {

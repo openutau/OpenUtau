@@ -6,7 +6,8 @@ using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.ViewModels {
     public class CurveCopyEvent { }
@@ -23,8 +24,8 @@ namespace OpenUtau.ViewModels {
         CurveEraserTool
     }
 
-    public class CurveViewModel : ViewModelBase, ICmdSubscriber {
-        [Reactive] public int CurveToolIndex { get; set; } = 1;
+    public partial class CurveViewModel : ViewModelBase, ICmdSubscriber {
+        [Reactive] public partial int CurveToolIndex { get; set; } = 1;
 
         public CurveTools CurveTool => (CurveTools)CurveToolIndex;
         public bool IsSelected(string abbr) => selection.HasValue(abbr);

@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive;
 using Avalonia.Input;
 using Avalonia.Threading;
 using DynamicData.Binding;
@@ -12,7 +11,8 @@ using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using OpenUtau.ViewModels;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
     public class PhonemeMouseoverEvent {
@@ -42,11 +42,11 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public class PianoRollViewModel : ViewModelBase, ICmdSubscriber {
+    public partial class PianoRollViewModel : ViewModelBase, ICmdSubscriber {
 
-        [Reactive] public NotesViewModel NotesViewModel { get; set; }
-        [Reactive] public PlaybackViewModel? PlaybackViewModel { get; set; }
-        [Reactive] public CurveViewModel CurveViewModel { get; set; }
+        [Reactive] public partial NotesViewModel NotesViewModel { get; set; }
+        [Reactive] public partial PlaybackViewModel? PlaybackViewModel { get; set; }
+        [Reactive] public partial CurveViewModel CurveViewModel { get; set; }
 
         public double Width => Preferences.Default.PianorollWindowSize.Width;
         public double Height => Preferences.Default.PianorollWindowSize.Height;
@@ -68,6 +68,7 @@ namespace OpenUtau.App.ViewModels {
         public bool PlaybackAutoScroll1 { get => Preferences.Default.PlaybackAutoScroll == 1 ? true : false; }
         public bool PlaybackAutoScroll2 { get => Preferences.Default.PlaybackAutoScroll == 2 ? true : false; }
         public bool PianoRollDetached { get => Preferences.Default.DetachPianoRoll; }
+        public bool HideMenuItemVisible => !Preferences.Default.DetachPianoRoll;
         public bool ShowPhonemizerTags {
             get => Preferences.Default.ShowPhonemizerTags;
             set {
@@ -78,9 +79,9 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public EditTool EditTool { get; set; } = Preferences.Default.EditTool;
-        [Reactive] public int ToolIndex { get; set; } = Preferences.Default.EditTool.BaseTool;
-        [Reactive] public int PenToolIndex { get; set; } = Preferences.Default.EditTool.PenToolVariation;
-        [Reactive] public bool PitchOverwrite { get; set; } = Preferences.Default.EditTool.OverwritePitch;
+        [Reactive] public partial int ToolIndex { get; set; } = Preferences.Default.EditTool.BaseTool;
+        [Reactive] public partial int PenToolIndex { get; set; } = Preferences.Default.EditTool.PenToolVariation;
+        [Reactive] public partial bool PitchOverwrite { get; set; } = Preferences.Default.EditTool.OverwritePitch;
 
         public ObservableCollectionExtended<MenuItemViewModel> LegacyPlugins { get; private set; }
             = new ObservableCollectionExtended<MenuItemViewModel>();
@@ -97,25 +98,25 @@ namespace OpenUtau.App.ViewModels {
         public Dictionary<Key, MenuItemViewModel> LegacyPluginShortcuts { get; private set; }
             = new Dictionary<Key, MenuItemViewModel>();
 
-        [Reactive] public double Progress { get; set; }
-        [Reactive] public bool CanUndo { get; set; } = false;
-        [Reactive] public bool CanRedo { get; set; } = false;
-        [Reactive] public string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
-        [Reactive] public string RedoText { get; set; } = ThemeManager.GetString("menu.edit.redo");
+        [Reactive] public partial double Progress { get; set; }
+        [Reactive] public partial bool CanUndo { get; set; } = false;
+        [Reactive] public partial bool CanRedo { get; set; } = false;
+        [Reactive] public partial string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
+        [Reactive] public partial string RedoText { get; set; } = ThemeManager.GetString("menu.edit.redo");
 
-        public ReactiveCommand<NoteHitInfo, Unit> NoteDeleteCommand { get; set; }
-        public ReactiveCommand<NoteHitInfo, Unit> NoteCopyCommand { get; set; }
-        public ReactiveCommand<NoteHitInfo, Unit> ClearPhraseCacheCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitEaseInOutCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitLinearCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitEaseInCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitEaseOutCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitSplineCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitSnapCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitDelCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitAddCommand { get; set; }
+        public ReactiveCommand<NoteHitInfo, RxVoid> NoteDeleteCommand { get; set; }
+        public ReactiveCommand<NoteHitInfo, RxVoid> NoteCopyCommand { get; set; }
+        public ReactiveCommand<NoteHitInfo, RxVoid> ClearPhraseCacheCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitEaseInOutCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitLinearCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitEaseInCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitEaseOutCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitSplineCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitSnapCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitDelCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitAddCommand { get; set; }
 
-        private ReactiveCommand<Classic.Plugin, Unit> legacyPluginCommand;
+        private ReactiveCommand<Classic.Plugin, RxVoid> legacyPluginCommand;
 
         public PianoRollViewModel() {
             NotesViewModel = new NotesViewModel();

@@ -41,10 +41,14 @@ namespace OpenUtau.Core {
                 CachePath = Path.Combine(cacheHome, "OpenUtau");
                 HomePathIsAscii = true;
             } else {
-                string exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-                IsInstalled = File.Exists(Path.Combine(exePath, "installed.txt"));
+                // AppContext.BaseDirectory correctly resolves to the application's output
+                // directory in both normal execution (portable/installed mode) and during
+                // dotnet test, unlike Process.MainModule which points to testhost.exe
+                // during tests.
+                string appDir = Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
+                IsInstalled = File.Exists(Path.Combine(appDir, "installed.txt"));
                 if (!IsInstalled) {
-                    DataPath = exePath;
+                    DataPath = appDir;
                 } else {
                     string dataHome = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
                     DataPath = Path.Combine(dataHome, "OpenUtau");
@@ -141,6 +145,16 @@ namespace OpenUtau.Core {
                     Log.Error(e, $"Failed to delete dir {dir}");
                 }
             }
+            OpenUtau.Core.PlaybackManager.Inst.StopPlayback();
+            OpenUtau.Core.PlaybackManager.Inst.LiveWaveformCache.Clear();
+            if (OpenUtau.Core.DocManager.Inst.Project != null) {
+                foreach (var part in OpenUtau.Core.DocManager.Inst.Project.parts) {
+                    if (part is OpenUtau.Core.Ustx.UVoicePart voicePart) {
+                        voicePart.Mix = null!; 
+                    }
+                }
+            }
+            OpenUtau.Core.DocManager.Inst.ExecuteCmd(new OpenUtau.Core.WaveformReadyNotification());
         }
 
         readonly static string[] sizes = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };

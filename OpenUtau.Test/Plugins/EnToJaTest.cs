@@ -3,7 +3,6 @@ using System;
 using OpenUtau.Api;
 using OpenUtau.Plugin.Builtin;
 using Xunit;
-using Xunit.Abstractions;
 using System.Linq;
 
 namespace OpenUtau.Plugins {

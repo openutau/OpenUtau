@@ -13,7 +13,7 @@
     <StackPanel Orientation="Horizontal" Grid.Row="0">
       <TextBlock Text="{DynamicResource lyricsreplace.before}" />
       <TextBox Text="{Binding OldValue}" MinWidth="200" Margin="10,0"
-               Watermark="{DynamicResource lyricsreplace.regex}"/>
+               PlaceholderText="{DynamicResource lyricsreplace.regex}"/>
     </StackPanel>
 
     <StackPanel Orientation="Horizontal" Grid.Row="2">

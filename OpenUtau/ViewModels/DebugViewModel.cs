@@ -3,14 +3,14 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reactive;
 using System.Text;
 using Avalonia.Data.Converters;
 using DynamicData.Binding;
 using OpenUtau.App.Views;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
@@ -39,7 +39,7 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public class DebugViewModel : ViewModelBase {
+    public partial class DebugViewModel : ViewModelBase {
 
         private DebugWindow? window;
 
@@ -121,10 +121,10 @@ namespace OpenUtau.App.ViewModels {
             }
         }
 
-        [Reactive] public LogEventLevel LogEventLevel { get; set; }
+        [Reactive] public partial LogEventLevel LogEventLevel { get; set; }
         public ObservableCollection<LogEvent> LogEvents => Sink.Inst.LogEvents;
-        public ReactiveCommand<Unit, Unit> ReverseLogOrderCommand { get; private set; }
-        public ReactiveCommand<Unit, Unit> CopyLogCommand { get; private set; }
+        public ReactiveCommand<RxVoid, RxVoid> ReverseLogOrderCommand { get; private set; }
+        public ReactiveCommand<RxVoid, RxVoid> CopyLogCommand { get; private set; }
 
         public void Clear() {
             Sink.Inst.LogEvents.Clear();

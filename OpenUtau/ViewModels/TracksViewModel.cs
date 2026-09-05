@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Linq;
 using Avalonia;
 using DynamicData;
 using DynamicData.Binding;
@@ -9,7 +8,8 @@ using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
     public class TracksRefreshEvent { }
@@ -60,24 +60,24 @@ namespace OpenUtau.App.ViewModels {
         public PartRedrawEvent(UPart part) { this.part = part; }
     }
 
-    public class TracksViewModel : ViewModelBase, ICmdSubscriber {
+    public partial class TracksViewModel : ViewModelBase, ICmdSubscriber {
         public UProject Project => DocManager.Inst.Project;
-        [Reactive] public Rect Bounds { get; set; }
+        [Reactive] public partial Rect Bounds { get; set; }
         public int TickCount => Math.Max(Project.timeAxis.BarBeatToTickPos(32, 0), Project.EndTick + 23040);
         public int TrackCount => Math.Max(20, Project.tracks.Count + 1);
-        [Reactive] public double TickWidth { get; set; }
+        [Reactive] public partial double TickWidth { get; set; }
         public double TrackHeightMin => ViewConstants.TrackHeightMin;
         public double TrackHeightMax => ViewConstants.TrackHeightMax;
-        [Reactive] public double TrackHeight { get; set; }
-        [Reactive] public double TickOffset { get; set; }
-        [Reactive] public double TrackOffset { get; set; }
-        [Reactive] public int SnapDiv { get; set; }
-        [Reactive] public int SnapUnit { get; set; }
+        [Reactive] public partial double TrackHeight { get; set; }
+        [Reactive] public partial double TickOffset { get; set; }
+        [Reactive] public partial double TrackOffset { get; set; }
+        [Reactive] public partial int SnapDiv { get; set; }
+        [Reactive] public partial int SnapUnit { get; set; }
         public ObservableCollectionExtended<int> SnapTicks { get; } = new ObservableCollectionExtended<int>();
-        [Reactive] public double PlayPosX { get; set; }
-        [Reactive] public double PlayPosHighlightX { get; set; }
-        [Reactive] public double PlayPosHighlightWidth { get; set; }
-        [Reactive] public bool PlayPosWaitingRendering { get; set; }
+        [Reactive] public partial double PlayPosX { get; set; }
+        [Reactive] public partial double PlayPosHighlightX { get; set; }
+        [Reactive] public partial double PlayPosHighlightWidth { get; set; }
+        [Reactive] public partial bool PlayPosWaitingRendering { get; set; }
         public double ViewportTicks => viewportTicks.Value;
         public double ViewportTracks => viewportTracks.Value;
         public double SmallChangeX => smallChangeX.Value;

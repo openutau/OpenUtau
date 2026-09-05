@@ -236,7 +236,9 @@ namespace OpenUtau.Plugin.Builtin {
                 return false;
             }
 
-            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var oto)) {
+            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var otoAlt)) {
+                return true;
+            } else if (singer.TryGetMappedOto(phoneme, note.tone + toneShift, color, out var oto)) {
                 return true;
             } else if (singer.TryGetMappedOto(phoneme, note.tone, color, out oto)) {
                 return true;
@@ -251,7 +253,10 @@ namespace OpenUtau.Plugin.Builtin {
             var toneShift = attr.toneShift ?? GetParentToneShift();
             int? alt = attr.alternate ?? GetParentAlternate();
 
-            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var oto)) {
+
+            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var otoAlt)) {
+                return otoAlt.Alias;
+            } else if (singer.TryGetMappedOto(phoneme, note.tone + toneShift, color, out var oto)) {
                 return oto.Alias;
             } else if (singer.TryGetMappedOto(phoneme, note.tone, color, out oto)) {
                 return oto.Alias;

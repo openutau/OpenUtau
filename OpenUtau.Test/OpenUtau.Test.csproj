@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <PropertyGroup>
     <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
@@ -11,13 +11,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia.Headless.XUnit" Version="11.2.4" />
+    <PackageReference Include="Avalonia.Headless.XUnit" Version="12.1.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.2" />
-    <PackageReference Include="System.Text.Json" Version="9.0.2" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.2.2">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -25,6 +23,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.v3.common" Version="3.2.2" />
+    <PackageReference Include="xunit.v3.extensibility.core" Version="3.2.2" />
   </ItemGroup>
 
   <ItemGroup>

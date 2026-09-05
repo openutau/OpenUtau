@@ -1,7 +1,6 @@
 ﻿using OpenUtau.Api;
 using OpenUtau.Plugin.Builtin;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace OpenUtau.Plugins {
     public class EnArpaTest : PhonemizerTestBase {

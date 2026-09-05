@@ -5,26 +5,27 @@ using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    class NoteDefaultsViewModel : ViewModelBase {
+    partial class NoteDefaultsViewModel : ViewModelBase {
 
-        [Reactive] public string? DefaultLyric { get; set; }
-        [Reactive] public string? SplittedLyric { get; set; }
-        [Reactive] public int CurrentPortamentoLength { get; set; }
-        [Reactive] public int CurrentPortamentoStart { get; set; }
-        [Reactive] public int CurrentPitchShape { get; set; }
-        [Reactive] public float CurrentVibratoLength { get; set; }
-        [Reactive] public float CurrentVibratoPeriod { get; set; }
-        [Reactive] public float CurrentVibratoDepth { get; set; }
-        [Reactive] public float CurrentVibratoIn { get; set; }
-        [Reactive] public float CurrentVibratoOut { get; set; }
-        [Reactive] public float CurrentVibratoShift { get; set; }
-        [Reactive] public float CurrentVibratoDrift { get; set; }
-        [Reactive] public float CurrentVibratoVolLink { get; set; }
-        [Reactive] public float AutoVibratoNoteLength { get; set; }
-        [Reactive] public bool AutoVibratoToggle { get; set; }
+        [Reactive] public partial string? DefaultLyric { get; set; }
+        [Reactive] public partial string? SplittedLyric { get; set; }
+        [Reactive] public partial int CurrentPortamentoLength { get; set; }
+        [Reactive] public partial int CurrentPortamentoStart { get; set; }
+        [Reactive] public partial int CurrentPitchShape { get; set; }
+        [Reactive] public partial float CurrentVibratoLength { get; set; }
+        [Reactive] public partial float CurrentVibratoPeriod { get; set; }
+        [Reactive] public partial float CurrentVibratoDepth { get; set; }
+        [Reactive] public partial float CurrentVibratoIn { get; set; }
+        [Reactive] public partial float CurrentVibratoOut { get; set; }
+        [Reactive] public partial float CurrentVibratoShift { get; set; }
+        [Reactive] public partial float CurrentVibratoDrift { get; set; }
+        [Reactive] public partial float CurrentVibratoVolLink { get; set; }
+        [Reactive] public partial float AutoVibratoNoteLength { get; set; }
+        [Reactive] public partial bool AutoVibratoToggle { get; set; }
         public List<NotePresets.PortamentoPreset>? PortamentoPresets { get; }
         public NotePresets.PortamentoPreset? ApplyPortamentoPreset {
             get => appliedPortamentoPreset;
@@ -61,6 +62,7 @@ namespace OpenUtau.App.ViewModels {
             VibratoPresets = NotePresets.Default.VibratoPresets;
 
             this.WhenAnyValue(vm => vm.DefaultLyric)
+                .OfType<String>()
                     .Subscribe(defaultLyric => {
                         if(defaultLyric == null){
                             return;
@@ -69,6 +71,7 @@ namespace OpenUtau.App.ViewModels {
                         NotePresets.Save();
                     });
             this.WhenAnyValue(vm => vm.SplittedLyric)
+                .OfType<String>()
                     .Subscribe(splittedLyric => {
                         if(splittedLyric == null){
                             return;
@@ -146,7 +149,7 @@ namespace OpenUtau.App.ViewModels {
                         NotePresets.Save();
                     });
             this.WhenAnyValue(vm => vm.ApplyPortamentoPreset)
-                .WhereNotNull()
+                .OfType<NotePresets.PortamentoPreset>()
                 .Subscribe(portamentoPreset => {
                     if (portamentoPreset != null) {
                         CurrentPortamentoLength = portamentoPreset.PortamentoLength;
@@ -157,7 +160,7 @@ namespace OpenUtau.App.ViewModels {
                     }
                 });
             this.WhenAnyValue(vm => vm.ApplyVibratoPreset)
-                .WhereNotNull()
+                .OfType<NotePresets.VibratoPreset>()
                 .Subscribe(vibratoPreset => {
                     if (vibratoPreset != null) {
                         CurrentVibratoLength = Math.Max(0, Math.Min(100, vibratoPreset.VibratoLength));

@@ -7,28 +7,26 @@
         Width="400" Height="300" CanResize="False" WindowStartupLocation="CenterScreen"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource updater.caption}" Closing="OnClosing">
-  <Grid RowDefinitions="*, 20, 20, *, *">
-    <Image Grid.Row="0" Margin="20" Width="96" Height="96"
-           VerticalAlignment="Top" HorizontalAlignment="Center"
-           Source="/Assets/open-utau.ico"/>
-    <Image Grid.Row="0" Height="16" Margin="0,136,0,10"
-           VerticalAlignment="Top" HorizontalAlignment="Center"
-           Source="/Assets/logotype.png" IsVisible="{Binding !IsDarkMode}"/>
-    <Image Grid.Row="0" Height="16" Margin="0,136,0,10"
-           VerticalAlignment="Top" HorizontalAlignment="Center"
-           Source="/Assets/logotype-w.png" IsVisible="{Binding IsDarkMode}"/>
-    <TextBlock Grid.Row="1" Margin="40,0" TextAlignment="Center"
-               Text="{Binding AppVersion}"/>
-    <TextBlock Grid.Row="2" Margin="40,0" TextAlignment="Center"
-               Text="{DynamicResource updater.description}"/>
-    <TextBlock Grid.Row="3" Margin="40,0" TextAlignment="Center" VerticalAlignment="Bottom"
-               Text="{Binding UpdaterStatus}" FontWeight="Bold"/>
-    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,20,0,20"
-                HorizontalAlignment="Center" Spacing="20">
-      <Button Width="120" Content="{DynamicResource updater.github}" Command="{Binding OnGithub}"/>
-      <Button Width="120" Content="{DynamicResource updater.update}" Command="{Binding OnUpdate}"
-              IsEnabled="{Binding UpdateAvailable}"
-              FontWeight="{Binding UpdateButtonFontWeight}"/>
-    </StackPanel>
-  </Grid>
+    <Grid RowDefinitions="Auto, Auto, Auto, *, Auto">
+        <StackPanel Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Center" Margin="20,20,20,4">
+            <Image Width="96" Height="96" Source="/Assets/open-utau.ico"/>
+            <Image Height="16" Margin="0,8,0,0"
+                   Source="/Assets/logotype.png" IsVisible="{Binding !IsDarkMode}"/>
+            <Image Height="16" Margin="0,8,0,0"
+                   Source="/Assets/logotype-w.png" IsVisible="{Binding IsDarkMode}"/>
+        </StackPanel>
+        <TextBlock Grid.Row="1" Margin="40,4" TextAlignment="Center"
+                   Text="{Binding AppVersion}"/>
+        <TextBlock Grid.Row="2" Margin="40,4" TextAlignment="Center"
+                   Text="{DynamicResource updater.description}"/>
+        <TextBlock Grid.Row="3" Margin="40,0" TextAlignment="Center" VerticalAlignment="Bottom"
+                   Text="{Binding UpdaterStatus}" FontWeight="Bold"/>
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,20,0,20"
+                    HorizontalAlignment="Center" Spacing="20">
+            <Button Width="120" Content="{DynamicResource updater.github}" Command="{Binding OnGithub}"/>
+            <Button Width="120" Content="{DynamicResource updater.update}" Command="{Binding OnUpdate}"
+                    IsEnabled="{Binding UpdateAvailable}"
+                    FontWeight="{Binding UpdateButtonFontWeight}"/>
+        </StackPanel>
+    </Grid>
 </Window>

@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using ReactiveUI;
+using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.Views {
     public partial class SliderDialog : Window {

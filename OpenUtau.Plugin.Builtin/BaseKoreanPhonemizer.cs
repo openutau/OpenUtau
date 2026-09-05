@@ -40,7 +40,10 @@ namespace OpenUtau.Plugin.Builtin {
             int? alt = attr.alternate ?? GetParentAlternate();
             if (phoneme.Equals("")) {return phoneme;}
 
-            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var oto)) {
+            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var otoAlt)) {
+                phonemeToReturn = otoAlt.Alias;
+            } 
+            else if (singer.TryGetMappedOto(phoneme, note.tone + toneShift, color, out var oto)) {
                 phonemeToReturn = oto.Alias;
             } 
             else if (singer.TryGetMappedOto(phoneme, note.tone, color, out oto)) {

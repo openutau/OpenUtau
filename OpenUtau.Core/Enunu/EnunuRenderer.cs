@@ -73,7 +73,7 @@ namespace OpenUtau.Core.Enunu {
             };
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var task = Task.Run(() => {
                 lock (lockObj) {
                     if (cancellation.IsCancellationRequested) {
@@ -185,6 +185,10 @@ namespace OpenUtau.Core.Enunu {
                         }
                         if (result.samples != null) {
                             Renderers.ApplyDynamics(phrase, result);
+                            PlaybackManager.Inst.LiveWaveformCache[phrase.hash.ToString()] = (trackNo, phrase.positionMs - phrase.leadingMs, result.samples, DateTime.Now);
+                            Task.Factory.StartNew(() => {
+                                DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                            }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
                         }
                     } else {
                         result.samples = new float[0];

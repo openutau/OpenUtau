@@ -27,7 +27,9 @@ namespace OpenUtau.Plugin.Builtin {
 
             var otos = new List<UOto>();
             foreach (string test in input) {
-                if (singer.TryGetMappedOto(test + alt, note.tone + shift, color, out var otoCandidacy)) {
+                if (singer.TryGetMappedOto(test + alt, note.tone + shift, color, out var otoAlt)) {
+                    otos.Add(otoAlt);
+                } else if (singer.TryGetMappedOto(test, note.tone + shift, color, out var otoCandidacy)) {
                     otos.Add(otoCandidacy);
                 }
             }

@@ -1,6 +1,5 @@
 ﻿using OpenUtau.Core;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace OpenUtau.Classic {
     public class VoicebankConfigTest {
