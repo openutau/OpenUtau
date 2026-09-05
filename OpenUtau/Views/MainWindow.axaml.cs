@@ -610,9 +610,20 @@ namespace OpenUtau.App.Views {
 
         void OnMenuPackageManager(object sender, RoutedEventArgs args) {
             try {
-                var dialog = new PackageManagerDialog() { DataContext = new PackageManagerViewModel() };
-                dialog.Show();
+                var desktop = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+                if (desktop == null) {
+                    return;
+                }
+                var dialog = desktop.Windows.FirstOrDefault(w => w is PackageManagerDialog) as PackageManagerDialog;
+                if (dialog == null) {
+                    dialog = new PackageManagerDialog() { DataContext = new PackageManagerViewModel() };
+                }
                 if (dialog.Position.Y < 0) dialog.Position = dialog.Position.WithY(0);
+                if (dialog.WindowState == WindowState.Minimized) {
+                    dialog.WindowState = WindowState.Normal;
+                }
+                dialog.Show();
+                dialog.Activate();
             } catch (Exception e) {
                 DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
             }
@@ -986,7 +997,14 @@ namespace OpenUtau.App.Views {
                     ThemeManager.GetString("dialogs.installdependency.caption"),
                     MessageBox.MessageBoxButtons.OkCancel);
                 if (result == MessageBox.MessageBoxResult.Ok) {
-                    await PackageManager.Inst.InstallFromFileAsync(file);
+                    try {
+                        await PackageManager.Inst.InstallFromFileAsync(file);
+                    } catch (Exception e) {
+                        Log.Error(e, $"Failed to install dependency {file}");
+                        _ = await MessageBox.ShowError(this, new MessageCustomizableException(
+                            $"Failed to install dependency {file}",
+                            $"<translate:errors.failed.installdependency>: {file}", e));
+                    }
                 }
             }
         }

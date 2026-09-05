@@ -90,13 +90,13 @@ namespace OpenUtau.Plugin.Builtin {
         private bool CheckOtoUntilHit(string[] input, Note note, out UOto oto) {
             oto = default;
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
-            string color = attr.voiceColor ?? "";
+            string color = attr.voiceColor ?? GetParentVoiceColor();
+            int shift = attr.toneShift ?? GetParentToneShift();
+            int? alt = attr.alternate ?? GetParentAlternate();
 
             var otos = new List<UOto>();
             foreach (string test in input) {
-                if (singer.TryGetMappedOto(test + attr.alternate, note.tone + attr.toneShift, color, out var otoAlt)) {
-                    otos.Add(otoAlt);
-                } else if (singer.TryGetMappedOto(test, note.tone + attr.toneShift, color, out var otoCandidacy)) {
+                if (singer.TryGetMappedOto(test + alt, note.tone + shift, color, out var otoCandidacy)) {
                     otos.Add(otoCandidacy);
                 }
             }

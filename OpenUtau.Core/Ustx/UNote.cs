@@ -139,7 +139,7 @@ namespace OpenUtau.Core.Ustx {
                 attr.index = exp.index.Value;
                 if (exp.abbr == Format.Ustx.VEL) {
                     attr.consonantStretchRatio = Math.Pow(2, 1.0 - exp.value / 100.0);
-                } else if (exp.abbr == Format.Ustx.ALT) {
+                } else if (exp.abbr == Format.Ustx.ALT && exp.value != 0) { // 0 means no alt (nothing added)
                     attr.alternate = (int)exp.value;
                 } else if (exp.abbr == Format.Ustx.CLR && track.VoiceColorExp != null) {
                     int optionIdx = (int)exp.value;

@@ -86,7 +86,7 @@ namespace OpenUtau.Api {
             /// <summary>
             /// Tone shift. Shifts the note tone used for oto lookup.
             /// </summary>
-            public int toneShift;
+            public int? toneShift;
             /// <summary>
             /// Alternate index. The number suffix of duplicate aliases.
             /// </summary>
@@ -94,7 +94,7 @@ namespace OpenUtau.Api {
             /// <summary>
             /// Voice color.
             /// </summary>
-            public string voiceColor;
+            public string? voiceColor;
         }
 
         public struct PhonemeExpression {
@@ -176,7 +176,13 @@ namespace OpenUtau.Api {
         /// </summary>
         public virtual bool LegacyMapping => false;
 
-        public virtual void SetUp(Note[][] notes, UProject project, UTrack track) { }
+        public UProject? project;
+        public UTrack? track;
+
+        public virtual void SetUp(Note[][] notes, UProject project, UTrack track) {
+            this.project = project;
+            this.track = track;
+        }
 
         /// <summary>
         /// Phonemize a consecutive sequence of notes. This is the main logic of a phonemizer.
@@ -257,6 +263,44 @@ namespace OpenUtau.Api {
                     }
                 }
             };
+        }
+
+        public double GetParentConsonantStretchRatio() {
+            if (project != null && track != null) {
+                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.VEL, out var trackVEL)) {
+                    return Math.Pow(2, 1.0 - trackVEL.CustomDefaultValue / 100.0);
+                }
+            }
+            return 1;
+        }
+
+        public int GetParentToneShift() {
+            if (project != null && track != null) {
+                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.SHFT, out var trackTS)) {
+                    return (int)trackTS.CustomDefaultValue;
+                }
+            }
+            return 0;
+        }
+
+        public int? GetParentAlternate() {
+            if (project != null && track != null) {
+                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.ALT, out var trackAlt)) {
+                    if (trackAlt.CustomDefaultValue != 0) {
+                        return (int)trackAlt.CustomDefaultValue;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public string GetParentVoiceColor() {
+            if (project != null && track != null) {
+                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.CLR, out var trackCLR)) {
+                    return track.VoiceColorExp.options[(int)trackCLR.CustomDefaultValue];
+                }
+            }
+            return string.Empty;
         }
 
         /// <summary>

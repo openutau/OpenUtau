@@ -225,20 +225,18 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         // Method to check if the alias exists in oto.ini.
-        public static bool isExistPhonemeInOto(USinger singer, string phoneme, Note note) {
+        public bool isExistPhonemeInOto(string phoneme, Note note) {
 
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
-            string color = attr.voiceColor ?? string.Empty;
+            string color = attr.voiceColor ?? GetParentVoiceColor();
+            int toneShift = attr.toneShift ?? GetParentToneShift();
+            int? alt = attr.alternate ?? GetParentAlternate();
 
-            var toneShift = 0;
-            int? alt = null;
             if (phoneme.Equals(string.Empty)) {
                 return false;
             }
 
-            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var otoAlt)) {
-                return true;
-            } else if (singer.TryGetMappedOto(phoneme, note.tone + toneShift, color, out var oto)) {
+            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var oto)) {
                 return true;
             } else if (singer.TryGetMappedOto(phoneme, note.tone, color, out oto)) {
                 return true;
@@ -247,16 +245,13 @@ namespace OpenUtau.Plugin.Builtin {
             return false;
         }
 
-        static string GetOtoAlias(USinger singer, string phoneme, Note note) {
+        string GetOtoAlias(string phoneme, Note note) {
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
-            string color = attr.voiceColor ?? string.Empty;
-            int? alt = attr.alternate;
-            var toneShift = attr.toneShift;
+            string color = attr.voiceColor ?? GetParentVoiceColor();
+            var toneShift = attr.toneShift ?? GetParentToneShift();
+            int? alt = attr.alternate ?? GetParentAlternate();
 
-
-            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var otoAlt)) {
-                return otoAlt.Alias;
-            } else if (singer.TryGetMappedOto(phoneme, note.tone + toneShift, color, out var oto)) {
+            if (singer.TryGetMappedOto(phoneme + alt, note.tone + toneShift, color, out var oto)) {
                 return oto.Alias;
             } else if (singer.TryGetMappedOto(phoneme, note.tone, color, out oto)) {
                 return oto.Alias;
@@ -287,7 +282,7 @@ namespace OpenUtau.Plugin.Builtin {
 
                     foreach (var phoneticHint in phoneticHints.Select((hint, index) => (hint, index))) {
                         phonemes[phoneticHint.index] = new Phoneme {
-                            phoneme = GetOtoAlias(singer, phoneticHint.hint.Trim(), notes[0]) ,
+                            phoneme = GetOtoAlias(phoneticHint.hint.Trim(), notes[0]) ,
                             // The position is evenly divided into n parts.
                             position = totalDuration - ((totalDuration / phoneticHints.Length) * (phoneticHints.Length - phoneticHint.index)),
                         };
@@ -300,7 +295,7 @@ namespace OpenUtau.Plugin.Builtin {
 
                 // If the note is an End Breath note
                 if (Config.SupportedTailBreath.Contains(phoneme) && prevNeighbour != null) {
-                    phoneme = GetOtoAlias(singer, $"{GetLyricVowel(prevNeighbour?.lyric)} {phoneme}", notes[0]);
+                    phoneme = GetOtoAlias($"{GetLyricVowel(prevNeighbour?.lyric)} {phoneme}", notes[0]);
                     
                     return new Result {
                         // Output in the form "Basic vowel shape + End Breath written with lyrics"
@@ -309,10 +304,10 @@ namespace OpenUtau.Plugin.Builtin {
                 }
 
                 // If retan is set to True in zhcvvplus.yaml, there is no previous note, and the "- lyrics" alias exists in oto.ini
-                if (Config.UseRetan && prevNeighbour == null && isExistPhonemeInOto(singer, $"- {phoneme}", notes[0])) {
+                if (Config.UseRetan && prevNeighbour == null && isExistPhonemeInOto($"- {phoneme}", notes[0])) {
                     // 가사를 "- 가사"로 변경
                     phoneme = $"- {phoneme}";
-                    phoneme = GetOtoAlias(singer, phoneme, notes[0]);
+                    phoneme = GetOtoAlias(phoneme, notes[0]);
                 }
 
                 // If the lyrics require a tail vowel
@@ -339,8 +334,8 @@ namespace OpenUtau.Plugin.Builtin {
                             // Change to the position specified in zhcvvplus.yaml.
                             tailVowelPosition = Config.FastTailVowelTimingTick;
                         }
-                        phoneme = GetOtoAlias(singer, phoneme, notes[0]);
-                        tailPhoneme = GetOtoAlias(singer, tailPhoneme, notes[0]);
+                        phoneme = GetOtoAlias(phoneme, notes[0]);
+                        tailPhoneme = GetOtoAlias(tailPhoneme, notes[0]);
                         return new Result() {
                             phonemes = new Phoneme[] {
                                 new Phoneme { phoneme = phoneme }, // Original note lyrics
@@ -354,7 +349,7 @@ namespace OpenUtau.Plugin.Builtin {
                 return new Result {
                     phonemes = new Phoneme[] {
                         new Phoneme() {
-                            phoneme = GetOtoAlias(singer, phoneme, notes[0]), // 防止无尾音歌词在多音阶情况下丢失prefix map suffix
+                            phoneme = GetOtoAlias(phoneme, notes[0]), // 防止无尾音歌词在多音阶情况下丢失prefix map suffix
                         }
                     }
                 };

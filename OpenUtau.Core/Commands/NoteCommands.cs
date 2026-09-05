@@ -542,7 +542,7 @@ namespace OpenUtau.Core {
             }
             max = Math.Max(0, max);
             double min = -phoneme.autoPreutter;
-            newDelta = (float)Math.Clamp(delta, min, max);
+            newDelta = (float)Math.Max(Math.Min(delta, max), min);
         }
         public override void Execute() {
             var o = note.GetPhonemeOverride(index);
@@ -574,7 +574,7 @@ namespace OpenUtau.Core {
             double overlap = phoneme.preutter - phoneme.autoOverlap;
             double max = phoneme.envelope.data[3].X + overlap;
             double min = -phoneme.Prev?.DurationMs + 5 + overlap ?? 0;
-            newDelta = (float)Math.Clamp(delta, min, max);
+            newDelta = (float)Math.Max(Math.Min(delta, max), min);
         }
         public override void Execute() {
             var o = note.GetPhonemeOverride(index);
@@ -605,7 +605,7 @@ namespace OpenUtau.Core {
 
             double max = phoneme.autoPreutter - phoneme.GetFadeIn() + phoneme.envelope.data[3].X;
             double min = -phoneme.GetFadeIn() + 5;
-            newDelta = (float)Math.Clamp(delta, min, max);
+            newDelta = (float)Math.Max(Math.Min(delta, max), min);
         }
         public override void Execute() {
             var o = note.GetPhonemeOverride(index);
@@ -637,7 +637,7 @@ namespace OpenUtau.Core {
             var p3x = phoneme.envelope.data[4].X - phoneme.GetFadeOut();
             double max = p3x - phoneme.envelope.data[2].X;
             double min = -phoneme.GetFadeOut() + 5;
-            newDelta = (float)Math.Clamp(delta, min, max);
+            newDelta = (float)Math.Max(Math.Min(delta, max), min);
         }
         public override void Execute() {
             var o = note.GetPhonemeOverride(index);
@@ -652,7 +652,7 @@ namespace OpenUtau.Core {
 
     public class ClearPhonemeTimingCommand : NoteCommand {
         readonly UNote note;
-        readonly Tuple<int, int?, float?, float?>[] oldValues;
+        readonly Tuple<int, int?, float?, float?, float?, float?>[] oldValues;
         public override ValidateOptions ValidateOptions => new ValidateOptions {
             SkipTiming = true,
             Part = Part,
@@ -661,7 +661,7 @@ namespace OpenUtau.Core {
         public ClearPhonemeTimingCommand(UVoicePart part, UNote note) : base(part, note) {
             this.note = note;
             oldValues = note.phonemeOverrides
-                .Select(o => Tuple.Create(o.index, o.offset, o.preutterDelta, o.overlapDelta))
+                .Select(o => Tuple.Create(o.index, o.offset, o.preutterDelta, o.overlapDelta, o.attackTimeDelta, o.releaseTimeDelta))
                 .ToArray();
         }
 
@@ -670,6 +670,8 @@ namespace OpenUtau.Core {
                 o.offset = null;
                 o.preutterDelta = null;
                 o.overlapDelta = null;
+                o.attackTimeDelta = null;
+                o.releaseTimeDelta = null;
             }
         }
         public override void Unexecute() {
@@ -678,6 +680,8 @@ namespace OpenUtau.Core {
                 o.offset = t.Item2;
                 o.preutterDelta = t.Item3;
                 o.overlapDelta = t.Item4;
+                o.attackTimeDelta = t.Item5;
+                o.releaseTimeDelta = t.Item6;
             }
         }
         public override string ToString() => "Clear phoneme timing";

@@ -35,6 +35,7 @@ namespace OpenUtau.Core.Enunu {
         }
 
         public override void SetUp(Note[][] notes, UProject project, UTrack track) {
+            base.SetUp(notes, project, track);
             partResult.Clear();
             if (notes.Length == 0 || singer == null || !singer.Found) {
                 return;

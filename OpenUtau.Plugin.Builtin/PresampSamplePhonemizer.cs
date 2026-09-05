@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Classic;
 using OpenUtau.Api;
-using OpenUtau.Classic;
 using OpenUtau.Core.Ustx;
 
 #if DEBUG
@@ -60,25 +58,25 @@ namespace OpenUtau.Plugin.Builtin {
             var attr0 = notes[0].phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
             var attr1 = notes[0].phonemeAttributes?.FirstOrDefault(attr => attr.index == 1) ?? default;
             if (lyric == "-" || lyric.ToLowerInvariant() == "r") {
-                if (singer.TryGetMappedOto($"{prevVowel}{vcpad}R", notes[0].tone + attr0.toneShift, attr0.voiceColor, out var oto1)) {
+                if (singer.TryGetMappedOto($"{prevVowel}{vcpad}R", notes[0].tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto1)) {
                     return MakeSimpleResult(oto1.Alias);
                 }
                 return MakeSimpleResult($"{prevVowel}{vcpad}R");
             }
             int totalDuration = notes.Sum(n => n.duration);
-            if (singer.TryGetMappedOto($"{prevVowel}{vcpad}{lyric}", notes[0].tone + attr0.toneShift, attr0.voiceColor, out var oto)) {
+            if (singer.TryGetMappedOto($"{prevVowel}{vcpad}{lyric}", notes[0].tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var oto)) {
                 return MakeSimpleResult(oto.Alias);
             }
             int vcLen = 120;
-            if (singer.TryGetMappedOto(lyric, notes[0].tone + attr0.toneShift, attr0.voiceColor, out var cvOto)) {
+            if (singer.TryGetMappedOto(lyric, notes[0].tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out var cvOto)) {
                 if (cvOto.Overlap < 0) {
                     vcLen = MsToTick(cvOto.Preutter - cvOto.Overlap);
                 } else {
                     vcLen = MsToTick(cvOto.Preutter);
                 }
-                vcLen = Convert.ToInt32(Math.Min(totalDuration / 2, vcLen * (attr0.consonantStretchRatio ?? 1)));
+                vcLen = Convert.ToInt32(Math.Min(totalDuration / 2, vcLen * (attr0.consonantStretchRatio ?? GetParentConsonantStretchRatio())));
             }
-            if (singer.TryGetMappedOto($"{prevVowel}{vcpad}{consonant}", notes[0].tone + attr0.toneShift, attr0.voiceColor, out oto)) {
+            if (singer.TryGetMappedOto($"{prevVowel}{vcpad}{consonant}", notes[0].tone + (attr0.toneShift ?? GetParentToneShift()), attr0.voiceColor ?? GetParentVoiceColor(), out oto)) {
                 return new Result {
                     phonemes = new Phoneme[] {
                         new Phoneme() {

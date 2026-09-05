@@ -1,4 +1,4 @@
-using OpenUtau.Api;
+﻿using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +12,7 @@ namespace OpenUtau.Core.DiffSinger
         public override string GetLangCode()=>"ko";
 
         public override void SetUp(Note[][] groups, UProject project, UTrack track) {
+            base.SetUp(groups, project, track);
             if (groups.Length == 0) {
                 return;
             }

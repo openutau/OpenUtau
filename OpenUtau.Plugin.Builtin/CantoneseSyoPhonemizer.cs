@@ -71,6 +71,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// </summary>
         /// <param name="groups"></param>
         public override void SetUp(Note[][] groups, UProject project, UTrack track) {
+            base.SetUp(groups, project, track);
             JyutpingConversion.RomanizeNotes(groups);
         }
         public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevNeighbours) {
@@ -97,17 +98,6 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
             string phoneme0 = lyric;
-
-            // Get color
-            string color = string.Empty;
-            int toneShift = 0;
-            int? alt = 0;
-            if (note.phonemeAttributes != null) {
-                var attr = note.phonemeAttributes.FirstOrDefault(attr0 => attr0.index == 0);
-                color = attr.voiceColor;
-                toneShift = attr.toneShift;
-                alt = attr.alternate;
-            }
 
             string fin = $"{vowel} -";
             // We will need to split the total duration for phonemes, so we compute it here.
@@ -316,17 +306,17 @@ namespace OpenUtau.Plugin.Builtin {
         private bool checkOtoUntilHit(List<string> input, Note note, out UOto oto) {
             oto = default;
             var attr = note.phonemeAttributes?.FirstOrDefault(attrCheck => attrCheck.index == 0) ?? default;
+            string color = attr.voiceColor ?? GetParentVoiceColor();
+            int shift = attr.toneShift ?? GetParentToneShift();
+            int? alt = attr.alternate ?? GetParentAlternate();
 
             var otos = new List<UOto>();
             foreach (string test in input) {
-                if (singer.TryGetMappedOto(test + attr.alternate, note.tone + attr.toneShift, attr.voiceColor, out var otoAlt)) {
-                    otos.Add(otoAlt);
-                } else if (singer.TryGetMappedOto(test, note.tone + attr.toneShift, attr.voiceColor, out var otoCandidacy)) {
+                if (singer.TryGetMappedOto(test + alt, note.tone + shift, color, out var otoCandidacy)) {
                     otos.Add(otoCandidacy);
                 }
             }
 
-            string color = attr.voiceColor ?? "";
             if (otos.Count > 0) {
                 oto = otos.FirstOrDefault(oto => oto.IsColorMatch(color));
                 if (oto == null) {
@@ -341,17 +331,17 @@ namespace OpenUtau.Plugin.Builtin {
         private bool checkOtoUntilHitFinal(List<string> input, Note note, out UOto oto) {
             oto = default;
             var attr = note.phonemeAttributes?.FirstOrDefault(attrCheck => attrCheck.index == 1) ?? default;
+            string color = attr.voiceColor ?? GetParentVoiceColor();
+            int shift = attr.toneShift ?? GetParentToneShift();
+            int? alt = attr.alternate ?? GetParentAlternate();
 
             var otos = new List<UOto>();
             foreach (string test in input) {
-                if (singer.TryGetMappedOto(test + attr.alternate, note.tone + attr.toneShift, attr.voiceColor, out var otoAlt)) {
-                    otos.Add(otoAlt);
-                } else if (singer.TryGetMappedOto(test, note.tone + attr.toneShift, attr.voiceColor, out var otoCandidacy)) {
+                if (singer.TryGetMappedOto(test + alt, note.tone + shift, color, out var otoCandidacy)) {
                     otos.Add(otoCandidacy);
                 }
             }
 
-            string color = attr.voiceColor ?? "";
             if (otos.Count > 0) {
                 oto = otos.FirstOrDefault(oto => oto.IsColorMatch(color));
                 if (oto != null) {

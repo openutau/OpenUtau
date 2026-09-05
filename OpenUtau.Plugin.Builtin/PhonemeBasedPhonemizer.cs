@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -62,7 +62,7 @@ namespace OpenUtau.Plugin.Builtin
             // The user is using a tail "-" note to produce a "<something> -" sound.
             if (note.lyric == "-" && prevSymbols != null) {
                 var attr = note.phonemeAttributes?.FirstOrDefault() ?? default;
-                string color = attr.voiceColor;
+                string color = attr.voiceColor ?? GetParentVoiceColor();
                 string alias = $"{prevSymbols.Last()} -";
                 if (singer.TryGetMappedOto(alias, note.tone, color, out var oto)) {
                     return MakeSimpleResult(oto.Alias);
@@ -143,9 +143,9 @@ namespace OpenUtau.Plugin.Builtin
             string prevSymbol = prevSymbols == null ? "-" : prevSymbols.Last();
             for (int i = 0; i < symbols.Length; i++) {
                 var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == i) ?? default;
-                string alt = attr.alternate?.ToString() ?? string.Empty;
-                string color = attr.voiceColor;
-                int toneShift = attr.toneShift;
+                string alt = (attr.alternate ?? GetParentAlternate())?.ToString() ?? string.Empty;
+                string color = attr.voiceColor ?? GetParentVoiceColor();
+                int toneShift = attr.toneShift ?? GetParentToneShift();
                 var phoneme = phonemes[i];
                 while (noteIndex < notes.Length - 1 && notes[noteIndex].position - note.position < phoneme.position) {
                     noteIndex++;

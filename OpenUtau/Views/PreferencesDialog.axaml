@@ -322,6 +322,10 @@
             <ToggleSwitch IsChecked="{Binding DiffSingerTensorCache}" />
           </Grid>
           <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.rendering.diffsingervariancelocalpitchpatch}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding DiffSingerVarianceLocalPitchPatch}" IsEnabled="{Binding DiffSingerTensorCache}" />
+          </Grid>
+          <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.diffsingerlangcodehide}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerLangCodeHide}" />
           </Grid>
