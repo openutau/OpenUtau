@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -87,11 +88,12 @@ namespace OpenUtau.Plugin.Builtin {
 
             var note = notes[0];
             string currentLyric = note.lyric.Normalize();
+            int totalDuration = notes.Sum(n => n.duration);
 
             // 1. 音素提示优先（强制覆盖）
             if (!string.IsNullOrEmpty(note.phoneticHint)) {
                 string hint = note.phoneticHint.Normalize();
-                if (CheckOtoUntilHit(new string[] { hint }, note, out var ph)) {
+                if (CheckOtoUntilHit(new string[] { hint }, note, 0, out var ph)) {
                     return MakeSimpleResult(ph.Alias);
                 }
                 return MakeSimpleResult(hint);
@@ -127,15 +129,44 @@ namespace OpenUtau.Plugin.Builtin {
             candidates.Add(currentPure);          // 优先级4：纯拼音兜底
 
             // 5. 按优先级匹配 OTO
-            if (CheckOtoUntilHit(candidates.ToArray(), note, out var oto)) {
-                return MakeSimpleResult(oto.Alias);
+            if (CheckOtoUntilHit(candidates.ToArray(), note, 0, out var oto)) {
+                return MakeResultWithTailR(oto.Alias, note, currentPure, totalDuration, nextNeighbour);
             }
 
             // 6. 全部失败：返回原拼音保底
-            return MakeSimpleResult(currentPure);
+            return MakeResultWithTailR(currentPure, note, currentPure, totalDuration, nextNeighbour);
         }
 
         // 辅助方法
+
+        /// <summary>
+        /// 为结束音符（无后续邻居音符）追加尾韵 R 音素
+        /// 参考 ChineseCVVCPhonemizer 的尾音处理逻辑
+        /// </summary>
+        private Result MakeResultWithTailR(string mainPhoneme, Note note, string currentPure, int totalDuration, Note? nextNeighbour) {
+            // 有后续音符时不需要尾韵 R（由后续音符的 VCV 连接承担）
+            if (nextNeighbour.HasValue) {
+                return MakeSimpleResult(mainPhoneme);
+            }
+
+            // 查表获取当前音符的尾韵母，生成尾韵 R 别名
+            if (tailLookup.TryGetValue(currentPure, out string? tail) && !string.IsNullOrEmpty(tail)) {
+                string tailRAlias = $"{tail} R";
+                if (CheckOtoUntilHit(new string[] { tailRAlias }, note, 1, out var tailOto)) {
+                    return new Result {
+                        phonemes = new Phoneme[] {
+                            new Phoneme { phoneme = mainPhoneme },
+                            new Phoneme {
+                                phoneme = tailOto.Alias,
+                                position = totalDuration - Math.Min(totalDuration / 6, 60),
+                            },
+                        },
+                    };
+                }
+            }
+
+            return MakeSimpleResult(mainPhoneme);
+        }
 
         /// <summary>
         /// 从歌词中提取纯拼音
@@ -168,14 +199,14 @@ namespace OpenUtau.Plugin.Builtin {
         /// 按优先级依次匹配 OTO，返回第一个命中项
         /// 处理：备用索引、音高偏移、音色、多音阶映射
         /// </summary>
-        private bool CheckOtoUntilHit(string[] inputs, Note note, out UOto matchedOto) {
+        private bool CheckOtoUntilHit(string[] inputs, Note note, int index, out UOto matchedOto) {
             matchedOto = default;
 
             if (singer == null) {
                 return false;
             }
 
-            var attr = note.phonemeAttributes?.FirstOrDefault(a => a.index == 0) ?? default;
+            var attr = note.phonemeAttributes?.FirstOrDefault(a => a.index == index) ?? default;
             string color = attr.voiceColor ?? string.Empty;
             int toneShift = attr.toneShift ?? 0;
             int? alt = attr.alternate;
