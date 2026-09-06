@@ -12,6 +12,7 @@ using OpenUtau.Core;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
+using ReactiveUI;
 
 namespace OpenUtau.App.Views {
     class KeyboardPlayState {
@@ -141,17 +142,24 @@ namespace OpenUtau.App.Views {
     }
 
     class NoteMoveEditState : NoteEditState {
-        public readonly UNote note;
+        public UNote note;
         private double xOffset;
+        private bool duplicated = true;
         protected override bool ShowValueTip => false;
-        protected override string? commandNameKey => "command.note.move";
+        protected override string? commandNameKey => commandNameKeyLocal;
+        private string commandNameKeyLocal = "command.note.move";
 
         public NoteMoveEditState(
             Control control,
             PianoRollViewModel vm,
             IValueTip valueTip,
-            UNote note) : base(control, vm, valueTip) {
+            UNote note,
+            bool duplicate = false) : base(control, vm, valueTip) {
             this.note = note;
+            if (duplicate) {
+                this.duplicated = false;
+                commandNameKeyLocal = "command.note.duplicate";
+            }
             var notesVm = vm.NotesViewModel;
             if (!notesVm.Selection.Contains(note)) {
                 notesVm.SelectNote(note);
@@ -177,10 +185,10 @@ namespace OpenUtau.App.Views {
             int deltaTone = notesVm.PointToTone(point) - note.tone;
             int minDeltaTone;
             int maxDeltaTone;
-            var selectedNotes = notesVm.Selection.ToList();
-            if (selectedNotes.Count > 0) {
-                minDeltaTone = -selectedNotes.Select(p => p.tone).Min();
-                maxDeltaTone = ViewConstants.MaxTone - 1 - selectedNotes.Select(p => p.tone).Max();
+            var notes = notesVm.Selection.ToList();
+            if (notes.Count > 0) {
+                minDeltaTone = -notes.Select(p => p.tone).Min();
+                maxDeltaTone = ViewConstants.MaxTone - 1 - notes.Select(p => p.tone).Max();
             } else {
                 minDeltaTone = -note.tone;
                 maxDeltaTone = ViewConstants.MaxTone - 1 - note.tone;
@@ -195,9 +203,9 @@ namespace OpenUtau.App.Views {
             int deltaTick = newPos - note.position;
             int minDeltaTick;
             int maxDeltaTick;
-            if (selectedNotes.Count > 0) {
-                minDeltaTick = -selectedNotes.Select(n => n.position).Min();
-                maxDeltaTick = part.Duration - selectedNotes.Select(n => n.End).Max();
+            if (notes.Count > 0) {
+                minDeltaTick = -notes.Select(n => n.position).Min();
+                maxDeltaTick = part.Duration - notes.Select(n => n.End).Max();
             } else {
                 minDeltaTick = -note.position;
                 maxDeltaTick = part.Duration - note.End;
@@ -207,12 +215,21 @@ namespace OpenUtau.App.Views {
             if (deltaTone == 0 && deltaTick == 0) {
                 return;
             }
-            if (selectedNotes.Count == 0) {
-                DocManager.Inst.ExecuteCmd(new MoveNoteCommand(
-                    part, note, deltaTick, deltaTone));
+
+            if (!duplicated) {
+                notes.Remove(note);
+                note = note.Clone();
+                notes = notes.Select(note => note.Clone()).ToList();
+                notes.Add(note);
+                DocManager.Inst.ExecuteCmd(new AddNoteCommand(part, notes));
+                notesVm.Selection.Select(notes);
+                MessageBus.Current.SendMessage(new NotesSelectionEvent(notesVm.Selection));
+                duplicated = true;
+            }
+            if (notes.Count == 0) {
+                DocManager.Inst.ExecuteCmd(new MoveNoteCommand(part, note, deltaTick, deltaTone));
             } else {
-                DocManager.Inst.ExecuteCmd(new MoveNoteCommand(
-                    part, selectedNotes, deltaTick, deltaTone));
+                DocManager.Inst.ExecuteCmd(new MoveNoteCommand(part, notes, deltaTick, deltaTone));
             }
         }
     }

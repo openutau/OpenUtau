@@ -820,6 +820,9 @@ namespace OpenUtau.App.Controls {
                     ViewModel.NotesViewModel.DeselectNotes();
                     editState = new NoteSplitEditState(
                             control, ViewModel, this, noteHitInfo.note);
+                } else if (args.KeyModifiers == KeyModifiers.Alt) {
+                    editState = new NoteMoveEditState(control, ViewModel, this, noteHitInfo.note, true);
+                    Cursor = ViewConstants.cursorSizeAll;
                 } else {
                     editState = new NoteMoveEditState(control, ViewModel, this, noteHitInfo.note);
                     Cursor = ViewConstants.cursorSizeAll;

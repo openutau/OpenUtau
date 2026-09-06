@@ -26,6 +26,7 @@
   <system:String x:Key="command.import.track">Import track(s)</system:String>
   <system:String x:Key="command.note.add">Add note</system:String>
   <system:String x:Key="command.note.delete">Delete note(s)</system:String>
+  <system:String x:Key="command.note.duplicate">Duplicate note(s)</system:String>
   <system:String x:Key="command.note.edit">Edit note(s)</system:String>
   <system:String x:Key="command.note.lyric">Edit lyric(s)</system:String>
   <system:String x:Key="command.note.move">Move note(s)</system:String>
