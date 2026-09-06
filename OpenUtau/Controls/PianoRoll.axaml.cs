@@ -1252,7 +1252,6 @@ namespace OpenUtau.App.Controls {
             }
             var hitInfoAlias = ViewModel.NotesViewModel.HitTest.HitTestAlias(point);
             var phoneme = hitInfoAlias.phoneme;
-            Log.Debug($"PhonemeCanvasDoubleTapped, hit = {hitInfoAlias.hit}, point = {{{hitInfoAlias.point}}}, phoneme = {phoneme?.phoneme}");
             if (hitInfoAlias.hit) {
                 LyricBox?.Show(ViewModel.NotesViewModel.Part, new LyricBoxPhoneme(phoneme!), phoneme!.phoneme);
                 return;

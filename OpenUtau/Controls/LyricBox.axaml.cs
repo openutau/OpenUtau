@@ -131,7 +131,6 @@ namespace OpenUtau.App.Controls {
         }
 
         private void OnTab(KeyModifiers keyModifiers) {
-            Log.Error($"OnTab: tabFrom={viewModel.NoteOrPhoneme}, mods={keyModifiers}");
             UVoicePart? part = viewModel.Part;
             var tabFrom = viewModel.NoteOrPhoneme;
             LyricBoxNoteOrPhoneme? tabTo = null;
