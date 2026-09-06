@@ -1,0 +1,2738 @@
+%YAML 1.2
+---
+version: 1.0
+symbols:
+- {symbol: a, type: vowel}
+- {symbol: ay, type: vowel}
+- {symbol: aw, type: vowel}
+- {symbol: b, type: stop}
+- {symbol: c, type: affricate}
+- {symbol: d, type: stop}
+- {symbol: e, type: vowel}
+- {symbol: ax, type: vowel}
+- {symbol: f, type: fricative}
+- {symbol: g, type: stop}
+- {symbol: h, type: fricative}
+- {symbol: i, type: vowel}
+- {symbol: j, type: affricate}
+- {symbol: k, type: stop}
+- {symbol: l, type: liquid}
+- {symbol: m, type: nasal}
+- {symbol: n, type: nasal}
+- {symbol: ny, type: nasal}
+- {symbol: ng, type: nasal}
+- {symbol: o, type: vowel}
+- {symbol: oy, type: vowel}
+- {symbol: p, type: stop}
+- {symbol: r, type: liquid}
+- {symbol: s, type: fricative}
+- {symbol: sy, type: fricative}
+- {symbol: t, type: stop}
+- {symbol: u, type: vowel}
+- {symbol: v, type: fricative}
+- {symbol: w, type: semivowel}
+- {symbol: y, type: semivowel}
+- {symbol: z, type: fricative}
+
+replacements:
+- {from: [a, i], to: [ay]}
+- {from: [a, u], to: [aw]}
+- {from: [e, i], to: [e, y]}
+- {from: [e, u], to: [e, w]}
+- {from: [i, u], to: [i, w]}
+- {from: [o, i], to: [oy]}
+- {from: [o, u], to: [o, w]}
+- {from: [u, i], to: [u, y]}
+
+
+entries:
+- grapheme: openutau
+  phonemes: [ow, p, e, n, u, t, a, u]
+- grapheme: あ
+  phonemes: [a]
+- grapheme: あい
+  phonemes: [a, i]
+- grapheme: あう
+  phonemes: [a, u]
+- grapheme: あえ
+  phonemes: [a, e]
+- grapheme: あお
+  phonemes: [a, o]
+- grapheme: あん
+  phonemes: [a, n]
+- grapheme: い
+  phonemes: [i]
+- grapheme: いあ
+  phonemes: [i, a]
+- grapheme: いえ
+  phonemes: [i, e]
+- grapheme: いう
+  phonemes: [i, u]
+- grapheme: いお
+  phonemes: [i, o]
+- grapheme: いん
+  phonemes: [i, n]
+- grapheme: う
+  phonemes: [u]
+- grapheme: うあ
+  phonemes: [u, a]
+- grapheme: うい
+  phonemes: [u, i]
+- grapheme: うえ
+  phonemes: [u, e]
+- grapheme: うお
+  phonemes: [u, o]
+- grapheme: うん
+  phonemes: [u, n]
+- grapheme: え
+  phonemes: [e]
+- grapheme: えあ
+  phonemes: [e, a]
+- grapheme: えい
+  phonemes: [e, i]
+- grapheme: えう
+  phonemes: [e, u]
+- grapheme: えお
+  phonemes: [e, o]
+- grapheme: えん
+  phonemes: [e, n]
+- grapheme: お
+  phonemes: [o]
+- grapheme: おあ
+  phonemes: [o, a]
+- grapheme: おい
+  phonemes: [o, i]
+- grapheme: おう
+  phonemes: [o, u]
+- grapheme: おえ
+  phonemes: [o, e]
+- grapheme: おん
+  phonemes: [o, n]
+- grapheme: "'あ"
+  phonemes: [a]
+- grapheme: "'い"
+  phonemes: [i]
+- grapheme: "'う"
+  phonemes: [u]
+- grapheme: "'え"
+  phonemes: [e]
+- grapheme: "'お"
+  phonemes: [o]
+- grapheme: ・あ
+  phonemes: [a]
+- grapheme: ・い
+  phonemes: [i]
+- grapheme: ・う
+  phonemes: [u]
+- grapheme: ・え
+  phonemes: [e]
+- grapheme: ・お
+  phonemes: [o]
+- grapheme: か
+  phonemes: [k, a]
+- grapheme: き
+  phonemes: [k, i]
+- grapheme: く
+  phonemes: [k, u]
+- grapheme: け
+  phonemes: [k, e]
+- grapheme: こ
+  phonemes: [k, o]
+- grapheme: っか
+  phonemes: [k, a]
+- grapheme: っき
+  phonemes: [k, i]
+- grapheme: っく
+  phonemes: [k, u]
+- grapheme: っけ
+  phonemes: [k, e]
+- grapheme: っこ
+  phonemes: [k, o]
+- grapheme: きゃ
+  phonemes: [k, y, a]
+- grapheme: きゅ
+  phonemes: [k, y, u]
+- grapheme: きぇ
+  phonemes: [k, y, e]
+- grapheme: きょ
+  phonemes: [k, y, o]
+- grapheme: っきゃ
+  phonemes: [k, y, a]
+- grapheme: っきゅ
+  phonemes: [k, y, u]
+- grapheme: っきょ
+  phonemes: [k, y, o]
+- grapheme: かん
+  phonemes: [k, a, n]
+- grapheme: きん
+  phonemes: [k, i, n]
+- grapheme: くん
+  phonemes: [k, u, n]
+- grapheme: けん
+  phonemes: [k, e, n]
+- grapheme: こん
+  phonemes: [k, o, n]
+- grapheme: っかん
+  phonemes: [k, a, n]
+- grapheme: っきん
+  phonemes: [k, i, n]
+- grapheme: っくん
+  phonemes: [k, u, n]
+- grapheme: っけん
+  phonemes: [k, e, n]
+- grapheme: っこん
+  phonemes: [k, o, n]
+- grapheme: きゃん
+  phonemes: [k, y, a, n]
+- grapheme: きゅん
+  phonemes: [k, y, u, n]
+- grapheme: きぇん
+  phonemes: [k, y, e, n]
+- grapheme: きょん
+  phonemes: [k, y, o, n]
+- grapheme: っきゃん
+  phonemes: [k, y, a, n]
+- grapheme: っきゅん
+  phonemes: [k, y, u, n]
+- grapheme: っきょん
+  phonemes: [k, y, o, n]
+- grapheme: かい
+  phonemes: [k, a, i]
+- grapheme: くい
+  phonemes: [k, u, i]
+- grapheme: けい
+  phonemes: [k, e, i]
+- grapheme: こい
+  phonemes: [k, o, i]
+- grapheme: っかい
+  phonemes: [k, a, i]
+- grapheme: っくい
+  phonemes: [k, u, i]
+- grapheme: っけい
+  phonemes: [k, e, i]
+- grapheme: っこい
+  phonemes: [k, o, i]
+- grapheme: きゃい
+  phonemes: [k, y, a, i]
+- grapheme: きゅい
+  phonemes: [k, y, u, i]
+- grapheme: きぇい
+  phonemes: [k, y, e, i]
+- grapheme: きょい
+  phonemes: [k, y, o, i]
+- grapheme: っきゃい
+  phonemes: [k, y, a, i]
+- grapheme: っきゅい
+  phonemes: [k, y, u, i]
+- grapheme: っきょい
+  phonemes: [k, y, o, i]
+- grapheme: かえ
+  phonemes: [k, a, e]
+- grapheme: きえ
+  phonemes: [k, i, e]
+- grapheme: くえ
+  phonemes: [k, u, e]
+- grapheme: こえ
+  phonemes: [k, o, e]
+- grapheme: っかえ
+  phonemes: [k, a, e]
+- grapheme: っきえ
+  phonemes: [k, i, e]
+- grapheme: っくえ
+  phonemes: [k, u, e]
+- grapheme: っこえ
+  phonemes: [k, o, e]
+- grapheme: きゃえ
+  phonemes: [k, y, a, e]
+- grapheme: きゅえ
+  phonemes: [k, y, u, e]
+- grapheme: きょえ
+  phonemes: [k, y, o, e]
+- grapheme: っきゃえ
+  phonemes: [k, y, a, e]
+- grapheme: っきゅえ
+  phonemes: [k, y, u, e]
+- grapheme: っきょえ
+  phonemes: [k, y, o, e]
+- grapheme: かう
+  phonemes: [k, a, u]
+- grapheme: きう
+  phonemes: [k, i, u]
+- grapheme: けう
+  phonemes: [k, e, u]
+- grapheme: こう
+  phonemes: [k, o, u]
+- grapheme: っかう
+  phonemes: [k, a, u]
+- grapheme: っきう
+  phonemes: [k, i, u]
+- grapheme: っけう
+  phonemes: [k, e, u]
+- grapheme: っこう
+  phonemes: [k, o, u]
+- grapheme: きゃう
+  phonemes: [k, y, a, u]
+- grapheme: きぇう
+  phonemes: [k, y, e, u]
+- grapheme: きょう
+  phonemes: [k, y, o, u]
+- grapheme: っきゃう
+  phonemes: [k, y, a, u]
+- grapheme: っきょう
+  phonemes: [k, y, o, u]
+- grapheme: かお
+  phonemes: [k, a, o]
+- grapheme: きお
+  phonemes: [k, i, o]
+- grapheme: くお
+  phonemes: [k, u, o]
+- grapheme: けお
+  phonemes: [k, e, o]
+- grapheme: っかお
+  phonemes: [k, a, o]
+- grapheme: っきお
+  phonemes: [k, i, o]
+- grapheme: っくお
+  phonemes: [k, u, o]
+- grapheme: っけお
+  phonemes: [k, e, o]
+- grapheme: きゃお
+  phonemes: [k, y, a, o]
+- grapheme: きゅお
+  phonemes: [k, y, u, o]
+- grapheme: きぇお
+  phonemes: [k, y, e, o]
+- grapheme: っきゃお
+  phonemes: [k, y, a, o]
+- grapheme: っきゅお
+  phonemes: [k, y, u, o]
+- grapheme: が
+  phonemes: [g, a]
+- grapheme: ぎ
+  phonemes: [g, i]
+- grapheme: ぐ
+  phonemes: [g, u]
+- grapheme: げ
+  phonemes: [g, e]
+- grapheme: ご
+  phonemes: [g, o]
+- grapheme: っが
+  phonemes: [g, a]
+- grapheme: っぎ
+  phonemes: [g, i]
+- grapheme: っぐ
+  phonemes: [g, u]
+- grapheme: っげ
+  phonemes: [g, e]
+- grapheme: っご
+  phonemes: [g, o]
+- grapheme: ぎゃ
+  phonemes: [g, y, a]
+- grapheme: ぎゅ
+  phonemes: [g, y, u, o]
+- grapheme: ぎょ
+  phonemes: [g, y, o]
+- grapheme: っぎゃ
+  phonemes: [g, y, a]
+- grapheme: っぎゅ
+  phonemes: [g, y, u]
+- grapheme: っぎょ
+  phonemes: [g, y, o]
+- grapheme: がん
+  phonemes: [g, a, n]
+- grapheme: ぎん
+  phonemes: [g, i, n]
+- grapheme: ぐん
+  phonemes: [g, u, n]
+- grapheme: げん
+  phonemes: [g, e, n]
+- grapheme: ごん
+  phonemes: [g, o, n]
+- grapheme: っがん
+  phonemes: [g, a, n]
+- grapheme: っぎん
+  phonemes: [g, i, n]
+- grapheme: っぐん
+  phonemes: [g, u, n]
+- grapheme: っげん
+  phonemes: [g, e, n]
+- grapheme: っごん
+  phonemes: [g, o, n]
+- grapheme: ぎゃん
+  phonemes: [g, y, a, n]
+- grapheme: ぎょん
+  phonemes: [g, y, o, n]
+- grapheme: っぎゃん
+  phonemes: [g, y, a, n]
+- grapheme: っぎゅん
+  phonemes: [g, y, u, n]
+- grapheme: っぎょん
+  phonemes: [g, y, o, n]
+- grapheme: がい
+  phonemes: [g, a, i]
+- grapheme: ぐい
+  phonemes: [g, u, i]
+- grapheme: げい
+  phonemes: [g, e, i]
+- grapheme: ごい
+  phonemes: [g, o, i]
+- grapheme: っがい
+  phonemes: [g, a, i]
+- grapheme: っぐい
+  phonemes: [g, u, i]
+- grapheme: っげい
+  phonemes: [g, e, i]
+- grapheme: っごい
+  phonemes: [g, o, i]
+- grapheme: ぎゃい
+  phonemes: [g, y, a, i]
+- grapheme: ぎょい
+  phonemes: [g, y, o, i]
+- grapheme: っぎゃい
+  phonemes: [g, y, a, i]
+- grapheme: っぎゅい
+  phonemes: [g, y, u, i]
+- grapheme: っぎょい
+  phonemes: [g, y, o, i]
+- grapheme: がえ
+  phonemes: [g, a, e]
+- grapheme: ぐえ
+  phonemes: [g, u, e]
+- grapheme: げえ
+  phonemes: [g, e, e]
+- grapheme: ごえ
+  phonemes: [g, o, e]
+- grapheme: っがえ
+  phonemes: [g, a, e]
+- grapheme: っぐえ
+  phonemes: [g, u, e]
+- grapheme: っげえ
+  phonemes: [g, e, e]
+- grapheme: っごえ
+  phonemes: [g, o, e]
+- grapheme: ぎゃえ
+  phonemes: [g, y, a, e]
+- grapheme: ぎょえ
+  phonemes: [g, y, o, e]
+- grapheme: っぎゃえ
+  phonemes: [g, y, a, e]
+- grapheme: っぎゅえ
+  phonemes: [g, y, u, e]
+- grapheme: っぎょえ
+  phonemes: [g, y, o, e]
+- grapheme: がお
+  phonemes: [g, a, o]
+- grapheme: ぎお
+  phonemes: [g, i, o]
+- grapheme: ぐお
+  phonemes: [g, u, o]
+- grapheme: げお
+  phonemes: [g, e, o]
+- grapheme: っがお
+  phonemes: [g, a, o]
+- grapheme: っぎお
+  phonemes: [g, i, o]
+- grapheme: っぐお
+  phonemes: [g, u, o]
+- grapheme: っげお
+  phonemes: [g, e, o]
+- grapheme: ぎゃお
+  phonemes: [g, y, a, o]
+- grapheme: っぎゃお
+  phonemes: [g, y, a, o]
+- grapheme: っぎゅお
+  phonemes: [g, y, u, o]
+- grapheme: がう
+  phonemes: [g, a, u]
+- grapheme: ぎう
+  phonemes: [g, i, u]
+- grapheme: げう
+  phonemes: [g, e, u]
+- grapheme: ごう
+  phonemes: [g, o, u]
+- grapheme: っがう
+  phonemes: [g, a, u]
+- grapheme: っぎう
+  phonemes: [g, i, u]
+- grapheme: っげう
+  phonemes: [g, e, u]
+- grapheme: っごう
+  phonemes: [g, o, u]
+- grapheme: ぎゃう
+  phonemes: [g, y, a, u]
+- grapheme: ぎょう
+  phonemes: [g, y, o, u]
+- grapheme: っぎゃう
+  phonemes: [g, y, a, u]
+- grapheme: っぎょう
+  phonemes: [g, y, o, u]
+- grapheme: さ
+  phonemes: [s, a]
+- grapheme: すぃ
+  phonemes: [s, i]
+- grapheme: す
+  phonemes: [s, u]
+- grapheme: せ
+  phonemes: [s, e]
+- grapheme: そ
+  phonemes: [s, o]
+- grapheme: っさ
+  phonemes: [s, a]
+- grapheme: っすぃ
+  phonemes: [s, i]
+- grapheme: っす
+  phonemes: [s, u]
+- grapheme: っせ
+  phonemes: [s, e]
+- grapheme: っそ
+  phonemes: [s, o]
+- grapheme: ざ
+  phonemes: [z, a]
+- grapheme: ずぃ
+  phonemes: [z, i]
+- grapheme: ず
+  phonemes: [z, u]
+- grapheme: ぜ
+  phonemes: [z, e]
+- grapheme: ぞ
+  phonemes: [z, o]
+- grapheme: っざ
+  phonemes: [z, a]
+- grapheme: っずぃ
+  phonemes: [z, i]
+- grapheme: っず
+  phonemes: [z, u]
+- grapheme: っぜ
+  phonemes: [z, e]
+- grapheme: っぞ
+  phonemes: [z, o]
+- grapheme: さん
+  phonemes: [s, a, n]
+- grapheme: すぃん
+  phonemes: [s, i, n]
+- grapheme: すん
+  phonemes: [s, u, n]
+- grapheme: せん
+  phonemes: [s, e, n]
+- grapheme: そん
+  phonemes: [s, o, n]
+- grapheme: っさん
+  phonemes: [s, a, n]
+- grapheme: っすぃん
+  phonemes: [s, i, n]
+- grapheme: っすん
+  phonemes: [s, u, n]
+- grapheme: っせん
+  phonemes: [s, e, n]
+- grapheme: っそん
+  phonemes: [s, o, n]
+- grapheme: ざん
+  phonemes: [z, a, n]
+- grapheme: ずぃん
+  phonemes: [z, i, n]
+- grapheme: ずん
+  phonemes: [z, u, n]
+- grapheme: ぜん
+  phonemes: [z, e, n]
+- grapheme: ぞん
+  phonemes: [z, o, n]
+- grapheme: っざん
+  phonemes: [z, a, n]
+- grapheme: っずぃん
+  phonemes: [z, i, n]
+- grapheme: っずん
+  phonemes: [z, u, n]
+- grapheme: っぜん
+  phonemes: [z, e, n]
+- grapheme: っぞん
+  phonemes: [z, o, n]
+- grapheme: さい
+  phonemes: [s, a, i]
+- grapheme: すい
+  phonemes: [s, u, i]
+- grapheme: せい
+  phonemes: [s, e, i]
+- grapheme: そい
+  phonemes: [s, o, i]
+- grapheme: っさい
+  phonemes: [s, a, i]
+- grapheme: っすい
+  phonemes: [s, u, i]
+- grapheme: っせい
+  phonemes: [s, e, i]
+- grapheme: っそい
+  phonemes: [s, o, i]
+- grapheme: ざい
+  phonemes: [z, a, i]
+- grapheme: ずい
+  phonemes: [z, u, i]
+- grapheme: ぜい
+  phonemes: [z, e, i]
+- grapheme: ぞい
+  phonemes: [z, o, i]
+- grapheme: っざい
+  phonemes: [z, a, i]
+- grapheme: っずい
+  phonemes: [z, u, i]
+- grapheme: っぜい
+  phonemes: [z, e, i]
+- grapheme: っぞい
+  phonemes: [z, o, i]
+- grapheme: さえ
+  phonemes: [s, a, e]
+- grapheme: すぃえ
+  phonemes: [s, i, e]
+- grapheme: すえ
+  phonemes: [s, u, e]
+- grapheme: そえ
+  phonemes: [s, o, e]
+- grapheme: っさえ
+  phonemes: [s, a, e]
+- grapheme: っすぃえ
+  phonemes: [s, i, e]
+- grapheme: っすえ
+  phonemes: [s, u, e]
+- grapheme: っそえ
+  phonemes: [s, o, e]
+- grapheme: ざえ
+  phonemes: [z, a, e]
+- grapheme: ずぃえ
+  phonemes: [z, i, e]
+- grapheme: ずえ
+  phonemes: [z, u, e]
+- grapheme: ぞえ
+  phonemes: [z, o, e]
+- grapheme: っざえ
+  phonemes: [z, a, e]
+- grapheme: っずぃえ
+  phonemes: [z, i, e]
+- grapheme: っずえ
+  phonemes: [z, u, e]
+- grapheme: っぞえ
+  phonemes: [z, o, e]
+- grapheme: さお
+  phonemes: [s, a, o]
+- grapheme: すぃお
+  phonemes: [s, i, o]
+- grapheme: すお
+  phonemes: [s, u, o]
+- grapheme: せお
+  phonemes: [s, e, o]
+- grapheme: っさお
+  phonemes: [s, a, o]
+- grapheme: っすぃお
+  phonemes: [s, i, o]
+- grapheme: っすお
+  phonemes: [s, u, o]
+- grapheme: っせお
+  phonemes: [s, e, o]
+- grapheme: ざお
+  phonemes: [z, a, o]
+- grapheme: ずぃお
+  phonemes: [z, i, o]
+- grapheme: ずお
+  phonemes: [z, u, o]
+- grapheme: ぜお
+  phonemes: [z, e, o]
+- grapheme: っざお
+  phonemes: [z, a, o]
+- grapheme: っずぃお
+  phonemes: [z, i, o]
+- grapheme: っずお
+  phonemes: [z, u, o]
+- grapheme: っぜお
+  phonemes: [z, e, o]
+- grapheme: さう
+  phonemes: [s, a, u]
+- grapheme: すぃう
+  phonemes: [s, i, u]
+- grapheme: せう
+  phonemes: [s, e, u]
+- grapheme: そう
+  phonemes: [s, o, u]
+- grapheme: っさう
+  phonemes: [s, a, u]
+- grapheme: っすぃう
+  phonemes: [s, i, u]
+- grapheme: っせう
+  phonemes: [s, e, u]
+- grapheme: っそう
+  phonemes: [s, o, u]
+- grapheme: ざう
+  phonemes: [z, a, u]
+- grapheme: ずぃう
+  phonemes: [z, i, u]
+- grapheme: ぜう
+  phonemes: [z, e, u]
+- grapheme: ぞう
+  phonemes: [z, o, u]
+- grapheme: っざう
+  phonemes: [z, a, u]
+- grapheme: っずぃう
+  phonemes: [z, i, u]
+- grapheme: っぜう
+  phonemes: [z, e, u]
+- grapheme: っぞう
+  phonemes: [z, o, u]
+- grapheme: しゃ
+  phonemes: [sy, a]
+- grapheme: し
+  phonemes: [sy, i]
+- grapheme: しゅ
+  phonemes: [sy, u]
+- grapheme: しぇ
+  phonemes: [sy, e]
+- grapheme: しょ
+  phonemes: [sy, o]
+- grapheme: っし
+  phonemes: [sy, i]
+- grapheme: っしゅ
+  phonemes: [sy, u]
+- grapheme: っしぇ
+  phonemes: [sy, e]
+- grapheme: っしょ
+  phonemes: [sy, o]
+- grapheme: じゃ
+  phonemes: [j, a]
+- grapheme: じ
+  phonemes: [j, i]
+- grapheme: じゅ
+  phonemes: [j, u]
+- grapheme: じぇ
+  phonemes: [j, e]
+- grapheme: じょ
+  phonemes: [j, o]
+- grapheme: っじゃ
+  phonemes: [j, a]
+- grapheme: っじ
+  phonemes: [j, i]
+- grapheme: っじゅ
+  phonemes: [j, u]
+- grapheme: っじぇ
+  phonemes: [j, e]
+- grapheme: っじょ
+  phonemes: [j, o]
+- grapheme: しゃん
+  phonemes: [sy, a, n]
+- grapheme: しん
+  phonemes: [sy, i, n]
+- grapheme: しゅん
+  phonemes: [sy, u, n]
+- grapheme: しぇん
+  phonemes: [sy, e, n]
+- grapheme: しょん
+  phonemes: [sy, o, n]
+- grapheme: っしん
+  phonemes: [sy, i, n]
+- grapheme: っしゅん
+  phonemes: [sy, u, n]
+- grapheme: っしぇん
+  phonemes: [sy, e, n]
+- grapheme: っしょん
+  phonemes: [sy, o, n]
+- grapheme: じゃん
+  phonemes: [j, a, n]
+- grapheme: じん
+  phonemes: [j, i, n]
+- grapheme: じゅん
+  phonemes: [j, u, n]
+- grapheme: じぇん
+  phonemes: [j, e, n]
+- grapheme: じょん
+  phonemes: [j, o, n]
+- grapheme: っじゃん
+  phonemes: [j, a, n]
+- grapheme: っじん
+  phonemes: [j, i, n]
+- grapheme: っじゅん
+  phonemes: [j, u, n]
+- grapheme: っじぇん
+  phonemes: [j, e, n]
+- grapheme: っじょん
+  phonemes: [j, o, n]
+- grapheme: しゃい
+  phonemes: [sy, a, i]
+- grapheme: しゅい
+  phonemes: [sy, u, i]
+- grapheme: しぇい
+  phonemes: [sy, e, i]
+- grapheme: しょい
+  phonemes: [sy, o, i]
+- grapheme: っしゅい
+  phonemes: [sy, u, i]
+- grapheme: っしぇい
+  phonemes: [sy, e, i]
+- grapheme: っしょい
+  phonemes: [sy, o, i]
+- grapheme: じゃい
+  phonemes: [j, a, i]
+- grapheme: じゅい
+  phonemes: [j, u, i]
+- grapheme: じぇい
+  phonemes: [j, e, i]
+- grapheme: じょい
+  phonemes: [j, o, i]
+- grapheme: っじゃい
+  phonemes: [j, a, i]
+- grapheme: っじゅい
+  phonemes: [j, u, i]
+- grapheme: っじぇい
+  phonemes: [j, e, i]
+- grapheme: っじょい
+  phonemes: [j, o, i]
+- grapheme: しゃえ
+  phonemes: [sy, a, e]
+- grapheme: しえ
+  phonemes: [sy, i, e]
+- grapheme: しゅえ
+  phonemes: [sy, u, e]
+- grapheme: しょえ
+  phonemes: [sy, o, e]
+- grapheme: っしえ
+  phonemes: [sy, i, e]
+- grapheme: っしゅえ
+  phonemes: [sy, u, e]
+- grapheme: っしょえ
+  phonemes: [sy, o, e]
+- grapheme: じゃえ
+  phonemes: [j, a, e]
+- grapheme: じえ
+  phonemes: [j, i, e]
+- grapheme: じゅえ
+  phonemes: [j, u, e]
+- grapheme: じょえ
+  phonemes: [j, o, e]
+- grapheme: っじゃえ
+  phonemes: [j, a, e]
+- grapheme: っじえ
+  phonemes: [j, i, e]
+- grapheme: っじゅえ
+  phonemes: [j, u, e]
+- grapheme: っじょえ
+  phonemes: [j, o, e]
+- grapheme: しゃお
+  phonemes: [sy, a, o]
+- grapheme: しお
+  phonemes: [sy, i, o]
+- grapheme: しゅお
+  phonemes: [sy, u, o]
+- grapheme: しぇお
+  phonemes: [sy, e, o]
+- grapheme: っしお
+  phonemes: [sy, i, o]
+- grapheme: っしゅお
+  phonemes: [sy, u, o]
+- grapheme: っしぇお
+  phonemes: [sy, e, o]
+- grapheme: じゃお
+  phonemes: [j, a, o]
+- grapheme: じお
+  phonemes: [j, i, o]
+- grapheme: じゅお
+  phonemes: [j, u, o]
+- grapheme: じぇお
+  phonemes: [j, e, o]
+- grapheme: っじゃお
+  phonemes: [j, a, o]
+- grapheme: っじお
+  phonemes: [j, i, o]
+- grapheme: っじゅお
+  phonemes: [j, u, o]
+- grapheme: っじぇお
+  phonemes: [j, e, o]
+- grapheme: しゃう
+  phonemes: [sy, a, u]
+- grapheme: しう
+  phonemes: [sy, i, u]
+- grapheme: しぇう
+  phonemes: [sy, e, u]
+- grapheme: しょう
+  phonemes: [sy, o, u]
+- grapheme: っしう
+  phonemes: [sy, i, u]
+- grapheme: っしぇう
+  phonemes: [sy, e, u]
+- grapheme: っしょう
+  phonemes: [sy, o, u]
+- grapheme: じゃう
+  phonemes: [j, a, u]
+- grapheme: じう
+  phonemes: [j, i, u]
+- grapheme: じぇう
+  phonemes: [j, e, u]
+- grapheme: じょう
+  phonemes: [j, o, u]
+- grapheme: っじゃう
+  phonemes: [j, a, u]
+- grapheme: っじう
+  phonemes: [j, i, u]
+- grapheme: っじぇう
+  phonemes: [j, e, u]
+- grapheme: っじょう
+  phonemes: [j, o, u]
+- grapheme: た
+  phonemes: [t, a]
+- grapheme: てぃ
+  phonemes: [t, i]
+- grapheme: とぅ
+  phonemes: [t, u]
+- grapheme: て
+  phonemes: [t, e]
+- grapheme: と
+  phonemes: [t, o]
+- grapheme: った
+  phonemes: [t, a]
+- grapheme: ってぃ
+  phonemes: [t, i]
+- grapheme: っとぅ
+  phonemes: [t, u]
+- grapheme: って
+  phonemes: [t, e]
+- grapheme: っと
+  phonemes: [t, o]
+- grapheme: だ
+  phonemes: [d, a]
+- grapheme: でぃ
+  phonemes: [d, i]
+- grapheme: どぅ
+  phonemes: [d, u]
+- grapheme: で
+  phonemes: [d, e]
+- grapheme: ど
+  phonemes: [d, o]
+- grapheme: っだ
+  phonemes: [d, a]
+- grapheme: っでぃ
+  phonemes: [d, i]
+- grapheme: っどぅ
+  phonemes: [d, u]
+- grapheme: っで
+  phonemes: [d, e]
+- grapheme: っど
+  phonemes: [d, o]
+- grapheme: たん
+  phonemes: [t, a, n]
+- grapheme: てぃん
+  phonemes: [t, i, n]
+- grapheme: とぅん
+  phonemes: [t, u, n]
+- grapheme: てん
+  phonemes: [t, e, n]
+- grapheme: とん
+  phonemes: [t, o, n]
+- grapheme: ったん
+  phonemes: [t, a, n]
+- grapheme: ってぃん
+  phonemes: [t, i, n]
+- grapheme: っとぅん
+  phonemes: [t, u, n]
+- grapheme: ってん
+  phonemes: [t, e, n]
+- grapheme: っとん
+  phonemes: [t, o, n]
+- grapheme: だん
+  phonemes: [d, a, n]
+- grapheme: でぃん
+  phonemes: [d, i, n]
+- grapheme: どぅん
+  phonemes: [d, u, n]
+- grapheme: でん
+  phonemes: [d, e, n]
+- grapheme: どん
+  phonemes: [d, o, n]
+- grapheme: っだん
+  phonemes: [d, a, n]
+- grapheme: っでぃん
+  phonemes: [d, i, n]
+- grapheme: っどぅん
+  phonemes: [d, u, n]
+- grapheme: っでん
+  phonemes: [d, e, n]
+- grapheme: っどん
+  phonemes: [d, o, n]
+- grapheme: たい
+  phonemes: [t, a, i]
+- grapheme: とぅい
+  phonemes: [t, u, i]
+- grapheme: てい
+  phonemes: [t, e, i]
+- grapheme: とい
+  phonemes: [t, o, i]
+- grapheme: ったい
+  phonemes: [t, a, i]
+- grapheme: っとぅい
+  phonemes: [t, u, i]
+- grapheme: ってい
+  phonemes: [t, e, i]
+- grapheme: っとい
+  phonemes: [t, o, i]
+- grapheme: だい
+  phonemes: [d, a, i]
+- grapheme: どぅい
+  phonemes: [d, u, i]
+- grapheme: でい
+  phonemes: [d, e, i]
+- grapheme: どい
+  phonemes: [d, o, i]
+- grapheme: っだい
+  phonemes: [d, a, i]
+- grapheme: っどぅい
+  phonemes: [d, u, i]
+- grapheme: っでい
+  phonemes: [d, e, i]
+- grapheme: っどい
+  phonemes: [d, o, i]
+- grapheme: たえ
+  phonemes: [t, a, e]
+- grapheme: てぃえ
+  phonemes: [t, i, e]
+- grapheme: とぅえ
+  phonemes: [t, u, e]
+- grapheme: とえ
+  phonemes: [t, o, e]
+- grapheme: ったえ
+  phonemes: [t, a, e]
+- grapheme: ってぃえ
+  phonemes: [t, i, e]
+- grapheme: っとぅえ
+  phonemes: [t, u, e]
+- grapheme: っとえ
+  phonemes: [t, o, e]
+- grapheme: だえ
+  phonemes: [d, a, e]
+- grapheme: でぃえ
+  phonemes: [d, i, e]
+- grapheme: どぅえ
+  phonemes: [d, u, e]
+- grapheme: どえ
+  phonemes: [d, o, e]
+- grapheme: っだえ
+  phonemes: [d, a, e]
+- grapheme: っでぃえ
+  phonemes: [d, i, e]
+- grapheme: っどぅえ
+  phonemes: [d, u, e]
+- grapheme: っどえ
+  phonemes: [d, o, e]
+- grapheme: たお
+  phonemes: [t, a, o]
+- grapheme: てぃお
+  phonemes: [t, i, o]
+- grapheme: とぅお
+  phonemes: [t, u, o]
+- grapheme: てお
+  phonemes: [t, e, o]
+- grapheme: ったお
+  phonemes: [t, a, o]
+- grapheme: ってぃお
+  phonemes: [t, i, o]
+- grapheme: っとぅお
+  phonemes: [t, u, o]
+- grapheme: ってお
+  phonemes: [t, e, o]
+- grapheme: だお
+  phonemes: [d, a, o]
+- grapheme: でぃお
+  phonemes: [d, i, o]
+- grapheme: どぅお
+  phonemes: [d, u, o]
+- grapheme: でお
+  phonemes: [d, e, o]
+- grapheme: っだお
+  phonemes: [d, a, o]
+- grapheme: っでぃお
+  phonemes: [d, i, o]
+- grapheme: っどぅお
+  phonemes: [d, u, o]
+- grapheme: っでお
+  phonemes: [d, e, o]
+- grapheme: たう
+  phonemes: [t, a, u]
+- grapheme: てぃう
+  phonemes: [t, i, u]
+- grapheme: てう
+  phonemes: [t, e, u]
+- grapheme: とう
+  phonemes: [t, o, u]
+- grapheme: ったう
+  phonemes: [t, a, u]
+- grapheme: ってぃう
+  phonemes: [t, i, u]
+- grapheme: ってう
+  phonemes: [t, e, u]
+- grapheme: っとう
+  phonemes: [t, o, u]
+- grapheme: だう
+  phonemes: [d, a, u]
+- grapheme: でぃう
+  phonemes: [d, i, u]
+- grapheme: でう
+  phonemes: [d, e, u]
+- grapheme: どう
+  phonemes: [d, o, u]
+- grapheme: っだう
+  phonemes: [d, a, u]
+- grapheme: っでぃう
+  phonemes: [d, i, u]
+- grapheme: っでう
+  phonemes: [d, e, u]
+- grapheme: っどう
+  phonemes: [d, o, u]
+- grapheme: ちゃ
+  phonemes: [c, a]
+- grapheme: ち
+  phonemes: [c, i]
+- grapheme: ちゅ
+  phonemes: [c, u]
+- grapheme: ちぇ
+  phonemes: [c, e]
+- grapheme: ちょ
+  phonemes: [c, o]
+- grapheme: っちゃ
+  phonemes: [c, a]
+- grapheme: っち
+  phonemes: [c, i]
+- grapheme: っちゅ
+  phonemes: [c, u]
+- grapheme: っちぇ
+  phonemes: [c, e]
+- grapheme: っちょ
+  phonemes: [c, o]
+- grapheme: ちゃん
+  phonemes: [c, a, n]
+- grapheme: ちん
+  phonemes: [c, i, n]
+- grapheme: ちゅん
+  phonemes: [c, u, n]
+- grapheme: ちぇん
+  phonemes: [c, e, n]
+- grapheme: ちょん
+  phonemes: [c, o, n]
+- grapheme: っちゃん
+  phonemes: [c, a, n]
+- grapheme: っちん
+  phonemes: [c, i, n]
+- grapheme: っちゅん
+  phonemes: [c, u, n]
+- grapheme: っちぇん
+  phonemes: [c, e, n]
+- grapheme: っちょん
+  phonemes: [c, o, n]
+- grapheme: ちゃい
+  phonemes: [c, a, i]
+- grapheme: ちゅい
+  phonemes: [c, u, i]
+- grapheme: ちぇい
+  phonemes: [c, e, i]
+- grapheme: ちょい
+  phonemes: [c, o, i]
+- grapheme: っちゃい
+  phonemes: [c, a, i]
+- grapheme: っちゅい
+  phonemes: [c, u, i]
+- grapheme: っちぇい
+  phonemes: [c, e, i]
+- grapheme: っちょい
+  phonemes: [c, o, i]
+- grapheme: ちゃえ
+  phonemes: [c, a, e]
+- grapheme: ちえ
+  phonemes: [c, i, e]
+- grapheme: ちゅえ
+  phonemes: [c, u, e]
+- grapheme: ちょえ
+  phonemes: [c, o, e]
+- grapheme: っちゃえ
+  phonemes: [c, a, e]
+- grapheme: っちえ
+  phonemes: [c, i, e]
+- grapheme: っちゅえ
+  phonemes: [c, u, e]
+- grapheme: っちょえ
+  phonemes: [c, o, e]
+- grapheme: ちゃお
+  phonemes: [c, a, o]
+- grapheme: ちお
+  phonemes: [c, i, o]
+- grapheme: ちゅお
+  phonemes: [c, u, o]
+- grapheme: ちぇお
+  phonemes: [c, e, o]
+- grapheme: っちゃお
+  phonemes: [c, a, o]
+- grapheme: っちお
+  phonemes: [c, i, o]
+- grapheme: っちゅお
+  phonemes: [c, u, o]
+- grapheme: っちぇお
+  phonemes: [c, e, o]
+- grapheme: ちゃう
+  phonemes: [c, a, u]
+- grapheme: ちう
+  phonemes: [c, i, u]
+- grapheme: ちぇう
+  phonemes: [c, e, u]
+- grapheme: ちょう
+  phonemes: [c, o, u]
+- grapheme: っちゃう
+  phonemes: [c, a, u]
+- grapheme: っちう
+  phonemes: [c, i, u]
+- grapheme: っちぇう
+  phonemes: [c, e, u]
+- grapheme: っちょう
+  phonemes: [c, o, u]
+- grapheme: つぁ
+  phonemes: [t, s, a]
+- grapheme: つぃ
+  phonemes: [t, s, i]
+- grapheme: つ
+  phonemes: [t, s, u]
+- grapheme: つぇ
+  phonemes: [t, s, e]
+- grapheme: つぉ
+  phonemes: [t, s, o]
+- grapheme: っつぁ
+  phonemes: [t, s, a]
+- grapheme: っつぃ
+  phonemes: [t, s, i]
+- grapheme: っつ
+  phonemes: [t, s, u]
+- grapheme: っつぇ
+  phonemes: [t, s, e]
+- grapheme: っつぉ
+  phonemes: [t, s, o]
+- grapheme: つぁん
+  phonemes: [t, s, a, n]
+- grapheme: つぃん
+  phonemes: [t, s, i, n]
+- grapheme: つん
+  phonemes: [t, s, u, n]
+- grapheme: つぇん
+  phonemes: [t, s, e, n]
+- grapheme: つぉん
+  phonemes: [t, s, o, n]
+- grapheme: っつぁん
+  phonemes: [t, s, a, n]
+- grapheme: っつぃん
+  phonemes: [t, s, i, n]
+- grapheme: っつん
+  phonemes: [t, s, u, n]
+- grapheme: っつぇん
+  phonemes: [t, s, e, n]
+- grapheme: っつぉん
+  phonemes: [t, s, o, n]
+- grapheme: つぁい
+  phonemes: [t, s, a, i]
+- grapheme: つい
+  phonemes: [t, s, u, i]
+- grapheme: つぇい
+  phonemes: [t, s, e, i]
+- grapheme: つぉい
+  phonemes: [t, s, o, i]
+- grapheme: っつぁい
+  phonemes: [t, s, a, i]
+- grapheme: っつい
+  phonemes: [t, s, u, i]
+- grapheme: っつぇい
+  phonemes: [t, s, e, i]
+- grapheme: っつぉい
+  phonemes: [t, s, o, i]
+- grapheme: つぁえ
+  phonemes: [t, s, a, e]
+- grapheme: つぃえ
+  phonemes: [t, s, i, e]
+- grapheme: つえ
+  phonemes: [t, s, u, e]
+- grapheme: つぉえ
+  phonemes: [t, s, o, e]
+- grapheme: っつぁえ
+  phonemes: [t, s, a, e]
+- grapheme: っつぃえ
+  phonemes: [t, s, i, e]
+- grapheme: っつえ
+  phonemes: [t, s, u, e]
+- grapheme: っつぉえ
+  phonemes: [t, s, o, e]
+- grapheme: つぁお
+  phonemes: [t, s, a, o]
+- grapheme: つぃお
+  phonemes: [t, s, i, o]
+- grapheme: つお
+  phonemes: [t, s, u, o]
+- grapheme: つぇお
+  phonemes: [t, s, e, o]
+- grapheme: っつぁお
+  phonemes: [t, s, a, o]
+- grapheme: っつぃお
+  phonemes: [t, s, i, o]
+- grapheme: っつお
+  phonemes: [t, s, u, o]
+- grapheme: っつぇお
+  phonemes: [t, s, e, o]
+- grapheme: な
+  phonemes: [n, a]
+- grapheme: に
+  phonemes: [n, i]
+- grapheme: ぬ
+  phonemes: [n, u]
+- grapheme: ね
+  phonemes: [n, e]
+- grapheme: の
+  phonemes: [n, o]
+- grapheme: にゃ
+  phonemes: [ny, a]
+- grapheme: にゅ
+  phonemes: [ny, u]
+- grapheme: にぇ
+  phonemes: [ny, e]
+- grapheme: にょ
+  phonemes: [ny, o]
+- grapheme: なん
+  phonemes: [n, a, n]
+- grapheme: にん
+  phonemes: [n, i, n]
+- grapheme: ぬん
+  phonemes: [n, u, n]
+- grapheme: ねん
+  phonemes: [n, e, n]
+- grapheme: のん
+  phonemes: [n, o, n]
+- grapheme: にゃん
+  phonemes: [ny, a, n]
+- grapheme: にゅん
+  phonemes: [ny, u, n]
+- grapheme: にぇん
+  phonemes: [ny, e, n]
+- grapheme: にょん
+  phonemes: [ny, o, n]
+- grapheme: ない
+  phonemes: [n, a, i]
+- grapheme: ぬい
+  phonemes: [n, u, i]
+- grapheme: ねい
+  phonemes: [n, e, i]
+- grapheme: のい
+  phonemes: [n, o, i]
+- grapheme: にゃい
+  phonemes: [ny, a, i]
+- grapheme: にゅい
+  phonemes: [ny, u, i]
+- grapheme: にぇい
+  phonemes: [ny, e, i]
+- grapheme: にょい
+  phonemes: [ny, o, i]
+- grapheme: なえ
+  phonemes: [n, a, e]
+- grapheme: にえ
+  phonemes: [n, i, e]
+- grapheme: ぬえ
+  phonemes: [n, u, e]
+- grapheme: のえ
+  phonemes: [n, o, e]
+- grapheme: にゃえ
+  phonemes: [ny, a, e]
+- grapheme: にゅえ
+  phonemes: [ny, u, e]
+- grapheme: にょえ
+  phonemes: [ny, o, e]
+- grapheme: なお
+  phonemes: [n, a, o]
+- grapheme: にお
+  phonemes: [n, i, o]
+- grapheme: ぬお
+  phonemes: [n, u, o]
+- grapheme: ねお
+  phonemes: [n, e, o]
+- grapheme: にゃお
+  phonemes: [ny, a, o]
+- grapheme: にゅお
+  phonemes: [ny, u, o]
+- grapheme: にぇお
+  phonemes: [ny, e, o]
+- grapheme: なう
+  phonemes: [n, a, u]
+- grapheme: にう
+  phonemes: [n, i, u]
+- grapheme: ねう
+  phonemes: [n, e, u]
+- grapheme: のう
+  phonemes: [n, o, u]
+- grapheme: にゃう
+  phonemes: [ny, a, u]
+- grapheme: にぇう
+  phonemes: [ny, e, u]
+- grapheme: にょう
+  phonemes: [ny, o, u]
+- grapheme: は
+  phonemes: [h, a]
+- grapheme: ひ
+  phonemes: [h, i]
+- grapheme: ほぅ
+  phonemes: [h, u]
+- grapheme: へ
+  phonemes: [h, e]
+- grapheme: ほ
+  phonemes: [h, o]
+- grapheme: ひゃ
+  phonemes: [h, y, a]
+- grapheme: ひゅ
+  phonemes: [h, y, u]
+- grapheme: ひぇ
+  phonemes: [h, y, e]
+- grapheme: ひょ
+  phonemes: [h, y, o]
+- grapheme: ふぁ
+  phonemes: [f, a]
+- grapheme: ふぃ
+  phonemes: [f, i]
+- grapheme: ふ
+  phonemes: [f, u]
+- grapheme: ふぇ
+  phonemes: [f, e]
+- grapheme: ふぉ
+  phonemes: [f, o]
+- grapheme: ふゃ
+  phonemes: [f, y, a]
+- grapheme: ふゅ
+  phonemes: [f, y, u]
+- grapheme: ふょ
+  phonemes: [f, y, o]
+- grapheme: はん
+  phonemes: [h, a, n]
+- grapheme: ひん
+  phonemes: [h, i, n]
+- grapheme: ほぅん
+  phonemes: [h, u, n]
+- grapheme: へん
+  phonemes: [h, e, n]
+- grapheme: ほん
+  phonemes: [h, o, n]
+- grapheme: ひゃん
+  phonemes: [h, y, a, n]
+- grapheme: ひゅん
+  phonemes: [h, y, u, n]
+- grapheme: ひぇん
+  phonemes: [h, y, e, n]
+- grapheme: ひょん
+  phonemes: [h, y, o, n]
+- grapheme: ふぁん
+  phonemes: [f, a, n]
+- grapheme: ふぃん
+  phonemes: [f, i, n]
+- grapheme: ふん
+  phonemes: [f, u, n]
+- grapheme: ふぇん
+  phonemes: [f, e, n]
+- grapheme: ふぉん
+  phonemes: [f, o, n]
+- grapheme: ふゃん
+  phonemes: [f, y, a, n]
+- grapheme: ふゅん
+  phonemes: [f, y, u, n]
+- grapheme: ふょん
+  phonemes: [f, y, o, n]
+- grapheme: はい
+  phonemes: [h, a, i]
+- grapheme: ひい
+  phonemes: [h, i, i]
+- grapheme: ほぅい
+  phonemes: [h, u, i]
+- grapheme: へい
+  phonemes: [h, e, i]
+- grapheme: ほい
+  phonemes: [h, o, i]
+- grapheme: ひゃい
+  phonemes: [h, y, a, i]
+- grapheme: ひゅい
+  phonemes: [h, y, u, i]
+- grapheme: ひぇい
+  phonemes: [h, y, e, i]
+- grapheme: ひょい
+  phonemes: [h, y, o, i]
+- grapheme: ふぁい
+  phonemes: [f, a, i]
+- grapheme: ふぃい
+  phonemes: [f, i, i]
+- grapheme: ふい
+  phonemes: [f, u, i]
+- grapheme: ふぇい
+  phonemes: [f, e, i]
+- grapheme: ふぉい
+  phonemes: [f, o, i]
+- grapheme: ふゃい
+  phonemes: [f, y, a, i]
+- grapheme: ふゅい
+  phonemes: [f, y, u, i]
+- grapheme: ふょい
+  phonemes: [f, y, o, i]
+- grapheme: はえ
+  phonemes: [h, a, e]
+- grapheme: ひえ
+  phonemes: [h, i, e]
+- grapheme: ほぅえ
+  phonemes: [h, u, e]
+- grapheme: ほえ
+  phonemes: [h, o, e]
+- grapheme: ひゃえ
+  phonemes: [h, y, a, e]
+- grapheme: ひゅえ
+  phonemes: [h, y, u, e]
+- grapheme: ひぇえ
+  phonemes: [h, y, e, e]
+- grapheme: ひょえ
+  phonemes: [h, y, o, e]
+- grapheme: ふぁえ
+  phonemes: [f, a, e]
+- grapheme: ふぃえ
+  phonemes: [f, i, e]
+- grapheme: ふえ
+  phonemes: [f, u, e]
+- grapheme: ふぉえ
+  phonemes: [f, o, e]
+- grapheme: ふゃえ
+  phonemes: [f, y, a, e]
+- grapheme: ふゅえ
+  phonemes: [f, y, u, e]
+- grapheme: ふょえ
+  phonemes: [f, y, o, e]
+- grapheme: はお
+  phonemes: [h, a, o]
+- grapheme: ひお
+  phonemes: [h, i, o]
+- grapheme: ほぅお
+  phonemes: [h, u, o]
+- grapheme: へお
+  phonemes: [h, e, o]
+- grapheme: ひゃお
+  phonemes: [h, y, a, o]
+- grapheme: ひゅお
+  phonemes: [h, y, u, o]
+- grapheme: ひぇお
+  phonemes: [h, y, e, o]
+- grapheme: ふぁお
+  phonemes: [f, a, o]
+- grapheme: ふぃお
+  phonemes: [f, i, o]
+- grapheme: ふお
+  phonemes: [f, u, o]
+- grapheme: ふぇお
+  phonemes: [f, e, o]
+- grapheme: ふゃお
+  phonemes: [f, y, a, o]
+- grapheme: ふゅお
+  phonemes: [f, y, u, o]
+- grapheme: ば
+  phonemes: [b, a]
+- grapheme: び
+  phonemes: [b, i]
+- grapheme: ぶ
+  phonemes: [b, u]
+- grapheme: べ
+  phonemes: [b, e]
+- grapheme: ぼ
+  phonemes: [b, o]
+- grapheme: っば
+  phonemes: [b, a]
+- grapheme: っび
+  phonemes: [b, i]
+- grapheme: っぶ
+  phonemes: [b, u]
+- grapheme: っべ
+  phonemes: [b, e]
+- grapheme: っぼ
+  phonemes: [b, o]
+- grapheme: びゃ
+  phonemes: [b, y, a]
+- grapheme: びゅ
+  phonemes: [b, y, u]
+- grapheme: びぇ
+  phonemes: [b, y, e]
+- grapheme: びょ
+  phonemes: [b, y, o]
+- grapheme: っびゃ
+  phonemes: [b, y, a]
+- grapheme: っびゅ
+  phonemes: [b, y, u]
+- grapheme: っびぇ
+  phonemes: [b, y, e]
+- grapheme: っびょ
+  phonemes: [b, y, o]
+- grapheme: ばん
+  phonemes: [b, a, n]
+- grapheme: びん
+  phonemes: [b, i, n]
+- grapheme: ぶん
+  phonemes: [b, u, n]
+- grapheme: べん
+  phonemes: [b, e, n]
+- grapheme: ぼん
+  phonemes: [b, o, n]
+- grapheme: っばん
+  phonemes: [b, a, n]
+- grapheme: っびん
+  phonemes: [b, i, n]
+- grapheme: っぶん
+  phonemes: [b, u, n]
+- grapheme: っべん
+  phonemes: [b, e, n]
+- grapheme: っぼん
+  phonemes: [b, o, n]
+- grapheme: びゃん
+  phonemes: [b, y, a, n]
+- grapheme: びゅん
+  phonemes: [b, y, u, n]
+- grapheme: びぇん
+  phonemes: [b, y, e, n]
+- grapheme: びょん
+  phonemes: [b, y, o, n]
+- grapheme: っびゃん
+  phonemes: [b, y, a, n]
+- grapheme: っびゅん
+  phonemes: [b, y, u, n]
+- grapheme: っびぇん
+  phonemes: [b, y, e, n]
+- grapheme: っびょん
+  phonemes: [b, y, o, n]
+- grapheme: ばい
+  phonemes: [b, a, i]
+- grapheme: ぶい
+  phonemes: [b, u, i]
+- grapheme: べい
+  phonemes: [b, e, i]
+- grapheme: ぼい
+  phonemes: [b, o, i]
+- grapheme: っばい
+  phonemes: [b, a, i]
+- grapheme: っぶい
+  phonemes: [b, u, i]
+- grapheme: っべい
+  phonemes: [b, e, i]
+- grapheme: っぼい
+  phonemes: [b, o, i]
+- grapheme: びゃい
+  phonemes: [b, y, a, i]
+- grapheme: びゅい
+  phonemes: [b, y, u, i]
+- grapheme: びぇい
+  phonemes: [b, y, e, i]
+- grapheme: びょい
+  phonemes: [b, y, o, i]
+- grapheme: っびゃい
+  phonemes: [b, y, a, i]
+- grapheme: っびゅい
+  phonemes: [b, y, u, i]
+- grapheme: っびぇい
+  phonemes: [b, y, e, i]
+- grapheme: っびょい
+  phonemes: [b, y, o, i]
+- grapheme: ばえ
+  phonemes: [b, a, e]
+- grapheme: びえ
+  phonemes: [b, i, e]
+- grapheme: ぶえ
+  phonemes: [b, u, e]
+- grapheme: ぼえ
+  phonemes: [b, o, e]
+- grapheme: っばえ
+  phonemes: [b, a, e]
+- grapheme: っびえ
+  phonemes: [b, i, e]
+- grapheme: っぶえ
+  phonemes: [b, u, e]
+- grapheme: っぼえ
+  phonemes: [b, o, e]
+- grapheme: びゃえ
+  phonemes: [b, y, a, e]
+- grapheme: びゅえ
+  phonemes: [b, y, u, e]
+- grapheme: びょえ
+  phonemes: [b, y, o, e]
+- grapheme: っびゃえ
+  phonemes: [b, y, a, e]
+- grapheme: っびゅえ
+  phonemes: [b, y, u, e]
+- grapheme: っびょえ
+  phonemes: [b, y, o, e]
+- grapheme: ばお
+  phonemes: [b, a, o]
+- grapheme: びお
+  phonemes: [b, i, o]
+- grapheme: ぶお
+  phonemes: [b, u, o]
+- grapheme: べお
+  phonemes: [b, e, o]
+- grapheme: っばお
+  phonemes: [b, a, o]
+- grapheme: っびお
+  phonemes: [b, i, o]
+- grapheme: っぶお
+  phonemes: [b, u, o]
+- grapheme: っべお
+  phonemes: [b, e, o]
+- grapheme: びゃお
+  phonemes: [b, y, a, o]
+- grapheme: びゅお
+  phonemes: [b, y, u, o]
+- grapheme: びぇお
+  phonemes: [b, y, e, o]
+- grapheme: っびゃお
+  phonemes: [b, y, a, o]
+- grapheme: っびゅお
+  phonemes: [b, y, u, o]
+- grapheme: っびぇお
+  phonemes: [b, y, e, o]
+- grapheme: ばう
+  phonemes: [b, a, u]
+- grapheme: びう
+  phonemes: [b, i, u]
+- grapheme: べう
+  phonemes: [b, e, u]
+- grapheme: ぼう
+  phonemes: [b, o, u]
+- grapheme: っばう
+  phonemes: [b, a, u]
+- grapheme: っびう
+  phonemes: [b, i, u]
+- grapheme: っべう
+  phonemes: [b, e, u]
+- grapheme: っぼう
+  phonemes: [b, o, u]
+- grapheme: びゃう
+  phonemes: [b, y, a, u]
+- grapheme: びぇう
+  phonemes: [b, y, e, u]
+- grapheme: びょう
+  phonemes: [b, y, o, u]
+- grapheme: っびゃう
+  phonemes: [b, y, a, u]
+- grapheme: っびぇう
+  phonemes: [b, y, e, u]
+- grapheme: っびょう
+  phonemes: [b, y, o, u]
+- grapheme: ぱ
+  phonemes: [p, a]
+- grapheme: ぴ
+  phonemes: [p, i]
+- grapheme: ぷ
+  phonemes: [p, u]
+- grapheme: ぺ
+  phonemes: [p, e]
+- grapheme: ぽ
+  phonemes: [p, o]
+- grapheme: っぱ
+  phonemes: [p, a]
+- grapheme: っぴ
+  phonemes: [p, i]
+- grapheme: っぷ
+  phonemes: [p, u]
+- grapheme: っぺ
+  phonemes: [p, e]
+- grapheme: っぽ
+  phonemes: [p, o]
+- grapheme: ぴゃ
+  phonemes: [p, y, a]
+- grapheme: ぴゅ
+  phonemes: [p, y, u]
+- grapheme: ぴぇ
+  phonemes: [p, y, e]
+- grapheme: ぴょ
+  phonemes: [p, y, o]
+- grapheme: っぴゃ
+  phonemes: [p, y, a]
+- grapheme: っぴゅ
+  phonemes: [p, y, u]
+- grapheme: っぴぇ
+  phonemes: [p, y, e]
+- grapheme: っぴょ
+  phonemes: [p, y, o]
+- grapheme: ぱん
+  phonemes: [p, a, n]
+- grapheme: ぴん
+  phonemes: [p, i, n]
+- grapheme: ぷん
+  phonemes: [p, u, n]
+- grapheme: ぺん
+  phonemes: [p, e, n]
+- grapheme: ぽん
+  phonemes: [p, o, n]
+- grapheme: っぱん
+  phonemes: [p, a, n]
+- grapheme: っぴん
+  phonemes: [p, i, n]
+- grapheme: っぷん
+  phonemes: [p, u, n]
+- grapheme: っぺん
+  phonemes: [p, e, n]
+- grapheme: っぽん
+  phonemes: [p, o, n]
+- grapheme: ぴゃん
+  phonemes: [p, y, a, n]
+- grapheme: ぴゅん
+  phonemes: [p, y, u, n]
+- grapheme: ぴぇん
+  phonemes: [p, y, e, n]
+- grapheme: ぴょん
+  phonemes: [p, y, o, n]
+- grapheme: っぴゃん
+  phonemes: [p, y, a, n]
+- grapheme: っぴゅん
+  phonemes: [p, y, u, n]
+- grapheme: っぴぇん
+  phonemes: [p, y, e, n]
+- grapheme: っぴょん
+  phonemes: [p, y, o, n]
+- grapheme: ぱい
+  phonemes: [p, a, i]
+- grapheme: ぷい
+  phonemes: [p, u, i]
+- grapheme: ぺい
+  phonemes: [p, e, i]
+- grapheme: ぽい
+  phonemes: [p, o, i]
+- grapheme: っぱい
+  phonemes: [p, a, i]
+- grapheme: っぷい
+  phonemes: [p, u, i]
+- grapheme: っぺい
+  phonemes: [p, e, i]
+- grapheme: っぽい
+  phonemes: [p, o, i]
+- grapheme: ぴゃい
+  phonemes: [p, y, a, i]
+- grapheme: ぴゅい
+  phonemes: [p, y, u, i]
+- grapheme: ぴぇい
+  phonemes: [p, y, e, i]
+- grapheme: ぴょい
+  phonemes: [p, y, o, i]
+- grapheme: っぴゃい
+  phonemes: [p, y, a, i]
+- grapheme: っぴゅい
+  phonemes: [p, y, u, i]
+- grapheme: っぴぇい
+  phonemes: [p, y, e, i]
+- grapheme: っぴょい
+  phonemes: [p, y, o, i]
+- grapheme: ぱえ
+  phonemes: [p, a, e]
+- grapheme: ぴえ
+  phonemes: [p, i, e]
+- grapheme: ぷえ
+  phonemes: [p, u, e]
+- grapheme: ぽえ
+  phonemes: [p, o, e]
+- grapheme: っぱえ
+  phonemes: [p, a, e]
+- grapheme: っぴえ
+  phonemes: [p, i, e]
+- grapheme: っぷえ
+  phonemes: [p, u, e]
+- grapheme: っぽえ
+  phonemes: [p, o, e]
+- grapheme: ぴゃえ
+  phonemes: [p, y, a, e]
+- grapheme: ぴゅえ
+  phonemes: [p, y, u, e]
+- grapheme: ぴょえ
+  phonemes: [p, y, o, e]
+- grapheme: っぴゃえ
+  phonemes: [p, y, a, e]
+- grapheme: っぴゅえ
+  phonemes: [p, y, u, e]
+- grapheme: っぴょえ
+  phonemes: [p, y, o, e]
+- grapheme: ぱお
+  phonemes: [p, a, o]
+- grapheme: ぴお
+  phonemes: [p, i, o]
+- grapheme: ぷお
+  phonemes: [p, u, o]
+- grapheme: ぺお
+  phonemes: [p, e, o]
+- grapheme: っぱお
+  phonemes: [p, a, o]
+- grapheme: っぴお
+  phonemes: [p, i, o]
+- grapheme: っぷお
+  phonemes: [p, u, o]
+- grapheme: っぺお
+  phonemes: [p, e, o]
+- grapheme: ぴゃお
+  phonemes: [p, y, a, o]
+- grapheme: ぴゅお
+  phonemes: [p, y, u, o]
+- grapheme: ぴぇお
+  phonemes: [p, y, e, o]
+- grapheme: っぴゃお
+  phonemes: [p, y, a, o]
+- grapheme: っぴゅお
+  phonemes: [p, y, u, o]
+- grapheme: っぴぇお
+  phonemes: [p, y, e, o]
+- grapheme: ぱう
+  phonemes: [p, a, u]
+- grapheme: ぴう
+  phonemes: [p, i, u]
+- grapheme: ぺう
+  phonemes: [p, e, u]
+- grapheme: ぽう
+  phonemes: [p, o, u]
+- grapheme: っぱう
+  phonemes: [p, a, u]
+- grapheme: っぴう
+  phonemes: [p, i, u]
+- grapheme: っぺう
+  phonemes: [p, e, u]
+- grapheme: っぽう
+  phonemes: [p, o, u]
+- grapheme: ぴゃう
+  phonemes: [p, y, a, u]
+- grapheme: ぴぇう
+  phonemes: [p, y, e, u]
+- grapheme: ぴょう
+  phonemes: [p, y, o, u]
+- grapheme: っぴゃう
+  phonemes: [p, y, a, u]
+- grapheme: っぴぇう
+  phonemes: [p, y, e, u]
+- grapheme: っぴょう
+  phonemes: [p, y, o, u]
+- grapheme: ま
+  phonemes: [m, a]
+- grapheme: み
+  phonemes: [m, i]
+- grapheme: む
+  phonemes: [m, u]
+- grapheme: め
+  phonemes: [m, e]
+- grapheme: も
+  phonemes: [m, o]
+- grapheme: みゃ
+  phonemes: [m, y, a]
+- grapheme: みゅ
+  phonemes: [m, y, u]
+- grapheme: みぇ
+  phonemes: [m, y, e]
+- grapheme: みょ
+  phonemes: [m, y, o]
+- grapheme: まん
+  phonemes: [m, a, n]
+- grapheme: みん
+  phonemes: [m, i, n]
+- grapheme: むん
+  phonemes: [m, u, n]
+- grapheme: めん
+  phonemes: [m, e, n]
+- grapheme: もん
+  phonemes: [m, o, n]
+- grapheme: みゃん
+  phonemes: [m, y, a, n]
+- grapheme: みゅん
+  phonemes: [m, y, u, n]
+- grapheme: みぇん
+  phonemes: [m, y, e, n]
+- grapheme: みょん
+  phonemes: [m, y, o, n]
+- grapheme: まい
+  phonemes: [m, a, i]
+- grapheme: むい
+  phonemes: [m, u, i]
+- grapheme: めい
+  phonemes: [m, e, i]
+- grapheme: もい
+  phonemes: [m, o, i]
+- grapheme: みゃい
+  phonemes: [m, y, a, i]
+- grapheme: みゅい
+  phonemes: [m, y, u, i]
+- grapheme: みぇい
+  phonemes: [m, y, e, i]
+- grapheme: みょい
+  phonemes: [m, y, o, i]
+- grapheme: まえ
+  phonemes: [m, a, e]
+- grapheme: みえ
+  phonemes: [m, i, e]
+- grapheme: むえ
+  phonemes: [m, u, e]
+- grapheme: もえ
+  phonemes: [m, o, e]
+- grapheme: みゃえ
+  phonemes: [m, y, a, e]
+- grapheme: みゅえ
+  phonemes: [m, y, u, e]
+- grapheme: みょえ
+  phonemes: [m, y, o, e]
+- grapheme: まお
+  phonemes: [m, a, o]
+- grapheme: みお
+  phonemes: [m, i, o]
+- grapheme: むお
+  phonemes: [m, u, o]
+- grapheme: めお
+  phonemes: [m, e, o]
+- grapheme: みゃお
+  phonemes: [m, y, a, o]
+- grapheme: みゅお
+  phonemes: [m, y, u, o]
+- grapheme: みぇお
+  phonemes: [m, y, e, o]
+- grapheme: まう
+  phonemes: [m, a, u]
+- grapheme: みう
+  phonemes: [m, i, u]
+- grapheme: めう
+  phonemes: [m, e, u]
+- grapheme: もう
+  phonemes: [m, o, u]
+- grapheme: みゃう
+  phonemes: [m, y, a, u]
+- grapheme: みぇう
+  phonemes: [m, y, e, u]
+- grapheme: みょう
+  phonemes: [m, y, o, u]
+- grapheme: や
+  phonemes: [y, a]
+- grapheme: ゆ
+  phonemes: [y, u]
+- grapheme: いぇ
+  phonemes: [y, e]
+- grapheme: よ
+  phonemes: [y, o]
+- grapheme: やん
+  phonemes: [y, a, n]
+- grapheme: ゆん
+  phonemes: [y, u, n]
+- grapheme: いぇん
+  phonemes: [y, e, n]
+- grapheme: よん
+  phonemes: [y, o, n]
+- grapheme: やい
+  phonemes: [y, a, i]
+- grapheme: ゆい
+  phonemes: [y, u, i]
+- grapheme: いぇい
+  phonemes: [y, e, i]
+- grapheme: よい
+  phonemes: [y, o, i]
+- grapheme: やえ
+  phonemes: [y, a, e]
+- grapheme: ゆえ
+  phonemes: [y, u, e]
+- grapheme: よえ
+  phonemes: [y, o, e]
+- grapheme: やお
+  phonemes: [y, a, o]
+- grapheme: ゆお
+  phonemes: [y, u, o]
+- grapheme: いぇお
+  phonemes: [y, e, o]
+- grapheme: やう
+  phonemes: [y, a, u]
+- grapheme: いぇう
+  phonemes: [y, e, u]
+- grapheme: よう
+  phonemes: [y, o, u]
+- grapheme: ら
+  phonemes: [r, a]
+- grapheme: り
+  phonemes: [r, i]
+- grapheme: る
+  phonemes: [r, u]
+- grapheme: れ
+  phonemes: [r, e]
+- grapheme: ろ
+  phonemes: [r, o]
+- grapheme: りゃ
+  phonemes: [r, y, a]
+- grapheme: りゅ
+  phonemes: [r, y, u]
+- grapheme: りぇ
+  phonemes: [r, y, e]
+- grapheme: りょ
+  phonemes: [r, y, o]
+- grapheme: らん
+  phonemes: [r, a, n]
+- grapheme: りん
+  phonemes: [r, i, n]
+- grapheme: るん
+  phonemes: [r, u, n]
+- grapheme: れん
+  phonemes: [r, e, n]
+- grapheme: ろん
+  phonemes: [r, o, n]
+- grapheme: りゃん
+  phonemes: [r, y, a, n]
+- grapheme: りゅん
+  phonemes: [r, y, u, n]
+- grapheme: りぇん
+  phonemes: [r, y, e, n]
+- grapheme: りょん
+  phonemes: [r, y, o, n]
+- grapheme: らい
+  phonemes: [r, a, i]
+- grapheme: るい
+  phonemes: [r, u, i]
+- grapheme: れい
+  phonemes: [r, e, i]
+- grapheme: ろい
+  phonemes: [r, o, i]
+- grapheme: りゃい
+  phonemes: [r, y, a, i]
+- grapheme: りゅい
+  phonemes: [r, y, u, i]
+- grapheme: りぇい
+  phonemes: [r, y, e, i]
+- grapheme: りょい
+  phonemes: [r, y, o, i]
+- grapheme: らえ
+  phonemes: [r, a, e]
+- grapheme: りえ
+  phonemes: [r, i, e]
+- grapheme: るえ
+  phonemes: [r, u, e]
+- grapheme: ろえ
+  phonemes: [r, o, e]
+- grapheme: りゃえ
+  phonemes: [r, y, a, e]
+- grapheme: りゅえ
+  phonemes: [r, y, u, e]
+- grapheme: りょえ
+  phonemes: [r, y, o, e]
+- grapheme: らお
+  phonemes: [r, a, o]
+- grapheme: りお
+  phonemes: [r, i, o]
+- grapheme: るお
+  phonemes: [r, u, o]
+- grapheme: れお
+  phonemes: [r, e, o]
+- grapheme: りゃお
+  phonemes: [r, y, a, o]
+- grapheme: りゅお
+  phonemes: [r, y, u, o]
+- grapheme: りぇお
+  phonemes: [r, y, e, o]
+- grapheme: らう
+  phonemes: [r, a, u]
+- grapheme: りう
+  phonemes: [r, i, u]
+- grapheme: れう
+  phonemes: [r, e, u]
+- grapheme: ろう
+  phonemes: [r, o, u]
+- grapheme: りゃう
+  phonemes: [r, y, a, u]
+- grapheme: りぇう
+  phonemes: [r, y, e, u]
+- grapheme: りょう
+  phonemes: [r, y, o, u]
+- grapheme: わ
+  phonemes: [w, a]
+- grapheme: うぃ
+  phonemes: [w, i]
+- grapheme: うぅ
+  phonemes: [w, u]
+- grapheme: うぇ
+  phonemes: [w, e]
+- grapheme: うぉ
+  phonemes: [w, o]
+- grapheme: わん
+  phonemes: [w, a, n]
+- grapheme: うぃん
+  phonemes: [w, i, n]
+- grapheme: うぅん
+  phonemes: [w, u, n]
+- grapheme: うぇん
+  phonemes: [w, e, n]
+- grapheme: うぉん
+  phonemes: [w, o, n]
+- grapheme: わい
+  phonemes: [w, a, i]
+- grapheme: うぅい
+  phonemes: [w, u, i]
+- grapheme: うぇい
+  phonemes: [w, e, i]
+- grapheme: うぉい
+  phonemes: [w, o, i]
+- grapheme: わえ
+  phonemes: [w, a, e]
+- grapheme: うぃえ
+  phonemes: [w, i, e]
+- grapheme: うぅえ
+  phonemes: [w, u, e]
+- grapheme: うぉえ
+  phonemes: [w, o, e]
+- grapheme: わお
+  phonemes: [w, a, o]
+- grapheme: うぃお
+  phonemes: [w, i, o]
+- grapheme: うぅお
+  phonemes: [w, u, o]
+- grapheme: うぇお
+  phonemes: [w, e, o]
+- grapheme: わう
+  phonemes: [w, a, u]
+- grapheme: うぃう
+  phonemes: [w, i, u]
+- grapheme: うぇう
+  phonemes: [w, e, u]
+- grapheme: うぉう
+  phonemes: [w, o, u]
+- grapheme: ん
+  phonemes: [n]
+- grapheme: を
+  phonemes: [w, o]
+- grapheme: っ
+  phonemes: [cl]
+- grapheme: "'"
+  phonemes: [cl]
+- grapheme: ヴァ1
+  phonemes: [v, a]
+- grapheme: ヴィ1
+  phonemes: [v, i]
+- grapheme: ヴェ1
+  phonemes: [v, e]
+- grapheme: ヴォ1
+  phonemes: [v, o]
+- grapheme: キャ1
+  phonemes: [k, y, a]
+- grapheme: キュ1
+  phonemes: [k, y, u]
+- grapheme: キェ1
+  phonemes: [k, y, e]
+- grapheme: キョ1
+  phonemes: [k, y, o]
+- grapheme: ギャ1
+  phonemes: [g, y, a]
+- grapheme: ギュ1
+  phonemes: [g, y, u]
+- grapheme: ギェ1
+  phonemes: [g, y, e]
+- grapheme: ギョ1
+  phonemes: [g, y, o]
+- grapheme: シャ1
+  phonemes: [sy, a]
+- grapheme: シュ1
+  phonemes: [sy, u]
+- grapheme: シェ1
+  phonemes: [sy, e]
+- grapheme: ショ1
+  phonemes: [sy, o]
+- grapheme: ジャ1
+  phonemes: [j, a]
+- grapheme: ジュ1
+  phonemes: [j, u]
+- grapheme: ジェ1
+  phonemes: [j, e]
+- grapheme: ジョ1
+  phonemes: [j, o]
+- grapheme: チャ1
+  phonemes: [c, a]
+- grapheme: チュ1
+  phonemes: [c, u]
+- grapheme: チェ1
+  phonemes: [c, e]
+- grapheme: チョ1
+  phonemes: [c, o]
+- grapheme: ツァ1
+  phonemes: [t, s, a]
+- grapheme: ツィ1
+  phonemes: [t, s, i]
+- grapheme: ツェ1
+  phonemes: [t, s, e]
+- grapheme: ツォ1
+  phonemes: [t, s, o]
+- grapheme: ニャ1
+  phonemes: [ny, a]
+- grapheme: ニュ1
+  phonemes: [ny, u]
+- grapheme: ニェ1
+  phonemes: [ny, e]
+- grapheme: ニョ1
+  phonemes: [ny, o]
+- grapheme: ヒャ1
+  phonemes: [h, y, a]
+- grapheme: ヒュ1
+  phonemes: [h, y, u]
+- grapheme: ヒェ1
+  phonemes: [h, y, e]
+- grapheme: ヒョ1
+  phonemes: [h, y, o]
+- grapheme: ピャ1
+  phonemes: [p, y, a]
+- grapheme: ピュ1
+  phonemes: [p, y, u]
+- grapheme: ピェ1
+  phonemes: [p, y, e]
+- grapheme: ピョ1
+  phonemes: [p, y, o]
+- grapheme: ビャ1
+  phonemes: [b, y, a]
+- grapheme: ビュ1
+  phonemes: [b, y, u]
+- grapheme: ビェ1
+  phonemes: [b, y, e]
+- grapheme: ビョ1
+  phonemes: [b, y, o]
+- grapheme: ミャ1
+  phonemes: [m, y, a]
+- grapheme: ミュ1
+  phonemes: [m, y, u]
+- grapheme: ミェ1
+  phonemes: [m, y, e]
+- grapheme: ミョ1
+  phonemes: [m, y, o]
+- grapheme: イェ1
+  phonemes: [y, e]
+- grapheme: リャ1
+  phonemes: [r, y, a]
+- grapheme: リュ1
+  phonemes: [r, y, u]
+- grapheme: リェ1
+  phonemes: [r, y, e]
+- grapheme: リョ1
+  phonemes: [r, y, o]
+- grapheme: ティ1
+  phonemes: [t, i]
+- grapheme: トゥ1
+  phonemes: [t, u]
+- grapheme: ファ1
+  phonemes: [f, a]
+- grapheme: フィ1
+  phonemes: [f, i]
+- grapheme: フェ1
+  phonemes: [f, e]
+- grapheme: フォ1
+  phonemes: [f, o]
+- grapheme: スィ1
+  phonemes: [s, i]
+- grapheme: ヅィ1
+  phonemes: [z, i]
+- grapheme: ディ1
+  phonemes: [d, i]
+- grapheme: ドゥ1
+  phonemes: [d, u]
+- grapheme: デュ1
+  phonemes: [d, y, u]
+- grapheme: ウィ1
+  phonemes: [w, i]
+- grapheme: ウェ1
+  phonemes: [w, e]
+- grapheme: ウォ1
+  phonemes: [w, o]
+- grapheme: ア1
+  phonemes: [a]
+- grapheme: イ1
+  phonemes: [i]
+- grapheme: ウ1
+  phonemes: [u]
+- grapheme: エ1
+  phonemes: [e]
+- grapheme: オ1
+  phonemes: [o]
+- grapheme: カ1
+  phonemes: [k, a]
+- grapheme: キ1
+  phonemes: [k, i]
+- grapheme: ク1
+  phonemes: [k, u]
+- grapheme: ケ1
+  phonemes: [k, e]
+- grapheme: コ1
+  phonemes: [k, o]
+- grapheme: サ1
+  phonemes: [s, a]
+- grapheme: シ1
+  phonemes: [sy, i]
+- grapheme: ス1
+  phonemes: [s, u]
+- grapheme: セ1
+  phonemes: [s, e]
+- grapheme: ソ1
+  phonemes: [s, o]
+- grapheme: タ1
+  phonemes: [t, a]
+- grapheme: チ1
+  phonemes: [c, i]
+- grapheme: ツ1
+  phonemes: [t, s, u]
+- grapheme: テ1
+  phonemes: [t, e]
+- grapheme: ト1
+  phonemes: [t, o]
+- grapheme: ナ1
+  phonemes: [n, a]
+- grapheme: ニ1
+  phonemes: [n, i]
+- grapheme: ヌ1
+  phonemes: [n, u]
+- grapheme: ネ1
+  phonemes: [n, e]
+- grapheme: ノ1
+  phonemes: [n, o]
+- grapheme: ハ1
+  phonemes: [h, a]
+- grapheme: ヒ1
+  phonemes: [h, i]
+- grapheme: フ1
+  phonemes: [f, u]
+- grapheme: ヘ1
+  phonemes: [h, e]
+- grapheme: ホ1
+  phonemes: [h, o]
+- grapheme: マ1
+  phonemes: [m, a]
+- grapheme: ミ1
+  phonemes: [m, i]
+- grapheme: ム1
+  phonemes: [m, u]
+- grapheme: メ1
+  phonemes: [m, e]
+- grapheme: モ1
+  phonemes: [m, o]
+- grapheme: ヤ1
+  phonemes: [y, a]
+- grapheme: ユ1
+  phonemes: [y, u]
+- grapheme: ヨ1
+  phonemes: [y, o]
+- grapheme: ラ1
+  phonemes: [r, a]
+- grapheme: リ1
+  phonemes: [r, i]
+- grapheme: ル1
+  phonemes: [r, u]
+- grapheme: レ1
+  phonemes: [r, e]
+- grapheme: ロ1
+  phonemes: [r, o]
+- grapheme: l a1
+  phonemes: [l, a]
+- grapheme: l i1
+  phonemes: [l, i]
+- grapheme: l u1
+  phonemes: [l, u]
+- grapheme: l e1
+  phonemes: [l, e]
+- grapheme: l o1
+  phonemes: [l, o]
+- grapheme: ワ1
+  phonemes: [w, a]
+- grapheme: を1
+  phonemes: [o]
+- grapheme: ン1
+  phonemes: [n]
+- grapheme: ガ1
+  phonemes: [g, a]
+- grapheme: ギ1
+  phonemes: [g, i]
+- grapheme: グ1
+  phonemes: [g, u]
+- grapheme: ゲ1
+  phonemes: [g, e]
+- grapheme: ゴ1
+  phonemes: [g, o]
+- grapheme: ザ1
+  phonemes: [z, a]
+- grapheme: ジ1
+  phonemes: [j, i]
+- grapheme: ヅ1
+  phonemes: [z, u]
+- grapheme: ゼ1
+  phonemes: [z, e]
+- grapheme: ゾ1
+  phonemes: [z, o]
+- grapheme: ダ1
+  phonemes: [d, a]
+- grapheme: デ1
+  phonemes: [d, e]
+- grapheme: ド1
+  phonemes: [d, o]
+- grapheme: パ1
+  phonemes: [p, a]
+- grapheme: ピ1
+  phonemes: [p, i]
+- grapheme: プ1
+  phonemes: [p, u]
+- grapheme: ポ1
+  phonemes: [p, o]
+- grapheme: バ1
+  phonemes: [b, a]
+- grapheme: ビ1
+  phonemes: [b, i]
+- grapheme: ブ1
+  phonemes: [b, u]
+- grapheme: ベ1
+  phonemes: [b, e]
+- grapheme: ボ1
+  phonemes: [b, o]
+- grapheme: ヴァ
+  phonemes: [v]
+- grapheme: ヴィ
+  phonemes: [v]
+- grapheme: ヴェ
+  phonemes: [v]
+- grapheme: ヴォ
+  phonemes: [v]
+- grapheme: キャ
+  phonemes: [k, y]
+- grapheme: キュ
+  phonemes: [k, y]
+- grapheme: キェ
+  phonemes: [k, y]
+- grapheme: キョ
+  phonemes: [k, y]
+- grapheme: ギャ
+  phonemes: [g, y]
+- grapheme: ギュ
+  phonemes: [g, y]
+- grapheme: ギェ
+  phonemes: [g, y]
+- grapheme: ギョ
+  phonemes: [g, y]
+- grapheme: シャ
+  phonemes: [sy]
+- grapheme: シュ
+  phonemes: [sy]
+- grapheme: シェ
+  phonemes: [sy]
+- grapheme: ショ
+  phonemes: [sy]
+- grapheme: ジャ
+  phonemes: [j]
+- grapheme: ジュ
+  phonemes: [j]
+- grapheme: ジェ
+  phonemes: [j]
+- grapheme: ジョ
+  phonemes: [j]
+- grapheme: チャ
+  phonemes: [c]
+- grapheme: チュ
+  phonemes: [c]
+- grapheme: チェ
+  phonemes: [c]
+- grapheme: チョ
+  phonemes: [c]
+- grapheme: ツァ
+  phonemes: [t, s]
+- grapheme: ツィ
+  phonemes: [t, s]
+- grapheme: ツェ
+  phonemes: [t, s]
+- grapheme: ツォ
+  phonemes: [t, s]
+- grapheme: ニャ
+  phonemes: [ny]
+- grapheme: ニュ
+  phonemes: [ny]
+- grapheme: ニェ
+  phonemes: [ny]
+- grapheme: ニョ
+  phonemes: [ny]
+- grapheme: ヒャ
+  phonemes: [h, y]
+- grapheme: ヒュ
+  phonemes: [h, y]
+- grapheme: ヒェ
+  phonemes: [h, y]
+- grapheme: ヒョ
+  phonemes: [h, y]
+- grapheme: ピャ
+  phonemes: [p, y]
+- grapheme: ピュ
+  phonemes: [p, y]
+- grapheme: ピェ
+  phonemes: [p, y]
+- grapheme: ピョ
+  phonemes: [p, y]
+- grapheme: ビャ
+  phonemes: [b, y]
+- grapheme: ビュ
+  phonemes: [b, y]
+- grapheme: ビェ
+  phonemes: [b, y]
+- grapheme: ビョ
+  phonemes: [b, y]
+- grapheme: ミャ
+  phonemes: [m, y]
+- grapheme: ミュ
+  phonemes: [m, y]
+- grapheme: ミェ
+  phonemes: [m, y]
+- grapheme: ミョ
+  phonemes: [m, y]
+- grapheme: イェ
+  phonemes: [y]
+- grapheme: リャ
+  phonemes: [r, y]
+- grapheme: リュ
+  phonemes: [r, y]
+- grapheme: リェ
+  phonemes: [r, y]
+- grapheme: リョ
+  phonemes: [r, y]
+- grapheme: ティ
+  phonemes: [t]
+- grapheme: トゥ
+  phonemes: [t]
+- grapheme: ファ
+  phonemes: [f]
+- grapheme: フィ
+  phonemes: [f]
+- grapheme: フェ
+  phonemes: [f]
+- grapheme: フォ
+  phonemes: [f]
+- grapheme: スィ
+  phonemes: [s]
+- grapheme: ヅィ
+  phonemes: [z]
+- grapheme: ディ
+  phonemes: [d]
+- grapheme: ドゥ
+  phonemes: [d]
+- grapheme: デュ
+  phonemes: [d, y]
+- grapheme: ウィ
+  phonemes: [w]
+- grapheme: ウェ
+  phonemes: [w]
+- grapheme: ウォ
+  phonemes: [w]
+- grapheme: ア
+  phonemes: [a]
+- grapheme: イ
+  phonemes: [i]
+- grapheme: ウ
+  phonemes: [u]
+- grapheme: エ
+  phonemes: [e]
+- grapheme: オ
+  phonemes: [o]
+- grapheme: カ
+  phonemes: [k]
+- grapheme: キ
+  phonemes: [k]
+- grapheme: ク
+  phonemes: [k]
+- grapheme: ケ
+  phonemes: [k]
+- grapheme: コ
+  phonemes: [k]
+- grapheme: サ
+  phonemes: [s]
+- grapheme: シ
+  phonemes: [sy]
+- grapheme: ス
+  phonemes: [s]
+- grapheme: セ
+  phonemes: [s]
+- grapheme: ソ
+  phonemes: [s]
+- grapheme: タ
+  phonemes: [t]
+- grapheme: チ
+  phonemes: [c]
+- grapheme: ツ
+  phonemes: [t, s]
+- grapheme: テ
+  phonemes: [t]
+- grapheme: ト
+  phonemes: [t]
+- grapheme: ナ
+  phonemes: [n]
+- grapheme: ニ
+  phonemes: [n]
+- grapheme: ヌ
+  phonemes: [n]
+- grapheme: ネ
+  phonemes: [n]
+- grapheme: ノ
+  phonemes: [n]
+- grapheme: ハ
+  phonemes: [h]
+- grapheme: ヒ
+  phonemes: [h]
+- grapheme: フ
+  phonemes: [f]
+- grapheme: ヘ
+  phonemes: [h]
+- grapheme: ホ
+  phonemes: [h]
+- grapheme: マ
+  phonemes: [m]
+- grapheme: ミ
+  phonemes: [m]
+- grapheme: ム
+  phonemes: [m]
+- grapheme: メ
+  phonemes: [m]
+- grapheme: モ
+  phonemes: [m]
+- grapheme: ヤ
+  phonemes: [y]
+- grapheme: ユ
+  phonemes: [y]
+- grapheme: ヨ
+  phonemes: [y]
+- grapheme: ラ
+  phonemes: [r]
+- grapheme: リ
+  phonemes: [r]
+- grapheme: ル
+  phonemes: [r]
+- grapheme: レ
+  phonemes: [r]
+- grapheme: ロ
+  phonemes: [r]
+- grapheme: ワ
+  phonemes: [w]
+- grapheme: ン
+  phonemes: [n]
+- grapheme: ガ
+  phonemes: [g]
+- grapheme: ギ
+  phonemes: [g]
+- grapheme: グ
+  phonemes: [g]
+- grapheme: ゲ
+  phonemes: [g]
+- grapheme: ゴ
+  phonemes: [g]
+- grapheme: ザ
+  phonemes: [z]
+- grapheme: ジ
+  phonemes: [j]
+- grapheme: ヅ
+  phonemes: [z]
+- grapheme: ゼ
+  phonemes: [z]
+- grapheme: ゾ
+  phonemes: [z]
+- grapheme: ダ
+  phonemes: [d]
+- grapheme: デ
+  phonemes: [d]
+- grapheme: ド
+  phonemes: [d]
+- grapheme: パ
+  phonemes: [p]
+- grapheme: ピ
+  phonemes: [p]
+- grapheme: プ
+  phonemes: [p]
+- grapheme: ポ
+  phonemes: [p]
+- grapheme: バ
+  phonemes: [b]
+- grapheme: ビ
+  phonemes: [b]
+- grapheme: ブ
+  phonemes: [b]
+- grapheme: ベ
+  phonemes: [b]
+- grapheme: ボ
+  phonemes: [b]

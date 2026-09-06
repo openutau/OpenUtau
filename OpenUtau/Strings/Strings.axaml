@@ -252,6 +252,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="languages.vi">Vietnamese</system:String>
   <system:String x:Key="languages.zh">Chinese</system:String>
   <system:String x:Key="languages.zh-yue">Cantonese</system:String>
+  <system:String x:Key="languages.id">Indonesian</system:String>
 
   <system:String x:Key="lyrics.applyselected">Apply only to selected notes</system:String>
   <system:String x:Key="lyrics.caption">Edit Lyrics</system:String>
