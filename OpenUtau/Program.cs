@@ -5,12 +5,14 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using ReactiveUI.Avalonia;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
+using OpenUtau.Core.Headless;
 using Serilog;
 
 namespace OpenUtau.App {
@@ -20,8 +22,21 @@ namespace OpenUtau.App {
         // yet and stuff might break.
         [STAThread]
         public static void Main(string[] args) {
+            var isHeadlessCommand = HeadlessRenderCommand.IsCommand(args);
+            if (isHeadlessCommand) {
+                AttachToParentConsole();
+            }
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             InitLogging();
+            if (isHeadlessCommand) {
+                try {
+                    Environment.ExitCode = RunHeadlessCommand(args);
+                } finally {
+                    CleanupNetMq();
+                    Log.CloseAndFlush();
+                }
+                return;
+            }
             string processName = Process.GetCurrentProcess().ProcessName;
             if (processName != "dotnet") {
                 var exists = Process.GetProcessesByName(processName).Count() > 1;
@@ -43,10 +58,7 @@ namespace OpenUtau.App {
                 Run(args);
                 Log.Information($"Exiting.");
             } finally {
-                if (!OS.IsMacOS()) {
-                    NetMQ.NetMQConfig.Cleanup(/*block=*/false);
-                    // Cleanup() hangs on macOS https://github.com/zeromq/netmq/issues/1018
-                }
+                CleanupNetMq();
             }
             Log.Information($"Exited.");
         }
@@ -97,6 +109,37 @@ namespace OpenUtau.App {
                 .StartWithClassicDesktopLifetime(
                     args, ShutdownMode.OnMainWindowClose);
 
+        private static int RunHeadlessCommand(string[] args) {
+            var exitCode = 1;
+            Exception? exception = null;
+            var thread = new Thread(() => {
+                try {
+                    exitCode = HeadlessRenderCommand.Run(args);
+                } catch (Exception e) {
+                    exception = e;
+                }
+            });
+            try {
+                thread.SetApartmentState(ApartmentState.MTA);
+            } catch {
+            }
+            thread.Start();
+            thread.Join();
+            if (exception != null) {
+                Console.Error.WriteLine(exception.Message);
+                Log.Error(exception, "Headless command failed unexpectedly.");
+                return 1;
+            }
+            return exitCode;
+        }
+
+        private static void CleanupNetMq() {
+            if (!OS.IsMacOS()) {
+                NetMQ.NetMQConfig.Cleanup(/*block=*/false);
+                // Cleanup() hangs on macOS https://github.com/zeromq/netmq/issues/1018
+            }
+        }
+
         public static void InitLogging() {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
@@ -113,5 +156,31 @@ namespace OpenUtau.App {
             });
             Log.Information("Logging initialized.");
         }
+
+        private static void AttachToParentConsole() {
+            if (!OS.IsWindows()) {
+                return;
+            }
+            AttachConsole(AttachParentProcess);
+            ResetConsoleStreams();
+        }
+
+        private static void ResetConsoleStreams() {
+            try {
+                var output = Console.OpenStandardOutput();
+                Console.SetOut(new StreamWriter(output) { AutoFlush = true });
+            } catch {
+            }
+            try {
+                var error = Console.OpenStandardError();
+                Console.SetError(new StreamWriter(error) { AutoFlush = true });
+            } catch {
+            }
+        }
+
+        private const uint AttachParentProcess = 0xFFFFFFFF;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool AttachConsole(uint dwProcessId);
     }
 }
