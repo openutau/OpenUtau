@@ -117,6 +117,8 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="dialogs.installdependency.caption">Installing dependency</system:String>
   <system:String x:Key="dialogs.installdependency.message">Installing </system:String>
   <system:String x:Key="dialogs.installdll.caption">Installing phonemizer</system:String>
+  <system:String x:Key="warning.enginemismatch.title">Phonemizer Mismatched</system:String>
+  <system:String x:Key="warning.enginemismatch.msg">The singer type ({0}) does not match the phonemizer type ({1}). This may result in missing phonemes or errors. Do you want to use this phonemizer anyway?</system:String>
   <system:String x:Key="dialogs.installdll.message">Installing </system:String>
   <system:String x:Key="dialogs.merge.caption">Merging Parts</system:String>
   <system:String x:Key="dialogs.merge.multitracks">Parts on different tracks cannot be merged.</system:String>

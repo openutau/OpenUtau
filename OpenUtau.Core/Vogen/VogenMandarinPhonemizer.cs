@@ -2,7 +2,7 @@
 using OpenUtau.Api;
 
 namespace OpenUtau.Core.Vogen {
-    [Phonemizer("Vogen Chinese Mandarin Phonemizer", "VOGEN ZH", language: "ZH")]
+    [Phonemizer("Vogen Chinese Mandarin Phonemizer", "VOGEN ZH", language: "ZH", engine: "Vogen")]
     public class VogenMandarinPhonemizer : VogenBasePhonemizer {
         private static InferenceSession? g2p;
         private static InferenceSession? prosody;

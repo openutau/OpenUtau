@@ -3,7 +3,7 @@ using OpenUtau.Core.G2p;
 
 namespace OpenUtau.Core.DiffSinger
 {
-    [Phonemizer("DiffSinger German Marzipan Phonemizer", "DIFFS DE MARZ", language: "DE")]
+    [Phonemizer("DiffSinger German Marzipan Phonemizer", "DIFFS DE MARZ", language: "DE", engine: "Diffsinger")]
     public class DiDiffSingerGermanMarzipanPhonemizerr : DiffSingerG2pPhonemizer
     {
         protected override string GetDictionaryName()=> "dsdict-de-marzipan.yaml";
