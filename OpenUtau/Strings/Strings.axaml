@@ -466,6 +466,8 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.menu.notes.addtailrest">Add tail "R"</system:String>
   <system:String x:Key="pianoroll.menu.notes.autolegato">Auto Legato</system:String>
   <system:String x:Key="pianoroll.menu.notes.bakepitch">Convert PITD to pitch control points</system:String>
+  <system:String x:Key="pianoroll.menu.notes.bakpointstopitd">Convert pitch control points to PITD</system:String>
+  <system:String x:Key="pianoroll.menu.notes.simplifypitchpoints">Simplify Pitch Points</system:String>
   <system:String x:Key="pianoroll.menu.notes.clear.vibratos">Clear vibratos</system:String>
   <system:String x:Key="pianoroll.menu.notes.commonnotecopy">Commonnote Copy</system:String>
   <system:String x:Key="pianoroll.menu.notes.commonnotepaste">Commonnote Paste</system:String>
