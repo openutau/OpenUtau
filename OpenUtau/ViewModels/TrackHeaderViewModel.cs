@@ -307,13 +307,13 @@ namespace OpenUtau.App.ViewModels {
 
                 if (allSingers.Count > 0) {
                     foreach (var id in Preferences.Default.RecentSingers) {
-                        if (allSingers.TryGetValue(id, out var singer) && singer != null) {
+                        if (!string.IsNullOrWhiteSpace(id) && allSingers.TryGetValue(id, out var singer) && singer != null) {
                             list.Add(CreateSingerMenuItem(singer));
                         }
                     }
                     var favList = new List<USinger>();
                     foreach (var id in Preferences.Default.FavoriteSingers) {
-                        if (allSingers.TryGetValue(id, out var singer) && singer != null) {
+                        if (!string.IsNullOrWhiteSpace(id) && allSingers.TryGetValue(id, out var singer) && singer != null) {
                             favList.Add(singer);
                         }
                     }

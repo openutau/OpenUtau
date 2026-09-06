@@ -134,6 +134,14 @@ namespace OpenUtau.Core.Util {
                         Default.PreferPortAudio = null;
                     }
                     Default.MigrateRealTimePitchMode();
+                    Default.RecentSingers = Default.RecentSingers?
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .ToList()
+                        ?? new List<string>();
+                    Default.FavoriteSingers = Default.FavoriteSingers?
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .ToList()
+                        ?? new List<string>();
                 } else {
                     Reset();
                 }
