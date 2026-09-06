@@ -378,7 +378,7 @@ namespace OpenUtau.App.Views {
                 return;
             }
             // Resize neighbor note
-            if (resizeNeighbor && neighborNote != null) {
+            if (resizeNeighbor && neighborNote != null && !shiftHeld) {
                 int cutDuration = deltaDuration;
                 if (!this.resizeNeighbor && deltaDuration < 0) {
                     cutDuration = Math.Max(deltaDuration, neighborNote.duration - neighborNoteLength);
@@ -397,6 +397,9 @@ namespace OpenUtau.App.Views {
             if (notesVm.Selection.Count <= 1) {
                 if (fromStart) {
                     DocManager.Inst.ExecuteCmd(new MoveNoteCommand(part, note, -deltaDuration, 0));
+                } else if (shiftHeld) {
+                    var rippleNotes = part.notes.Where(n => n.position > note.position).ToList();
+                    DocManager.Inst.ExecuteCmd(new MoveNoteCommand(part, rippleNotes, deltaDuration, 0));
                 }
                 DocManager.Inst.ExecuteCmd(new ResizeNoteCommand(part, note, deltaDuration));
             } else {
