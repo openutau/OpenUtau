@@ -29,6 +29,7 @@ namespace OpenUtau.Core {
             Log.Information("Searching singers.");
             Directory.CreateDirectory(PathManager.Inst.SingersPath);
             var stopWatch = Stopwatch.StartNew();
+            var oldSingers = Singers.Values.ToList();
             var singers = ClassicSingerLoader.FindAllSingers()
                 .Concat(Vogen.VogenSingerLoader.FindAllSingers())
                 .Distinct();
@@ -38,6 +39,9 @@ namespace OpenUtau.Core {
             SingerGroups = singers
                 .GroupBy(s => s.SingerType)
                 .ToDictionary(s => s.Key, s => s.LocalizedOrderBy(singer => singer.LocalizedName).ToList());
+            foreach (var old in oldSingers) {
+                (old as IDisposable)?.Dispose();
+            }
             stopWatch.Stop();
             Log.Information($"Search all singers: {stopWatch.Elapsed}");
         }

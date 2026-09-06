@@ -502,6 +502,7 @@ namespace OpenUtau.App.ViewModels {
 
         public void RefreshAvatar() {
             var singer = track?.Singer;
+            Avatar?.Dispose();
             if (singer == null || singer.AvatarData == null) {
                 Avatar = new RenderTargetBitmap(new PixelSize(1, 1));
                 return;

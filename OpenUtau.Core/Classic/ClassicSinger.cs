@@ -10,7 +10,7 @@ using Serilog;
 using WanaKanaNet;
 
 namespace OpenUtau.Classic {
-    public class ClassicSinger : USinger {
+    public class ClassicSinger : USinger, IDisposable {
         public override string Id => voicebank.Id;
         public override string Name => voicebank.Name;
         public override Dictionary<string, string> LocalizedNames => voicebank.LocalizedNames;
@@ -159,6 +159,11 @@ namespace OpenUtau.Classic {
             } finally {
                 otoWatcher.Paused = false;
             }
+        }
+        
+        public void Dispose() {
+            otoWatcher?.Dispose();
+            otoWatcher = null;
         }
 
         public override bool TryGetOto(string phoneme, out UOto oto) {
