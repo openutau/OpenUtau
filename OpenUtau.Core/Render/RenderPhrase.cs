@@ -193,6 +193,7 @@ namespace OpenUtau.Core.Render {
 
         internal readonly IRenderer renderer;
         public readonly string wavtool;
+        public readonly IReadOnlyDictionary<string, string> rendererSettings;
 
         private List<string> cacheFiles = new List<string>();
 
@@ -221,6 +222,8 @@ namespace OpenUtau.Core.Render {
             singer = track.Singer;
             renderer = track.RendererSettings.Renderer;
             wavtool = track.RendererSettings.wavtool;
+            rendererSettings = new Dictionary<string, string>(track.RendererSettings.rendererSettings ??
+                new Dictionary<string, string>());
             timeAxis = project.timeAxis.Clone();
 
             position = part.position + phonemes.First().position;
@@ -493,6 +496,11 @@ namespace OpenUtau.Core.Render {
                     writer.Write(singer.Id);
                     writer.Write(renderer == null ? "" : Renderers.GetRendererId(renderer));
                     writer.Write(wavtool ?? "");
+                    foreach (var setting in rendererSettings.OrderBy(pair => pair.Key,
+                            StringComparer.Ordinal)) {
+                        writer.Write(setting.Key);
+                        writer.Write(setting.Value ?? string.Empty);
+                    }
                     writer.Write(timeAxis.Timestamp);
                     foreach (var phone in phones) {
                         writer.Write(phone.hash);

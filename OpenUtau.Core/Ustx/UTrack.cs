@@ -12,6 +12,7 @@ namespace OpenUtau.Core.Ustx {
         public string renderer;
         public string resampler;
         public string wavtool;
+        public Dictionary<string, string> rendererSettings = new Dictionary<string, string>();
 
         [YamlIgnore] public IRenderer Renderer { get; set; }
         [YamlIgnore] public IResampler Resampler { get; set; }
@@ -19,6 +20,7 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public string RendererLoadError { get; private set; }
 
         public void Validate(UTrack track, bool fallbackUnavailableRenderer = true) {
+            rendererSettings ??= new Dictionary<string, string>();
             if (track.Singer == null || !track.Singer.Found) {
                 renderer = null;
                 Renderer = null;
@@ -83,6 +85,14 @@ namespace OpenUtau.Core.Ustx {
             } else {
                 wavtool = null;
                 Wavtool = null;
+                var descriptor = ExternalRendererRegistry.Renderers.FirstOrDefault(item =>
+                    string.Equals(item.Id, Renderers.GetRendererId(Renderer),
+                        StringComparison.OrdinalIgnoreCase));
+                if (descriptor != null) {
+                    foreach (var setting in descriptor.Metadata.Settings) {
+                        rendererSettings.TryAdd(setting.Key, setting.Value.DefaultValue);
+                    }
+                }
             }
         }
 
@@ -91,6 +101,7 @@ namespace OpenUtau.Core.Ustx {
                 renderer = renderer,
                 resampler = resampler,
                 wavtool = wavtool,
+                rendererSettings = new Dictionary<string, string>(rendererSettings ?? new Dictionary<string, string>()),
             };
         }
     }
@@ -191,12 +202,25 @@ namespace OpenUtau.Core.Ustx {
                 RendererSettings = new URenderSettings();
             }
             RendererSettings.Validate(this);
+            RegisterRendererExpressions(project);
             if (project.expressions.TryGetValue(Format.Ustx.CLR, out var descriptor)) {
                 if (VoiceColorExp == null && Singer != null && Singer.Found && Singer.Loaded) {
                     VoiceColorExp = descriptor.Clone();
                     var colors = Singer.Subbanks.Select(subbank => subbank.Color).ToHashSet();
                     VoiceColorExp.options = colors.OrderBy(c => c).ToArray();
                     VoiceColorExp.max = VoiceColorExp.options.Length - 1;
+                }
+            }
+        }
+
+        public void RegisterRendererExpressions(UProject project) {
+            if (RendererSettings.Renderer == null || Singer == null || !Singer.Found) {
+                return;
+            }
+            foreach (var descriptor in RendererSettings.Renderer.GetSuggestedExpressions(
+                    Singer, RendererSettings) ?? Array.Empty<UExpressionDescriptor>()) {
+                if (descriptor != null && !string.IsNullOrWhiteSpace(descriptor.abbr)) {
+                    project.RegisterExpression(descriptor);
                 }
             }
         }

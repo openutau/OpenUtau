@@ -34,6 +34,21 @@ namespace OpenUtau.Core.Render {
             = new Dictionary<string, AnalysisFormatManifest>();
         public IReadOnlyDictionary<string, UExpressionDescriptor> Expressions { get; init; }
             = new Dictionary<string, UExpressionDescriptor>();
+        public IReadOnlyDictionary<string, RendererSettingDescriptor> Settings { get; init; }
+            = new Dictionary<string, RendererSettingDescriptor>();
+    }
+
+    public enum RendererSettingType { Integer, Number, Boolean, Text, Choice }
+
+    public sealed class RendererSettingDescriptor {
+        public string Name { get; init; } = string.Empty;
+        public string Description { get; init; } = string.Empty;
+        public RendererSettingType Type { get; init; } = RendererSettingType.Text;
+        public string DefaultValue { get; init; } = string.Empty;
+        public double? Min { get; init; }
+        public double? Max { get; init; }
+        public double? Step { get; init; }
+        public IReadOnlyList<string> Choices { get; init; } = Array.Empty<string>();
     }
 
     /// <summary>

@@ -6,10 +6,25 @@
         x:Class="OpenUtau.App.Views.TrackSettingsDialog"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource dialogs.tracksettings.caption}"
-        Height="184" Width="320" WindowStartupLocation="CenterOwner" CanResize="False">
+        MinHeight="184" MaxHeight="640" Width="360" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" CanResize="False">
   <Border Margin="{Binding $parent.WindowDecorationMargin}">
     <StackPanel Margin="8">
       <TextBlock Text="{DynamicResource warning.renderer}" IsVisible="{Binding IsNotClassic}"/>
+      <ItemsControl ItemsSource="{Binding RendererSettings}" IsVisible="{Binding HasRendererSettings}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <StackPanel Margin="0,0,0,8">
+              <TextBlock Text="{Binding Name}" ToolTip.Tip="{Binding Description}"/>
+              <TextBox IsVisible="{Binding IsNumber}" Text="{Binding NumberText}"/>
+              <ToggleSwitch IsVisible="{Binding IsBoolean}" IsChecked="{Binding BoolValue}"/>
+              <ComboBox IsVisible="{Binding IsChoice}" ItemsSource="{Binding Choices}"
+                        SelectedItem="{Binding ChoiceValue}"/>
+              <TextBox IsVisible="{Binding IsText}" Text="{Binding TextValue}"/>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
       <TextBlock Text="{DynamicResource prefs.rendering.resampler}" IsVisible="{Binding NeedsResampler}"/>
       <ComboBox Grid.Column="0" HorizontalAlignment="Stretch" IsVisible="{Binding NeedsResampler}"
                 ItemsSource="{Binding Resamplers}"

@@ -313,9 +313,15 @@ namespace OpenUtau.Core.Render {
             if (requests.Count == 0) return Array.Empty<RendererAnalysisResult>();
             var results = await provider.GenerateAsync(requests, progress, cancellation)
                 ?? Array.Empty<RendererAnalysisResult>();
-            var byOutput = results.GroupBy(result => Path.GetFullPath(result.Request.OutputFile),
+            var byOutput = results
+                .Where(result => result?.Request != null &&
+                    !string.IsNullOrWhiteSpace(result.Request.OutputFile))
+                .Select(result => (Result: result, Output: TryGetFullPath(result.Request.OutputFile)))
+                .Where(item => item.Output != null)
+                .GroupBy(item => item.Output!,
                     StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+                .ToDictionary(group => group.Key, group => group.First().Result,
+                    StringComparer.OrdinalIgnoreCase);
             return requests.Select(request => {
                 if (!byOutput.TryGetValue(Path.GetFullPath(request.OutputFile), out var result)) {
                     return new RendererAnalysisResult(request, RendererAnalysisOutcome.Failed,
@@ -328,6 +334,15 @@ namespace OpenUtau.Core.Render {
                 }
                 return result with { Request = request };
             }).ToArray();
+        }
+
+        static string? TryGetFullPath(string path) {
+            try {
+                return Path.GetFullPath(path);
+            } catch (Exception exception) when (exception is ArgumentException or
+                    NotSupportedException or PathTooLongException) {
+                return null;
+            }
         }
 
         public static async Task PrepareRequiredAnalysisAsync(
@@ -453,6 +468,23 @@ namespace OpenUtau.Core.Render {
                         $"Renderer analysis format '{pair.Key}' has no path in {origin}.");
                 }
             }
+            foreach (var pair in metadata.Settings) {
+                if (string.IsNullOrWhiteSpace(pair.Key) || pair.Value == null ||
+                        string.IsNullOrWhiteSpace(pair.Value.Name)) {
+                    throw new InvalidDataException(
+                        $"Renderer setting has no key, descriptor, or name in {origin}.");
+                }
+                if (pair.Value.Type == RendererSettingType.Choice &&
+                        (pair.Value.Choices.Count == 0 ||
+                         !pair.Value.Choices.Contains(pair.Value.DefaultValue))) {
+                    throw new InvalidDataException(
+                        $"Renderer choice setting '{pair.Key}' has an invalid default in {origin}.");
+                }
+                if (pair.Value.Min > pair.Value.Max) {
+                    throw new InvalidDataException(
+                        $"Renderer setting '{pair.Key}' has min greater than max in {origin}.");
+                }
+            }
             if (metadata.Capabilities.parallelism < 0) {
                 throw new InvalidDataException(
                     $"Renderer declares negative parallelism in {origin}.");
@@ -465,6 +497,8 @@ namespace OpenUtau.Core.Render {
                 ?? new Dictionary<string, AnalysisFormatManifest>(),
             Expressions = metadata?.Expressions
                 ?? new Dictionary<string, UExpressionDescriptor>(),
+            Settings = metadata?.Settings
+                ?? new Dictionary<string, RendererSettingDescriptor>(),
         };
 
         static IRenderer LoadRenderer(ExternalRendererDescriptor descriptor) {

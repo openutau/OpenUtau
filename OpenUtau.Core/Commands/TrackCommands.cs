@@ -156,12 +156,20 @@ namespace OpenUtau.Core {
         public override void Execute() {
             var settings = newSettings.Clone();
             settings.Validate(track, fallbackUnavailableRenderer: false);
-            track.RendererSettings = settings;
+            ReplaceSettings(settings);
         }
         public override void Unexecute() {
             var settings = oldSettings.Clone();
             settings.Validate(track);
+            ReplaceSettings(settings);
+        }
+        void ReplaceSettings(URenderSettings settings) {
+            if (!ReferenceEquals(track.RendererSettings.Renderer, settings.Renderer) &&
+                    track.RendererSettings.Renderer is IDisposable disposable) {
+                disposable.Dispose();
+            }
             track.RendererSettings = settings;
+            track.RegisterRendererExpressions(project);
         }
     }
 }
