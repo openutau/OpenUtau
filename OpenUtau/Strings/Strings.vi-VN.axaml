@@ -17,16 +17,16 @@
   <!--<system:String x:Key="button.select">Select</system:String>-->
   <!--<system:String x:Key="button.yes">Yes</system:String>-->
 
-  <!--<system:String x:Key="command.batch.lyric">Lyrics batch edit</system:String>-->
+  <system:String x:Key="command.batch.lyric">Chỉnh sửa nhiều nốt</system:String>
   <!--<system:String x:Key="command.batch.note">Notes batch edit</system:String>-->
   <!--<system:String x:Key="command.batch.plugin">Apply plugin edit</system:String>-->
   <!--<system:String x:Key="command.batch.reset">Batch reset</system:String>-->
   <!--<system:String x:Key="command.exp.edit">Edit expression</system:String>-->
   <!--<system:String x:Key="command.exp.paste">Paste expression curve</system:String>-->
   <!--<system:String x:Key="command.exp.reset">Reset expression</system:String>-->
-  <!--<system:String x:Key="command.import.audio">Import audio</system:String>-->
+  <system:String x:Key="command.import.audio">Nhập âm thanh</system:String>
   <!--<system:String x:Key="command.import.track">Import track(s)</system:String>-->
-  <!--<system:String x:Key="command.note.add">Add note</system:String>-->
+  <system:String x:Key="command.note.add">Thêm nốt</system:String>
   <!--<system:String x:Key="command.note.delete">Delete note(s)</system:String>-->
   <!--<system:String x:Key="command.note.edit">Edit note(s)</system:String>-->
   <!--<system:String x:Key="command.note.lyric">Edit lyric(s)</system:String>-->
@@ -47,27 +47,27 @@
   <!--<system:String x:Key="command.pitch.add">Add pitch point</system:String>-->
   <!--<system:String x:Key="command.pitch.delete">Delete pitch point</system:String>-->
   <!--<system:String x:Key="command.pitch.draw">Draw pitch</system:String>-->
-  <!--<system:String x:Key="command.pitch.edit">Edit pitch</system:String>-->
-  <!--<system:String x:Key="command.pitch.editpoint">Edit pitch point</system:String>-->
-  <!--<system:String x:Key="command.pitch.reset">Reset pitch</system:String>-->
-  <!--<system:String x:Key="command.project.exp">Edit project expressions</system:String>-->
-  <!--<system:String x:Key="command.project.key">Change project key</system:String>-->
-  <!--<system:String x:Key="command.project.tempo">Edit tempo</system:String>-->
-  <!--<system:String x:Key="command.project.timesignature">Edit time signature</system:String>-->
+  <system:String x:Key="command.pitch.edit">Chỉnh sửa cao độ </system:String>
+  <system:String x:Key="command.pitch.editpoint">Chỉnh sửa dấu cao độ </system:String>
+  <system:String x:Key="command.pitch.reset">Đặt lại cao độ</system:String>
+  <system:String x:Key="command.project.exp">Chỉnh sửa biểu cảm của dự án</system:String>
+  <system:String x:Key="command.project.key">Đổi tông của dự án</system:String>
+  <system:String x:Key="command.project.tempo">Chỉnh sửa nhịp điệu</system:String>
+  <system:String x:Key="command.project.timesignature">Chỉnh sửa chỉ nhịp</system:String>
   <!--<system:String x:Key="command.property.edit">Edit note(s) property</system:String>-->
   <!--<system:String x:Key="command.property.reset">Reset note(s) property</system:String>-->
-  <!--<system:String x:Key="command.track.add">Add track</system:String>-->
-  <!--<system:String x:Key="command.track.delete">Delete track</system:String>-->
-  <!--<system:String x:Key="command.track.duplicate">Duplicate track</system:String>-->
+  <system:String x:Key="command.track.add">Thêm track</system:String>
+  <system:String x:Key="command.track.delete">Xóa track</system:String>
+  <system:String x:Key="command.track.duplicate">Nhân đôi track</system:String>
   <!--<system:String x:Key="command.track.exp">Edit track expressions</system:String>-->
   <!--<system:String x:Key="command.track.order">Edit track order</system:String>-->
   <!--<system:String x:Key="command.track.remapvc">Remap voice color</system:String>-->
-  <!--<system:String x:Key="command.track.setting">Change track setting</system:String>-->
-  <!--<system:String x:Key="command.track.singer">Change track singer</system:String>-->
-  <!--<system:String x:Key="command.vibrato.edit">Edit vibrato</system:String>-->
+  <system:String x:Key="command.track.setting">Chỉnh sửa cài đặt track</system:String>
+  <system:String x:Key="command.track.singer">Đổi giọng hát của track</system:String>
+  <system:String x:Key="command.vibrato.edit">Chỉnh sửa rung giọng </system:String>
 
-  <!--<system:String x:Key="context.note.clearcache">Clear cache of phrase</system:String>-->
-  <system:String x:Key="context.note.copy">Copy nốt</system:String>
+  <system:String x:Key="context.note.clearcache">Xóa cache nốt đã chọn</system:String>
+  <system:String x:Key="context.note.copy">Sao chép nốt</system:String>
   <system:String x:Key="context.note.delete">Xoá nốt</system:String>
   <system:String x:Key="context.note.pasteparameters">Chọn và dán các thông số</system:String>
   <!--<system:String x:Key="context.part.applypitch">Apply pitch from...</system:String>-->
@@ -103,8 +103,7 @@
 
   <system:String x:Key="dialogs.about.caption">Thông tin về OpenUTAU</system:String>
   <system:String x:Key="dialogs.about.message">
-    OpenUTAU nhắm đến việc tạo nên một môi trường làm việc mã nguồn mở dành cho cộng đồng UTAU, với một giao diện hiện đại và các tiện ích hỗ trợ âm vị thông minh. Thông tin chi tiết trên Github.
-  </system:String>
+OpenUTAU nhắm đến việc tạo nên một môi trường làm việc mã nguồn mở dành cho cộng đồng UTAU, với một giao diện hiện đại và các tiện ích hỗ trợ âm vị thông minh. Thông tin chi tiết trên Github.</system:String>
   <system:String x:Key="dialogs.exitsave.caption">Thoát OpenUTAU</system:String>
   <system:String x:Key="dialogs.exitsave.message">Dự án đã bị chỉnh sửa. Bạn có muốn lưu không?</system:String>
   <system:String x:Key="dialogs.export.caption">Xuất thành</system:String>
@@ -126,7 +125,7 @@
   <system:String x:Key="dialogs.messagebox.copy">Sao chép chi tiết lỗi</system:String>
   <system:String x:Key="dialogs.noresampler.caption">Chưa có resampler</system:String>
   <system:String x:Key="dialogs.noresampler.message">Chưa có resampler! Thêm resampler định dạng EXE hoặc DLL vào thư mục Resamplers và chọn trong Tuỳ chỉnh!</system:String>
-  <system:String x:Key="dialogs.recovery">OpenUtau đột ngột bị tắt. Bạn có muốn phục hồi dữ liệu?</system:String>
+  <!--<system:String x:Key="dialogs.recovery">Previously, OpenUtau terminated abnormally. Click here to recover.</system:String>-->
   <system:String x:Key="dialogs.recovery.caption">Dự án phục hồi</system:String>
   <system:String x:Key="dialogs.remaptimeaxis.message">Nhịp độ của dự án sẽ được chỉnh mà không ảnh hưởng đến vị trí và trường độ (tính bằng giây) của các nốt.
   BPM mới:</system:String>
@@ -163,11 +162,11 @@ Do you want to continue by splitting at the nearest position after current playh
 
   <system:String x:Key="errors.caption">Lỗi</system:String>
   <system:String x:Key="errors.details">Chi tiết về lỗi</system:String>
-  <!--<system:String x:Key="errors.diffsinger.downloadvocoder">Error loading vocoder "{0}". Please download vocoder from {1}</system:String>-->
+  <system:String x:Key="errors.diffsinger.downloadvocoder">Không load được vocoder "{0}". Vui lòng tải vocoder từ trang {1}</system:String>
   <system:String x:Key="errors.diffsinger.downloadvocoder1">Không load được vocoder </system:String>
   <system:String x:Key="errors.diffsinger.downloadvocoder2">. Vui lòng tải vocoder từ trang </system:String>
-  <!--<system:String x:Key="errors.editing.autopitch.unsupported">The current voicebank doesn't support generating pitch curve. Please use a Diffsinger or Enunu voicebank.</system:String>-->
-  <system:String x:Key="errors.encryptedarchive">Không hỗ trợ tệp nén đã mã hoá, cần phải tự giải nén trước.</system:String>
+  <system:String x:Key="errors.editing.autopitch.unsupported">Voicebank hiện tại không hỗ trợ tạo đường cong cao độ. Vui lòng sử dụng voicebank Diffsinger hoặc Enunu.</system:String>
+  <!--<system:String x:Key="errors.encryptedarchive">Encrypted archive files are not supported. Please open the Singer folder from Tools > Preferences > Paths and extract the archive file manually to this location.</system:String>-->
   <system:String x:Key="errors.expression.abbrlong">Từ viết tắt chỉ gồm 1 tới 4 kí tự</system:String>
   <system:String x:Key="errors.expression.abbrset">Phải đặt từ viết tắt</system:String>
   <system:String x:Key="errors.expression.abbrunique">Bị trùng từ viết tắt</system:String>
@@ -188,7 +187,8 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.failed.loadprefs">Không truy cập tuỳ chỉnh được. Bắt đầu khởi tạo.</system:String>
   <system:String x:Key="errors.failed.openfile">Không mở tệp được</system:String>
   <system:String x:Key="errors.failed.openlocation">Không mở đường dẫn được</system:String>
-  <!--<system:String x:Key="errors.failed.opennewerproject">Project file is newer than software! Upgrade OpenUtau!</system:String>-->
+  <system:String x:Key="errors.failed.opennewerproject">Dự án này được làm với phiên bản mới hơn của OpenUTAU! Hãy cập nhật lại OpenUTAU trước khi mở lại dự án này!</system:String>
+  <!--<system:String x:Key="errors.failed.prerender">Failed to render in the background.</system:String>-->
   <!--<system:String x:Key="errors.failed.render">Failed to render.</system:String>-->
   <system:String x:Key="errors.failed.runeditingmacro">Không chạy tập lệnh chỉnh sửa được</system:String>
   <system:String x:Key="errors.failed.save">Không lưu được</system:String>
@@ -202,11 +202,12 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.lyrics.regex">Không được dùng kí tự này trong biểu thức chính quy</system:String>
   <system:String x:Key="errors.lyrics.regexpreview">- lỗi biểu thức chính quy -</system:String>
   <!--<system:String x:Key="errors.resampler.failed.message">Resampler failed to create output file(s). Resampler errors like this are often caused by oto.ini configuration issues. Consider generating a singer error report to check for such issues.</system:String>-->
+  <!--<system:String x:Key="errors.toast.details">(Click here for details)</system:String>-->
 
   <!--<system:String x:Key="exesetup.installing">Installing "{0}"...</system:String>-->
-  <!--<system:String x:Key="exesetup.linux">To use exe resamplers or wavtools on Linux:
-1. Install wine from {0}
-2. Set wine path in Preferences > Advanced > Wine Path</system:String>-->
+  <system:String x:Key="exesetup.linux">Để sử dụng resamplers hoặc wavtools trên Linux:
+1. Cài đặt wine từ trang {0}
+2. Thiết lập wine path trong Tùy chỉnh > Nâng cao > Wine Path</system:String>
   <!--<system:String x:Key="exesetup.mac">To use exe resamplers or wavtools on MacOS:
 1. Install wine using following commands
 2. Set wine path in Preferences > Advanced > Wine Path</system:String>-->
@@ -324,7 +325,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.tools">Công cụ</system:String>
   <system:String x:Key="menu.tools.clearcache">Xoá bộ nhớ đệm</system:String>
   <system:String x:Key="menu.tools.debugwindow">Mở cửa sổ Debug</system:String>
-  <system:String x:Key="menu.tools.dependency.install">Cài đặt tệp phụ thuộc (.oudep)...</system:String>
+  <!--<system:String x:Key="menu.tools.dependency.install">Install Dependency (.oudep)...</system:String>-->
   <system:String x:Key="menu.tools.fullscreen">Toàn màn hình</system:String>
   <system:String x:Key="menu.tools.layout">Bố cục</system:String>
   <system:String x:Key="menu.tools.layout.hsplit11">Ngang 1:1</system:String>
@@ -368,7 +369,7 @@ Syntax: prefix,suffix</system:String>-->
 
   <system:String x:Key="notedefaults.lyric">Lời nhạc</system:String>
   <!--<system:String x:Key="notedefaults.lyric.enter">When Enter</system:String>-->
-  <!--<system:String x:Key="notedefaults.lyric.knife">When Knife Tool</system:String>-->
+  <system:String x:Key="notedefaults.lyric.knife">Khi dùng công cụ cắt nốt</system:String>
   <system:String x:Key="notedefaults.portamento">Luyến giọng</system:String>
   <system:String x:Key="notedefaults.portamento.length">Độ dài</system:String>
   <system:String x:Key="notedefaults.portamento.start">Bắt đầu</system:String>
@@ -452,6 +453,8 @@ Lưu ý: tuỳ chọn này cũng sẽ xoá các tổ hợp thiết lập của b
   <!--<system:String x:Key="packages.unknownversion">unknown version</system:String>-->
   <!--<system:String x:Key="packages.update">Update</system:String>-->
 
+  <!--<system:String x:Key="phoneme.show.error">Alt + Click to view the full error</system:String>-->
+
   <system:String x:Key="phoneticassistant.caption">Phân tích cách phát âm</system:String>
   <system:String x:Key="phoneticassistant.copy">Sao chép</system:String>
 
@@ -460,6 +463,7 @@ Lưu ý: tuỳ chọn này cũng sẽ xoá các tổ hợp thiết lập của b
   <system:String x:Key="pianoroll.menu.batch.running">Đang chỉnh đồng loạt</system:String>
   <!--<system:String x:Key="pianoroll.menu.external">External</system:String>-->
   <system:String x:Key="pianoroll.menu.lyrics">Lời nhạc</system:String>
+  <!--<system:String x:Key="pianoroll.menu.lyrics.addphonetichints">Add Phonetic Hint</system:String>-->
   <system:String x:Key="pianoroll.menu.lyrics.dashtoplus">Đổi "-" thành "+"</system:String>
   <!--<system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">Replace "-" with "+~"</system:String>-->
   <system:String x:Key="pianoroll.menu.lyrics.edit">Sửa lời nhạc</system:String>
@@ -498,7 +502,7 @@ Lưu ý: tuỳ chọn này cũng sẽ xoá các tổ hợp thiết lập của b
   <system:String x:Key="pianoroll.menu.notes.reset.all">Reset về cài đặt mặc định</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.allparameters">Reset tất cả thông số</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.exps">Reset biểu cảm</system:String>
-  <system:String x:Key="pianoroll.menu.notes.reset.phonemetimings">Reset độ dài âm vị</system:String>
+  <!--<system:String x:Key="pianoroll.menu.notes.reset.phonemetimings">Reset phoneme timings and envelopes</system:String>-->
   <system:String x:Key="pianoroll.menu.notes.reset.pitchbends">Reset điểm luyến giọng</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.vibratos">Reset rung giọng</system:String>
   <system:String x:Key="pianoroll.menu.part">Phần</system:String>
@@ -519,6 +523,8 @@ Lưu ý: tuỳ chọn này cũng sẽ xoá các tổ hợp thiết lập của b
   <!--<system:String x:Key="pianoroll.toggle.expressions">View Expressions (L)</system:String>-->
   <system:String x:Key="pianoroll.toggle.finalpitch">Hiện đường vẽ luyến giọng (R)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">Hiện thông số nốt (\)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.overwritepitch">Toggle Overwrite Pitch Mode</system:String>-->
   <system:String x:Key="pianoroll.toggle.phoneme">Hiện độ dài âm vị (O)</system:String>
@@ -531,13 +537,12 @@ Lưu ý: tuỳ chọn này cũng sẽ xoá các tổ hợp thiết lập của b
   <system:String x:Key="pianoroll.toggle.tone">Bật tắt tiếng cao độ khi viết nốt(Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">Hiện đường rung giọng (U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">Hiện sóng âm (W)</system:String>
-  <system:String x:Key="pianoroll.tool.drawpitch">Vẽ đường luyến giọng (4)
-    Nhấn chuột trái để vẽ
-    Nhấn chuột phải để xoá
-    Nhấn giữ Ctrl để chọn
-    Nhấn giữ Alt để làm mượt</system:String>
+  <!--<system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (Shift + 1)
+    Left click to draw
+    Right click to reset
+    Hold Ctrl to select</system:String>-->
   <system:String x:Key="pianoroll.tool.eraser">Xoá nốt (3)</system:String>
-  <system:String x:Key="pianoroll.tool.knife">Cắt nốt (5)</system:String>
+  <!--<system:String x:Key="pianoroll.tool.knife">Knife Tool (4)</system:String>-->
   <system:String x:Key="pianoroll.tool.penplus">Viết nốt PLUS (Ctrl + 2)
     Chuột trái để viết
     Chuột phải để xoá
@@ -598,6 +603,9 @@ Lưu ý: tuỳ chọn này cũng sẽ xoá các tổ hợp thiết lập của b
   <!--<system:String x:Key="prefs.appearance.detachpianoroll">Show piano roll in separate window</system:String>-->
   <!--<system:String x:Key="prefs.appearance.diffsingerlangcodehide">Hide language prefix from phoneme editor</system:String>-->
   <system:String x:Key="prefs.appearance.lang">Ngôn ngữ</system:String>
+  <!--<system:String x:Key="prefs.appearance.notehoverglow">Note hover glow</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.playbacknotebounce">Bounce notes on playback</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.playbacknotehighlight">Highlight notes on playback</system:String>-->
   <system:String x:Key="prefs.appearance.showghostnotes">Hiện nốt các track khác trong Piano Roll</system:String>
   <system:String x:Key="prefs.appearance.showicon">Hiện icon trong Piano Roll</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Hiện avatar trong Piano Roll</system:String>
@@ -610,6 +618,10 @@ Lưu ý: tuỳ chọn này cũng sẽ xoá các tổ hợp thiết lập của b
   <system:String x:Key="prefs.cache.clearonquit">Dọn bộ nhớ đệm khi thoát chương trình</system:String>
   <system:String x:Key="prefs.cache.diffsingertensorcache">Bộ nhớ đệm Tensor của DiffSinger</system:String>
   <system:String x:Key="prefs.caption">Tuỳ chọn</system:String>
+  <!--<system:String x:Key="prefs.channel">Release Channel</system:String>-->
+  <!--<system:String x:Key="prefs.channel.alpha">Alpha</system:String>-->
+  <!--<system:String x:Key="prefs.channel.beta">Beta</system:String>-->
+  <!--<system:String x:Key="prefs.channel.stable">Stable</system:String>-->
   <!--<system:String x:Key="prefs.diffsinger">DiffSinger</system:String>-->
   <system:String x:Key="prefs.editing">Chỉnh sửa</system:String>
   <!--<system:String x:Key="prefs.general">General</system:String>-->
@@ -632,6 +644,7 @@ Lưu ý: tuỳ chọn này cũng sẽ xoá các tổ hợp thiết lập của b
   <system:String x:Key="prefs.playback.backend">Trình phát âm thanh</system:String>
   <system:String x:Key="prefs.playback.backend.auto">Tự động</system:String>
   <!--<system:String x:Key="prefs.playback.backend.mini">MiniAudio</system:String>-->
+  <!--<system:String x:Key="prefs.playback.backend.sdl3">SDL 3</system:String>-->
   <system:String x:Key="prefs.playback.cursorposition">Vị trí con trỏ phát nhạc</system:String>
   <system:String x:Key="prefs.playback.device">Thiết bị phát nhạc</system:String>
   <system:String x:Key="prefs.playback.lockstarttime">Khi dừng phát nhạc</system:String>
@@ -643,6 +656,7 @@ Lưu ý: tuỳ chọn này cũng sẽ xoá các tổ hợp thiết lập của b
   <system:String x:Key="prefs.rendering">Render</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Trình render mặc định (thư viện UTAU cổ điển)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">Chiều sâu render DiffSinger</system:String>
+  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <!--<system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Render Steps for Acoustic</system:String>-->
   <!--<system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger Render Steps for Pitch</system:String>-->
   <!--<system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger Render Steps for Variance</system:String>-->
@@ -653,25 +667,19 @@ Lưu ý: tuỳ chọn này cũng sẽ xoá các tổ hợp thiết lập của b
   <system:String x:Key="prefs.rendering.phasecomp">Bù pha</system:String>
   <system:String x:Key="prefs.rendering.prerender">Tiền render nghe thử trước</system:String>
   <!--<system:String x:Key="prefs.rendering.resampler">Resampler</system:String>-->
-  <system:String x:Key="prefs.rendering.resampler.morewarn">
-    Lưu ý: không hỗ trợ moresampler đầy đủ. Có thể chạy chậm và tiêu tốn tài nguyên CPU. Nếu muốn tiếp tục sử dụng:
-    1. Đặt "resampler-compatibility" là "on" trong tệp moreconfig.txt.
-    2. Đặt "auto-update-llsm-mrq" là "off" trong tệp moreconfig.txt.
-    3. Chờ moresampler tạo các tệp llsm còn thiếu.
-  </system:String>
-  <system:String x:Key="prefs.rendering.resampler.note">
-    Ghi chú: để sử dụng resampler khác, thêm resampler định dạng EXE hoặc DLL vào trong thư mục Resamplers của OpenUTAU và chọn trong Tuỳ chỉnh.
-  </system:String>
+  <!--<system:String x:Key="prefs.rendering.resampler.morewarn">Warning: moresampler is not fully supported. It may be slow and cause high CPU usage. If you insist, please:
+  1. Set "resampler-compatibility" to "on" in moreconfig.txt.
+  2. Set "auto-update-llsm-mrq" to "off" in moreconfig.txt.
+  3. Patiently wait for moresampler to generate missing llsm files.</system:String>-->
+  <system:String x:Key="prefs.rendering.resampler.note">Ghi chú: để sử dụng resampler khác, thêm resampler định dạng EXE hoặc DLL vào trong thư mục Resamplers của OpenUTAU và chọn trong Tuỳ chỉnh.</system:String>
   <system:String x:Key="prefs.rendering.skipmuted">Không render track bị tắt tiếng</system:String>
-  <system:String x:Key="prefs.rendering.threads.cpuwarn">
-    Cảnh báo: quá nhiều luồng render có thể làm OpenUTAU chạy chậm.
-  </system:String>
+  <system:String x:Key="prefs.rendering.threads.cpuwarn">Cảnh báo: quá nhiều luồng render có thể làm OpenUTAU chạy chậm.</system:String>
   <system:String x:Key="prefs.rendering.threads.numthreads">Luồng render tối đa</system:String>
   <!--<system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>-->
   <!--<system:String x:Key="prefs.utau">UTAU</system:String>-->
 
-  <!--<system:String x:Key="progress.cachecleared">Cache cleared.</system:String>-->
-  <!--<system:String x:Key="progress.clearingcache">Clearing cache...</system:String>-->
+  <system:String x:Key="progress.cachecleared">Đã xóa bộ đệm.</system:String>
+  <system:String x:Key="progress.clearingcache">Đang xóa bộ đệm...</system:String>
   <system:String x:Key="progress.loadingsingers">Đang truy cập thư viện...</system:String>
   <system:String x:Key="progress.saved">Lưu dự án thành công. {0}</system:String>
   <system:String x:Key="progress.waitingrendering">Đang tổng hợp giọng hát...</system:String>
@@ -732,7 +740,7 @@ The voicebank may not work on another OS.</system:String>-->
   <system:String x:Key="singers.otoview.zoomin">Phóng to</system:String>
   <system:String x:Key="singers.otoview.zoomout">Thu nhỏ</system:String>
   <!--<system:String x:Key="singers.playsample">Play Sample</system:String>-->
-  <!--<system:String x:Key="singers.playselectedfile">Play Selected File</system:String>-->
+  <system:String x:Key="singers.playselectedfile">Phát mẫu âm thanh đang chọn</system:String>
   <system:String x:Key="singers.publish">Đóng gói thư viện nguồn âm</system:String>
   <system:String x:Key="singers.publish.description">Đóng gói thư viện thành tệp ZIP tối ưu để chia sẻ với mọi người.</system:String>
   <system:String x:Key="singers.publish.ignoretypes">Bỏ qua các loại tệp sau khi đóng gói (dùng cú pháp gitignore):</system:String>
@@ -774,6 +782,8 @@ The voicebank may not work on another OS.</system:String>-->
   <system:String x:Key="singersetup.textfileencoding.prompt">Chọn bảng mã sao cho văn bản hiển thị đúng.</system:String>
   <!--<system:String x:Key="singersetup.title">Singer Setup</system:String>-->
 
+  <!--<system:String x:Key="themeeditor.cancel">Cancel</system:String>-->
+  <!--<system:String x:Key="themeeditor.save">Save</system:String>-->
   <!--<system:String x:Key="themeeditor.title">Theme Editor</system:String>-->
 
   <system:String x:Key="tip.aliasbox">Đổi tên hiệu</system:String>
@@ -814,7 +824,7 @@ Tổng quát
 
   <system:String x:Key="tracks.duplicate">Sao chép track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Sao chép thiết lập của track</system:String>
-  <!--<system:String x:Key="tracks.favorite">Favorites</system:String>-->
+  <system:String x:Key="tracks.favorite">Đặt thành yêu thích</system:String>
   <system:String x:Key="tracks.installsinger">Cài đặt thư viện</system:String>
   <!--<system:String x:Key="tracks.mixfx">Track Polish...</system:String>-->
   <system:String x:Key="tracks.more">Còn nữa</system:String>
@@ -854,9 +864,9 @@ Tổng quát
   <system:String x:Key="warning.asciipath">Đường dẫn chứa OpenUTAU "{0}" có chứa kí tự không thuộc bảng mã ASCII. Resampler định dạng exe có thể không hoạt động.</system:String>
   <system:String x:Key="warning.renderer">Trình render này không có tuỳ chỉnh nào cả.</system:String>
 
-  <!--<system:String x:Key="welcome.new">New</system:String>-->
+  <system:String x:Key="welcome.new">Dự án mới</system:String>
   <!--<system:String x:Key="welcome.new.description">Create a new project</system:String>-->
-  <!--<system:String x:Key="welcome.open">Open</system:String>-->
+  <system:String x:Key="welcome.open">Mở tệp</system:String>
   <!--<system:String x:Key="welcome.open.description">Open a local project</system:String>-->
   <!--<system:String x:Key="welcome.recent">Recent</system:String>-->
   <!--<system:String x:Key="welcome.start">Start</system:String>-->

@@ -18,7 +18,7 @@
   <!--<system:String x:Key="button.yes">Yes</system:String>-->
 
   <!--<system:String x:Key="command.batch.lyric">Lyrics batch edit</system:String>-->
-  <!--<system:String x:Key="command.batch.note">Notes batch edit</system:String>-->
+  <system:String x:Key="command.batch.note">Editează notele în masă</system:String>
   <!--<system:String x:Key="command.batch.plugin">Apply plugin edit</system:String>-->
   <!--<system:String x:Key="command.batch.reset">Batch reset</system:String>-->
   <!--<system:String x:Key="command.exp.edit">Edit expression</system:String>-->
@@ -66,77 +66,77 @@
   <!--<system:String x:Key="command.track.singer">Change track singer</system:String>-->
   <!--<system:String x:Key="command.vibrato.edit">Edit vibrato</system:String>-->
 
-  <!--<system:String x:Key="context.note.clearcache">Clear cache of phrase</system:String>-->
+  <system:String x:Key="context.note.clearcache">Golește cache frază</system:String>
   <system:String x:Key="context.note.copy">Copiază nota</system:String>
   <system:String x:Key="context.note.delete">Șterge nota</system:String>
   <system:String x:Key="context.note.pasteparameters">Selectează și lipește parametrii</system:String>
   <!--<system:String x:Key="context.part.applypitch">Apply pitch from...</system:String>-->
   <system:String x:Key="context.part.delete">Șterge segmentul</system:String>
   <!--<system:String x:Key="context.part.extractingpitch">Extracting pitch</system:String>-->
-  <system:String x:Key="context.part.gotofile">Vezi locația în dosar</system:String>
-  <!--<system:String x:Key="context.part.merge">Merge parts</system:String>-->
+  <system:String x:Key="context.part.gotofile">Vezi locația fișierului</system:String>
+  <system:String x:Key="context.part.merge">Combină părțile</system:String>
   <!--<system:String x:Key="context.part.nopitchdetected">No pitch detected from the source wave part.</system:String>-->
   <!--<system:String x:Key="context.part.nopitchregion">There is no overlapping region between the source wave part and the target note part.</system:String>-->
   <!--<system:String x:Key="context.part.nopitchsource">No wave part available</system:String>-->
-  <system:String x:Key="context.part.rename">Redenumește segmentul</system:String>
+  <system:String x:Key="context.part.rename">Redenumește partea</system:String>
   <system:String x:Key="context.part.replaceaudio">Reselectează fișierul audio</system:String>
   <!--<system:String x:Key="context.part.split">Split part at playhead</system:String>-->
-  <system:String x:Key="context.part.transcribe">Transcrie audio în Midi</system:String>
+  <system:String x:Key="context.part.transcribe">Transcrie audio pentru a crea note</system:String>
   <system:String x:Key="context.part.transcribing">Se transcrie</system:String>
-  <!--<system:String x:Key="context.pitch.easein">Ease in</system:String>-->
-  <!--<system:String x:Key="context.pitch.easeinout">Ease in/out</system:String>-->
-  <!--<system:String x:Key="context.pitch.easeout">Ease out</system:String>-->
+  <system:String x:Key="context.pitch.easein">Intrare lină</system:String>
+  <system:String x:Key="context.pitch.easeinout">Intrare/Ieșire Lină</system:String>
+  <system:String x:Key="context.pitch.easeout">Ieșire lină</system:String>
   <!--<system:String x:Key="context.pitch.linear">Linear</system:String>-->
-  <!--<system:String x:Key="context.pitch.pointadd">Add point</system:String>-->
-  <!--<system:String x:Key="context.pitch.pointdel">Delete point</system:String>-->
-  <!--<system:String x:Key="context.pitch.pointsnapprev">Snap to previous note</system:String>-->
+  <system:String x:Key="context.pitch.pointadd">Adaugă punct</system:String>
+  <system:String x:Key="context.pitch.pointdel">Șterge punct</system:String>
+  <system:String x:Key="context.pitch.pointsnapprev">Fixare la nota precedentă</system:String>
   <!--<system:String x:Key="context.pitch.shape">Curve shape</system:String>-->
   <!--<system:String x:Key="context.pitch.smooth">Smooth</system:String>-->
-  <!--<system:String x:Key="context.timeline.addtempo">Add tempo change at {0}</system:String>-->
-  <!--<system:String x:Key="context.timeline.addtimesig">Add time signature change</system:String>-->
-  <!--<system:String x:Key="context.timeline.deltempo">Delete tempo change at {0}</system:String>-->
-  <!--<system:String x:Key="context.timeline.deltimesig">Delete time signature change</system:String>-->
+  <system:String x:Key="context.timeline.addtempo">Adaugă schimbare de tempo la {0}</system:String>
+  <system:String x:Key="context.timeline.addtimesig">Adaugă schimbare de măsură</system:String>
+  <system:String x:Key="context.timeline.deltempo">Șterge schimbarea de tempo la {0}</system:String>
+  <system:String x:Key="context.timeline.deltimesig">Șterge schimbarea măsurii</system:String>
 
-  <!--<system:String x:Key="debug.clear">Clear</system:String>-->
-  <!--<system:String x:Key="debug.copylog">Copy Log</system:String>-->
-  <!--<system:String x:Key="debug.reverselogorder">Reverse Log Order</system:String>-->
+  <system:String x:Key="debug.clear">Curăță</system:String>
+  <system:String x:Key="debug.copylog">Copiază log-ul</system:String>
+  <system:String x:Key="debug.reverselogorder">Inversează Ordinea Logurilor</system:String>
 
-  <!--<system:String x:Key="dialogs.about.caption">About OpenUTAU</system:String>-->
-  <!--<system:String x:Key="dialogs.about.message">
-OpenUtau aims to be an open source editing environment for UTAU community, with a modern user experience and intelligent phonological support. Visit us on Github.</system:String>-->
-  <!--<system:String x:Key="dialogs.exitsave.caption">Exit OpenUtau</system:String>-->
-  <!--<system:String x:Key="dialogs.exitsave.message">The current project contains unsaved changes. Do you want to save it?</system:String>-->
-  <!--<system:String x:Key="dialogs.export.caption">Export</system:String>-->
-  <!--<system:String x:Key="dialogs.export.savefirst">Save project file first</system:String>-->
+  <system:String x:Key="dialogs.about.caption">Despre OpenUTAU</system:String>
+  <system:String x:Key="dialogs.about.message">
+OpenUtau țintește să fie un mediu open-source de editare pentru comunitatea UTAU, cu o experiență modernă de folosință și suport fonologic inteligent. Vizitează-ne pe GitHub.</system:String>
+  <system:String x:Key="dialogs.exitsave.caption">Ieși din OpenUtau</system:String>
+  <system:String x:Key="dialogs.exitsave.message">Acest proiect conține schimbări ce nu au fost salvate. Dorești să îl salvezi?</system:String>
+  <system:String x:Key="dialogs.export.caption">Exportă</system:String>
+  <system:String x:Key="dialogs.export.savefirst">Salvează fișierul proiectului întâi</system:String>
   <!--<system:String x:Key="dialogs.exportds.caption">Export DiffSinger Scripts</system:String>-->
   <!--<system:String x:Key="dialogs.exportds.curves">Curves</system:String>-->
   <!--<system:String x:Key="dialogs.exportds.notrendered">Please render all parts before exporting.</system:String>-->
   <!--<system:String x:Key="dialogs.exportds.pitch">Pitch (f0)</system:String>-->
   <!--<system:String x:Key="dialogs.exportds.variance">Variance expressions</system:String>-->
   <!--<system:String x:Key="dialogs.exportds.variance.hint">Enable DiffSinger Tensor Cache in Preferences to export variance curves.</system:String>-->
-  <!--<system:String x:Key="dialogs.importtracks.caption">Import tracks</system:String>-->
-  <!--<system:String x:Key="dialogs.importtracks.importtempo">The imported project contains the following tempo markers. Do you want to use them?</system:String>-->
-  <!--<system:String x:Key="dialogs.installdependency.caption">Installing dependency</system:String>-->
-  <!--<system:String x:Key="dialogs.installdependency.message">Installing </system:String>-->
-  <!--<system:String x:Key="dialogs.installdll.caption">Installing phonemizer</system:String>-->
-  <!--<system:String x:Key="dialogs.installdll.message">Installing </system:String>-->
-  <!--<system:String x:Key="dialogs.merge.caption">Merging Parts</system:String>-->
-  <!--<system:String x:Key="dialogs.merge.multitracks">Parts on different tracks cannot be merged.</system:String>-->
-  <!--<system:String x:Key="dialogs.messagebox.copy">Copy error to clipboard</system:String>-->
-  <!--<system:String x:Key="dialogs.noresampler.caption">No resampler</system:String>-->
-  <!--<system:String x:Key="dialogs.noresampler.message">No resampler! Put your favourite resampler exe or dll in the Resamplers folder and choose it in Preferences!</system:String>-->
-  <!--<system:String x:Key="dialogs.recovery">Previously, OpenUtau terminated abnormally. Click here to recover.</system:String>-->
-  <!--<system:String x:Key="dialogs.recovery.caption">Recovery project</system:String>-->
-  <!--<system:String x:Key="dialogs.remaptimeaxis.message">This tool will change the tempo of the project without changing the actual positions and durations (in seconds) of notes.
-  New BPM:</system:String>-->
+  <system:String x:Key="dialogs.importtracks.caption">Importă track-uri</system:String>
+  <system:String x:Key="dialogs.importtracks.importtempo">Proiectul importat conține următoarele marcări de tempo. Dorești să le folosești?</system:String>
+  <system:String x:Key="dialogs.installdependency.caption">Se instalează dependența</system:String>
+  <system:String x:Key="dialogs.installdependency.message">Se instalează </system:String>
+  <system:String x:Key="dialogs.installdll.caption">Se instalează phonemizer-ul</system:String>
+  <system:String x:Key="dialogs.installdll.message">Se instalează </system:String>
+  <system:String x:Key="dialogs.merge.caption">Se unesc părțile</system:String>
+  <system:String x:Key="dialogs.merge.multitracks">Părțile din track-uri diferite nu pot fi unite.</system:String>
+  <system:String x:Key="dialogs.messagebox.copy">Copiază eroarea</system:String>
+  <system:String x:Key="dialogs.noresampler.caption">Nu a fost găsit un resampler</system:String>
+  <system:String x:Key="dialogs.noresampler.message">Niciun resampler nu a fost găsit! Puneți resampler-ul preferat exe sau dll în folderul Resamplers și alege-l în Preferințe!</system:String>
+  <system:String x:Key="dialogs.recovery">Data trecută, OpenUtau a fost închis anormal. Dați click aici pentru a recupera proiectul.</system:String>
+  <system:String x:Key="dialogs.recovery.caption">Proiect de recuperare</system:String>
+  <system:String x:Key="dialogs.remaptimeaxis.message">Această unealtă va schimba tempo-ul proiectului fără a modifica pozițiile actuale și durata (în secunde) a notelor.
+  Noul tempo:</system:String>
   <!--<system:String x:Key="dialogs.splitpart.caption">Splitting Part</system:String>-->
   <!--<system:String x:Key="dialogs.splitpart.intheway">There are one or more note(s) overlapping with the playhead.
 Do you want to continue by splitting at the nearest position after current playhead with no notes in the way?</system:String>-->
-  <!--<system:String x:Key="dialogs.timesig.caption">Time Signature</system:String>-->
-  <!--<system:String x:Key="dialogs.tracksettings.caption">Track Settings</system:String>-->
-  <!--<system:String x:Key="dialogs.tracksettings.location">Location</system:String>-->
-  <!--<system:String x:Key="dialogs.tracksettings.renderer">Renderer</system:String>-->
-  <!--<system:String x:Key="dialogs.tracksettings.setasdefault">Set As Default</system:String>-->
+  <system:String x:Key="dialogs.timesig.caption">Măsura de timp:</system:String>
+  <system:String x:Key="dialogs.tracksettings.caption">Setările Track-ului</system:String>
+  <system:String x:Key="dialogs.tracksettings.location">Locație</system:String>
+  <system:String x:Key="dialogs.tracksettings.renderer">Redator</system:String>
+  <system:String x:Key="dialogs.tracksettings.setasdefault">Setați ca implicit</system:String>
   <!--<system:String x:Key="dialogs.transcribe.allnotfound">No transcription models are installed. Please install GAME via the Package Manager or download manually from {0}.</system:String>-->
   <!--<system:String x:Key="dialogs.transcribe.caption">Transcribe Audio</system:String>-->
   <!--<system:String x:Key="dialogs.transcribe.game.batchduration">Max Batch Duration (s)</system:String>-->
@@ -154,204 +154,205 @@ Do you want to continue by splitting at the nearest position after current playh
   <!--<system:String x:Key="dialogs.transcribe.rmvpe">Extract pitch using RMVPE</system:String>-->
   <!--<system:String x:Key="dialogs.transcribe.rmvpe.notfound">RMVPE is not installed. Install it from the Package Manager.</system:String>-->
   <!--<system:String x:Key="dialogs.transcribe.some.notfound">SOME is not installed.</system:String>-->
-  <!--<system:String x:Key="dialogs.unsupportedfile.caption">Unsupported file format</system:String>-->
-  <!--<system:String x:Key="dialogs.unsupportedfile.message">Unsupported file format: </system:String>-->
-  <!--<system:String x:Key="dialogs.voicecolorremapping">Voice color remapping</system:String>-->
-  <!--<system:String x:Key="dialogs.voicecolorremapping.caption">Applies to all notes in this track:</system:String>-->
-  <!--<system:String x:Key="dialogs.voicecolorremapping.error">This singer has no voice color</system:String>-->
+  <system:String x:Key="dialogs.unsupportedfile.caption">Format de fișier incompatibil</system:String>
+  <system:String x:Key="dialogs.unsupportedfile.message">Format de fișier incompatibil: </system:String>
+  <system:String x:Key="dialogs.voicecolorremapping">Realocarea culorilor vocale</system:String>
+  <system:String x:Key="dialogs.voicecolorremapping.caption">Se aplică tuturor notelor din track:</system:String>
+  <system:String x:Key="dialogs.voicecolorremapping.error">Acest cântăreț nu are vreo culoare vocală</system:String>
 
-  <!--<system:String x:Key="errors.caption">Error</system:String>-->
-  <!--<system:String x:Key="errors.details">Error Details</system:String>-->
-  <!--<system:String x:Key="errors.diffsinger.downloadvocoder">Error loading vocoder "{0}". Please download vocoder from {1}</system:String>-->
-  <!--<system:String x:Key="errors.diffsinger.downloadvocoder1">Error loading vocoder </system:String>-->
-  <!--<system:String x:Key="errors.diffsinger.downloadvocoder2">. Please download vocoder from </system:String>-->
-  <!--<system:String x:Key="errors.editing.autopitch.unsupported">The current voicebank doesn't support generating pitch curve. Please use a Diffsinger or Enunu voicebank.</system:String>-->
-  <!--<system:String x:Key="errors.encryptedarchive">Encrypted archive files are not supported. Please open the Singer folder from Tools > Preferences > Paths and extract the archive file manually to this location.</system:String>-->
-  <!--<system:String x:Key="errors.expression.abbrlong">Abbreviation must be between 1 and 4 characters long</system:String>-->
-  <!--<system:String x:Key="errors.expression.abbrset">Abbreviation must be set</system:String>-->
-  <!--<system:String x:Key="errors.expression.abbrunique">Abbreviations must be unique</system:String>-->
-  <!--<system:String x:Key="errors.expression.customDefault">Project/Track default value must be between min and max</system:String>-->
-  <!--<system:String x:Key="errors.expression.default">Default value must be between min and max</system:String>-->
-  <!--<system:String x:Key="errors.expression.flagunique">Flags must be unique</system:String>-->
-  <!--<system:String x:Key="errors.expression.marge">The following expressions have been merged due to duplicate flags</system:String>-->
-  <!--<system:String x:Key="errors.expression.min">Min must be smaller than max</system:String>-->
-  <!--<system:String x:Key="errors.expression.name">Name must be set</system:String>-->
-  <!--<system:String x:Key="errors.failed.export">Failed to export</system:String>-->
-  <!--<system:String x:Key="errors.failed.importaudio">Failed to import audio</system:String>-->
-  <!--<system:String x:Key="errors.failed.importfiles">Failed to import files</system:String>-->
-  <!--<system:String x:Key="errors.failed.importmidi">Failed to import midi</system:String>-->
+  <system:String x:Key="errors.caption">Eroare</system:String>
+  <system:String x:Key="errors.details">Detalii eroare</system:String>
+  <system:String x:Key="errors.diffsinger.downloadvocoder">Eroare în timpul încărcării vocoder-ului "{0}". Vă rugăm descărcați vocoder-ul de la "{1}"</system:String>
+  <system:String x:Key="errors.diffsinger.downloadvocoder1">Eroare în timpul încărcării vocoder-ului </system:String>
+  <system:String x:Key="errors.diffsinger.downloadvocoder2">.Vă rugăm descărcați vocoder-ul de la </system:String>
+  <system:String x:Key="errors.editing.autopitch.unsupported">Cântărețul actual nu poate genera curbe de tonalitate. Vă rugăm să folosiți un cântăreț de tip DiffSinger sau ENUNU.</system:String>
+  <system:String x:Key="errors.encryptedarchive">Arhiva de fișiere criptate nu este suportată. Vă rugăm să deschideți folderul Cântăreț din Unelte > Preferințe > Căi și să extrageți arhiva manual în această locație.</system:String>
+  <system:String x:Key="errors.expression.abbrlong">Abrevierea trebuie să conțină între 1 sau 4 caractere</system:String>
+  <system:String x:Key="errors.expression.abbrset">Abrevierea trebuie setată</system:String>
+  <system:String x:Key="errors.expression.abbrunique">Abrevierile trebuie să fie unice</system:String>
+  <system:String x:Key="errors.expression.customDefault">Valoarea implicită a Proiectului/Track-ului trebuie să fie între minim și maxim</system:String>
+  <system:String x:Key="errors.expression.default">Valoarea implicită trebuie să fie între minim și maxim</system:String>
+  <system:String x:Key="errors.expression.flagunique">Atributele trebuie să fie unice</system:String>
+  <system:String x:Key="errors.expression.marge">Următoarele expresii au fost combinate din cauza atributelor identice</system:String>
+  <system:String x:Key="errors.expression.min">Valoarea minimă trebuie să fie mai mică decât valoarea maximă</system:String>
+  <system:String x:Key="errors.expression.name">Numele trebuie setat</system:String>
+  <system:String x:Key="errors.failed.export">Export eșuat</system:String>
+  <system:String x:Key="errors.failed.importaudio">Importul audio a eșuat</system:String>
+  <system:String x:Key="errors.failed.importfiles">Importul fișierelor a eșuat</system:String>
+  <system:String x:Key="errors.failed.importmidi">Importul MIDI a eșuat</system:String>
   <!--<system:String x:Key="errors.failed.importustandothers">Failed to open the projects. It contains a mix of ust and other file formats.</system:String>-->
   <!--<system:String x:Key="errors.failed.importustflags">The following undefined flags within the project were not imported:</system:String>-->
-  <!--<system:String x:Key="errors.failed.installsinger">Failed to install singer</system:String>-->
-  <!--<system:String x:Key="errors.failed.load">Failed to load</system:String>-->
-  <!--<system:String x:Key="errors.failed.loadprefs">Failed to load prefs. Initialize it.</system:String>-->
-  <!--<system:String x:Key="errors.failed.openfile">Failed to open</system:String>-->
-  <!--<system:String x:Key="errors.failed.openlocation">Failed to open location</system:String>-->
-  <!--<system:String x:Key="errors.failed.opennewerproject">Project file is newer than software! Upgrade OpenUtau!</system:String>-->
-  <!--<system:String x:Key="errors.failed.render">Failed to render.</system:String>-->
-  <!--<system:String x:Key="errors.failed.runeditingmacro">Failed to run editing macro</system:String>-->
-  <!--<system:String x:Key="errors.failed.save">Failed to save</system:String>-->
-  <!--<system:String x:Key="errors.failed.savesingerconfig">Failed to save singer config file</system:String>-->
-  <!--<system:String x:Key="errors.failed.searchsinger">Failed to search singers</system:String>-->
-  <!--<system:String x:Key="errors.failed.synth.cutoffbeforeoffset">Oto error: cutoff before offset</system:String>-->
-  <!--<system:String x:Key="errors.failed.synth.cutoffexceedduration">Oto error: cutoff exceeds audio duration</system:String>-->
+  <system:String x:Key="errors.failed.installsinger">Instalarea cântărețului a eșuat</system:String>
+  <system:String x:Key="errors.failed.load">Încărcarea a eșuat</system:String>
+  <system:String x:Key="errors.failed.loadprefs">Încărcarea preferințelor a eșuat. Inițializează.</system:String>
+  <system:String x:Key="errors.failed.openfile">Deschiderea a eșuat</system:String>
+  <system:String x:Key="errors.failed.openlocation">Deschiderea locației a eșuat</system:String>
+  <system:String x:Key="errors.failed.opennewerproject">Versiunea proiectului este mai nouă decât programul! Actualizați OpenUtau!</system:String>
+  <!--<system:String x:Key="errors.failed.prerender">Failed to render in the background.</system:String>-->
+  <system:String x:Key="errors.failed.render">Randarea a eșuat.</system:String>
+  <system:String x:Key="errors.failed.runeditingmacro">Executarea macro-ului de editare a eșuat</system:String>
+  <system:String x:Key="errors.failed.save">Salvarea a eșuat</system:String>
+  <system:String x:Key="errors.failed.savesingerconfig">Salvarea fișierului de configurare a cântărețului a eșuat</system:String>
+  <system:String x:Key="errors.failed.searchsinger">Căutarea de cântăreți a eșuat</system:String>
+  <system:String x:Key="errors.failed.synth.cutoffbeforeoffset">Eroare Oto: cutoff înainte de offset</system:String>
+  <system:String x:Key="errors.failed.synth.cutoffexceedduration">Eroare Oto: cutoff depășește durata audio</system:String>
   <!--<system:String x:Key="errors.failed.transcribe.rmvpe">Error loading RMVPE ONNX model. Install it from the Package Manager, or put rmvpe.onnx in {0}</system:String>-->
   <!--<system:String x:Key="errors.failed.transcribe.some">Error loading SOME. Please download SOME from {0}</system:String>-->
-  <!--<system:String x:Key="errors.install.cpp">Try installing the latest Visual C++ Redistributable. https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170</system:String>-->
-  <!--<system:String x:Key="errors.lyrics.regex">Character not allowed in regular expression</system:String>-->
-  <!--<system:String x:Key="errors.lyrics.regexpreview">- regular expression error -</system:String>-->
+  <system:String x:Key="errors.install.cpp">Încercați să instalați cea mai nouă versiune de Visual C++ Redistributable. https://learn.microsoft.com/ro-ro/cpp/windows/latest-supported-vc-redist?view=msvc-170</system:String>
+  <system:String x:Key="errors.lyrics.regex">Caracterul nu este permis în expresia obișnuită</system:String>
+  <system:String x:Key="errors.lyrics.regexpreview">- eroare de expresie obișnuită -</system:String>
   <!--<system:String x:Key="errors.resampler.failed.message">Resampler failed to create output file(s). Resampler errors like this are often caused by oto.ini configuration issues. Consider generating a singer error report to check for such issues.</system:String>-->
+  <!--<system:String x:Key="errors.toast.details">(Click here for details)</system:String>-->
 
-  <!--<system:String x:Key="exesetup.installing">Installing "{0}"...</system:String>-->
-  <!--<system:String x:Key="exesetup.linux">To use exe resamplers or wavtools on Linux:
-1. Install wine from {0}
-2. Set wine path in Preferences > Advanced > Wine Path</system:String>-->
-  <!--<system:String x:Key="exesetup.mac">To use exe resamplers or wavtools on MacOS:
-1. Install wine using following commands
-2. Set wine path in Preferences > Advanced > Wine Path</system:String>-->
-  <!--<system:String x:Key="exesetup.resampler">Install as resampler</system:String>-->
-  <!--<system:String x:Key="exesetup.title">Installing Exe File</system:String>-->
-  <!--<system:String x:Key="exesetup.wavtool">Install as wavtool</system:String>-->
+  <system:String x:Key="exesetup.installing">Se instalează "{0}"...</system:String>
+  <system:String x:Key="exesetup.linux">Pentru a folosi resamplere sau wavtool-uri pe Linux:
+1. Instalați Wine de la {0}
+2. Setați calea către Wine în Preferințe > Avansat > Cale Wine</system:String>
+  <system:String x:Key="exesetup.mac">Pentru a folosi resamplere sau wavtool-uri pe MacOS:
+1. Instalați Wine folosind următoarele comenzi
+2. Setați calea către Wine în Preferințe > Avansat > Cale Wine</system:String>
+  <system:String x:Key="exesetup.resampler">Instalează ca resampler</system:String>
+  <system:String x:Key="exesetup.title">Se Instalează Fișierul exe</system:String>
+  <system:String x:Key="exesetup.wavtool">Instalează ca wavtool</system:String>
 
-  <!--<system:String x:Key="exps.abbr">Abbreviation</system:String>-->
-  <!--<system:String x:Key="exps.caption">Expressions</system:String>-->
-  <!--<system:String x:Key="exps.defaultvalue">Default</system:String>-->
-  <!--<system:String x:Key="exps.flag">Resampler Flag</system:String>-->
-  <!--<system:String x:Key="exps.getsuggestions">Add all expressions suggested by renderers</system:String>-->
-  <!--<system:String x:Key="exps.isflag">Is Resampler Flag</system:String>-->
-  <!--<system:String x:Key="exps.maxvalue">Max</system:String>-->
-  <!--<system:String x:Key="exps.minvalue">Min</system:String>-->
-  <!--<system:String x:Key="exps.name">Name</system:String>-->
-  <!--<system:String x:Key="exps.optionvalues">Option Values</system:String>-->
-  <!--<system:String x:Key="exps.project">Project Expressions</system:String>-->
-  <!--<system:String x:Key="exps.projectdefault">Project Default</system:String>-->
-  <!--<system:String x:Key="exps.sepbycomma">Separate values by ','</system:String>-->
-  <!--<system:String x:Key="exps.skipoutput">Skip flag output when the value is system default</system:String>-->
-  <!--<system:String x:Key="exps.systemdefault">System Default</system:String>-->
-  <!--<system:String x:Key="exps.track">Track Expressions (override)</system:String>-->
-  <!--<system:String x:Key="exps.trackdefault">Track Default</system:String>-->
-  <!--<system:String x:Key="exps.type">Type</system:String>-->
-  <!--<system:String x:Key="exps.type.curve">Curve</system:String>-->
-  <!--<system:String x:Key="exps.type.numerical">Numerical</system:String>-->
-  <!--<system:String x:Key="exps.type.options">Options</system:String>-->
+  <system:String x:Key="exps.abbr">Abreviere</system:String>
+  <system:String x:Key="exps.caption">Expresii</system:String>
+  <system:String x:Key="exps.defaultvalue">Implicit</system:String>
+  <system:String x:Key="exps.flag">Atribut de resampler</system:String>
+  <system:String x:Key="exps.getsuggestions">Adaugă toate expresiile sugerate de către renderizatori</system:String>
+  <system:String x:Key="exps.isflag">Este atribut de resampler</system:String>
+  <system:String x:Key="exps.maxvalue">Maxim</system:String>
+  <system:String x:Key="exps.minvalue">Minim</system:String>
+  <system:String x:Key="exps.name">Nume</system:String>
+  <system:String x:Key="exps.optionvalues">Opţiunea de valori</system:String>
+  <system:String x:Key="exps.project">Expresii ale proiectului</system:String>
+  <system:String x:Key="exps.projectdefault">Configurări implicite proiect</system:String>
+  <system:String x:Key="exps.sepbycomma">Separă valorile folosind ','</system:String>
+  <system:String x:Key="exps.skipoutput">Sari peste atribut când valoarea este prestabilită din sistem</system:String>
+  <system:String x:Key="exps.systemdefault">Prestabilit din sistem</system:String>
+  <system:String x:Key="exps.track">Expresii ale track-ului (suprascrie)</system:String>
+  <system:String x:Key="exps.trackdefault">Expresii implicite ale track-ului</system:String>
+  <system:String x:Key="exps.type">Tip</system:String>
+  <system:String x:Key="exps.type.curve">Curbă</system:String>
+  <system:String x:Key="exps.type.numerical">Numeric</system:String>
+  <system:String x:Key="exps.type.options">Setări</system:String>
 
-  <system:String x:Key="languages.de">germană</system:String>
-  <system:String x:Key="languages.en">engleză</system:String>
-  <system:String x:Key="languages.es">spaniolă</system:String>
-  <!--<system:String x:Key="languages.fil">Filipino</system:String>-->
-  <system:String x:Key="languages.fr">franceză</system:String>
-  <!--<system:String x:Key="languages.invariant">Not translating</system:String>-->
-  <system:String x:Key="languages.it">italiană</system:String>
-  <system:String x:Key="languages.ja">japoneză</system:String>
-  <system:String x:Key="languages.ko">coreeană</system:String>
-  <system:String x:Key="languages.pl">poloneză</system:String>
-  <system:String x:Key="languages.pt">portugheză</system:String>
-  <system:String x:Key="languages.ru">rusă</system:String>
-  <system:String x:Key="languages.th">thailandeză</system:String>
-  <!--<system:String x:Key="languages.tr">Turkish</system:String>-->
-  <system:String x:Key="languages.vi">vietnameză</system:String>
-  <system:String x:Key="languages.zh">chineză</system:String>
-  <system:String x:Key="languages.zh-yue">cantoneză</system:String>
+  <system:String x:Key="languages.de">Germană</system:String>
+  <system:String x:Key="languages.en">Engleză</system:String>
+  <system:String x:Key="languages.es">Spaniolă</system:String>
+  <system:String x:Key="languages.fil">Filipineză</system:String>
+  <system:String x:Key="languages.fr">Franceză</system:String>
+  <system:String x:Key="languages.invariant">Nu se traduce</system:String>
+  <system:String x:Key="languages.it">Italiană</system:String>
+  <system:String x:Key="languages.ja">Japoneză</system:String>
+  <system:String x:Key="languages.ko">Coreeană</system:String>
+  <system:String x:Key="languages.pl">Poloneză</system:String>
+  <system:String x:Key="languages.pt">Portugheză</system:String>
+  <system:String x:Key="languages.ru">Rusă</system:String>
+  <system:String x:Key="languages.th">Thailandeză</system:String>
+  <system:String x:Key="languages.tr">Turcă</system:String>
+  <system:String x:Key="languages.vi">Vietnameză</system:String>
+  <system:String x:Key="languages.zh">Chineză</system:String>
+  <system:String x:Key="languages.zh-yue">Cantoneză</system:String>
 
-  <!--<system:String x:Key="lyrics.applyselected">Apply only to selected notes</system:String>-->
-  <!--<system:String x:Key="lyrics.caption">Edit Lyrics</system:String>-->
-  <!--<system:String x:Key="lyrics.livepreview">Live preview</system:String>-->
-  <!--<system:String x:Key="lyrics.nonote">There is no note!</system:String>-->
-  <!--<system:String x:Key="lyrics.selectnotes">Select some notes first!</system:String>-->
-  <!--<system:String x:Key="lyrics.separators">Separators</system:String>-->
+  <system:String x:Key="lyrics.applyselected">Aplică doar notelor selectate</system:String>
+  <system:String x:Key="lyrics.caption">Modificați versurile</system:String>
+  <system:String x:Key="lyrics.livepreview">Previzualizare în direct</system:String>
+  <system:String x:Key="lyrics.nonote">Nu este nicio notă!</system:String>
+  <system:String x:Key="lyrics.selectnotes">Selectează niște note întâi!</system:String>
+  <system:String x:Key="lyrics.separators">Separatori</system:String>
 
-  <!--<system:String x:Key="lyricsreplace.after">After :</system:String>-->
-  <!--<system:String x:Key="lyricsreplace.before">Before :</system:String>-->
-  <!--<system:String x:Key="lyricsreplace.preset.rmvalphabet">Remove alphabet</system:String>-->
-  <!--<system:String x:Key="lyricsreplace.preset.rmvnonhiragana">Remove non-hiragana</system:String>-->
-  <!--<system:String x:Key="lyricsreplace.preset.rmvphonetichint">Remove phonetic hint</system:String>-->
-  <!--<system:String x:Key="lyricsreplace.preset.rmvspace">Remove spaces and earlier</system:String>-->
-  <!--<system:String x:Key="lyricsreplace.preset.rmvtone">Remove tone suffix</system:String>-->
-  <!--<system:String x:Key="lyricsreplace.presets">Presets</system:String>-->
-  <!--<system:String x:Key="lyricsreplace.preview">Preview</system:String>-->
-  <!--<system:String x:Key="lyricsreplace.regex">Regular expressions can be used</system:String>-->
-  <!--<system:String x:Key="lyricsreplace.replace">General lyrics replacement</system:String>-->
+  <system:String x:Key="lyricsreplace.after">După:</system:String>
+  <system:String x:Key="lyricsreplace.before">Înainte:</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvalphabet">Îndepărtare alfabet</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvnonhiragana">Îndepărtare non-hiragana</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvphonetichint">Îndepărtare indicii fonetice</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvspace">Îndepărtare spații și textul precedent</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvtone">Îndepărtare sufix de ton</system:String>
+  <system:String x:Key="lyricsreplace.presets">Valori prestabilite</system:String>
+  <system:String x:Key="lyricsreplace.preview">Previzualizare</system:String>
+  <system:String x:Key="lyricsreplace.regex">Expresii obișnuite pot fi folosite</system:String>
+  <system:String x:Key="lyricsreplace.replace">Înlocuire generală a versurilor</system:String>
 
-  <!--<system:String x:Key="menu.edit">Edit</system:String>-->
-  <!--<system:String x:Key="menu.edit.copy">Copy</system:String>-->
-  <!--<system:String x:Key="menu.edit.cut">Cut</system:String>-->
-  <!--<system:String x:Key="menu.edit.delete">Delete</system:String>-->
-  <!--<system:String x:Key="menu.edit.lockunselectednotes">Lock editing of unselected notes</system:String>-->
-  <!--<system:String x:Key="menu.edit.lockunselectednotes.expressions">Expressions</system:String>-->
-  <!--<system:String x:Key="menu.edit.lockunselectednotes.pitchpoints">Pitch Points</system:String>-->
+  <system:String x:Key="menu.edit">Editare</system:String>
+  <system:String x:Key="menu.edit.copy">Copiază</system:String>
+  <system:String x:Key="menu.edit.cut">Decupează</system:String>
+  <system:String x:Key="menu.edit.delete">Șterge</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes">Blochează modificarea notelor neselectate</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.expressions">Expresii</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.pitchpoints">Puncte modulare ton</system:String>
   <!--<system:String x:Key="menu.edit.lockunselectednotes.vibrato">Vibrato</system:String>-->
-  <!--<system:String x:Key="menu.edit.paste">Paste</system:String>-->
-  <!--<system:String x:Key="menu.edit.pasteplainnotes">Paste as plain notes</system:String>-->
-  <!--<system:String x:Key="menu.edit.redo">Redo</system:String>-->
-  <!--<system:String x:Key="menu.edit.selectall">Select All</system:String>-->
-  <!--<system:String x:Key="menu.edit.undo">Undo</system:String>-->
-  <!--<system:String x:Key="menu.file">File</system:String>-->
-  <!--<system:String x:Key="menu.file.exit">Exit</system:String>-->
-  <!--<system:String x:Key="menu.file.exportaudio">Export Audio</system:String>-->
-  <!--<system:String x:Key="menu.file.exportds">Export DiffSinger Scripts To</system:String>-->
-  <!--<system:String x:Key="menu.file.exportmidi">Export Midi File</system:String>-->
-  <!--<system:String x:Key="menu.file.exportmixdown">Mixdown To Wav File</system:String>-->
-  <!--<system:String x:Key="menu.file.exportproject">Export Project</system:String>-->
-  <!--<system:String x:Key="menu.file.exportust">Export Ust Files</system:String>-->
-  <!--<system:String x:Key="menu.file.exportustto">Export Ust Files To...</system:String>-->
-  <!--<system:String x:Key="menu.file.exportwav">Export Wav Files</system:String>-->
-  <!--<system:String x:Key="menu.file.exportwavto">Export Wav Files To...</system:String>-->
-  <!--<system:String x:Key="menu.file.importaudio">Import Audio...</system:String>-->
-  <!--<system:String x:Key="menu.file.importmidi">Import Midi...</system:String>-->
-  <!--<system:String x:Key="menu.file.importmidi.drywetmidi">DryWetMidi Importer</system:String>-->
-  <!--<system:String x:Key="menu.file.importmidi.naudio">Naudio Importer</system:String>-->
-  <!--<system:String x:Key="menu.file.importtracks">Import Tracks...</system:String>-->
-  <!--<system:String x:Key="menu.file.new">New</system:String>-->
-  <!--<system:String x:Key="menu.file.newfromtemplate">New From Template</system:String>-->
-  <!--<system:String x:Key="menu.file.open">Open...</system:String>-->
-  <!--<system:String x:Key="menu.file.openas">Open As</system:String>-->
-  <!--<system:String x:Key="menu.file.openexportlocation">Open Export Location</system:String>-->
-  <!--<system:String x:Key="menu.file.openprojectlocation">Open Project Location</system:String>-->
-  <!--<system:String x:Key="menu.file.openrecent">Open Recent</system:String>-->
-  <!--<system:String x:Key="menu.file.save">Save</system:String>-->
-  <!--<system:String x:Key="menu.file.saveas">Save As...</system:String>-->
-  <!--<system:String x:Key="menu.file.savetemplate">Save Template...</system:String>-->
-  <!--<system:String x:Key="menu.help">Help</system:String>-->
-  <!--<system:String x:Key="menu.help.about">About OpenUtau</system:String>-->
-  <!--<system:String x:Key="menu.help.checkupdate">Check Update</system:String>-->
-  <!--<system:String x:Key="menu.help.logslocation">Open Logs Location</system:String>-->
-  <!--<system:String x:Key="menu.help.reportissue">Report Issue</system:String>-->
-  <!--<system:String x:Key="menu.help.wiki">OpenUtau Documentation</system:String>-->
-  <!--<system:String x:Key="menu.project">Project</system:String>-->
-  <!--<system:String x:Key="menu.project.expressions">Expressions...</system:String>-->
-  <!--<system:String x:Key="menu.project.remaptimeaxis">Adjust Tempo (Preserve Timing)</system:String>-->
-  <!--<system:String x:Key="menu.tools">Tools</system:String>-->
-  <!--<system:String x:Key="menu.tools.clearcache">Clear Cache</system:String>-->
-  <!--<system:String x:Key="menu.tools.debugwindow">Debug Window</system:String>-->
+  <system:String x:Key="menu.edit.paste">Lipește</system:String>
+  <system:String x:Key="menu.edit.pasteplainnotes">Lipește ca note simple</system:String>
+  <system:String x:Key="menu.edit.redo">Refă</system:String>
+  <system:String x:Key="menu.edit.selectall">Selectează tot</system:String>
+  <system:String x:Key="menu.edit.undo">Recuperează</system:String>
+  <system:String x:Key="menu.file">Filă</system:String>
+  <system:String x:Key="menu.file.exit">Ieșire</system:String>
+  <system:String x:Key="menu.file.exportaudio">Exportare Audio</system:String>
+  <system:String x:Key="menu.file.exportds">Exportă scripturi DiffSinger în</system:String>
+  <system:String x:Key="menu.file.exportmidi">Exportare filă MIDI</system:String>
+  <system:String x:Key="menu.file.exportmixdown">Combină într-o filă WAV</system:String>
+  <system:String x:Key="menu.file.exportproject">Exportă proiect</system:String>
+  <system:String x:Key="menu.file.exportust">Exportă file UST</system:String>
+  <system:String x:Key="menu.file.exportustto">Exportă file UST în</system:String>
+  <system:String x:Key="menu.file.exportwav">Exportă fișiere WAV</system:String>
+  <system:String x:Key="menu.file.exportwavto">Exportă fișiere WAV în</system:String>
+  <system:String x:Key="menu.file.importaudio">Adaugă Audio</system:String>
+  <system:String x:Key="menu.file.importmidi">Adaugă MIDI</system:String>
+  <system:String x:Key="menu.file.importmidi.drywetmidi">Importator de DryWetMIDI</system:String>
+  <system:String x:Key="menu.file.importmidi.naudio">Importator Naudio</system:String>
+  <system:String x:Key="menu.file.importtracks">Adaugă MIDI...</system:String>
+  <system:String x:Key="menu.file.new">Nou</system:String>
+  <system:String x:Key="menu.file.newfromtemplate">Nou Din Șablon</system:String>
+  <system:String x:Key="menu.file.open">Deschide...</system:String>
+  <system:String x:Key="menu.file.openas">Deschide ca</system:String>
+  <system:String x:Key="menu.file.openexportlocation">Deschide Locația de Exportare</system:String>
+  <system:String x:Key="menu.file.openprojectlocation">Deschide locația fișierului</system:String>
+  <system:String x:Key="menu.file.openrecent">Deschide recent</system:String>
+  <system:String x:Key="menu.file.save">Salvează</system:String>
+  <system:String x:Key="menu.file.saveas">Salvează ca</system:String>
+  <system:String x:Key="menu.file.savetemplate">Salvează șablon</system:String>
+  <system:String x:Key="menu.help">Ajutor</system:String>
+  <system:String x:Key="menu.help.about">Despre OpenUTAU</system:String>
+  <system:String x:Key="menu.help.checkupdate">Verifică actualizări</system:String>
+  <system:String x:Key="menu.help.logslocation">Deschide locația jurnalului</system:String>
+  <system:String x:Key="menu.help.reportissue">Raportează o problemă</system:String>
+  <system:String x:Key="menu.help.wiki">Documentare OpenUtau</system:String>
+  <system:String x:Key="menu.project">Proiect</system:String>
+  <system:String x:Key="menu.project.expressions">Expresii...</system:String>
+  <system:String x:Key="menu.project.remaptimeaxis">Ajustează Tempo (Păstrează Sincronizarea)</system:String>
+  <system:String x:Key="menu.tools">Instrumente</system:String>
+  <system:String x:Key="menu.tools.clearcache">Golește cache</system:String>
+  <system:String x:Key="menu.tools.debugwindow">Fereastră depanare</system:String>
   <!--<system:String x:Key="menu.tools.dependency.install">Install Dependency (.oudep)...</system:String>-->
-  <!--<system:String x:Key="menu.tools.fullscreen">Full Screen</system:String>-->
-  <!--<system:String x:Key="menu.tools.layout">Layout</system:String>-->
-  <!--<system:String x:Key="menu.tools.layout.hsplit11">Horizontal 1:1</system:String>-->
-  <!--<system:String x:Key="menu.tools.layout.hsplit12">Horizontal 1:2</system:String>-->
-  <!--<system:String x:Key="menu.tools.layout.hsplit13">Horizontal 1:3</system:String>-->
-  <!--<system:String x:Key="menu.tools.layout.reset">Reset Layout</system:String>-->
+  <system:String x:Key="menu.tools.fullscreen">Ecran Complet</system:String>
+  <system:String x:Key="menu.tools.layout">Amplasare</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit11">Orizontal 1:1</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit12">Orizontal 1:2</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit13">Orizontal 1:3</system:String>
+  <system:String x:Key="menu.tools.layout.reset">Resetează Amplasarea</system:String>
   <!--<system:String x:Key="menu.tools.layout.vsplit11">Vertical 1:1</system:String>-->
-  <!--<system:String x:Key="menu.tools.layout.vsplit12">Vertical 1:2</system:String>-->
+  <system:String x:Key="menu.tools.layout.vsplit12">Vertical 1:1</system:String>
   <!--<system:String x:Key="menu.tools.layout.vsplit13">Vertical 1:3</system:String>-->
   <!--<system:String x:Key="menu.tools.packages">Packages...</system:String>-->
-  <!--<system:String x:Key="menu.tools.prefs">Preferences...</system:String>-->
-  <!--<system:String x:Key="menu.tools.singer.install">Install Singer...</system:String>-->
-  <!--<system:String x:Key="menu.tools.singer.installadv">Install Singer (Advanced)...</system:String>-->
-  <!--<system:String x:Key="menu.tools.singers">Singers...</system:String>-->
-  <!--<system:String x:Key="menu.tools.wavtoolresampler.install">Install Wavtool/Resampler (.exe)...</system:String>-->
-  <!--<system:String x:Key="menu.view">View</system:String>-->
+  <system:String x:Key="menu.tools.prefs">Preferinţe...</system:String>
+  <system:String x:Key="menu.tools.singer.install">Instalează Cântăreț...</system:String>
+  <system:String x:Key="menu.tools.singer.installadv">Instalează Cântăreț (Avansat)...</system:String>
+  <system:String x:Key="menu.tools.singers">Cântăreți...</system:String>
+  <system:String x:Key="menu.tools.wavtoolresampler.install">Instalează Wavtool/Resampler (.exe)</system:String>
+  <system:String x:Key="menu.view">Vizualizează</system:String>
 
-  <!--<system:String x:Key="mergevoicebank.back">Back</system:String>-->
-  <!--<system:String x:Key="mergevoicebank.error">Failed to merge singer.</system:String>-->
-  <!--<system:String x:Key="mergevoicebank.merge">Merge</system:String>-->
-  <!--<system:String x:Key="mergevoicebank.next">Next</system:String>-->
-  <!--<system:String x:Key="mergevoicebank.selectsinger">This tool will merge another voicebank into current voicebank as new voice colors.
-Choose the voicebank that you want to merge into current voicebank</system:String>-->
-  <!--<system:String x:Key="mergevoicebank.setfolder">Set new names for copied folders.</system:String>-->
-  <!--<system:String x:Key="mergevoicebank.setsubbank">Set new prefix and suffix for subbanks.
-Syntax: prefix,suffix</system:String>-->
-  <!--<system:String x:Key="mergevoicebank.setvoicecolor">Set new names for voice colors (shown in CLR expression).</system:String>-->
-  <!--<system:String x:Key="mergevoicebank.title">Merge voicebanks</system:String>-->
+  <system:String x:Key="mergevoicebank.back">Înapoi</system:String>
+  <system:String x:Key="mergevoicebank.error">Unirea cântărețului a eșuat.</system:String>
+  <system:String x:Key="mergevoicebank.merge">Unește</system:String>
+  <system:String x:Key="mergevoicebank.next">Următorul</system:String>
+  <system:String x:Key="mergevoicebank.selectsinger">Acest instrument va uni o altă bază de voce în baza de voce curentă drept o nouă culoare a vocii. Alege baza de voce pe care dorești să o unești cu baza de voce curentă.</system:String>
+  <system:String x:Key="mergevoicebank.setfolder">Setează nume noi pentru folderele copiate</system:String>
+  <system:String x:Key="mergevoicebank.setsubbank">Setează un prefix și sufix nou pentru sub-bănci.
+Sintaxă: prefix,sufix</system:String>
+  <system:String x:Key="mergevoicebank.setvoicecolor">Setează nume noi pentru culorile de voce (arătate în expresia CLR)</system:String>
+  <system:String x:Key="mergevoicebank.title">Unește cântăreții</system:String>
 
   <!--<system:String x:Key="mixfx.applyonexport">Apply when exporting mixdown</system:String>-->
   <!--<system:String x:Key="mixfx.caption">Track Polish</system:String>-->
@@ -365,58 +366,58 @@ Syntax: prefix,suffix</system:String>-->
   <!--<system:String x:Key="mixfx.recommended">Apply Default Settings</system:String>-->
   <!--<system:String x:Key="mixfx.recommended.tip">Vocal Air + Gentle compression + Small Room</system:String>-->
 
-  <!--<system:String x:Key="notedefaults.lyric">Lyric</system:String>-->
-  <!--<system:String x:Key="notedefaults.lyric.enter">When Enter</system:String>-->
-  <!--<system:String x:Key="notedefaults.lyric.knife">When Knife Tool</system:String>-->
+  <system:String x:Key="notedefaults.lyric">Vers</system:String>
+  <system:String x:Key="notedefaults.lyric.enter">Când Enter</system:String>
+  <system:String x:Key="notedefaults.lyric.knife">Când Cuțit</system:String>
   <!--<system:String x:Key="notedefaults.portamento">Portamento</system:String>-->
-  <!--<system:String x:Key="notedefaults.portamento.length">Length</system:String>-->
-  <!--<system:String x:Key="notedefaults.portamento.start">Start</system:String>-->
-  <!--<system:String x:Key="notedefaults.preset">Preset</system:String>-->
-  <!--<system:String x:Key="notedefaults.preset.namenew">New Preset Name</system:String>-->
-  <!--<system:String x:Key="notedefaults.preset.remove.tooltip">Removes last applied preset.</system:String>-->
-  <!--<system:String x:Key="notedefaults.preset.save.tooltip">Save current settings to a new preset.</system:String>-->
-  <!--<system:String x:Key="notedefaults.reset">Reset All Settings</system:String>-->
-  <!--<system:String x:Key="notedefaults.reset.tooltip">Reset every setting to default values.
-Warning: this option removes custom presets.</system:String>-->
+  <system:String x:Key="notedefaults.portamento.length">Lungime</system:String>
+  <system:String x:Key="notedefaults.portamento.start">Pornește</system:String>
+  <system:String x:Key="notedefaults.preset">Presetare</system:String>
+  <system:String x:Key="notedefaults.preset.namenew">Nume pentru presetarea nouă</system:String>
+  <system:String x:Key="notedefaults.preset.remove.tooltip">Elimină ultima presetare aplicată.</system:String>
+  <system:String x:Key="notedefaults.preset.save.tooltip">Salvează setările actuale într-o presetare nouă</system:String>
+  <system:String x:Key="notedefaults.reset">Resetează toate setările</system:String>
+  <system:String x:Key="notedefaults.reset.tooltip">Resetează toate setările la valori implicite.
+Avertisment: această opțiune va elimina presetările personalizate.</system:String>
   <!--<system:String x:Key="notedefaults.vibrato">Vibrato</system:String>-->
-  <!--<system:String x:Key="notedefaults.vibrato.autominlength">Minimum Length</system:String>-->
-  <!--<system:String x:Key="notedefaults.vibrato.autotoggle">Automatic Vibrato by Length</system:String>-->
-  <!--<system:String x:Key="notedefaults.vibrato.depth">Depth</system:String>-->
-  <!--<system:String x:Key="notedefaults.vibrato.drift">Drift</system:String>-->
-  <!--<system:String x:Key="notedefaults.vibrato.in">Fade In</system:String>-->
-  <!--<system:String x:Key="notedefaults.vibrato.length">Length</system:String>-->
-  <!--<system:String x:Key="notedefaults.vibrato.out">Fade Out</system:String>-->
-  <!--<system:String x:Key="notedefaults.vibrato.period">Period</system:String>-->
-  <!--<system:String x:Key="notedefaults.vibrato.shift">Shift</system:String>-->
-  <!--<system:String x:Key="notedefaults.vibrato.vollink">Volume Link</system:String>-->
+  <system:String x:Key="notedefaults.vibrato.autominlength">Lungime minimă</system:String>
+  <system:String x:Key="notedefaults.vibrato.autotoggle">Vibrato automat după lungime</system:String>
+  <system:String x:Key="notedefaults.vibrato.depth">Adâncime</system:String>
+  <system:String x:Key="notedefaults.vibrato.drift">Derivă</system:String>
+  <system:String x:Key="notedefaults.vibrato.in">Intrare lină</system:String>
+  <system:String x:Key="notedefaults.vibrato.length">Lungime</system:String>
+  <system:String x:Key="notedefaults.vibrato.out">Ieșire lină</system:String>
+  <system:String x:Key="notedefaults.vibrato.period">Perioadă</system:String>
+  <system:String x:Key="notedefaults.vibrato.shift">Schimbare</system:String>
+  <system:String x:Key="notedefaults.vibrato.vollink">Link către volum</system:String>
 
-  <!--<system:String x:Key="noteproperty">Note Properties</system:String>-->
-  <!--<system:String x:Key="noteproperty.basic">Basic</system:String>-->
+  <system:String x:Key="noteproperty">Proprietățile notei</system:String>
+  <system:String x:Key="noteproperty.basic">Bază</system:String>
   <!--<system:String x:Key="noteproperty.parent.phonemizer">Follows Parent Phonemizer</system:String>-->
   <!--<system:String x:Key="noteproperty.phonemizer">Phonemizer</system:String>-->
-  <!--<system:String x:Key="noteproperty.set">Set</system:String>-->
-  <!--<system:String x:Key="noteproperty.setlongnote">Set only on long notes</system:String>-->
-  <!--<system:String x:Key="noteproperty.tone">Tone</system:String>-->
-  <!--<system:String x:Key="noteproperty.tuning">Tuning</system:String>-->
-  <!--<system:String x:Key="noteproperty.vibratoenable">Enable</system:String>-->
+  <system:String x:Key="noteproperty.set">Setează</system:String>
+  <system:String x:Key="noteproperty.setlongnote">Setează doar pe notele lungi</system:String>
+  <system:String x:Key="noteproperty.tone">Nuanță</system:String>
+  <system:String x:Key="noteproperty.tuning">Ajustare</system:String>
+  <system:String x:Key="noteproperty.vibratoenable">Activați</system:String>
 
   <!--<system:String x:Key="oto.alias">Alias</system:String>-->
-  <!--<system:String x:Key="oto.color">Color</system:String>-->
-  <!--<system:String x:Key="oto.consonant">Consonant</system:String>-->
-  <!--<system:String x:Key="oto.cutoff">Cutoff</system:String>-->
-  <!--<system:String x:Key="oto.edit.consonant">Set Consonant</system:String>-->
-  <!--<system:String x:Key="oto.edit.cutoff">Set Cutoff</system:String>-->
-  <!--<system:String x:Key="oto.edit.offset">Set Offset</system:String>-->
-  <!--<system:String x:Key="oto.edit.overlap">Set Overlap</system:String>-->
-  <!--<system:String x:Key="oto.edit.preutter">Set Preutter</system:String>-->
-  <!--<system:String x:Key="oto.file">File</system:String>-->
+  <system:String x:Key="oto.color">Culoare</system:String>
+  <system:String x:Key="oto.consonant">Consoană</system:String>
+  <system:String x:Key="oto.cutoff">Punct de tăiere</system:String>
+  <system:String x:Key="oto.edit.consonant">Setează consoana</system:String>
+  <system:String x:Key="oto.edit.cutoff">Setează punctul de tăiere</system:String>
+  <system:String x:Key="oto.edit.offset">Setează offset-ul</system:String>
+  <system:String x:Key="oto.edit.overlap">Setează suprapunerea</system:String>
+  <system:String x:Key="oto.edit.preutter">Setează preutter-ul</system:String>
+  <system:String x:Key="oto.file">Fișier</system:String>
   <!--<system:String x:Key="oto.offset">Offset</system:String>-->
-  <!--<system:String x:Key="oto.overlap">Overlap</system:String>-->
-  <!--<system:String x:Key="oto.phonetic">Phonetic</system:String>-->
+  <system:String x:Key="oto.overlap">Suprapunere</system:String>
+  <system:String x:Key="oto.phonetic">Fonetic</system:String>
   <!--<system:String x:Key="oto.prefix">Prefix</system:String>-->
   <!--<system:String x:Key="oto.preutter">Preutter</system:String>-->
-  <!--<system:String x:Key="oto.set">Set</system:String>-->
-  <!--<system:String x:Key="oto.suffix">Suffix</system:String>-->
+  <system:String x:Key="oto.set">Setează</system:String>
+  <system:String x:Key="oto.suffix">Sufix</system:String>
 
   <!--<system:String x:Key="packages.caption">Packages</system:String>-->
   <!--<system:String x:Key="packages.col.action">Action</system:String>-->
@@ -451,98 +452,103 @@ Warning: this option removes custom presets.</system:String>-->
   <!--<system:String x:Key="packages.unknownversion">unknown version</system:String>-->
   <!--<system:String x:Key="packages.update">Update</system:String>-->
 
-  <!--<system:String x:Key="phoneticassistant.caption">Phonetic Assistant</system:String>-->
-  <!--<system:String x:Key="phoneticassistant.copy">Copy</system:String>-->
+  <!--<system:String x:Key="phoneme.show.error">Alt + Click to view the full error</system:String>-->
 
-  <!--<system:String x:Key="pianoroll.key">Key (for scale degree display)</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.batch">Batch Edits</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.batch.running">Running batch edit</system:String>-->
+  <system:String x:Key="phoneticassistant.caption">Asistent fonetic</system:String>
+  <system:String x:Key="phoneticassistant.copy">Copiază</system:String>
+
+  <system:String x:Key="pianoroll.key">Tonalitate (pentru afișarea treptelor)</system:String>
+  <system:String x:Key="pianoroll.menu.batch">Editare Multiplă</system:String>
+  <system:String x:Key="pianoroll.menu.batch.running">Editarea multiplă rulează</system:String>
   <!--<system:String x:Key="pianoroll.menu.external">External</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics">Lyrics</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.dashtoplus">Replace "-" with "+"</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">Replace "-" with "+~"</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.edit">Edit Lyrics</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.hiraganatoromaji">Hiragana to Romaji</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.insertslur">Insert slur lyric</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.javcvtocv">Japanese VCV to CV</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.movesuffixtovoicecolor">Move Suffix to VoiceColor</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.removelettersuffix">Remove Letter Suffix</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.removephonetichint">Remove Phonetic Hint</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.removetonesuffix">Remove Tone Suffix</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.lyrics.romajitohiragana">Romaji to Hiragana</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notedefaults">Note Defaults</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes">Notes</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.addbreath">Add breath</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.addtaildash">Add tail "-"</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.addtailrest">Add tail "R"</system:String>-->
+  <system:String x:Key="pianoroll.menu.lyrics">Versuri</system:String>
+  <!--<system:String x:Key="pianoroll.menu.lyrics.addphonetichints">Add Phonetic Hint</system:String>-->
+  <system:String x:Key="pianoroll.menu.lyrics.dashtoplus">Înlocuiește "-" cu "+"</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">Înlocuiește "-" cu "+~"</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.edit">Modificați versurile</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.hiraganatoromaji">Hiragana către Romaji</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.insertslur">Inserează vers prelungitor</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.javcvtocv">Japoneză VCV către CV</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.movesuffixtovoicecolor">Mută Sufixul la Culorile Vocii</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removelettersuffix">Îndepărtare sufix</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removephonetichint">Îndepărtare indicii fonetice</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removetonesuffix">Îndepărtare sufix de ton</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.romajitohiragana">Romaji către Hiragana</system:String>
+  <system:String x:Key="pianoroll.menu.notedefaults">Valori implicite notă</system:String>
+  <system:String x:Key="pianoroll.menu.notes">Note</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addbreath">Adaugă respirație</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addtaildash">Adaugă "-" la final </system:String>
+  <system:String x:Key="pianoroll.menu.notes.addtailrest">Adaugă "R" la final </system:String>
   <!--<system:String x:Key="pianoroll.menu.notes.autolegato">Auto Legato</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.bakepitch">Convert PITD to pitch control points</system:String>-->
+  <system:String x:Key="pianoroll.menu.notes.bakepitch">Convertiți PITD în puncte de control al tonului</system:String>
   <!--<system:String x:Key="pianoroll.menu.notes.clear.vibratos">Clear vibratos</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.commonnotecopy">Commonnote Copy</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.commonnotepaste">Commonnote Paste</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.fixoverlap">Fix overlapping notes</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.hanzitopinyin">Hanzi to pinyin</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.lengthencrossfade">Lengthen crossfades</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.loadrenderedpitch">Load rendered pitch</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.octavedown">Move an octave down</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.octaveup">Move an octave up</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.quantize">Quantize to grid size</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.randomizeoffset">Randomize phoneme offset</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.randomizetiming">Randomize note timing</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.randomizetuning">Randomize tuning</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.refreshrealcurves">Refresh real curves</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.removetaildash">Remove tail "-"</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.removetailrest">Remove tail "R"</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.reset.aliases">Reset phoneme aliases</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.reset.all">Reset notes to default</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.reset.allparameters">Reset all parameters</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.reset.exps">Reset all expressions</system:String>-->
+  <system:String x:Key="pianoroll.menu.notes.commonnotecopy">Copiere ca notă comună</system:String>
+  <system:String x:Key="pianoroll.menu.notes.commonnotepaste">Lipire ca notă comună</system:String>
+  <system:String x:Key="pianoroll.menu.notes.fixoverlap">Repară notele suprapuse</system:String>
+  <system:String x:Key="pianoroll.menu.notes.hanzitopinyin">Hanzi către pinyin</system:String>
+  <system:String x:Key="pianoroll.menu.notes.lengthencrossfade">Prelungește tranzițiile</system:String>
+  <system:String x:Key="pianoroll.menu.notes.loadrenderedpitch">Încarcă modularea redată</system:String>
+  <system:String x:Key="pianoroll.menu.notes.octavedown">Mută cu o octavă mai jos</system:String>
+  <system:String x:Key="pianoroll.menu.notes.octaveup">Mută cu o octavă mai sus</system:String>
+  <system:String x:Key="pianoroll.menu.notes.quantize">Cuantificați la dimensiunea grilei</system:String>
+  <system:String x:Key="pianoroll.menu.notes.randomizeoffset">Randomizați decalajul fonemic</system:String>
+  <system:String x:Key="pianoroll.menu.notes.randomizetiming">Randomizați sincronizarea notelor</system:String>
+  <system:String x:Key="pianoroll.menu.notes.randomizetuning">Randomizează acordarea</system:String>
+  <system:String x:Key="pianoroll.menu.notes.refreshrealcurves">Reîmprospătează curbele reale</system:String>
+  <system:String x:Key="pianoroll.menu.notes.removetaildash">Șterge ”-” de la final</system:String>
+  <system:String x:Key="pianoroll.menu.notes.removetailrest">Șterge ”R” de la final</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.aliases">Resetare aliasuri fonetice</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.all">Resetează notele implicit</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.allparameters">Resetează toți parametrii</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.exps">Resetează toate expresiile</system:String>
   <!--<system:String x:Key="pianoroll.menu.notes.reset.phonemetimings">Reset phoneme timings and envelopes</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.reset.pitchbends">Reset pitch bends</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.notes.reset.vibratos">Reset vibratos</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.part">Part</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.part.legacypluginexp">Legacy Plugin (Experimental)</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.part.singer">Singer and Oto settings</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.plugin.openfolder">Open folder</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.plugin.reload">Reload</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.reset">Reset</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.searchnote">Search Note</system:String>-->
+  <system:String x:Key="pianoroll.menu.notes.reset.pitchbends">Resetează modulările de ton</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.vibratos">Resetează vibrato</system:String>
+  <system:String x:Key="pianoroll.menu.part">Parte</system:String>
+  <system:String x:Key="pianoroll.menu.part.legacypluginexp">Plugin Vechi (Experimental)</system:String>
+  <system:String x:Key="pianoroll.menu.part.singer">Setări Cântăreț și Oto</system:String>
+  <system:String x:Key="pianoroll.menu.plugin.openfolder">Deschide folder</system:String>
+  <system:String x:Key="pianoroll.menu.plugin.reload">Reîncarcă</system:String>
+  <system:String x:Key="pianoroll.menu.reset">Resetează</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote">Caută note</system:String>
   <!--<system:String x:Key="pianoroll.menu.searchnote.alias">Alias</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.searchnote.all">Select All</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.searchnote.close">Close</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.searchnote.next">Next</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.searchnote.note">Note</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.searchnote.prev">Prev</system:String>-->
-  <!--<system:String x:Key="pianoroll.menu.searchnote.searchalias">Search Alias</system:String>-->
-  <!--<system:String x:Key="pianoroll.snapdiv">Snap Division</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.expressions">View Expressions (L)</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.finalpitch">View Final Pitch to Render (R)</system:String>-->
+  <system:String x:Key="pianoroll.menu.searchnote.all">Selectează tot</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.close">Închide</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.next">Următorul</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.note">Notă</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.prev">Anterior</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.searchalias">Caută Alias</system:String>
+  <system:String x:Key="pianoroll.snapdiv">Diviziune Instantanee</system:String>
+  <system:String x:Key="pianoroll.toggle.expressions">Vizualizează Expresiile (L)</system:String>
+  <system:String x:Key="pianoroll.toggle.finalpitch">Vizualizează Modularea Finală pentru Randare (R)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.noteparams">View Note Parameters (\)</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
+  <system:String x:Key="pianoroll.toggle.noteparams">Vizualizează Parametrii Notelor (\)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.overwritepitch">Toggle Overwrite Pitch Mode</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.phoneme">View Phonemes (O)</system:String>-->
+  <system:String x:Key="pianoroll.toggle.phoneme">Vizualizează Fonemele (O)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.phonemizer">View Phonemizer Tags</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.pitch">View Pitch Bend (I)</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.snap">Toggle Snap (P)</system:String>-->
+  <system:String x:Key="pianoroll.toggle.pitch">Vizualizează Modularea de Ton (I)</system:String>
+  <system:String x:Key="pianoroll.toggle.snap">Comutare Snap (P)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.snap.auto">Auto</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.snap.autotriplet">Auto (triplet)</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.tips">View Tips (T)</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.tone">Toggle Note Tone (Y)</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.vibrato">View Vibrato (U)</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.waveform">View Waveform (W)</system:String>-->
+  <system:String x:Key="pianoroll.toggle.tips">Vizualizează Sfaturi (T)</system:String>
+  <system:String x:Key="pianoroll.toggle.tone">Comutare Tonul Notei (Y)</system:String>
+  <system:String x:Key="pianoroll.toggle.vibrato">Vizualizează Vibrato (U)</system:String>
+  <system:String x:Key="pianoroll.toggle.waveform">Vizualizează Formele de Undă (W)</system:String>
   <!--<system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (Shift + 1)
     Left click to draw
     Right click to reset
     Hold Ctrl to select</system:String>-->
-  <!--<system:String x:Key="pianoroll.tool.eraser">Eraser Tool (3)</system:String>-->
+  <system:String x:Key="pianoroll.tool.eraser">Radieră (3)</system:String>
   <!--<system:String x:Key="pianoroll.tool.knife">Knife Tool (4)</system:String>-->
-  <!--<system:String x:Key="pianoroll.tool.penplus">Pen Plus Tool (Ctrl + 2)
-    Left click to draw
-    Right click to delete
-    Hold Ctrl to select</system:String>-->
-  <!--<system:String x:Key="pianoroll.tool.penv2">Pen Tool (2)
-    Left click to draw
-    Hold Ctrl to select</system:String>-->
+  <system:String x:Key="pianoroll.tool.penplus">Pix Special (Ctrl + 2)
+    Clic stânga pentru a desena
+    Clic dreapta pentru a șterge
+    Ține apăsat pe Ctrl pentru a selecta</system:String>
+  <system:String x:Key="pianoroll.tool.penv2">Creion (2)
+    Clic stânga pentru a desena
+    Ține apăsat pentru a selecta</system:String>
   <!--<system:String x:Key="pianoroll.tool.pitchesinewave">Pitch Sine Wave Tool (Shift + 4)
     Drag to draw sine wave, release to enter adjusting mode
     Move mouse to adjust wavelength and amplitude, click to apply
@@ -565,288 +571,299 @@ Warning: this option removes custom presets.</system:String>-->
     Left click to smoothen pitch
     Right click to reset
     Hold Ctrl to select</system:String>-->
-  <!--<system:String x:Key="pianoroll.tool.selectionv2">Selection Tool (1)</system:String>-->
+  <system:String x:Key="pianoroll.tool.selectionv2">Instrument de Selectare (1)</system:String>
   <!--<system:String x:Key="pianoroll.tooltip.attack">Attack time delta</system:String>-->
   <!--<system:String x:Key="pianoroll.tooltip.overlap">Overlap</system:String>-->
   <!--<system:String x:Key="pianoroll.tooltip.preutter">Preutter</system:String>-->
   <!--<system:String x:Key="pianoroll.tooltip.release">Release time delta</system:String>-->
 
-  <!--<system:String x:Key="prefs.advanced">Advanced</system:String>-->
+  <system:String x:Key="prefs.advanced">Avansat</system:String>
   <!--<system:String x:Key="prefs.advanced.beta">Beta</system:String>-->
-  <!--<system:String x:Key="prefs.advanced.lyricshelper">Lyrics Helper</system:String>-->
-  <!--<system:String x:Key="prefs.advanced.lyricshelper.brackets">Lyrics Helper Adds Brackets</system:String>-->
-  <!--<system:String x:Key="prefs.advanced.rememberfiletypes">Remember these file types in "Open Recent"</system:String>-->
-  <!--<system:String x:Key="prefs.advanced.resamplerlogging">Resampler Logging</system:String>-->
-  <!--<system:String x:Key="prefs.advanced.resamplerlogging.warn">Stores resampler output in log files. This option slows down UI and rendering.</system:String>-->
-  <!--<system:String x:Key="prefs.advanced.stable">Stable</system:String>-->
-  <!--<system:String x:Key="prefs.advanced.vlabelerpath">vLabeler Path</system:String>-->
+  <system:String x:Key="prefs.advanced.lyricshelper">Asistent pentru Versuri</system:String>
+  <system:String x:Key="prefs.advanced.lyricshelper.brackets">Asistentul pentru Versuri Adaugă Paranteze</system:String>
+  <system:String x:Key="prefs.advanced.rememberfiletypes">Amintește aceste fișiere în ”Deschide Recent”</system:String>
+  <system:String x:Key="prefs.advanced.resamplerlogging">Jurnal Resampler</system:String>
+  <system:String x:Key="prefs.advanced.resamplerlogging.warn">Reține ieșirea resampler în fișierele de jurnal. Această opțiune va încetini interfața și viteza de randare</system:String>
+  <system:String x:Key="prefs.advanced.stable">Stabil</system:String>
+  <system:String x:Key="prefs.advanced.vlabelerpath">Cale vLabeler</system:String>
   <!--<system:String x:Key="prefs.advanced.wayland">Use Wayland</system:String>-->
-  <!--<system:String x:Key="prefs.advanced.winepath">Wine Path (set to enable wine for compatibility)</system:String>-->
-  <!--<system:String x:Key="prefs.appearance">Appearance</system:String>-->
+  <system:String x:Key="prefs.advanced.winepath">Cale Wine (setează pentru a comuta wine pentru compatibilitate)</system:String>
+  <system:String x:Key="prefs.appearance">Aspect</system:String>
   <!--<system:String x:Key="prefs.appearance.customtheme.create.empty">Theme name cannot be empty.</system:String>-->
   <!--<system:String x:Key="prefs.appearance.customtheme.create.prompt">Enter Theme Name</system:String>-->
   <!--<system:String x:Key="prefs.appearance.customtheme.create.title">Create Custom Theme</system:String>-->
   <!--<system:String x:Key="prefs.appearance.customtheme.delete.message">Are you sure you want to delete this theme?</system:String>-->
   <!--<system:String x:Key="prefs.appearance.customtheme.delete.title">Delete Custom Theme</system:String>-->
   <!--<system:String x:Key="prefs.appearance.customtheme.edit.title">Edit Custom Theme</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.degree">Scale degree display style</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.degree.numbered">Numbered (1 2 3 4 5 6 7)</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.degree.off">Off</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.degree.solfege">Solfège (do re mi fa sol la ti)</system:String>-->
+  <system:String x:Key="prefs.appearance.degree">Stilul de afișare a gradelor pe scară</system:String>
+  <system:String x:Key="prefs.appearance.degree.numbered">Numerotat (1 2 3 4 5 6 7)</system:String>
+  <system:String x:Key="prefs.appearance.degree.off">Oprit</system:String>
+  <system:String x:Key="prefs.appearance.degree.solfege">Solfegiu (do re mi fa sol la ti)</system:String>
   <!--<system:String x:Key="prefs.appearance.detachpianoroll">Show piano roll in separate window</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.diffsingerlangcodehide">Hide language prefix from phoneme editor</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.lang">Language</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.showghostnotes">Show other tracks' notes on piano roll</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.showicon">Show icon on piano roll</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.showportrait">Show portrait on piano roll</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.sortorder">Singer name display language</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.theme">Theme</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.theme.dark">Dark</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.theme.light">Light</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.trackcolor">Use track color in UI</system:String>-->
+  <system:String x:Key="prefs.appearance.diffsingerlangcodehide">Ascunde prefixul limbilor din editorul fonetic</system:String>
+  <system:String x:Key="prefs.appearance.lang">Limbă</system:String>
+  <!--<system:String x:Key="prefs.appearance.notehoverglow">Note hover glow</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.playbacknotebounce">Bounce notes on playback</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.playbacknotehighlight">Highlight notes on playback</system:String>-->
+  <system:String x:Key="prefs.appearance.showghostnotes">Afișează notele altor track-uri pe rola de pian</system:String>
+  <system:String x:Key="prefs.appearance.showicon">Afișează iconița pe rola de pian</system:String>
+  <system:String x:Key="prefs.appearance.showportrait">Afișează portretul pe rola de pian</system:String>
+  <system:String x:Key="prefs.appearance.sortorder">Limba de afișare a cântăreților</system:String>
+  <system:String x:Key="prefs.appearance.theme">Temă</system:String>
+  <system:String x:Key="prefs.appearance.theme.dark">Întunecat</system:String>
+  <system:String x:Key="prefs.appearance.theme.light">Luminos</system:String>
+  <system:String x:Key="prefs.appearance.trackcolor">Folosește culoarea track-ului pe interfață</system:String>
   <!--<system:String x:Key="prefs.cache">Cache</system:String>-->
-  <!--<system:String x:Key="prefs.cache.clearonquit">Clear cache on quit</system:String>-->
-  <!--<system:String x:Key="prefs.cache.diffsingertensorcache">DiffSinger Tensor Cache</system:String>-->
-  <!--<system:String x:Key="prefs.caption">Preferences</system:String>-->
+  <system:String x:Key="prefs.cache.clearonquit">Golește memoria cache la ieșire</system:String>
+  <system:String x:Key="prefs.cache.diffsingertensorcache">Cache Tensor DiffSinger</system:String>
+  <system:String x:Key="prefs.caption">Preferințe</system:String>
+  <!--<system:String x:Key="prefs.channel">Release Channel</system:String>-->
+  <!--<system:String x:Key="prefs.channel.alpha">Alpha</system:String>-->
+  <!--<system:String x:Key="prefs.channel.beta">Beta</system:String>-->
+  <!--<system:String x:Key="prefs.channel.stable">Stable</system:String>-->
   <!--<system:String x:Key="prefs.diffsinger">DiffSinger</system:String>-->
-  <!--<system:String x:Key="prefs.editing">Editing</system:String>-->
+  <system:String x:Key="prefs.editing">Editare</system:String>
   <!--<system:String x:Key="prefs.general">General</system:String>-->
-  <!--<system:String x:Key="prefs.note.restart">Note: please restart OpenUtau after changing this item.</system:String>-->
-  <!--<system:String x:Key="prefs.otoeditor">Oto Editor</system:String>-->
-  <!--<system:String x:Key="prefs.otoeditor.select">Default Oto Editor</system:String>-->
-  <!--<system:String x:Key="prefs.otoeditor.setparampath">setParam Path</system:String>-->
-  <!--<system:String x:Key="prefs.paths">Paths</system:String>-->
-  <!--<system:String x:Key="prefs.paths.addlsinger">Additional Singer Path</system:String>-->
-  <!--<system:String x:Key="prefs.paths.addlsinger.install">Install to Additional Singer Path</system:String>-->
-  <!--<system:String x:Key="prefs.paths.detect">Detect</system:String>-->
-  <!--<system:String x:Key="prefs.paths.loaddeepfolders">Load all depth folders</system:String>-->
-  <!--<system:String x:Key="prefs.paths.singer">Singer Path</system:String>-->
-  <!--<system:String x:Key="prefs.playback">Playback</system:String>-->
-  <!--<system:String x:Key="prefs.playback.autoscroll">Auto-Scroll</system:String>-->
-  <!--<system:String x:Key="prefs.playback.autoscrollmode">Auto-Scroll Mode</system:String>-->
+  <system:String x:Key="prefs.note.restart">Notiță: Vă rugăm să restartați OpenUtau după schimbarea acestei setări.</system:String>
+  <system:String x:Key="prefs.otoeditor">Editor Oto</system:String>
+  <system:String x:Key="prefs.otoeditor.select">Editor Oto Implicit</system:String>
+  <system:String x:Key="prefs.otoeditor.setparampath">Cale setParam</system:String>
+  <system:String x:Key="prefs.paths">Căi</system:String>
+  <system:String x:Key="prefs.paths.addlsinger">Cale Adițională pentru Cântăreți</system:String>
+  <system:String x:Key="prefs.paths.addlsinger.install">Instalează în Calea Adițională pentru Cântăreți</system:String>
+  <system:String x:Key="prefs.paths.detect">Detectează</system:String>
+  <system:String x:Key="prefs.paths.loaddeepfolders">Încarcă toate folderele adânci</system:String>
+  <system:String x:Key="prefs.paths.singer">Cale Cântăreți</system:String>
+  <system:String x:Key="prefs.playback">Redare</system:String>
+  <system:String x:Key="prefs.playback.autoscroll">Auto-derulare</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode">Mod Auto-derulare</system:String>
   <!--<system:String x:Key="prefs.playback.autoscrollmode.off">Off</system:String>-->
-  <!--<system:String x:Key="prefs.playback.autoscrollmode.pagescroll">Page Scroll</system:String>-->
-  <!--<system:String x:Key="prefs.playback.autoscrollmode.stationarycursor">Stationary Cursor</system:String>-->
-  <!--<system:String x:Key="prefs.playback.backend">Audio Backend</system:String>-->
-  <!--<system:String x:Key="prefs.playback.backend.auto">Automatic</system:String>-->
+  <system:String x:Key="prefs.playback.autoscrollmode.pagescroll">Derularea în Pagină</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode.stationarycursor">Cursor Staționar</system:String>
+  <system:String x:Key="prefs.playback.backend">Backend Audio</system:String>
+  <system:String x:Key="prefs.playback.backend.auto">Automat</system:String>
   <!--<system:String x:Key="prefs.playback.backend.mini">MiniAudio</system:String>-->
-  <!--<system:String x:Key="prefs.playback.cursorposition">Auto-Scroll Margin</system:String>-->
-  <!--<system:String x:Key="prefs.playback.device">Playback Device</system:String>-->
-  <!--<system:String x:Key="prefs.playback.lockstarttime">On Pausing</system:String>-->
-  <!--<system:String x:Key="prefs.playback.lockstarttime.off">Do nothing</system:String>-->
-  <!--<system:String x:Key="prefs.playback.lockstarttime.on">Move cursor and view position back to where you started playing</system:String>-->
-  <!--<system:String x:Key="prefs.playback.lockstarttime.onlycursor">Move only cursor back to where you started playing</system:String>-->
+  <!--<system:String x:Key="prefs.playback.backend.sdl3">SDL 3</system:String>-->
+  <system:String x:Key="prefs.playback.cursorposition">Margine Auto-derulare</system:String>
+  <system:String x:Key="prefs.playback.device">Dispozitiv de redare</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime">La Pauză</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.off">Nicio acțiune</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.on">Mută cursorul și vizualizează poziția înapoi de unde a început derularea</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.onlycursor">Mișcă doar cursorul înapoi unde a început derularea</system:String>
   <!--<system:String x:Key="prefs.playback.systemdefault">Use system default device</system:String>-->
   <!--<system:String x:Key="prefs.playback.test">Test</system:String>-->
-  <!--<system:String x:Key="prefs.rendering">Rendering</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.defaultrenderer">Default renderer (for classic voicebanks)</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger Render Depth</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Render Steps for Acoustic</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger Render Steps for Pitch</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger Render Steps for Variance</system:String>-->
+  <system:String x:Key="prefs.rendering">Randare</system:String>
+  <system:String x:Key="prefs.rendering.defaultrenderer">Randatorul implicit (pentru cântăreți clasici)</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerdepth">Adâncimea Randării DiffSinger</system:String>
+  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
+  <system:String x:Key="prefs.rendering.diffsingersteps">Pașii de Randare DiffSinger pentru Modelul Acustic</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerstepspitch">Pașii de Randare DiffSinger pentru Modelul Tonal</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerstepsvariance">Pașii de Randare DiffSinger pentru Modelul de Varianță</system:String>
   <!--<system:String x:Key="prefs.rendering.diffsingervariancelocalpitchpatch">DiffSinger Local Variance Update for Pitch Edits</system:String>-->
   <!--<system:String x:Key="prefs.rendering.gamebackend">GAME Inference Backend</system:String>-->
   <!--<system:String x:Key="prefs.rendering.onnxgpu">GPU</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.onnxrunner">Machine Learning Runner</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.phasecomp">Phase Compensation</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.prerender">Pre-render</system:String>-->
+  <system:String x:Key="prefs.rendering.onnxrunner">Motor de Învățare Automată</system:String>
+  <system:String x:Key="prefs.rendering.phasecomp">Compensație de Fază</system:String>
+  <system:String x:Key="prefs.rendering.prerender">Pre-randare</system:String>
   <!--<system:String x:Key="prefs.rendering.resampler">Resampler</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.resampler.morewarn">Warning: moresampler is not fully supported. It may be slow and cause high CPU usage. If you insist, please:
-  1. Set "resampler-compatibility" to "on" in moreconfig.txt.
-  2. Set "auto-update-llsm-mrq" to "off" in moreconfig.txt.
-  3. Patiently wait for moresampler to generate missing llsm files.</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.resampler.note">Note: to use external resamplers, please add the resampler DLL or EXE file in the Resamplers folder in the OpenUtau install path and choose it in Preferences.</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.skipmuted">Skip muted tracks</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.threads.cpuwarn">Warning: too many render threads may cause OpenUtau to run slowly.</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.threads.numthreads">Maximum Render Threads</system:String>-->
+  <system:String x:Key="prefs.rendering.resampler.morewarn">Avertisment: moresampler nu este complet compatibil. Poate fi încet și poate cauza folosire ridicată a procesorului. Dacă insistați, vă rugăm să:
+  1. Setați ”resampler-compatibility” pe ”on” (pornit) în moreconfig.txt
+  2. Setați ”auto-update-llsm-mrq” pe ”off” (oprit) în moreconfig.txt
+  3. Așteptați răbdător ca moresampler să genereze fișierele llsm lipsă.</system:String>
+  <system:String x:Key="prefs.rendering.resampler.note">Notită: pentru a folosi resamplere externe, vă rugăm să adăugați fișierul DLL sau EXE în folderul Resamplers în calea de instalare OpenUtau și să îl alegeți în Preferințe</system:String>
+  <system:String x:Key="prefs.rendering.skipmuted">Sari peste track-urile amuțite</system:String>
+  <system:String x:Key="prefs.rendering.threads.cpuwarn">Avertisment: prea multe thread-uri de randare pot cauza ca OpenUtau să ruleze mai încet.</system:String>
+  <system:String x:Key="prefs.rendering.threads.numthreads">Thread-uri Maxime de Randare</system:String>
   <!--<system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>-->
   <!--<system:String x:Key="prefs.utau">UTAU</system:String>-->
 
-  <!--<system:String x:Key="progress.cachecleared">Cache cleared.</system:String>-->
-  <!--<system:String x:Key="progress.clearingcache">Clearing cache...</system:String>-->
-  <!--<system:String x:Key="progress.loadingsingers">Loading Singers...</system:String>-->
-  <!--<system:String x:Key="progress.saved">Project saved. {0}</system:String>-->
-  <!--<system:String x:Key="progress.waitingrendering">Waiting Rendering</system:String>-->
+  <system:String x:Key="progress.cachecleared">Memoria cache a golită.</system:String>
+  <system:String x:Key="progress.clearingcache">Se șterge memoria cache...</system:String>
+  <system:String x:Key="progress.loadingsingers">Cântăreții se încarcă...</system:String>
+  <system:String x:Key="progress.saved">Proiectul a fost salvat. {0}</system:String>
+  <system:String x:Key="progress.waitingrendering">Se procesează</system:String>
 
-  <!--<system:String x:Key="singererror.aliasfullwidthspaces">Alias contains full-width spaces.</system:String>-->
-  <!--<system:String x:Key="singererror.aliasisnfd">Alias is NFD.</system:String>-->
-  <!--<system:String x:Key="singererror.aliasmultiplespaces">Alias contains multiple spaces.</system:String>-->
-  <!--<system:String x:Key="singererror.aliasstartwithspace">Alias starts or ends with a space.</system:String>-->
-  <!--<system:String x:Key="singererror.bitdepth">Bit depth of the sound file is not 16bit.</system:String>-->
-  <!--<system:String x:Key="singererror.consonantoutofduration">Consonant out of sound file duration.</system:String>-->
-  <!--<system:String x:Key="singererror.consonantshort">Consonant must be >= 0.</system:String>-->
-  <!--<system:String x:Key="singererror.cutoffconsonant">Cutoff must be to the right of consonant.</system:String>-->
-  <!--<system:String x:Key="singererror.cutoffoutofduration">Cutoff out of sound file duration.</system:String>-->
-  <!--<system:String x:Key="singererror.cutoffoverlap">Cutoff must be to the right of overlap.</system:String>-->
-  <!--<system:String x:Key="singererror.cutoffpreutter">Cutoff must be to the right of preutter.</system:String>-->
-  <!--<system:String x:Key="singererror.duplicatealias">There are duplicate aliases.{0}</system:String>-->
-  <!--<system:String x:Key="singererror.duplicatename">Duplicated file names found when ignoreing case in oto set "{0}": {1}.
-The voicebank may not work on another OS with case-sensitivity.</system:String>-->
-  <!--<system:String x:Key="singererror.failedload">Failed to load voicebank.</system:String>-->
-  <!--<system:String x:Key="singererror.invalidduration">Invalid duration {0}.</system:String>-->
-  <!--<system:String x:Key="singererror.invalidoto">Invalid oto format.</system:String>-->
-  <!--<system:String x:Key="singererror.mono">Sound file is not mono channel.</system:String>-->
-  <!--<system:String x:Key="singererror.offsetoutofduration">Offset out of sound file duration.</system:String>-->
-  <!--<system:String x:Key="singererror.offsetshort">Offset must be >= 0.</system:String>-->
-  <!--<system:String x:Key="singererror.overlapoutofduration">Overlap out of sound file duration.</system:String>-->
-  <!--<system:String x:Key="singererror.preutteroutofduration">Preutter out of sound file duration.</system:String>-->
-  <!--<system:String x:Key="singererror.preuttershort">Preutter must be >= 0.</system:String>-->
-  <!--<system:String x:Key="singererror.samplerate">Sample rate of the sound file is not 44100Hz.</system:String>-->
-  <!--<system:String x:Key="singererror.soundmissing">Sound file missing</system:String>-->
-  <!--<system:String x:Key="singererror.soundnotopened">Cannot open sound file.</system:String>-->
-  <!--<system:String x:Key="singererror.txtnotfound">character.txt not found.</system:String>-->
-  <!--<system:String x:Key="singererror.wavisnfd">Wav filename is NFD.</system:String>-->
-  <!--<system:String x:Key="singererror.wrongcase">Wrong case in file name:
-expected: {0}
+  <system:String x:Key="singererror.aliasfullwidthspaces">Aliasul conține spații de lățime întreagă.</system:String>
+  <system:String x:Key="singererror.aliasisnfd">Aliasul este NFD.</system:String>
+  <system:String x:Key="singererror.aliasmultiplespaces">Aliasul conține spații multiple.</system:String>
+  <system:String x:Key="singererror.aliasstartwithspace">Aliasul începe sau se termină cu un spațiu.</system:String>
+  <system:String x:Key="singererror.bitdepth">Adâncimea de biți nu este în 16bit.</system:String>
+  <system:String x:Key="singererror.consonantoutofduration">Consoana este în afara duratei fișierului audio.</system:String>
+  <system:String x:Key="singererror.consonantshort">Consoana trebuie să fie >= 0.</system:String>
+  <system:String x:Key="singererror.cutoffconsonant">Tăierea trebuie să fie în dreapta consoanei.</system:String>
+  <system:String x:Key="singererror.cutoffoutofduration">Tăierea este în afara duratei fișierului audio.</system:String>
+  <system:String x:Key="singererror.cutoffoverlap">Tăierea trebuie să fie în dreapta suprapunerii.</system:String>
+  <system:String x:Key="singererror.cutoffpreutter">Tăierea trebuie să fie în dreapta preutter.</system:String>
+  <system:String x:Key="singererror.duplicatealias">Aliasuri duplice detectate.{0}</system:String>
+  <system:String x:Key="singererror.duplicatename">Nume de fișiere duplice când se ignoră capitalizarea găsite în setul oto "{0}": {1}.
+Cântărețul s-ar putea să nu funcționeze pe alt sistem de operare cu sensibilitate la capitalizare.</system:String>
+  <system:String x:Key="singererror.failedload">Încărcarea cântărețului a eșuat.</system:String>
+  <system:String x:Key="singererror.invalidduration">Durată nevalidă {0}.</system:String>
+  <system:String x:Key="singererror.invalidoto">Format oto nevalid.</system:String>
+  <system:String x:Key="singererror.mono">Fișierul audio nu este în canal mono.</system:String>
+  <system:String x:Key="singererror.offsetoutofduration">Decalajul se află în afara duratei fișierului audio.</system:String>
+  <system:String x:Key="singererror.offsetshort">Decalajul trebuie să fie >= 0.</system:String>
+  <system:String x:Key="singererror.overlapoutofduration">Suprapunerea se află în afara duratei fișierului audio.</system:String>
+  <system:String x:Key="singererror.preutteroutofduration">Preutter se află în afara duratei fișierului audio.</system:String>
+  <system:String x:Key="singererror.preuttershort">Preutter trebuie să fie >= 0.</system:String>
+  <system:String x:Key="singererror.samplerate">Frecvența de eșantionare a fișierului audio nu este de 44100Hz.</system:String>
+  <system:String x:Key="singererror.soundmissing">Fișierul audio lipsește</system:String>
+  <system:String x:Key="singererror.soundnotopened">Fișierul audio nu poate fi deschis</system:String>
+  <system:String x:Key="singererror.txtnotfound">character.txt nu a putut fi găsit.</system:String>
+  <system:String x:Key="singererror.wavisnfd">Numele fișierului wav este NFD.</system:String>
+  <system:String x:Key="singererror.wrongcase">Capitalizare greșită în numele fișierului:
+Așteptat: {0}
 Actual: {1}
-The voicebank may not work on another OS.</system:String>-->
-  <!--<system:String x:Key="singererror.yamlnotfound">character.yaml not found.</system:String>-->
+Cântărețul ar putea să nu funcționeze pe un alt sistem de operare.</system:String>
+  <system:String x:Key="singererror.yamlnotfound">character.yaml nu a putut fi găsit.</system:String>
 
-  <!--<system:String x:Key="singers.caption">Singers</system:String>-->
-  <!--<system:String x:Key="singers.editoto.editinsetparam">Edit In setParam</system:String>-->
-  <!--<system:String x:Key="singers.editoto.editinvlabeler">Edit In vLabeler</system:String>-->
-  <!--<system:String x:Key="singers.editoto.gotosource">Goto Source File</system:String>-->
-  <!--<system:String x:Key="singers.editoto.regenfrq">Regenerate FRQ</system:String>-->
-  <!--<system:String x:Key="singers.editoto.regenfrq.regenerating">Regenerating FRQ</system:String>-->
-  <!--<system:String x:Key="singers.editoto.reset">Reset Otos</system:String>-->
-  <!--<system:String x:Key="singers.editoto.save">Save Otos</system:String>-->
-  <!--<system:String x:Key="singers.editoto.searchalias">Search Alias</system:String>-->
-  <!--<system:String x:Key="singers.editoto.setsetparampath">Download setParam (v4.0b or higher) from http://nwp8861.blog92.fc2.com/ and set setParam path in Preferences first!</system:String>-->
-  <!--<system:String x:Key="singers.editoto.setvlabelerpath">Download vLabeler (1.0.0-beta1 or higher) from https://github.com/sdercolin/vlabeler and set vLabeler path in Preferences first!</system:String>-->
-  <!--<system:String x:Key="singers.errorreport">Generate Singer Error Report</system:String>-->
-  <!--<system:String x:Key="singers.location">Location</system:String>-->
-  <!--<system:String x:Key="singers.merge">Merge with another voicebank</system:String>-->
-  <!--<system:String x:Key="singers.otoview.moveleft">Move Left</system:String>-->
-  <!--<system:String x:Key="singers.otoview.moveright">Move Right</system:String>-->
-  <!--<system:String x:Key="singers.otoview.selectnext">Select Next</system:String>-->
-  <!--<system:String x:Key="singers.otoview.selectprev">Select Prev</system:String>-->
-  <!--<system:String x:Key="singers.otoview.showall">Show All</system:String>-->
-  <!--<system:String x:Key="singers.otoview.zoomin">Zoom In</system:String>-->
-  <!--<system:String x:Key="singers.otoview.zoomout">Zoom Out</system:String>-->
-  <!--<system:String x:Key="singers.playsample">Play Sample</system:String>-->
-  <!--<system:String x:Key="singers.playselectedfile">Play Selected File</system:String>-->
-  <!--<system:String x:Key="singers.publish">Publish Singer</system:String>-->
-  <!--<system:String x:Key="singers.publish.description">Create an optimized zip package of your singer for distribution.</system:String>-->
-  <!--<system:String x:Key="singers.publish.ignoretypes">Ignore these file types during packaging (gitignore syntax):</system:String>-->
-  <!--<system:String x:Key="singers.publish.publish">Publish</system:String>-->
-  <!--<system:String x:Key="singers.publish.useignore"> Use file type ignoring</system:String>-->
-  <!--<system:String x:Key="singers.readme">Open readme.txt</system:String>-->
-  <!--<system:String x:Key="singers.readme.notfound">readme.txt not found.</system:String>-->
-  <!--<system:String x:Key="singers.refresh">Refresh</system:String>-->
-  <!--<system:String x:Key="singers.setdefaultphonemizer">Set Default Phonemizer</system:String>-->
-  <!--<system:String x:Key="singers.setencoding">Set Encoding</system:String>-->
-  <!--<system:String x:Key="singers.setimage">Set Icon</system:String>-->
-  <!--<system:String x:Key="singers.setportrait">Set Portrait</system:String>-->
-  <!--<system:String x:Key="singers.setsingertype">Set Singer Type</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.clear">Clear</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.color">Color</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.color.add">Add Color</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.color.remove">Remove Color</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.color.rename">Rename</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.edit">Edit Subbanks</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.export">Export prefix.map</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.import">Import prefix.map</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.selectall">Select All</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.set">Set</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.tone">Tone</system:String>-->
-  <!--<system:String x:Key="singers.subbanks.toneranges">Tone Ranges</system:String>-->
-  <!--<system:String x:Key="singers.usefilename">Use filename as alias</system:String>-->
-  <!--<system:String x:Key="singers.visitwebsite">Visit Website</system:String>-->
+  <system:String x:Key="singers.caption">Cântăreți</system:String>
+  <system:String x:Key="singers.editoto.editinsetparam">Editează în setParam</system:String>
+  <system:String x:Key="singers.editoto.editinvlabeler">Editează în vLabeler</system:String>
+  <system:String x:Key="singers.editoto.gotosource">Du-te la Fișierul Sursă</system:String>
+  <system:String x:Key="singers.editoto.regenfrq">Regenerează FRQ</system:String>
+  <system:String x:Key="singers.editoto.regenfrq.regenerating">Se regenerează FRQ</system:String>
+  <system:String x:Key="singers.editoto.reset">Resetează Oto</system:String>
+  <system:String x:Key="singers.editoto.save">Salvează Oto</system:String>
+  <system:String x:Key="singers.editoto.searchalias">Caută Alias</system:String>
+  <system:String x:Key="singers.editoto.setsetparampath">Descarcă setParam (v4.0b sau mai nou) din http://nwp8861.blog92.fc2.com/ și setează calea setParam în Preferințe mai întâi!</system:String>
+  <system:String x:Key="singers.editoto.setvlabelerpath">Descarcă vLabeler (1.0.0-beta1 sau mai nou) din https://github.com/sdercolin/vlabeler și setează calea vLabeler în Preferințe mai întâi!</system:String>
+  <system:String x:Key="singers.errorreport">Generează Jurnal de Erori al Cântărețului</system:String>
+  <system:String x:Key="singers.location">Locație</system:String>
+  <system:String x:Key="singers.merge">Combină cu o altă bază de voci</system:String>
+  <system:String x:Key="singers.otoview.moveleft">Mută spre Stânga</system:String>
+  <system:String x:Key="singers.otoview.moveright">Mută spre Dreapta</system:String>
+  <system:String x:Key="singers.otoview.selectnext">Selectează Următorul</system:String>
+  <system:String x:Key="singers.otoview.selectprev">Selectează Anteriorul</system:String>
+  <system:String x:Key="singers.otoview.showall">Arată tot</system:String>
+  <system:String x:Key="singers.otoview.zoomin">Mărire</system:String>
+  <system:String x:Key="singers.otoview.zoomout">Micșorare</system:String>
+  <system:String x:Key="singers.playsample">Redați exemplul</system:String>
+  <system:String x:Key="singers.playselectedfile">Redați Fișierul Selectat</system:String>
+  <system:String x:Key="singers.publish">Publicați Cântărețul</system:String>
+  <system:String x:Key="singers.publish.description">Creează un pachet zip optimizat pentru distribuirea cântărețului tău.</system:String>
+  <system:String x:Key="singers.publish.ignoretypes">Ignoră aceste tipuri de fișier în timpul împachetării (sintaxă gitignore):</system:String>
+  <system:String x:Key="singers.publish.publish">Publică</system:String>
+  <system:String x:Key="singers.publish.useignore"> Folosește ignorarea al tipului de fișier</system:String>
+  <system:String x:Key="singers.readme">Deschde readme.txt</system:String>
+  <system:String x:Key="singers.readme.notfound">readme.txt nu a putut fi găsit.</system:String>
+  <system:String x:Key="singers.refresh">Reîmprospătează</system:String>
+  <system:String x:Key="singers.setdefaultphonemizer">Setează Phonemizer-ul Implicit</system:String>
+  <system:String x:Key="singers.setencoding">Stabilește codarea</system:String>
+  <system:String x:Key="singers.setimage">Setează Iconiță</system:String>
+  <system:String x:Key="singers.setportrait">Setează Portret</system:String>
+  <system:String x:Key="singers.setsingertype">Setează Tipul de Cântăreț</system:String>
+  <system:String x:Key="singers.subbanks.clear">Curăță</system:String>
+  <system:String x:Key="singers.subbanks.color">Culoare</system:String>
+  <system:String x:Key="singers.subbanks.color.add">Adaugă Culoare</system:String>
+  <system:String x:Key="singers.subbanks.color.remove">Elimină Culoare</system:String>
+  <system:String x:Key="singers.subbanks.color.rename">Redenumește</system:String>
+  <system:String x:Key="singers.subbanks.edit">Editează Subvocile</system:String>
+  <system:String x:Key="singers.subbanks.export">Exportă prefix.map</system:String>
+  <system:String x:Key="singers.subbanks.import">Importă prefix.map</system:String>
+  <system:String x:Key="singers.subbanks.selectall">Selectează tot</system:String>
+  <system:String x:Key="singers.subbanks.set">Setează</system:String>
+  <system:String x:Key="singers.subbanks.tone">Nuanță</system:String>
+  <system:String x:Key="singers.subbanks.toneranges">Gamele de Nuanță</system:String>
+  <system:String x:Key="singers.usefilename">Folosește tipul de fișier ca alias</system:String>
+  <system:String x:Key="singers.visitwebsite">Vizitează Website-ul</system:String>
 
-  <!--<system:String x:Key="singersetup.archivefileencoding">Archive File Encoding</system:String>-->
-  <!--<system:String x:Key="singersetup.archivefileencoding.prompt">Choose an encoding that make file names look right.</system:String>-->
-  <!--<system:String x:Key="singersetup.back">Back</system:String>-->
-  <!--<system:String x:Key="singersetup.failed">Failed to install singer.</system:String>-->
-  <!--<system:String x:Key="singersetup.install">Install</system:String>-->
-  <!--<system:String x:Key="singersetup.missinginfo">Please add the following settings to this voicebank's character.yaml.</system:String>-->
-  <!--<system:String x:Key="singersetup.next">Next</system:String>-->
-  <!--<system:String x:Key="singersetup.singertype">Singer Type</system:String>-->
-  <!--<system:String x:Key="singersetup.succeeded">Installation succeeded.</system:String>-->
-  <!--<system:String x:Key="singersetup.textfileencoding">Text File Encoding</system:String>-->
-  <!--<system:String x:Key="singersetup.textfileencoding.prompt">Choose an encoding that make file contents look right.</system:String>-->
-  <!--<system:String x:Key="singersetup.title">Singer Setup</system:String>-->
+  <system:String x:Key="singersetup.archivefileencoding">Codarea Fișierului Arhivat</system:String>
+  <system:String x:Key="singersetup.archivefileencoding.prompt">Alege o codare care nu afectează numele fișierelor.</system:String>
+  <system:String x:Key="singersetup.back">Înapoi</system:String>
+  <system:String x:Key="singersetup.failed">Instalarea cântărețului a eșuat.</system:String>
+  <system:String x:Key="singersetup.install">Instalează</system:String>
+  <system:String x:Key="singersetup.missinginfo">Vă rugăm să adăugați următoarele setări în fișierul character.yaml a acestui cântăreț.</system:String>
+  <system:String x:Key="singersetup.next">Următorul</system:String>
+  <system:String x:Key="singersetup.singertype">Tipul Cântărețului</system:String>
+  <system:String x:Key="singersetup.succeeded">Instalarea a avut succes.</system:String>
+  <system:String x:Key="singersetup.textfileencoding">Codarea Fișierului Text</system:String>
+  <system:String x:Key="singersetup.textfileencoding.prompt">Alege o codare care nu afectează conținutul fișierelor.</system:String>
+  <system:String x:Key="singersetup.title">Configurarea Cântărețului</system:String>
 
+  <!--<system:String x:Key="themeeditor.cancel">Cancel</system:String>-->
+  <!--<system:String x:Key="themeeditor.save">Save</system:String>-->
   <!--<system:String x:Key="themeeditor.title">Theme Editor</system:String>-->
 
-  <!--<system:String x:Key="tip.aliasbox">Override Alias</system:String>-->
-  <!--<system:String x:Key="tip.exps">Numerical,Options Type
-    Left Button Draw: Set expressions
-    Shift + Left Button Draw: Set uniform expressions
-    Right Button Draw: Reset expressions
-Curve Type
-    Left Button Draw: Draw
-    Shift + Ctrl + Left Button Draw: Line Draw
-    Shift + Left Button Draw: Horizontal Line Draw
-    Right Button Draw: Reset Line</system:String>-->
-  <!--<system:String x:Key="tip.exps.notsupported">Expression not supported by renderer</system:String>-->
-  <!--<system:String x:Key="tip.lyricbox.next">Tab: Next Note</system:String>-->
-  <!--<system:String x:Key="tip.lyricbox.prev">Shift+Tab: Previous Note</system:String>-->
-  <!--<system:String x:Key="tip.notes.basics">Selection Tool
-    Box Select: Select notes
-    Ctrl + Box Select: Select more notes
-    Up/Down: Transpose selected notes
-    Ctrl + Up/Down: Transpose selected notes by octave
-Pen Tool
-    Left Button Draw: Add note
-    Right Click: Remove note
-    Right Button Draw: Remove multiple notes
+  <system:String x:Key="tip.aliasbox">Suprascrie Aliasul</system:String>
+  <system:String x:Key="tip.exps">Numeric,Tipuri de Opțiuni
+    Desenare cu Butonul Stâng: Setare expresii
+    Shift + Desenare cu Butonul Stâng: Setare expresii uniforme
+    Desenare cu Butonul Drept: Resetare expresii
+Curbat
+    Desenare cu Butonul Stâng: Desenare
+    Shift + Ctrl + Desenare cu Butonul Stâng: Desenare liniară
+    Shift + Desenare cu Butonul Stâng: Desenare cu Linii Orizontale
+    Desenare cu Butonul Drept: Resetează Linia</system:String>
+  <system:String x:Key="tip.exps.notsupported">Expresia nu este suportată de către randator</system:String>
+  <system:String x:Key="tip.lyricbox.next">Tab: Nota Următoare</system:String>
+  <system:String x:Key="tip.lyricbox.prev">Shift + Tab: Nota Anterioară</system:String>
+  <system:String x:Key="tip.notes.basics">Selectare
+    Selectare Cutie: Selectează note
+    Ctrl + Selectare Cutie: Selectează mai multe note
+    Sus/Jos: Transpune notele selectate
+    Ctrl + Sus/Jos: Transpune notele selectate în intervale de octave
+Creion
+    Desenare cu Butonul Stâng: Adaugă o notă
+    Clic dreapta: Șterge nota
+    Desenare cu Butonu Drept: Șterge mai multe note
 General
-    T: Toggle tips
-    Drag Note: Move note
-    Drag End of Note: Resize note
-    Alt + Drag End of Note: Resize neighbouring notes
-    Space: Play</system:String>-->
-  <!--<system:String x:Key="tip.notes.zoomx">◀ Scroll here to zoom horizontally ▶</system:String>-->
-  <!--<system:String x:Key="tip.notes.zoomy">Scroll here to zoom vertically ▶</system:String>-->
+    T: Comută sfaturi
+    Trage Nota: Mută Nota
+    Trageți Capătul Notei: Redimensionați Nota
+    Alt + Trageți Capătul Notei: Redimensionați Notele Vecine
+    Spațiu: Redare</system:String>
+  <system:String x:Key="tip.notes.zoomx">◀ Derulați aici pentru a mări orizontal ▶</system:String>
+  <system:String x:Key="tip.notes.zoomy">Derulați aici pentru a mări vertical ▶</system:String>
   <!--<system:String x:Key="tip.playback.loop">Loop playback</system:String>-->
 
-  <!--<system:String x:Key="tracks.duplicate">Duplicate Track</system:String>-->
-  <!--<system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>-->
-  <!--<system:String x:Key="tracks.favorite">Favorites</system:String>-->
-  <!--<system:String x:Key="tracks.installsinger">Install singer</system:String>-->
+  <system:String x:Key="tracks.duplicate">Dublați Track-ul</system:String>
+  <system:String x:Key="tracks.duplicatesettings">Dublează Setările Track-ului</system:String>
+  <system:String x:Key="tracks.favorite">Favorite</system:String>
+  <system:String x:Key="tracks.installsinger">Instalează Cântăreț</system:String>
   <!--<system:String x:Key="tracks.mixfx">Track Polish...</system:String>-->
-  <!--<system:String x:Key="tracks.more">More</system:String>-->
-  <!--<system:String x:Key="tracks.movedown">Move Down</system:String>-->
-  <!--<system:String x:Key="tracks.moveup">Move Up</system:String>-->
-  <!--<system:String x:Key="tracks.mute">Mute</system:String>-->
-  <!--<system:String x:Key="tracks.mute.allothers">Mute all others</system:String>-->
-  <!--<system:String x:Key="tracks.mute.only">Mute this only</system:String>-->
-  <!--<system:String x:Key="tracks.mute.unmuteall">Unmute all</system:String>-->
-  <!--<system:String x:Key="tracks.nosinger">There is no singer</system:String>-->
-  <!--<system:String x:Key="tracks.openaddsingers">Open additional singers location</system:String>-->
-  <!--<system:String x:Key="tracks.opensingers">Open singers location</system:String>-->
-  <!--<system:String x:Key="tracks.remove">Remove</system:String>-->
-  <!--<system:String x:Key="tracks.rename">Rename track</system:String>-->
-  <!--<system:String x:Key="tracks.selectrenderer">Select Renderer</system:String>-->
-  <!--<system:String x:Key="tracks.selectsinger">Select Singer</system:String>-->
-  <!--<system:String x:Key="tracks.singerdefault">(Singer default) </system:String>-->
+  <system:String x:Key="tracks.more">Mai multe</system:String>
+  <system:String x:Key="tracks.movedown">Mută în jos</system:String>
+  <system:String x:Key="tracks.moveup">Mută în sus</system:String>
+  <system:String x:Key="tracks.mute">Dezactivează sunet</system:String>
+  <system:String x:Key="tracks.mute.allothers">Dezactivează sunetul pentru toate celelalte</system:String>
+  <system:String x:Key="tracks.mute.only">Dezactivează sunetul doar pentru acesta</system:String>
+  <system:String x:Key="tracks.mute.unmuteall">Activează sunetul pentru toate</system:String>
+  <system:String x:Key="tracks.nosinger">Nu este niciun cântăreț</system:String>
+  <system:String x:Key="tracks.openaddsingers">Deschide locația adițională a cântăreților</system:String>
+  <system:String x:Key="tracks.opensingers">Deschide locația cântăreților</system:String>
+  <system:String x:Key="tracks.remove">Elimină</system:String>
+  <system:String x:Key="tracks.rename">Redenumește track-ul</system:String>
+  <system:String x:Key="tracks.selectrenderer">Selectează Randatorul</system:String>
+  <system:String x:Key="tracks.selectsinger">Selectează Cântărețul</system:String>
+  <system:String x:Key="tracks.singerdefault">(Implicit pentru Cântăreț) </system:String>
   <!--<system:String x:Key="tracks.solo">Solo</system:String>-->
-  <!--<system:String x:Key="tracks.solo.add">Solo additionally (which not removes solo from other tracks)</system:String>-->
-  <!--<system:String x:Key="tracks.solo.only">Solo this only (which removes solo from other tracks)</system:String>-->
-  <!--<system:String x:Key="tracks.solo.unsoloall">Unsolo all</system:String>-->
-  <!--<system:String x:Key="tracks.trackcolor">Change track color</system:String>-->
-  <!--<system:String x:Key="tracks.tracksettings">Track Settings</system:String>-->
+  <system:String x:Key="tracks.solo.add">Solo adițional (care nu elimină solo din alte track-uri)</system:String>
+  <system:String x:Key="tracks.solo.only">Solo doar acesta (care elimină solo din alte track-uri)</system:String>
+  <system:String x:Key="tracks.solo.unsoloall">Dezactivează solo pentru toți</system:String>
+  <system:String x:Key="tracks.trackcolor">Schimbă culoarea track-ului</system:String>
+  <system:String x:Key="tracks.tracksettings">Setări ale track-ului</system:String>
 
   <!--<FontFamily x:Key="ui.fontfamily">Segoe UI,San Francisco,Helvetica Neue</FontFamily>-->
 
-  <!--<system:String x:Key="updater.caption">Check for Update</system:String>-->
-  <!--<system:String x:Key="updater.description">Open singing synthesis platform</system:String>-->
+  <system:String x:Key="updater.caption">Verifică Actualizări</system:String>
+  <system:String x:Key="updater.description">Platformă de sintetizare vocală open-source</system:String>
   <!--<system:String x:Key="updater.github">GitHub</system:String>-->
-  <!--<system:String x:Key="updater.status.available">Update v{0} available!</system:String>-->
-  <!--<system:String x:Key="updater.status.checking">Checking for updates...</system:String>-->
-  <!--<system:String x:Key="updater.status.notavailable">Up to date</system:String>-->
-  <!--<system:String x:Key="updater.status.unknown">Unable to check update</system:String>-->
-  <!--<system:String x:Key="updater.update">Update</system:String>-->
+  <system:String x:Key="updater.status.available">Actualizarea {0} disponibilă!</system:String>
+  <system:String x:Key="updater.status.checking">Se caută actualizări...</system:String>
+  <system:String x:Key="updater.status.notavailable">La zi</system:String>
+  <system:String x:Key="updater.status.unknown">Incapabil de a căuta actualizări</system:String>
+  <system:String x:Key="updater.update">Actualizează</system:String>
 
-  <!--<system:String x:Key="warning">Warning</system:String>-->
-  <!--<system:String x:Key="warning.asciipath">Your OpenUtau home path "{0}" contains non-ASCII character. Exe resamplers may not work.</system:String>-->
-  <!--<system:String x:Key="warning.renderer">No settings for this renderer.</system:String>-->
+  <system:String x:Key="warning">Avertisment</system:String>
+  <system:String x:Key="warning.asciipath">Calea implicită OpenUtau "{0}" conține caractere non-ASCII. Este posibil ca resamplerele exe să nu funcționeze.</system:String>
+  <system:String x:Key="warning.renderer">Fără setări pentru acest randator.</system:String>
 
-  <!--<system:String x:Key="welcome.new">New</system:String>-->
-  <!--<system:String x:Key="welcome.new.description">Create a new project</system:String>-->
-  <!--<system:String x:Key="welcome.open">Open</system:String>-->
-  <!--<system:String x:Key="welcome.open.description">Open a local project</system:String>-->
+  <system:String x:Key="welcome.new">Nou</system:String>
+  <system:String x:Key="welcome.new.description">Creează un proiect nou</system:String>
+  <system:String x:Key="welcome.open">Deschide</system:String>
+  <system:String x:Key="welcome.open.description">Deschide un proiect local</system:String>
   <!--<system:String x:Key="welcome.recent">Recent</system:String>-->
   <!--<system:String x:Key="welcome.start">Start</system:String>-->
-  <!--<system:String x:Key="welcome.template">Template</system:String>-->
+  <system:String x:Key="welcome.template">Șablon</system:String>
 </ResourceDictionary>
