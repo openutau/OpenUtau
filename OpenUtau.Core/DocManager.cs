@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenUtau.Api;
 using OpenUtau.Classic;
+using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Editing;
 using OpenUtau.Core.Lib;
 using OpenUtau.Core.Render;
@@ -56,6 +57,7 @@ namespace OpenUtau.Core {
             this.mainThread = mainThread;
             this.mainScheduler = mainScheduler;
             PhonemizerRunner = new PhonemizerRunner(mainScheduler);
+            RealTimePitchGenerationService.Inst.Initialize();
         }
 
         public void SearchAllLegacyPlugins() {
@@ -330,6 +332,33 @@ namespace OpenUtau.Core {
             undoGroup = null;
             Log.Information("undoGroup ended");
             ExecuteCmd(new PreRenderNotification());
+        }
+
+        /// <summary>
+        /// Apply commands without recording undo. Still notifies subscribers.
+        /// </summary>
+        public void ApplyTransient(IEnumerable<UCommand> commands, ValidateOptions? validateOptions = null, bool preRender = true) {
+            if (mainThread != Thread.CurrentThread) {
+                PostOnUIThread(() => ApplyTransient(commands, validateOptions, preRender));
+                return;
+            }
+            RealTimePitchGenerationService.SuppressCallbacks = true;
+            try {
+                foreach (var cmd in commands) {
+                    lock (Project) {
+                        cmd.Execute();
+                    }
+                    Publish(cmd);
+                }
+                if (validateOptions != null) {
+                    Project.Validate(validateOptions.Value);
+                    if (preRender) {
+                        ExecuteCmd(new PreRenderNotification());
+                    }
+                }
+            } finally {
+                RealTimePitchGenerationService.SuppressCallbacks = false;
+            }
         }
 
         public void RollBackUndoGroup() {

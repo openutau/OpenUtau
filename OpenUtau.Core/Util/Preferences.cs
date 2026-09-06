@@ -133,6 +133,7 @@ namespace OpenUtau.Core.Util {
                         };
                         Default.PreferPortAudio = null;
                     }
+                    Default.MigrateRealTimePitchMode();
                 } else {
                     Reset();
                 }
@@ -213,6 +214,9 @@ namespace OpenUtau.Core.Util {
             public bool ShowPlaybackNoteBounce = false;
             public EditTool EditTool = new EditTool();
             public bool PlayTone = true;
+            /// <summary>Legacy; migrated to <see cref="RealTimePitchMode"/> on load.</summary>
+            public bool RealTimePitchGeneration = false;
+            public int RealTimePitchMode = (int)LivePitchMode.Off;
             public bool ShowVibrato = true;
             public bool ShowPitch = true;
             public bool ShowFinalPitch = true;
@@ -296,6 +300,17 @@ errors.txt
             [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
             public int? Theme;
             public bool? PreferPortAudio = false;
+
+            public void MigrateRealTimePitchMode() {
+                if (RealTimePitchGeneration && RealTimePitchMode == (int)LivePitchMode.Off) {
+                    RealTimePitchMode = (int)LivePitchMode.Normal;
+                }
+                RealTimePitchGeneration = false;
+                if (RealTimePitchMode < (int)LivePitchMode.Off
+                    || RealTimePitchMode > (int)LivePitchMode.Fast) {
+                    RealTimePitchMode = (int)LivePitchMode.Off;
+                }
+            }
         }
 
         /// <summary>

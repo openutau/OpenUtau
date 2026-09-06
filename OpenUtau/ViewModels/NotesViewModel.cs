@@ -61,6 +61,10 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowVibrato { get; set; }
         [Reactive] public partial bool ShowPitch { get; set; }
         [Reactive] public partial bool ShowFinalPitch { get; set; }
+        [Reactive] public partial bool LivePitchNormal { get; set; }
+        [Reactive] public partial bool LivePitchFast { get; set; }
+        [Reactive] public partial bool IsDiffSinger { get; set; }
+        bool livePitchSyncing;
         [Reactive] public partial bool ShowWaveform { get; set; }
         [Reactive] public partial bool ShowPhoneme { get; set; }
         [Reactive] public partial bool ShowNoteParams { get; set; }
@@ -105,6 +109,7 @@ namespace OpenUtau.App.ViewModels {
         private readonly ObservableAsPropertyHelper<double> smallChangeY;
 
         public readonly NoteSelectionViewModel Selection = new NoteSelectionViewModel();
+        public UNote? SelectableNote;
 
         internal NotesViewModelHitTest HitTest;
         private int _lastNoteLength = 480;
@@ -227,6 +232,29 @@ namespace OpenUtau.App.ViewModels {
                  Preferences.Default.PlayTone = playTone;
                  Preferences.Save();
              });
+            ApplyLivePitchModeFromPreferences();
+            this.WhenAnyValue(x => x.LivePitchNormal)
+                .Subscribe(checkedNormal => {
+                    if (livePitchSyncing) {
+                        return;
+                    }
+                    if (checkedNormal) {
+                        SetLivePitchMode(LivePitchMode.Normal);
+                    } else if (Preferences.Default.RealTimePitchMode == (int)LivePitchMode.Normal) {
+                        SetLivePitchMode(LivePitchMode.Off);
+                    }
+                });
+            this.WhenAnyValue(x => x.LivePitchFast)
+                .Subscribe(checkedFast => {
+                    if (livePitchSyncing) {
+                        return;
+                    }
+                    if (checkedFast) {
+                        SetLivePitchMode(LivePitchMode.Fast);
+                    } else if (Preferences.Default.RealTimePitchMode == (int)LivePitchMode.Fast) {
+                        SetLivePitchMode(LivePitchMode.Off);
+                    }
+                });
             ShowVibrato = Preferences.Default.ShowVibrato;
             this.WhenAnyValue(x => x.ShowVibrato)
             .Subscribe(showVibrato => {
@@ -582,7 +610,17 @@ namespace OpenUtau.App.ViewModels {
                 return;
             }
             TickOrigin = Part.position;
+            UpdateIsDiffSinger();
             Notify();
+        }
+
+        void UpdateIsDiffSinger() {
+            if (Project == null || Part == null || Part.trackNo < 0 || Part.trackNo >= Project.tracks.Count) {
+                IsDiffSinger = false;
+                return;
+            }
+            var renderer = Project.tracks[Part.trackNo].RendererSettings.Renderer;
+            IsDiffSinger = renderer != null && renderer.SingerType == USingerType.DiffSinger;
         }
 
         private void DeselectNote(UNote note) {
@@ -1213,6 +1251,7 @@ namespace OpenUtau.App.ViewModels {
                         LoadPortrait(Part, Project);
                     }
                 }
+                UpdateIsDiffSinger();
                 PrimaryKeyNotSupported = !IsExpSupported(PrimaryKey);
             }
         }
@@ -1255,6 +1294,23 @@ namespace OpenUtau.App.ViewModels {
                 return (positionX - leftMargin) * playPosXToTickOffset;
             }
             return 0;
+        }
+
+        void ApplyLivePitchModeFromPreferences() {
+            livePitchSyncing = true;
+            var mode = (LivePitchMode)Preferences.Default.RealTimePitchMode;
+            LivePitchNormal = mode == LivePitchMode.Normal;
+            LivePitchFast = mode == LivePitchMode.Fast;
+            livePitchSyncing = false;
+        }
+
+        void SetLivePitchMode(LivePitchMode mode) {
+            livePitchSyncing = true;
+            LivePitchNormal = mode == LivePitchMode.Normal;
+            LivePitchFast = mode == LivePitchMode.Fast;
+            Preferences.Default.RealTimePitchMode = (int)mode;
+            Preferences.Save();
+            livePitchSyncing = false;
         }
     }
 }

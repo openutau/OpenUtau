@@ -44,7 +44,7 @@ namespace OpenUtau.App.ViewModels {
                         Preview = ThemeManager.GetString("errors.lyrics.regexpreview");
                     }
                 });
-            this.WhenValueChanged(x => x.SelectedPreset)
+            this.WhenAnyValue(x => x.SelectedPreset)
                 .Subscribe(p => {
                     if (p != null) {
                         OldValue = p.OldValue;

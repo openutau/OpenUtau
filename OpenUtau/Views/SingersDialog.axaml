@@ -124,7 +124,12 @@
               BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}"
               ItemsSource="{Binding DisplayedOtos}" SelectedItem="{Binding SelectedOto}" SelectedIndex="{Binding SelectedIndex}"
               SelectionChanged="OnSelectedOtoChanged"
-              BeginningEdit="OnBeginningEdit" CellEditEnded="OnCellEditEnded">
+              BeginningEdit="OnBeginningEdit" CellEditEnded="OnCellEditEnded"
+              ScrollViewer.VerticalScrollBarVisibility="Auto"
+              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+              ScrollViewer.IsScrollInertiaEnabled="True"
+              AutoGenerateColumns="False"
+              RowHeight="24">
       <DataGrid.ContextMenu>
         <ContextMenu IsVisible="{Binding IsClassic}">
           <MenuItem Header="{DynamicResource singers.editoto.gotosource}" Click="GotoSourceFile"/>

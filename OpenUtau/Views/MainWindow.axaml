@@ -85,7 +85,7 @@
         </Menu>
       <Carousel SelectedIndex="{Binding Page}" >
         <!--Welcome page-->
-        <Grid Margin="60,50,60,40" RowDefinitions="Auto,Auto,Auto,*" ColumnDefinitions="*,*">
+        <Grid Margin="60,50,60,40" RowDefinitions="Auto,Auto,Auto,*" ColumnDefinitions="*,*" KeyDown="OnCarouselPageKeyDown">
           <!--Startup warnings-->
           <StackPanel Grid.Row="0" Grid.ColumnSpan="2">
             <Button Click="OnWelcomeRecovery" Height="40" Content="{Binding RecoveryString}"
@@ -207,7 +207,7 @@
         </Grid>
       
         <!--Main page-->
-        <Grid ColumnDefinitions="300,*,24" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+        <Grid ColumnDefinitions="300,*,24" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" KeyDown="OnCarouselPageKeyDown">
           <Grid.RowDefinitions>
             <RowDefinition Height="24"/>
             <RowDefinition Height="24"/>

@@ -587,7 +587,7 @@ namespace OpenUtau.Core.Render {
                 var spEnvDst = np.ndarray(new Shape(tDst.Length, spEnvSrc.shape[1]), typeof(double));
                 var apDst = np.ndarray(new Shape(tDst.Length, apSrc.shape[1]), typeof(double));
                 for (int i = 0; i < tDst.Length; ++i) {
-                    double pos = tDst[i];
+                    double pos = Math.Max(0, Math.Min(tDst[i], f0Src.Length - 1.0));
                     int index = (int)Math.Floor(pos);
                     double frac = pos - index;
                     if (index + 1 < f0Src.Length) {

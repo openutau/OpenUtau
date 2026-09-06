@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Notifications;
 using Avalonia.Controls.Primitives;
-using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Platform.Storage;
-using Avalonia.VisualTree;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using OpenUtau.App.Controls;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Classic;
@@ -30,7 +30,6 @@ using Serilog;
 using SharpCompress;
 using Path = System.IO.Path;
 using Point = Avalonia.Point;
-using System.Runtime.InteropServices;
 
 namespace OpenUtau.App.Views {
     public partial class MainWindow : Window, ICmdSubscriber {
@@ -40,6 +39,7 @@ namespace OpenUtau.App.Views {
 
         private PianoRollDetachedWindow? pianoRollWindow;
         private PianoRoll? pianoRoll;
+        private WindowNotificationManager notificationManager;
 
         private PartEditState? partEditState;
 
@@ -92,6 +92,11 @@ namespace OpenUtau.App.Views {
                 DispatcherPriority.Normal,
                 (sender, args) => DocManager.Inst.AutoSave());
             autosaveTimer.Start();
+
+            notificationManager = new WindowNotificationManager(this) {
+                Position = NotificationPosition.BottomCenter,
+                MaxItems = 3
+            };
 
             PartRenameCommand = ReactiveCommand.Create<UPart>(part => RenamePart(part));
             PartGotoFileCommand = ReactiveCommand.Create<UPart>(part => GotoFile(part));
@@ -914,6 +919,24 @@ namespace OpenUtau.App.Views {
                         args.Handled = false;
                         break;
                 }
+            }
+        }
+
+        void OnCarouselPageKeyDown(object? sender, KeyEventArgs e) {
+            // Avalonia's Carousel navigates pages on arrow/Home/End keys, and it
+            // receives them bubbling up from any descendant (e.g. pressing Alt+Left
+            // in the lyric box switched the window back to the welcome page).
+            // Pages are only switched programmatically via the Page property, so
+            // swallow navigation keys the page content did not handle itself.
+            switch (e.Key) {
+                case Key.Left:
+                case Key.Right:
+                case Key.Up:
+                case Key.Down:
+                case Key.Home:
+                case Key.End:
+                    e.Handled = true;
+                    break;
             }
         }
 
@@ -1984,6 +2007,11 @@ namespace OpenUtau.App.Views {
                         MessageBox.ShowError(this, notif.e, notif.message, true);
                         break;
                 }
+            } else if (cmd is ToastNotification toast) {
+                if (toast.windowType == "Pianoroll" && pianoRollWindow != null) {
+                    if (pianoRollWindow.Toast(toast)) return;
+                }
+                notificationManager.Show(ToastControl.GetNotification(toast, this));
             } else if (cmd is VoiceColorRemappingNotification voicecolorNotif) {
                 if (voicecolorNotif.TrackNo < 0 || DocManager.Inst.Project.tracks.Count <= voicecolorNotif.TrackNo) {
                     // Verify whether remapping is required when the voice color lineup changes

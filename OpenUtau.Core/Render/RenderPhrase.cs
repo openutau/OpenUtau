@@ -192,6 +192,25 @@ namespace OpenUtau.Core.Render {
         internal readonly IRenderer renderer;
         public readonly string wavtool;
 
+        /// <summary>
+        /// The [startMs, endMs) range (absolute ms) of the rendered phrase
+        /// audio, including the leading pre-utter and the release tail,
+        /// matching the WaveSource layout used by the mix.
+        /// </summary>
+        public (double StartMs, double EndMs) AudioRange {
+            get {
+                try {
+                    var layout = renderer.Layout(this);
+                    double startMs = layout.positionMs - layout.leadingMs;
+                    return (startMs, startMs + layout.estimatedLengthMs);
+                } catch {
+                    // Layout can fail when the singer is not usable; fall back
+                    // to the phoneme span.
+                    return (positionMs, endMs);
+                }
+            }
+        }
+
         private List<string> cacheFiles = new List<string>();
 
         internal RenderPhrase(UProject project, UTrack track, UVoicePart part, IEnumerable<UPhoneme> phonemes) {
@@ -525,9 +544,14 @@ namespace OpenUtau.Core.Render {
             if (phonemes.Count == 0) {
                 return phrases;
             }
+            var renderer = track.RendererSettings.Renderer;
             var phrasePhonemes = new List<UPhoneme>() { phonemes[0] };
             for (int i = 1; i < phonemes.Count; ++i) {
-                if (phonemes[i - 1].End != phonemes[i].position) {
+                // A gap normally starts a new phrase, but the renderer may ask
+                // to keep adjacent phrases together when their padded audio
+                // would overlap (e.g. DiffSinger input padding).
+                if (phonemes[i - 1].End != phonemes[i].position
+                    && !renderer.ShouldMergePhrases(project, track, phonemes[i - 1], phonemes[i])) {
                     phrases.Add(new RenderPhrase(project, track, part, phrasePhonemes));
                     phrasePhonemes.Clear();
                 }

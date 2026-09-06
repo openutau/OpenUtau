@@ -41,6 +41,7 @@ namespace OpenUtau.Core.Ustx {
         public UPhoneme Next { get; set; }
         public bool Error { get; set; } = false;
         public Exception? ErrorException { get; set; }
+        Exception? durationErrorException;
 
         public override string ToString() => $"\"{phoneme}\" pos:{position}";
 
@@ -78,7 +79,17 @@ namespace OpenUtau.Core.Ustx {
             EndMs = project.timeAxis.TickPosToMsPos(part.position + End);
             Error = Duration <= 0;
             if (Error) {
-                ErrorException ??= new Exception("Phoneme duration is not positive.");
+                // The exception is remembered so it does not flicker between
+                // validates, and Validate() keeps the error visible until it
+                // clears again.
+                durationErrorException ??= new Exception("Phoneme duration is not positive.");
+                ErrorException ??= durationErrorException;
+            } else if (ReferenceEquals(ErrorException, durationErrorException)) {
+                // Duration is valid again (e.g. the phoneme offset override was
+                // moved back), so clear the stale duration error. A phonemizer
+                // response error stored in ErrorException is left untouched.
+                durationErrorException = null;
+                ErrorException = null;
             }
         }
 
