@@ -289,6 +289,8 @@ namespace OpenUtau.Core.Util {
 errors.txt
 ";
             public string RecoveryPath = string.Empty;
+            public bool AutoDeleteMorphCache = false;
+            public bool PhaseLocked = true;
             public bool DetachPianoRoll = true;
 
             // ----- Mix FX (post-processing) -----

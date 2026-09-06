@@ -146,7 +146,7 @@ namespace OpenUtau.App.Controls {
             double optionHeight = descriptor.type == UExpressionType.Options
                 ? Bounds.Height / descriptor.options.Length
                 : 0;
-            if (descriptor.type == UExpressionType.Curve) {
+            if (descriptor.type == UExpressionType.Curve || descriptor.type == UExpressionType.MorphingCurve) {
                 var curve = Part.curves.FirstOrDefault(c => c.descriptor == descriptor);
                 double defaultHeight = Math.Round(Bounds.Height - Bounds.Height * (descriptor.defaultValue - descriptor.min) / (descriptor.max - descriptor.min));
                 

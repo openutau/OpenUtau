@@ -357,6 +357,14 @@
             <Button Grid.Column="2" Content="{DynamicResource button.select}"
                     HorizontalAlignment="Stretch" Click="SelectSetParamPath"/>
           </Grid>
+          <Grid>
+            <TextBlock Text="{DynamicResource prefs.advanced.phasemorphing}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding PhaseLocked}" />
+          </Grid>
+          <Grid>
+            <TextBlock Text="{DynamicResource prefs.advanced.autodeletemorphcache}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding AutoDeleteMorphCache}" />
+          </Grid>
         </StackPanel>
 
         <!-- DiffSinger -->

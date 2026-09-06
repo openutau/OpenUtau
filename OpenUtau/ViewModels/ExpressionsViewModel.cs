@@ -65,8 +65,8 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(x => x.Abbr)
                 .Select(abbr => !Core.Format.Ustx.required.Contains(abbr) || ExpressionsViewModel.isTrackOverride)
                 .ToProperty(this, x => x.IsRemovable, out isRemovable);
-            this.WhenAnyValue(x => x.ExpressionType)
-                .Select(type => type == 0) // Numerical
+           this.WhenAnyValue(x => x.ExpressionType)
+                .Select(type => type == 0 || type == 3) // 0 = Numerical, 3 = MorphingCurve
                 .ToProperty(this, x => x.IsNumerical, out isNumerical);
             this.WhenAnyValue(x => x.ExpressionType)
                 .Select(type => type == 1) // Options
@@ -83,7 +83,7 @@ namespace OpenUtau.App.ViewModels {
             if (string.IsNullOrWhiteSpace(Abbr)) {
                 return new string[] { "Abbreviation must be set.", "<translate:errors.expression.abbrset>" };
             }
-            if (ExpressionType == 0) { // Numerical
+            if (ExpressionType == 0 || ExpressionType == 3) { // Numerical or MorphingCurve
                 if (Abbr.Trim().Length < 1 || Abbr.Trim().Length > 4) {
                     return new string[] { "Abbreviation must be between 1 and 4 characters long.", $"<translate:errors.expression.abbrlong>: {Name}" };
                 }
@@ -109,6 +109,10 @@ namespace OpenUtau.App.ViewModels {
                 case UExpressionType.Curve:
                     return new UExpressionDescriptor(Name.Trim(), Abbr.Trim().ToLower(), Min, Max, DefaultValue) {
                         type = UExpressionType.Curve,
+                    };
+                case UExpressionType.MorphingCurve:
+                    return new UExpressionDescriptor(Name.Trim(), Abbr.Trim().ToLower(), Min, Max, DefaultValue, Flag, CustomeDefaultValue, SkipOutputIfDefault) {
+                        type = UExpressionType.MorphingCurve,
                     };
             }
             throw new Exception("Unexpected expression type");

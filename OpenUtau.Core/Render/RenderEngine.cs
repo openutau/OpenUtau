@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenUtau.Core.SignalChain;
@@ -50,8 +53,8 @@ namespace OpenUtau.Core.Render {
         readonly UVoicePart focusPart;
         readonly int focusTick;
 
-        static readonly System.Collections.Concurrent.ConcurrentDictionary<string, float[]> XsyBlendCache =
-            new System.Collections.Concurrent.ConcurrentDictionary<string, float[]>();
+        static readonly ConcurrentDictionary<string, float[]> MorphBlendCache =
+            new ConcurrentDictionary<string, float[]>();
 
         public RenderEngine(
             UProject project,
@@ -68,12 +71,10 @@ namespace OpenUtau.Core.Render {
             this.focusTick = focusTick;
         }
 
-        // for playback or export
         public Tuple<WaveMix, List<Fader>> RenderMixdown(TaskScheduler uiScheduler, ref CancellationTokenSource cancellation, bool wait = false) {
             return RenderMixdown(uiScheduler, ref cancellation, wait, applyMixFx: true);
         }
 
-        // for playback or export -- explicit MixFx control (export dialog passes false to keep dry stems)
         public Tuple<WaveMix, List<Fader>> RenderMixdown(TaskScheduler uiScheduler, ref CancellationTokenSource cancellation, bool wait, bool applyMixFx) {
             var newCancellation = new CancellationTokenSource();
             var oldCancellation = Interlocked.Exchange(ref cancellation, newCancellation);
@@ -84,9 +85,6 @@ namespace OpenUtau.Core.Render {
             double startMs = project.timeAxis.TickPosToMsPos(startTick);
             double endMs = endTick == -1 ? double.PositiveInfinity : project.timeAxis.TickPosToMsPos(endTick);
             var faders = new List<Fader>();
-            // Each track is wrapped with its own UMixFx (no global FX bus).
-            // Tracks with MixFx == null or Enabled = false pass through unchanged
-            // (zero-overhead bypass).  All tracks sum into a single mix.
             var trackOutputs = new List<ISignalSource>();
             var requests = PrepareRequests()
                 .Where(request => request.sources.Length > 0 && request.sources.Max(s => s.EndMs) > startMs && (double.IsPositiveInfinity(endMs) || request.sources.Min(s => s.offsetMs) < endMs))
@@ -145,14 +143,10 @@ namespace OpenUtau.Core.Render {
             if (wait) {
                 task.Wait();
             }
-            // Build the final mix.  All tracks (FX-wrapped or dry) sum into
-            // a single WaveMix.  Bypass-as-pointer-identity in WrapWith keeps
-            // disabled tracks zero-cost.
             var resultMix = new WaveMix(trackOutputs);
             return Tuple.Create(resultMix, faders);
         }
 
-        // for playback
         public Tuple<MasterAdapter, List<Fader>> RenderProject(TaskScheduler uiScheduler, ref CancellationTokenSource cancellation) {
             double startMs = project.timeAxis.TickPosToMsPos(startTick);
             double endMs = endTick == -1
@@ -164,7 +158,6 @@ namespace OpenUtau.Core.Render {
             return Tuple.Create(master, renderMixdownResult.Item2);
         }
 
-        // for export
         public List<WaveMix> RenderTracks(TaskScheduler uiScheduler, ref CancellationTokenSource cancellation) {
             var newCancellation = new CancellationTokenSource();
             var oldCancellation = Interlocked.Exchange(ref cancellation, newCancellation);
@@ -192,7 +185,6 @@ namespace OpenUtau.Core.Render {
             return trackMixes;
         }
 
-        // for pre render
         public void PreRenderProject(ref CancellationTokenSource cancellation) {
             var newCancellation = new CancellationTokenSource();
             var oldCancellation = Interlocked.Exchange(ref cancellation, newCancellation);
@@ -237,8 +229,6 @@ namespace OpenUtau.Core.Render {
                 request.sources = new WaveSource[request.phrases.Length];
                 for (var i = 0; i < request.phrases.Length; i++) {
                     var phrase = request.phrases[i];
-                    var firstPhone = phrase.phones.First();
-                    var lastPhone = phrase.phones.Last();
                     var layout = phrase.renderer.Layout(phrase);
                     double posMs = layout.positionMs - layout.leadingMs;
                     double durMs = layout.estimatedLengthMs;
@@ -269,12 +259,11 @@ namespace OpenUtau.Core.Render {
                 tuples = OrderForPreRender(tuples);
             }
             var progress = new Progress(tuples.Sum(t => t.Item1.phones.Length));
-            // Only full-project passes (pre-render / export) maintain the real-curve coverage
-            // invariant. Partial playback passes must not trim curves outside their tick window.
             bool maintainCoverage = startTick == 0 && endTick == -1;
             var coverageRanges = maintainCoverage
                 ? new Dictionary<UVoicePart, List<(int start, int end)>>()
                 : null;
+
             foreach (var tuple in tuples) {
                 if (cancellation.IsCancellationRequested) {
                     break;
@@ -288,80 +277,181 @@ namespace OpenUtau.Core.Render {
                         publishedUpdates = PublishRealCurveUpdates(request.part, phrase, realCurves);
                     })
                     : null;
-                bool useXsy = phrase.xsy != null && phrase.xsy.Any(x => x > 0);
-                if (!useXsy) {
+
+                var morphTracks = GetActiveMorphTracks(phrase, request.part, request.trackNo);
+
+                if (morphTracks.Count == 0) {
+                    phrase.renderSalt = 0;
                     var task = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
                     task.Wait();
-                    if (cancellation.IsCancellationRequested) {
-                        break;
-                    }
+                    if (cancellation.IsCancellationRequested) break;
                     source.SetSamples(task.Result.samples);
                 } else {
-                    string xsyKey = $"{phrase.hash:x16}|" +
-                        string.Join(",", phrase.phones.Select(p => $"{p.oto2?.Set}:{p.oto2?.Alias}"));
-                    if (!XsyBlendCache.TryGetValue(xsyKey, out var blended)) {
+                    string morphKey = $"{phrase.hash:x16}|" +
+                        string.Join(",", morphTracks.Select(t => $"{t.TargetColor}:{t.Flag}:{t.Abbr}"));
+
+                    if (!MorphBlendCache.TryGetValue(morphKey, out var blended)) {
+                        // Pass A: Render Base Voice
+                        phrase.renderSalt = 0;
                         var taskA = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
                         taskA.Wait();
-                        if (cancellation.IsCancellationRequested) {
-                            break;
-                        }
+                        if (cancellation.IsCancellationRequested) break;
                         float[] samplesA = taskA.Result.samples;
 
-                        var otoField = typeof(RenderPhone).GetField("oto");
-                        var hashField = typeof(RenderPhone).GetField("hash");
-                        var phraseHashField = typeof(RenderPhrase).GetField("hash");
+                        var otoField = typeof(RenderPhone).GetField("oto", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        var hashField = typeof(RenderPhone).GetField("hash", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        var flagsField = typeof(RenderPhone).GetField("flags", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        var phraseHashField = typeof(RenderPhrase).GetField("hash", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
                         var originalOtos = phrase.phones.Select(p => p.oto).ToArray();
                         var originalHashes = phrase.phones.Select(p => p.hash).ToArray();
+                        var originalFlags = phrase.phones.Select(p => p.flags).ToArray();
                         ulong originalPhraseHash = phrase.hash;
-                        float[] samplesB;
-                        try {
-                            for (int i = 0; i < phrase.phones.Length; i++) {
-                                var phone = phrase.phones[i];
-                                if (phone.oto2 != null) {
-                                    otoField.SetValue(phone, phone.oto2);
-                                    hashField.SetValue(phone, phone.hash ^ 0x5858585858585858);
-                                }
-                            }
-                            phraseHashField.SetValue(phrase, phrase.hash ^ 0x5858585858585858);
-                            var taskB = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true);
-                            taskB.Wait();
-                            samplesB = taskB.Result.samples;
-                        } finally {
-                            for (int i = 0; i < phrase.phones.Length; i++) {
-                                otoField.SetValue(phrase.phones[i], originalOtos[i]);
-                                hashField.SetValue(phrase.phones[i], originalHashes[i]);
-                            }
-                            phraseHashField.SetValue(phrase, originalPhraseHash);
-                        }
-                        if (cancellation.IsCancellationRequested) {
-                            break;
-                        }
 
-                        const int fftSize = 2048;
-                        const int hopSize = 512;
-                        int totalSamples = Math.Max(samplesA.Length, samplesB.Length);
-                        int frameCount = Math.Max(1, (totalSamples - fftSize) / hopSize + 1);
-                        float[] frameRatios = new float[frameCount];
+                        var singer = DocManager.Inst.Project.tracks[request.trackNo].Singer;
+                        var colorAudios = new List<float[]>();
+                        var tempAuxCacheFiles = new List<string>();
+
                         int pitchStart = phrase.position - phrase.leading;
-                        for (int f = 0; f < frameCount; f++) {
-                            double timeMs = phrase.positionMs - phrase.leadingMs
-                                + (double)(f * hopSize) / 44100.0 * 1000.0;
-                            double tick = project.timeAxis.MsPosToTickPos(timeMs);
-                            int curveIndex = (int)Math.Max(0, (tick - pitchStart) / 5);
-                            if (phrase.xsy.Length > 0) {
-                                frameRatios[f] = curveIndex < phrase.xsy.Length
-                                    ? Math.Clamp(phrase.xsy[curveIndex] / 100f, 0f, 1f)
-                                    : Math.Clamp(phrase.xsy.Last() / 100f, 0f, 1f);
+
+                        try {
+                            // Pass B..N: Render each active auxiliary target
+                            for (int t = 0; t < morphTracks.Count; t++) {
+                                var track = morphTracks[t];
+                                ulong salt = (ulong)(t + 1) * 0x5858585858585858UL;
+                                float[] samplesB;
+
+                                try {
+                                    phrase.renderSalt = salt;
+
+                                    // SELECTIVE HIJACKING: Only hijack phones where the curve is actually active (> 0)
+                                    for (int i = 0; i < phrase.phones.Length; i++) {
+                                        var phone = phrase.phones[i];
+
+                                        int pStartTick = phrase.position + phone.position - phone.leading;
+                                        int pEndTick = phrase.position + phone.position + phone.duration;
+                                        int idxStart = Math.Max(0, (pStartTick - pitchStart) / 5);
+                                        int idxEnd = Math.Min(track.RawCurve.Length - 1, (pEndTick - pitchStart) / 5);
+
+                                        bool isPhoneActive = false;
+                                        for (int k = idxStart; k <= idxEnd; k++) {
+                                            if (track.WeightFunc(track.RawCurve[k]) > 0.001f) {
+                                                isPhoneActive = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if (!isPhoneActive) {
+                                            // Leave as base voice: renderer will hit cache and reuse Pass A audio
+                                            continue;
+                                        }
+
+                                        if (!string.IsNullOrEmpty(track.TargetColor)) {
+                                            if (TryHijackOto(singer, phone, track.TargetColor, out var secondaryOto)) {
+                                                otoField?.SetValue(phone, secondaryOto);
+                                            }
+                                        }
+
+                                        if (!string.IsNullOrEmpty(track.Flag)) {
+                                            var currentFlags = originalFlags[i]?.ToList() ?? new List<Tuple<string, int?, string>>();
+                                            currentFlags.RemoveAll(f =>
+                                                (!string.IsNullOrEmpty(track.Abbr) && f.Item3 == track.Abbr) ||
+                                                (!string.IsNullOrEmpty(track.FlagBase) && (f.Item1 == track.FlagBase || f.Item1.StartsWith(track.FlagBase))));
+                                            currentFlags.Add(Tuple.Create<string, int?, string>(track.Flag, null, track.Abbr));
+                                            flagsField?.SetValue(phone, currentFlags.ToArray());
+                                        }
+
+                                        hashField?.SetValue(phone, phone.hash ^ salt);
+                                    }
+                                    phraseHashField?.SetValue(phrase, phrase.hash ^ salt);
+
+                                    ulong saltedHash = phrase.hash;
+                                    tempAuxCacheFiles.Add(Path.Join(PathManager.Inst.CachePath, $"wdl-v1-{saltedHash:x16}.wav"));
+                                    tempAuxCacheFiles.Add(Path.Join(PathManager.Inst.CachePath, $"wdl-v2-{saltedHash:x16}.wav"));
+                                    tempAuxCacheFiles.Add(Path.Join(PathManager.Inst.CachePath, $"cat-{saltedHash:x16}.wav"));
+
+                                    var taskB = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true);
+                                    taskB.Wait();
+                                    samplesB = taskB.Result.samples;
+                                } finally {
+                                    phrase.renderSalt = 0;
+                                    for (int i = 0; i < phrase.phones.Length; i++) {
+                                        otoField?.SetValue(phrase.phones[i], originalOtos[i]);
+                                        hashField?.SetValue(phrase.phones[i], originalHashes[i]);
+                                        flagsField?.SetValue(phrase.phones[i], originalFlags[i]);
+                                    }
+                                    phraseHashField?.SetValue(phrase, originalPhraseHash);
+                                }
+
+                                if (cancellation.IsCancellationRequested) break;
+                                colorAudios.Add(samplesB ?? samplesA);
+                            }
+
+                            if (cancellation.IsCancellationRequested) break;
+
+                            const int fftSize = 2048;
+                            const int hopSize = 512;
+                            int totalSamples = samplesA.Length;
+                            foreach (var ca in colorAudios) {
+                                if (ca.Length > totalSamples) totalSamples = ca.Length;
+                            }
+                            int frameCount = Math.Max(1, (totalSamples - fftSize) / hopSize + 1);
+
+                            // Frame-accurate ratio sampling aligned directly to STFT frame centers
+                            var colorCurves = new List<float[]>();
+                            for (int t = 0; t < morphTracks.Count; t++) {
+                                var track = morphTracks[t];
+                                float[] frameRatios = new float[frameCount];
+                                for (int f = 0; f < frameCount; f++) {
+                                    double timeMs = phrase.positionMs - phrase.leadingMs
+                                        + (double)(f * hopSize + fftSize / 2) / 44100.0 * 1000.0;
+                                    double tick = project.timeAxis.MsPosToTickPos(timeMs);
+                                    int curveIndex = (int)Math.Max(0, (tick - pitchStart) / 5.0);
+                                    if (track.RawCurve.Length > 0) {
+                                        float rawVal = curveIndex < track.RawCurve.Length
+                                            ? track.RawCurve[curveIndex]
+                                            : track.RawCurve.Last();
+                                        frameRatios[f] = track.WeightFunc(rawVal);
+                                    }
+                                }
+                                colorCurves.Add(frameRatios);
+                            }
+
+                            blended = CrossSynthDSP.MorphN(samplesA, colorAudios, colorCurves);
+                            if (MorphBlendCache.Count > 1024) {
+                                MorphBlendCache.Clear();
+                            }
+                            MorphBlendCache[morphKey] = blended;
+
+                            PlaybackManager.Inst.LiveWaveformCache[originalPhraseHash.ToString()] = (
+                                request.trackNo,
+                                phrase.positionMs - phrase.leadingMs,
+                                blended,
+                                DateTime.Now
+                            );
+                            Task.Factory.StartNew(() => {
+                                DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                            }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
+
+                            for (int t = 0; t < morphTracks.Count; t++) {
+                                ulong salt = (ulong)(t + 1) * 0x5858585858585858UL;
+                                PlaybackManager.Inst.LiveWaveformCache.TryRemove((originalPhraseHash ^ salt).ToString(), out _);
+                            }
+
+                            source.SetSamples(blended);
+                        } finally {
+                            if (Preferences.Default.AutoDeleteMorphCache) {
+                                Task.Run(() => {
+                                    foreach (var auxFile in tempAuxCacheFiles) {
+                                        CleanUpIntermediateAudio(auxFile);
+                                    }
+                                });
                             }
                         }
-                        blended = CrossSynthDSP.StftBlend(samplesA, samplesB, frameRatios);
-                        if (XsyBlendCache.Count > 1024) {
-                            XsyBlendCache.Clear();
-                        }
-                        XsyBlendCache[xsyKey] = blended;
                     }
                     source.SetSamples(blended);
                 }
+
                 if (publishedUpdates == null) {
                     publishedUpdates = PublishRealCurveUpdates(request.part, phrase);
                 }
@@ -380,6 +470,171 @@ namespace OpenUtau.Core.Render {
                 }
             }
             progress.Clear();
+        }
+
+        private List<ActiveMorphTrack> GetActiveMorphTracks(RenderPhrase phrase, UVoicePart part, int trackNo) {
+            var list = new List<ActiveMorphTrack>();
+            if (phrase.curves == null || part == null) return list;
+
+            var singer = DocManager.Inst.Project.tracks[trackNo].Singer;
+            var uniqueColors = singer?.Subbanks?.Select(s => s.Color).Where(c => !string.IsNullOrEmpty(c)).Distinct().ToList() ?? new List<string>();
+
+            int pitchStart = phrase.position - phrase.leading;
+            int pitchEnd = phrase.end;
+
+            foreach (var tuple in phrase.curves) {
+                string abbr = tuple.Item1;
+                float[] curveSamples = tuple.Item2;
+                if (curveSamples == null || curveSamples.Length == 0) continue;
+
+                project.expressions.TryGetValue(abbr, out var exp);
+
+                string matchedColor = null;
+
+                // 1. Voice Color Matching (cl01..N)
+                if (abbr.StartsWith("cl", StringComparison.OrdinalIgnoreCase) && int.TryParse(abbr.Substring(2), out int idx)) {
+                    if (idx > 0 && idx <= uniqueColors.Count) {
+                        matchedColor = uniqueColors[idx - 1];
+                    }
+                } else if (exp != null && !string.IsNullOrEmpty(exp.name)) {
+                    matchedColor = uniqueColors.FirstOrDefault(c => exp.name.IndexOf(c, StringComparison.OrdinalIgnoreCase) >= 0);
+                }
+
+                if (matchedColor != null) {
+                    if (!curveSamples.Any(v => v > 0.001f)) continue;
+                    list.Add(new ActiveMorphTrack {
+                        Abbr = abbr,
+                        TargetColor = matchedColor,
+                        FlagBase = null,
+                        Flag = "",
+                        RawCurve = curveSamples,
+                        WeightFunc = val => Math.Clamp(val, 0f, 100f)
+                    });
+                    continue;
+                }
+
+                // 2. Bipolar & Unipolar Flag Curves
+                if (exp != null && (exp.isFlag || !string.IsNullOrEmpty(exp.flag) || exp.type == UExpressionType.MorphingCurve)) {
+                    string flagBase = string.IsNullOrEmpty(exp.flag) ? exp.abbr : exp.flag;
+                    float defVal = exp.defaultValue;
+                    float cMax = curveSamples.Max();
+                    float cMin = curveSamples.Min();
+
+                    if (cMax > defVal + 0.5f) {
+                        int posFlagVal = (int)Math.Round(cMax);
+                        string posFlag = $"{flagBase}{posFlagVal}";
+                        float rangePos = cMax - defVal;
+
+                        list.Add(new ActiveMorphTrack {
+                            Abbr = abbr,
+                            FlagBase = flagBase,
+                            TargetColor = null,
+                            Flag = posFlag,
+                            RawCurve = curveSamples,
+                            WeightFunc = val => val > defVal ? Math.Clamp((val - defVal) / rangePos * 100f, 0f, 100f) : 0f
+                        });
+                    }
+
+                    if (cMin < defVal - 0.5f) {
+                        int negFlagVal = (int)Math.Round(cMin);
+                        string negFlag = $"{flagBase}{negFlagVal}";
+                        float rangeNeg = defVal - cMin;
+
+                        list.Add(new ActiveMorphTrack {
+                            Abbr = abbr,
+                            FlagBase = flagBase,
+                            TargetColor = null,
+                            Flag = negFlag,
+                            RawCurve = curveSamples,
+                            WeightFunc = val => val < defVal ? Math.Clamp((defVal - val) / rangeNeg * 100f, 0f, 100f) : 0f
+                        });
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        private static bool TryHijackOto(USinger singer, RenderPhone phone, string targetColor, out UOto targetOto) {
+            targetOto = null;
+            if (singer == null || singer.Subbanks == null || phone.oto == null) return false;
+
+            string basePhoneme = phone.oto.Phonetic ?? phone.phoneme;
+
+            if (singer.TryGetMappedOto(basePhoneme, phone.tone, targetColor, out targetOto)) {
+                return true;
+            }
+
+            var targetSubbanks = singer.Subbanks
+                .Where(b => string.Equals(b.Color, targetColor, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (targetSubbanks.Count == 0) return false;
+
+            foreach (var sub in targetSubbanks) {
+                string candidate = (sub.Prefix ?? "") + phone.phoneme + (sub.Suffix ?? "");
+                if (singer.TryGetOto(candidate, out targetOto)) return true;
+            }
+
+            string rawAlias = phone.oto.Alias;
+            var baseSub = singer.Subbanks.FirstOrDefault(b =>
+                (!string.IsNullOrEmpty(b.Prefix) && rawAlias.StartsWith(b.Prefix)) ||
+                (!string.IsNullOrEmpty(b.Suffix) && rawAlias.EndsWith(b.Suffix)));
+
+            string root = rawAlias;
+            if (baseSub != null) {
+                if (!string.IsNullOrEmpty(baseSub.Prefix) && root.StartsWith(baseSub.Prefix)) root = root.Substring(baseSub.Prefix.Length);
+                if (!string.IsNullOrEmpty(baseSub.Suffix) && root.EndsWith(baseSub.Suffix)) root = root.Substring(0, root.Length - baseSub.Suffix.Length);
+            }
+
+            foreach (var sub in targetSubbanks) {
+                string candidate = (sub.Prefix ?? "") + root + (sub.Suffix ?? "");
+                if (singer.TryGetOto(candidate, out targetOto)) return true;
+            }
+
+            return false;
+        }
+
+        private static void CleanUpIntermediateAudio(string wavPath) {
+            if (string.IsNullOrEmpty(wavPath)) return;
+            try {
+                if (File.Exists(wavPath)) {
+                    File.Delete(wavPath);
+                }
+            } catch { }
+            CleanUpMetaFiles(wavPath);
+        }
+
+        private static void CleanUpMetaFiles(string filePath) {
+            if (string.IsNullOrEmpty(filePath)) return;
+            try {
+                string ext = Path.GetExtension(filePath);
+                string noExt = filePath.Substring(0, filePath.Length - ext.Length);
+                string frqExt = ext.Replace('.', '_') + ".frq";
+
+                string[] sidecarFiles = new string[] {
+                    noExt + frqExt,
+                    filePath + ".llsm",
+                    filePath + ".uspec",
+                    filePath + ".dio",
+                    filePath + ".star",
+                    filePath + ".platinum",
+                    filePath + ".frc",
+                    filePath + ".pmk",
+                    filePath + ".vs4ufrq",
+                    noExt + ".rudb",
+                    noExt + ".sc.npz",
+                    noExt + ".sc",
+                    noExt + ".hifi.npz"
+                };
+
+                foreach (string p in sidecarFiles) {
+                    try {
+                        if (File.Exists(p)) {
+                            File.Delete(p);
+                        }
+                    } catch { }
+                }
+            } catch { }
         }
 
         private RealCurveUpdate[]? PublishRealCurveUpdates(UVoicePart part, RenderPhrase phrase) {
@@ -478,6 +733,15 @@ namespace OpenUtau.Core.Render {
 
         public static void ReleaseSourceTemp() {
             VoicebankFiles.Inst.ReleaseSourceTemp();
+        }
+
+        class ActiveMorphTrack {
+            public string Abbr;
+            public string FlagBase;
+            public string TargetColor;
+            public string Flag;
+            public float[] RawCurve;
+            public Func<float, float> WeightFunc;
         }
     }
 }

@@ -18,8 +18,6 @@ namespace OpenUtau.Classic {
             Ustx.DYN,
             Ustx.PITD,
             Ustx.CLR,
-            Ustx.CLRY,
-            Ustx.XSY,
             Ustx.ENG,
             Ustx.VEL,
             Ustx.VOL,
@@ -35,10 +33,13 @@ namespace OpenUtau.Classic {
         public USingerType SingerType => USingerType.Classic;
 
         public bool SupportsRenderPitch => false;
+
         public bool SupportsExpression(UExpressionDescriptor descriptor) {
             return descriptor.isFlag
                 || !string.IsNullOrEmpty(descriptor.flag)
-                || supportedExp.Contains(descriptor.abbr);
+                || supportedExp.Contains(descriptor.abbr)
+                || descriptor.type == UExpressionType.MorphingCurve
+                || descriptor.abbr.StartsWith("cl", StringComparison.OrdinalIgnoreCase);
         }
 
         public RenderResult Layout(RenderPhrase phrase) {
@@ -58,19 +59,16 @@ namespace OpenUtau.Classic {
         }
 
         public Task<RenderResult> RenderInternal(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
-            var resamplerItems = new List<ResamplerItem>();
-            foreach (var phone in phrase.phones) {
-                resamplerItems.Add(new ResamplerItem(phrase, phone));
-            }
+            var resamplerItems = phrase.phones.Select(p => new ResamplerItem(phrase, p)).ToList();
             var task = Task.Run(() => {
-                Parallel.ForEach(source: resamplerItems, parallelOptions: new ParallelOptions() {
+                Parallel.ForEach(resamplerItems, new ParallelOptions {
                     MaxDegreeOfParallelism = Preferences.Default.NumRenderThreads
-                }, body: item => {
+                }, item => {
                     if (!cancellation.IsCancellationRequested && !File.Exists(item.outputFile)) {
                         if (!(item.resampler is WorldlineResampler)) {
                             VoicebankFiles.Inst.CopySourceTemp(item.inputFile, item.inputTemp);
                         }
-                        if(!item.phone.direct){
+                        if (!item.phone.direct) {
                             lock (Renderers.GetCacheLock(item.outputFile)) {
                                 item.resampler.DoResamplerReturnsFile(item, Log.Logger);
                             }
@@ -85,15 +83,18 @@ namespace OpenUtau.Classic {
                     }
                     progress.Complete(1, $"Track {trackNo + 1}: {item.resampler} \"{item.phone.phoneme}\"");
                 });
+
                 var result = Layout(phrase);
                 var wavtool = new SharpWavtool(true);
                 result.samples = wavtool.Concatenate(resamplerItems, string.Empty, cancellation);
                 if (result.samples != null) {
                     Renderers.ApplyDynamics(phrase, result);
-                    PlaybackManager.Inst.LiveWaveformCache[phrase.hash.ToString()] = (trackNo, phrase.positionMs - phrase.leadingMs, result.samples, DateTime.Now);
-                    Task.Factory.StartNew(() => {
-                        DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
-                    }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
+                    if (phrase.renderSalt == 0) {
+                        PlaybackManager.Inst.LiveWaveformCache[phrase.hash.ToString()] = (trackNo, phrase.positionMs - phrase.leadingMs, result.samples, DateTime.Now);
+                        Task.Factory.StartNew(() => {
+                            DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                        }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
+                    }
                 }
                 return result;
             });
@@ -101,26 +102,54 @@ namespace OpenUtau.Classic {
         }
 
         public Task<RenderResult> RenderExternal(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
-            var resamplerItems = new List<ResamplerItem>();
-            foreach (var phone in phrase.phones) {
-                resamplerItems.Add(new ResamplerItem(phrase, phone));
-            }
+            var resamplerItems = phrase.phones.Select(p => new ResamplerItem(phrase, p)).ToList();
             var task = Task.Run(() => {
                 string progressInfo = $"Track {trackNo + 1} : {phrase.wavtool} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
                 progress.Complete(0, progressInfo);
+
                 var wavPath = Path.Join(PathManager.Inst.CachePath, $"cat-{phrase.hash:x16}.wav");
                 phrase.AddCacheFile(wavPath);
                 var result = Layout(phrase);
-                if (File.Exists(wavPath)) {
-                    try {
-                        using (var waveStream = Wave.OpenFile(wavPath)) {
-                            result.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
+
+                lock (Renderers.GetCacheLock(wavPath)) {
+                    if (File.Exists(wavPath)) {
+                        try {
+                            using (var waveStream = Wave.OpenFile(wavPath)) {
+                                result.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
+                            }
+                        } catch (Exception e) {
+                            Log.Error(e, $"Failed to render: failed to open {wavPath}");
                         }
-                    } catch (Exception e) {
-                        Log.Error(e, $"Failed to render: failed to open {wavPath}");
                     }
                 }
+
                 if (result.samples == null) {
+                    Parallel.ForEach(resamplerItems, new ParallelOptions {
+                        MaxDegreeOfParallelism = Preferences.Default.NumRenderThreads
+                    }, item => {
+                        if (!cancellation.IsCancellationRequested && !File.Exists(item.outputFile)) {
+                            if (!(item.resampler is WorldlineResampler)) {
+                                VoicebankFiles.Inst.CopySourceTemp(item.inputFile, item.inputTemp);
+                            }
+                            if (!item.phone.direct) {
+                                lock (Renderers.GetCacheLock(item.outputFile)) {
+                                    item.resampler.DoResamplerReturnsFile(item, Log.Logger);
+                                }
+                                if (!File.Exists(item.outputFile)) {
+                                    DocManager.Inst.Project.timeAxis.TickPosToBarBeat(item.phrase.position + item.phone.position, out int bar, out int beat, out int tick);
+                                    throw new InvalidDataException($"{item.resampler} failed to resample \"{item.phone.phoneme}\" at {bar}:{beat}.{string.Format("{0:000}", tick)}");
+                                }
+                            }
+                            if (!(item.resampler is WorldlineResampler)) {
+                                VoicebankFiles.Inst.CopyBackMetaFiles(item.inputFile, item.inputTemp);
+                            }
+                        }
+                        progress.Complete(1, $"Track {trackNo + 1}: {item.resampler} \"{item.phone.phoneme}\"");
+                    });
+
+                    if (cancellation.IsCancellationRequested) return result;
+                    progress.Complete(0, $"Track {trackNo + 1}: {phrase.wavtool}");
+
                     foreach (var item in resamplerItems) {
                         VoicebankFiles.Inst.CopySourceTemp(item.inputFile, item.inputTemp);
                     }
@@ -130,13 +159,16 @@ namespace OpenUtau.Classic {
                         VoicebankFiles.Inst.CopyBackMetaFiles(item.inputFile, item.inputTemp);
                     }
                 }
+
                 progress.Complete(phrase.phones.Length, progressInfo);
                 if (result.samples != null) {
                     Renderers.ApplyDynamics(phrase, result);
-                    PlaybackManager.Inst.LiveWaveformCache[phrase.hash.ToString()] = (trackNo, phrase.positionMs - phrase.leadingMs, result.samples, DateTime.Now);
-                    Task.Factory.StartNew(() => {
-                        DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
-                    }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
+                    if (phrase.renderSalt == 0) {
+                        PlaybackManager.Inst.LiveWaveformCache[phrase.hash.ToString()] = (trackNo, phrase.positionMs - phrase.leadingMs, result.samples, DateTime.Now);
+                        Task.Factory.StartNew(() => {
+                            DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                        }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
+                    }
                 }
                 return result;
             });
@@ -148,11 +180,30 @@ namespace OpenUtau.Classic {
         }
 
         public UExpressionDescriptor[] GetSuggestedExpressions(USinger singer, URenderSettings renderSettings) {
-            var manifest= renderSettings.Resampler.Manifest;
-            if (manifest == null) {
-                return new UExpressionDescriptor[] { };
+            var expressions = new List<UExpressionDescriptor>();
+            var manifest = renderSettings.Resampler?.Manifest;
+            if (manifest != null && manifest.expressions != null) {
+                expressions.AddRange(manifest.expressions.Values);
             }
-            return manifest.expressions.Values.ToArray();
+
+            if (singer != null && singer.Subbanks != null) {
+                var uniqueColors = singer.Subbanks.Select(s => s.Color).Where(c => !string.IsNullOrEmpty(c)).Distinct().ToList();
+                int colorIndex = 1;
+                foreach (var colorName in uniqueColors) {
+                    expressions.Add(new UExpressionDescriptor {
+                        name = $"voice color {colorIndex:D2} {colorName}",
+                        abbr = $"cl{colorIndex:D2}",
+                        type = UExpressionType.MorphingCurve,
+                        min = 0,
+                        max = 100,
+                        defaultValue = 0,
+                        isFlag = false,
+                        flag = ""
+                    });
+                    colorIndex++;
+                }
+            }
+            return expressions.ToArray();
         }
 
         public override string ToString() => Renderers.CLASSIC;

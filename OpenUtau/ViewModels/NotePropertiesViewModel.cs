@@ -226,7 +226,7 @@ namespace OpenUtau.App.ViewModels {
                 this.Part = part as UVoicePart;
                 var track = DocManager.Inst.Project.tracks[part.trackNo];
                 foreach (var descriptor in track.GetSupportedExps(DocManager.Inst.Project)) {
-                    if (descriptor.type != UExpressionType.Curve) {
+                    if (descriptor.type != UExpressionType.Curve && descriptor.type != UExpressionType.MorphingCurve) {
                         var viewModel = new NotePropertyExpViewModel(descriptor, this);
                         if (descriptor.abbr == Ustx.CLR) {
                             if (track.VoiceColorExp != null && track.VoiceColorExp.options.Length > 0) {
