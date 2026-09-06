@@ -182,8 +182,9 @@ namespace OpenUtau.App.ViewModels {
             OnnxRunner = String.IsNullOrEmpty(Preferences.Default.OnnxRunner) ?
                OnnxRunnerOptions[0] : Preferences.Default.OnnxRunner;
             OnnxGpuOptions = Onnx.getGpuInfo();
-            OnnxGpu = OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0]);
-            ShowOnnxGpu = (OnnxRunner == "DirectML" || OnnxRunner == "CUDA");
+            OnnxGpu = OnnxGpuOptions.Count > 0
+                ? OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0])
+                : new GpuInfo();            ShowOnnxGpu = (OnnxRunner == "DirectML" || OnnxRunner == "CUDA");
             // GAME backend: ONNX is the default, GGML is available when installed.
             // The options list always includes both so the ComboBox UX is stable.
             GameBackend = Preferences.Default.GameBackend switch {

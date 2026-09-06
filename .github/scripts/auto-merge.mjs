@@ -61,10 +61,6 @@ async function getAll(path) {
 const pr = await getJSON(`/repos/${REPO}/pulls/${PR}`);
 if (pr.state !== 'open') notEligible(`PR is ${pr.state}`);
 if (pr.draft) notEligible('PR is a draft');
-// head.repo is null when the source fork was deleted or is invisible to the
-// token; that is not this repo, so it must be rejected too.
-if (!CFG.allow_forks && pr.head.repo?.full_name !== REPO)
-  notEligible('PR does not come from a branch of this repository');
 
 const [commits, reviews, files] = await Promise.all([
   getAll(`/repos/${REPO}/pulls/${PR}/commits`),

@@ -244,11 +244,9 @@ namespace OpenUtau.Core.DiffSinger {
             //durations: phoneme duration in frames
             //f0: pitch curve in Hz by frame
             //speedup: Diffusion render speedup, int
-            var tokens = phrase.phones
-                .Select(p => p.phoneme)
-                .Prepend("SP")
-                .Append("SP")
-                .Select(phoneme => (Int64)singer.PhonemeTokenize(phoneme))
+            var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            var tokens = segments
+                .Select(segment => (Int64)singer.PhonemeTokenize(segment.Phoneme))
                 .ToList();
             var durations = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames)
                 .ToList();
@@ -305,13 +303,10 @@ namespace OpenUtau.Core.DiffSinger {
             }
             //Language id
             if(singer.dsConfig.use_lang_id){
-                var langIdByPhone = phrase.phones
-                    .Select(p => (long)singer.languageIds.GetValueOrDefault(
-                        DiffSingerUtils.PhonemeLanguage(p.phoneme),0
-                        ))
-                    .Prepend(0)
-                    .Append(0)
-                    .ToArray();
+                var langIdByPhone = DiffSingerUtils.PaddedLanguageIds(
+                    phrase, frameMs, headFrames, tailFrames,
+                    phoneme => (long)singer.languageIds.GetValueOrDefault(
+                        DiffSingerUtils.PhonemeLanguage(phoneme), 0));
                 var langIdTensor = new DenseTensor<Int64>(langIdByPhone, new int[] { langIdByPhone.Length }, false)
                     .Reshape(new int[] { 1, langIdByPhone.Length });
                 acousticInputs.Add(NamedOnnxValue.CreateFromTensor("languages", langIdTensor));

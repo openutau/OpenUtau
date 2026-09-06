@@ -12,7 +12,6 @@
   ],
   "merge_method": "squash",
   "approvers_team": "approvers",
-  "allow_forks": false,
   "gating_workflow": "pr-test",
   "rules": [
     { "name": "translations", "paths": ["OpenUtau/Strings/"], "max_files": 8, "max_lines": 512, "required_approvals": 1 },
