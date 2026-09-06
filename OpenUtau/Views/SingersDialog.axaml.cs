@@ -423,11 +423,6 @@ namespace OpenUtau.App.Views {
                 }, scheduler);
             }
         }
-        async void DrawOto(UOto? oto) {
-            _otoLoadCts?.Cancel();
-            _otoLoadCts = new CancellationTokenSource();
-            var token = _otoLoadCts.Token;
-
         async void GenerateRendererAnalysis(object? sender, RoutedEventArgs args) {
             if (OtoGrid == null || sender is not Control { Tag: RendererAnalysisOption option }) return;
             var files = OtoGrid.SelectedItems.Cast<UOto>()
@@ -457,7 +452,11 @@ namespace OpenUtau.App.Views {
             }
         }
 
-        void DrawOto(UOto? oto) {
+        async void DrawOto(UOto? oto) {
+            _otoLoadCts?.Cancel();
+            _otoLoadCts = new CancellationTokenSource();
+            var token = _otoLoadCts.Token;
+
             if (oto == null) {
                 wavPath = null;
                 wav = null;
