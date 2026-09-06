@@ -263,16 +263,16 @@ namespace OpenUtau.App.Controls {
                         }
                         var geometry = new PathGeometry();
                         var figure = new PathFigure {
-                            IsClosed = true
+                            IsClosed = false
                         };
                         for (int i = start; i < end; ++i) {
                             float tick = curve.realXs[i];
                             float value = curve.realYs[i];
                             double x = viewModel.TickToneToPoint(tick, 0).X;
                             double y = Bounds.Height * (1 - value / 1000.0);
-                            
+
                             if (i == start) {
-                                figure.StartPoint = new Point(x, defaultHeight);
+                                figure.StartPoint = new Point(x, Bounds.Height);
                             }
                             figure.Segments!.Add(new LineSegment {
                                 Point = new Point(x, y),
@@ -280,7 +280,7 @@ namespace OpenUtau.App.Controls {
                             });
                             if (i == end - 1) {
                                 figure.Segments!.Add(new LineSegment {
-                                    Point = new Point(x, defaultHeight),
+                                    Point = new Point(x, Bounds.Height),
                                     IsStroked = false
                                 });
                             }

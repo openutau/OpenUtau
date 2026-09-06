@@ -14,7 +14,7 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "て_C4", "e s_C4", "と_C4", "うぉ_C4", "o d_C4", "ず_C4" })]
+            new string[] { "て_C4", "e s_C4", "s_C4", "t_C4", "うぉ_C4", "o d_C4", "z_C4" })]
         [InlineData("ja_vcv",
             new string[] { "- てA3", "e すA3", "u とA3", "o うぉA3", "o どA3", "o ずA3" })]
         [InlineData("ja_cv",
@@ -27,7 +27,7 @@ namespace OpenUtau.Plugins {
         [Theory]
         [InlineData("ja_cvvc",
             new string[] { "C3", "C4" },
-            new string[] { "て_A3", "e s_A3", "と_A3", "うぉ_C4", "o d_C4", "ず_C4" })]
+            new string[] { "て_A3", "e s_A3", "s_A3", "t_A3", "うぉ_C4", "o d_C4", "z_C4"  })]
         [InlineData("ja_vcv",
             new string[] { "C4", "C5" },
             new string[] { "- てA3", "e すA3", "u とA3", "o うぉC5", "o どC5", "o ずC5" })]
@@ -38,7 +38,7 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc", "強",
-        new string[] { "ご_強B3", "o w_C4" })]
+        new string[] { "ご_強B3", "o w_C4", "w_C4" })]
         [InlineData("ja_vcv", "Clear",
         new string[] { "- ごCA3", "o うA3" })]
         public void VoiceColorTest(string singerName, string color, string[] aliases) {
@@ -65,7 +65,7 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "て_C4", "e s_C4", "て_C4", "e n_C4" })]
+            new string[] { "て_C4", "e s_C4", "s_C4", "て_C4", "e n_C4", "n ん_C4" })]
         [InlineData("ja_vcv",
             new string[] { "- てA3", "e すA3", "u てA3", "e んA3", "n RA3" })]
         [InlineData("ja_cv",
@@ -78,7 +78,7 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "- お_C4", "o ry_C4", "りゅ_C4", "u ky_C4", "きゅ_C4", "u ts_C4", "つ_C4", "u n_C4" })]
+            new string[] { "- お_C4", "o ry_C4", "りゅ_C4", "u ky_C4", "きゅ_C4", "u ts_C4", "つ_C4", "u n_C4", "n ん_C4" })]
         [InlineData("ja_vcv",
             new string[] { "- おA3", "o りゅA3", "u きゅA3", "u つA3", "u んA3", "n RA3" })]
         [InlineData("ja_cv",
@@ -90,7 +90,7 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "- あ_C4", "a s_C4", "た_C4", "a w_C4" })]
+            new string[] { "- あ_C4", "a s_C4", "s_C4", "た_C4", "a r_C4", "r_C4" })]
         [InlineData("ja_vcv",
             new string[] { "- あA3", "a すA3", "u たA3", "a うA3" })]
         [InlineData("ja_cv",
@@ -138,11 +138,11 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "- え_C4", "e n_C4" })]
+            new string[] { "- え_C4", "e あ_C4", "a ん_C4" })]
         [InlineData("ja_vcv",
-            new string[] { "- えA3", "e んA3", "n RA3" })]
+            new string[] { "- えA3", "e あA3", "a んA3", "n RA3" })]
         [InlineData("ja_cv",
-            new string[] { "え", "ん" })]
+            new string[] { "え", "あ", "ん" })]
         public void EndingNasalTest(string singerName, string[] aliases) {
             SameAltsTonesColorsTest(singerName, aliases,
                 new string[] { "an" });
@@ -150,7 +150,7 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "ば_C4", "a w_C4", "- ん_C4" })]
+            new string[] { "ば_C4", "a r_C4", "n_C4" })]
         [InlineData("ja_vcv",
             new string[] { "- ばA3", "a うA3", "u んA3", "n RA3" })]
         [InlineData("ja_cv",
@@ -162,7 +162,7 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "- あ_C4", "a p_C4" })]
+            new string[] { "- あ_C4", "a p_C4", "p_C4" })]
         [InlineData("ja_vcv",
             new string[] { "- あA3", "a ぷA3" })]
         [InlineData("ja_cv",
@@ -174,7 +174,7 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "- あ_C4", "a v_C4" })]
+            new string[] { "- あ_C4", "a v_C4", "v_C4" })]
         [InlineData("ja_vcv",
             new string[] { "- あA3", "a ヴA3" })]
         [InlineData("ja_cv",
@@ -186,11 +186,11 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "- あ_C4", "a n_C4", "ど_C4" })]
+            new string[] { "- え_C4", "e あ_C4", "a ん_C4", "d_C4" })]
         [InlineData("ja_vcv",
-            new string[] { "- あA3", "a んA3", "n どA3" })]
+            new string[] { "- えA3", "e あA3", "a んA3", "n どA3" })]
         [InlineData("ja_cv",
-            new string[] { "あ", "ん", "ど" })]
+            new string[] { "え", "あ", "ん", "ど" })]
         public void EndingClusterTest(string singerName, string[] aliases) {
             SameAltsTonesColorsTest(singerName, aliases,
                 new string[] { "and" });
@@ -198,7 +198,7 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "- え_C4", "e ts_C4", "つ_C4" })]
+            new string[] { "- え_C4", "e ts_C4", "ts_C4" })]
         [InlineData("ja_vcv",
             new string[] { "- えA3", "e つA3" })]
         [InlineData("ja_cv",
@@ -228,13 +228,13 @@ namespace OpenUtau.Plugins {
             new string[] { "- あ_C4", "a d_C4", "だ_C4" })]
         [InlineData(
             new string[] { "a", "thin" },
-            new string[] { "- あ_C4", "a s_C4", "せ_C4", "e n_C4" })]
+            new string[] { "- あ_C4", "a s_C4", "せ_C4", "e n_C4", "n ん_C4" })]
         [InlineData(
             new string[] { "a", "zha" },
             new string[] { "- あ_C4", "a sh_C4", "しゃ_C4" })]
         [InlineData(
             new string[] { "a", "ra" },
-            new string[] { "- あ_C4", "a w_C4", "わ_C4" })]
+            new string[] { "- あ_C4", "a r_C4", "ら_C4" })]
         [InlineData(
             new string[] { "a", "la" },
             new string[] { "- あ_C4", "a r_C4", "ら_C4" })]

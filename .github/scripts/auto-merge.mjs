@@ -195,8 +195,23 @@ if (becameReady) {
     });
     // Non-fatal: the comment is informational, the decision below stands
     // either way. But say so, rather than claiming a post that never landed.
-    if (posted.ok) report('posted auto-merge rules comment');
-    else report(`failed to post rules comment (${posted.status}): ${(await posted.text()).slice(0, 300)}`);
+    if (posted.ok) {
+      report('posted auto-merge rules comment');
+      const labeled = await fetch(`https://api.github.com/repos/${REPO}/issues/${PR}/labels`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ labels: ['auto-merge'] }),
+      });
+      // Non-fatal, same as the comment above: labeling is informational only.
+      if (labeled.ok) report('added "auto-merge" label');
+      else report(`failed to add "auto-merge" label (${labeled.status}): ${(await labeled.text()).slice(0, 300)}`);
+    } else {
+      report(`failed to post rules comment (${posted.status}): ${(await posted.text()).slice(0, 300)}`);
+    }
   } else {
     report('rules comment already exists, skipping');
   }

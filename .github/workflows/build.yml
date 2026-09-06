@@ -1,10 +1,14 @@
 on:
+  schedule:
+    # Daily alpha build. Skipped if master has no new commits since the
+    # last alpha release (see the next-version job below).
+    - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       channel:
         description: "Release channel"
         type: choice
-        default: beta
+        default: alpha
         options:
           - stable
           - beta
@@ -23,6 +27,12 @@ on:
         default: true
         description: "Draft"
 
+# Keep same-trigger-type runs from overlapping, e.g. a slow scheduled build
+# still running when the next day's cron fires.
+concurrency:
+  group: release-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   next-version:
     runs-on: ubuntu-latest
@@ -33,17 +43,38 @@ jobs:
       name: ${{ steps.nv.outputs.name }}
       release: ${{ steps.nv.outputs.release }}
       draft: ${{ steps.nv.outputs.draft }}
+      skip: ${{ steps.check.outputs.skip }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
+      - id: check
+        # Scheduled runs skip the build entirely when master hasn't moved
+        # since the last alpha release, so a quiet day publishes nothing.
+        if: github.event_name == 'schedule'
+        run: |
+          latest_tag=$(git tag --list '*-alpha' | sort -V | tail -1)
+          if [ -z "$latest_tag" ]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            last_sha=$(git rev-list -n 1 "$latest_tag")
+            head_sha=$(git rev-parse HEAD)
+            if [ "$last_sha" = "$head_sha" ]; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
       - id: nv
+        if: steps.check.outputs.skip != 'true'
         env:
-          CHANNEL: ${{ inputs.channel }}
+          # Scheduled runs always build and publish an alpha release.
+          EVENT: ${{ github.event_name }}
+          CHANNEL: ${{ github.event_name == 'schedule' && 'alpha' || inputs.channel }}
           VERSION: ${{ inputs.version }}
-          RELEASE: ${{ inputs.release }}
-          DRAFT: ${{ inputs.draft }}
+          RELEASE: ${{ github.event_name == 'schedule' && 'true' || inputs.release }}
+          DRAFT: ${{ github.event_name == 'schedule' && 'false' || inputs.draft }}
         run: |
           set -u
           # Alpha is the only auto-versioned channel; stable and beta take
@@ -77,7 +108,10 @@ jobs:
           } | tee -a "$GITHUB_OUTPUT" >> "$GITHUB_STEP_SUMMARY"
   build:
     needs: next-version
+    if: needs.next-version.outputs.skip != 'true'
     runs-on: ${{ matrix.arch.runs-on }}
+    permissions:
+      contents: write
 
     strategy:
       fail-fast: false

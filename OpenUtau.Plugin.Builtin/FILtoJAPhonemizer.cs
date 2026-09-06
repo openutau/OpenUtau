@@ -7,51 +7,19 @@ using WanaKanaNet;
 
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Filipino to Japanese Phonemizer", "FIL to JA", "Cadlaxa", language: "FIL")]
+    // same base as en2ja now
     public class FILtoJAPhonemizer : ENtoJAPhonemizer {
-        protected override string[] GetVowels() => vowels;
-        private string[] vowels =
-            "a i u e o ay ey oy uy ow aw ew".Split();
-        protected override string[] GetConsonants() => consonants;
-        private string[] consonants =
-            "b by ch d dh f g gy h hy j k ky l ly m my n ny ng p py r ry s sh t ts th v w y z zh".Split();
-        protected override string GetDictionaryName() => "";
-        protected override Dictionary<string, string> GetDictionaryPhonemesReplacement() => dictionaryPhonemesReplacement;
-        private static readonly Dictionary<string, string> dictionaryPhonemesReplacement = new Dictionary<string, string> {
-            { "a", "a" },
-            { "e", "e" },
-            { "o", "o" },
-            { "aw", "aw" },
-            { "ay", "ay" },
-            { "b", "b" },
-            { "ch", "ch" },
-            { "d", "d" },
-            { "ey", "ey" },
-            { "f", "f" },
-            { "g", "g" },
-            { "hh", "h" },
-            { "i", "i" },
-            { "jh", "j" },
-            { "k", "k" },
-            { "l", "l" },
-            { "m", "m" },
-            { "n", "n" },
-            { "ng", "ng" },
-            { "ow", "ow" },
-            { "oy", "oy" },
-            { "p", "p" },
-            { "q", "-" },
-            { "r", "r" },
-            { "s", "s" },
-            { "sh", "sh" },
-            { "t", "t" },
-            { "u", "u" },
-            { "v", "v" },
-            { "w", "w" },
-            { "y", "y" },
-            { "z", "z" },
-            { "zh", "zh" },
-        };
+        protected override string YamlFileName => "fil2ja.yaml";
+        protected override byte[] YamlTemplate => Data.Resources.fil2ja_template;
+        protected override string YamlVersion => "1.0";
 
+        public FILtoJAPhonemizer() {
+            this.vowels = new string[] {
+                "a", "e", "i", "o", "u"
+            };
+            this.consonants = "b,ch,d,dh,dr,dx,f,g,hh,jh,k,l,m,n,ng,p,q,r,s,sh,t,th,tr,v,w,y,z".Split(',');
+        }
+        protected override string GetDictionaryName() => "";
         protected override IG2p LoadBaseDictionary() {
             var g2ps = new List<IG2p>();
             //g2ps.Add(new ArpabetPlusG2p());
@@ -117,16 +85,7 @@ namespace OpenUtau.Plugin.Builtin {
                 }
                 original = fallbackSplit.ToArray();
             }
-            List<string> modified = new List<string>();
-            string[] diphthongs = new[] { "ay", "ey", "oy", "uy", "aw", "ew", "ow", "iw" };
-            foreach (string s in original) {
-                if (diphthongs.Contains(s)) {
-                    modified.AddRange(new string[] { s[0].ToString(), s[1].ToString() });
-                } else {
-                    modified.Add(s);
-                }
-            }
-            return modified.ToArray();
+            return original.ToArray();
         }
     }
 }

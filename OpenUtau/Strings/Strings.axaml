@@ -636,6 +636,10 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.off">Do nothing</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.on">Move cursor and view position back to where you started playing</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.onlycursor">Move only cursor back to where you started playing</system:String>
+  <system:String x:Key="prefs.playback.metronome">Metronome</system:String>
+  <system:String x:Key="prefs.playback.metronome.volume">Metronome Volume</system:String>
+  <system:String x:Key="prefs.playback.metronome.highfrequency">Metronome High Frequency</system:String>
+  <system:String x:Key="prefs.playback.metronome.lowfrequency">Metronome Low Frequency</system:String>
   <system:String x:Key="prefs.playback.systemdefault">Use system default device</system:String>
   <system:String x:Key="prefs.playback.test">Test</system:String>
   <system:String x:Key="prefs.rendering">Rendering</system:String>

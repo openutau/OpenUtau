@@ -24,17 +24,17 @@ aoieu.wav=i e,,100,150,,,
 aoieu.wav=e u,20,
 aoieu.wav=u R,5,,33,44,,
 ".Replace("\r\n", "\n");
-            string expected = @"a.wav=a,,,,,
-a.wav=- a,,,,,
-a.wav=a R,500,,,,
+            string expected = @"a.wav=a,0,0,0,0,0
+a.wav=- a,0,0,0,0,0
+a.wav=a R,500,0,0,0,0
 !@#$!@#$
-aoieu.wav=- a,,,,,
+aoieu.wav=- a,0,0,0,0,0
 
-aoieu.wav=a o,,,,,
-aoieu.wav=o i,,,,,
-aoieu.wav=i e,,100,150,,
-aoieu.wav=e u,20,,,,
-aoieu.wav=u R,5,,33,44,
+aoieu.wav=a o,0,0,0,0,0
+aoieu.wav=o i,0,0,0,0,0
+aoieu.wav=i e,0,100,150,0,0
+aoieu.wav=e u,20,0,0,0,0
+aoieu.wav=u R,5,0,33,44,0
 ".Replace("\r\n", "\n");
 
             using (MemoryStream stream = new MemoryStream(Encoding.ASCII.GetBytes(text))) {

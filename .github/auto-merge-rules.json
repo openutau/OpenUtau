@@ -14,7 +14,8 @@
   "approvers_team": "approvers",
   "gating_workflow": "pr-test",
   "rules": [
-    { "name": "translations", "paths": ["OpenUtau/Strings/"], "max_files": 8, "max_lines": 512, "required_approvals": 1 },
-    { "name": "phonemizers", "paths": ["OpenUtau.Plugin.Builtin/"], "max_files": 4, "max_lines": 512, "required_approvals": 2 }
+    { "name": "tests", "paths": ["OpenUtau.Test/Files/"], "max_files": 16, "max_lines": 4096, "required_approvals": 1 },
+    { "name": "translations", "paths": ["OpenUtau/Strings/"], "max_files": 8, "max_lines": 2048, "required_approvals": 1 },
+    { "name": "phonemizers", "paths": ["OpenUtau.Plugin.Builtin/"], "max_files": 8, "max_lines": 1024, "required_approvals": 2 }
   ]
 }

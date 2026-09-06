@@ -16,6 +16,8 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -24,5 +26,13 @@ jobs:
           keep_latest: 32
           delete_prerelease_only: true
           delete_tag_pattern: build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Delete old alpha releases
+        uses: dev-drprasad/delete-older-releases@v0.2.0
+        with:
+          keep_latest: 32
+          delete_prerelease_only: true
+          tag_pattern: -alpha
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
