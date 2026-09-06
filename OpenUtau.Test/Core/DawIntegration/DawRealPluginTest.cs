@@ -48,14 +48,14 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         private DawManager? manager;
-        private readonly Xunit.Abstractions.ITestOutputHelper output;
+        private readonly ITestOutputHelper output;
 
         /// <summary>
-        /// xUnit 2.x has no runtime skip API (that arrived in v3), so a missing
-        /// OPENUTAU_BRIDGE_DISCOVERY cannot mark the run skipped. It is reported through the test
-        /// output instead of silently passing, and the early return keeps CI unaffected.
+        /// xUnit v3 has a runtime skip API, but a missing OPENUTAU_BRIDGE_DISCOVERY is reported
+        /// through the test output instead of silently passing, and the early return keeps CI
+        /// unaffected either way.
         /// </summary>
-        public DawRealPluginTest(Xunit.Abstractions.ITestOutputHelper output) {
+        public DawRealPluginTest(ITestOutputHelper output) {
             this.output = output;
         }
 
