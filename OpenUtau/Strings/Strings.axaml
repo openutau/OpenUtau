@@ -4,6 +4,7 @@
 
   <system:String x:Key="button.apply">Apply</system:String>
   <system:String x:Key="button.cancel">Cancel</system:String>
+  <system:String x:Key="button.close">Close</system:String>
   <system:String x:Key="button.no">No</system:String>
   <system:String x:Key="button.off">Off</system:String>
   <system:String x:Key="button.ok">Ok</system:String>
@@ -94,6 +95,32 @@
   <system:String x:Key="context.timeline.addtimesig">Add time signature change</system:String>
   <system:String x:Key="context.timeline.deltempo">Delete tempo change at {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Delete time signature change</system:String>
+
+  <system:String x:Key="dawintegration.caption">DAW Integration</system:String>
+  <system:String x:Key="dawintegration.col.apiversion">API</system:String>
+  <system:String x:Key="dawintegration.col.compatibility">Status</system:String>
+  <system:String x:Key="dawintegration.col.name">Plugin</system:String>
+  <system:String x:Key="dawintegration.col.port">Port</system:String>
+  <system:String x:Key="dawintegration.col.state">Connection</system:String>
+  <system:String x:Key="dawintegration.compatible">Compatible</system:String>
+  <system:String x:Key="dawintegration.connect">Connect</system:String>
+  <system:String x:Key="dawintegration.connected">Connected to {0}.</system:String>
+  <system:String x:Key="dawintegration.connecting">Connecting...</system:String>
+  <system:String x:Key="dawintegration.disconnect">Disconnect</system:String>
+  <system:String x:Key="dawintegration.disconnected">Not connected.</system:String>
+  <system:String x:Key="dawintegration.hint">Connect to a DAW plugin listening on this machine. Editing stays in OpenUtau; the plugin receives the project and the rendered audio.</system:String>
+  <system:String x:Key="dawintegration.incompatible">Unsupported API version</system:String>
+  <system:String x:Key="dawintegration.lost">Connection lost: {0}</system:String>
+  <system:String x:Key="dawintegration.none">No DAW plugin found. Start the OpenUtau plugin in your DAW, then refresh.</system:String>
+  <system:String x:Key="dawintegration.reconnecting">Reconnecting to {0}...</system:String>
+  <system:String x:Key="dawintegration.refresh">Refresh</system:String>
+  <system:String x:Key="dawintegration.unsavedproject">The project has not been saved yet. Save the project first, then connect the DAW plugin — an unsaved project cannot be sent to the DAW.</system:String>
+  <system:String x:Key="dawintegration.bpmmismatch">The DAW project's tempo does not match this project's tempo. The two timelines will only agree in seconds, not in bars — align the tempos to keep them in sync.</system:String>
+  <system:String x:Key="dawintegration.state.connected">Connected</system:String>
+  <system:String x:Key="dawintegration.state.connecting">Connecting</system:String>
+  <system:String x:Key="dawintegration.state.reconnecting">Reconnecting</system:String>
+  <system:String x:Key="dawintegration.state.free">Not connected</system:String>
+  <system:String x:Key="dawintegration.connected.count">Connected to {0} plugin(s).</system:String>
 
   <system:String x:Key="debug.clear">Clear</system:String>
   <system:String x:Key="debug.copylog">Copy Log</system:String>
@@ -322,6 +349,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.project.remaptimeaxis">Adjust Tempo (Preserve Timing)</system:String>
   <system:String x:Key="menu.tools">Tools</system:String>
   <system:String x:Key="menu.tools.clearcache">Clear Cache</system:String>
+  <system:String x:Key="menu.tools.dawintegration">DAW Integration...</system:String>
   <system:String x:Key="menu.tools.debugwindow">Debug Window</system:String>
   <system:String x:Key="menu.tools.dependency.install">Install Dependency (.oudep)...</system:String>
   <system:String x:Key="menu.tools.fullscreen">Full Screen</system:String>

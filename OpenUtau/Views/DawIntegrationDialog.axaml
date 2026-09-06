@@ -1,0 +1,44 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" Width="680" Height="400" MinWidth="520" MinHeight="320"
+        x:Class="OpenUtau.App.Views.DawIntegrationDialog"
+        Icon="/Assets/open-utau.ico"
+        Title="{DynamicResource dawintegration.caption}"
+        WindowStartupLocation="CenterOwner">
+  <Grid Margin="10" RowDefinitions="Auto,1*,Auto,Auto">
+    <TextBlock Grid.Row="0" Text="{DynamicResource dawintegration.hint}"
+               TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+    <DataGrid Grid.Row="1" ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServer}"
+              AutoGenerateColumns="False" CanUserSortColumns="False" IsReadOnly="True"
+              BorderThickness="1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
+      <DataGrid.Columns>
+        <DataGridTextColumn Header="{DynamicResource dawintegration.col.name}"
+                            Binding="{Binding Name}" Width="*"/>
+        <DataGridTextColumn Header="{DynamicResource dawintegration.col.port}"
+                            Binding="{Binding Port}" Width="70"/>
+        <DataGridTextColumn Header="{DynamicResource dawintegration.col.apiversion}"
+                            Binding="{Binding ApiVersion}" Width="60"/>
+        <DataGridTextColumn Header="{DynamicResource dawintegration.col.compatibility}"
+                            Binding="{Binding Compatibility}" Width="130"/>
+        <DataGridTextColumn Header="{DynamicResource dawintegration.col.state}"
+                            Binding="{Binding StateText}" Width="110"/>
+      </DataGrid.Columns>
+    </DataGrid>
+
+    <TextBlock Grid.Row="2" Text="{Binding Status}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+
+    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="10" Margin="0,10,0,0"
+                HorizontalAlignment="Right">
+      <Button Content="{DynamicResource dawintegration.refresh}" Click="OnRefresh"
+              IsEnabled="{Binding !IsBusy}"/>
+      <Button Content="{DynamicResource dawintegration.connect}" Click="OnConnect"
+              IsEnabled="{Binding ConnectEnabled}"/>
+      <Button Content="{DynamicResource dawintegration.disconnect}" Click="OnDisconnect"
+              IsEnabled="{Binding DisconnectEnabled}"/>
+      <Button Content="{DynamicResource button.close}" Click="OnClose" Width="90"/>
+    </StackPanel>
+  </Grid>
+</Window>

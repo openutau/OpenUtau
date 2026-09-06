@@ -716,6 +716,16 @@ namespace OpenUtau.App.Views {
                 : WindowState.FullScreen;
         }
 
+        void OnMenuDawIntegration(object sender, RoutedEventArgs args) {
+            var dialog = new DawIntegrationDialog() {
+                DataContext = new DawIntegrationViewModel(),
+            };
+            dialog.ShowDialog(this);
+            if (dialog.Position.Y < 0) {
+                dialog.Position = dialog.Position.WithY(0);
+            }
+        }
+
         void OnMenuClearCache(object sender, RoutedEventArgs args) {
             Task.Run(() => {
                 DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, ThemeManager.GetString("progress.clearingcache")));
