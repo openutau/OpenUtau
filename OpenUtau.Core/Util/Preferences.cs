@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using OpenUtau.Core.Render;
@@ -111,6 +112,11 @@ namespace OpenUtau.Core.Util {
 
                     if (!ValidString(new Action(() => CultureInfo.GetCultureInfo(Default.Language)))) Default.Language = string.Empty;
                     if (!ValidString(new Action(() => CultureInfo.GetCultureInfo(Default.SortingOrder)))) Default.SortingOrder = string.Empty;
+                    if (Default.Beta) {
+                        Default.Channel = "beta";
+                        Default.Beta = false;
+                    }
+                    if (!new[] { "stable", "beta", "alpha" }.Contains(Default.Channel)) Default.Channel = "stable";
                     if (!Renderers.getRendererOptions().Contains(Default.DefaultRenderer)) Default.DefaultRenderer = string.Empty;
                     if (!Onnx.getRunnerOptions().Contains(Default.OnnxRunner)) Default.OnnxRunner = string.Empty;
                     if (Default.Theme != null) {
@@ -120,6 +126,14 @@ namespace OpenUtau.Core.Util {
                         };
                         Default.Theme = null;
                     }
+                    if (Default.PreferPortAudio != null) {
+                        Default.AudioBackEnd = Default.PreferPortAudio switch {
+                            false => 0,
+                            true => 1
+                        };
+                        Default.PreferPortAudio = null;
+                    }
+                    Default.MigrateRealTimePitchMode();
                 } else {
                     Reset();
                 }
@@ -172,6 +186,7 @@ namespace OpenUtau.Core.Util {
             public bool DiffSingerVarianceLocalPitchPatch = false;
             public bool DiffSingerLangCodeHide = false;
             public bool DiffSingerLocalRetaking = false;
+            public bool Metronome = false;
             public bool SkipRenderingMutedTracks = false;
             public string Language = string.Empty;
             public string? SortingOrder = null;
@@ -186,17 +201,26 @@ namespace OpenUtau.Core.Util {
             public List<string> FavoriteSingers = new List<string>();
             public Dictionary<string, string> SingerPhonemizers = new Dictionary<string, string>();
             public List<string> RecentPhonemizers = new List<string>();
-            public bool PreferPortAudio = false;
+            public uint AudioBackEnd = 0; // 0 = Automatic, 1 = MiniAudio, 2 = SDL
             public bool UseSystemDefaultAudioDevice = true;
             public double PlayPosMarkerMargin = 0.9;
+            public int MetronomeVolume = 60;
+            public int MetronomeHighFrequency = 2200;
+            public int MetronomeLowFrequency = 1320;
             public int LockStartTime = 0;
             public int PlaybackAutoScroll = 2;
             public bool ReverseLogOrder = true;
             public bool ShowPortrait = true;
             public bool ShowIcon = true;
             public bool ShowGhostNotes = true;
+            public bool NoteHoverGlow = true;
+            public bool ShowPlaybackNoteHighlight = true;
+            public bool ShowPlaybackNoteBounce = false;
             public EditTool EditTool = new EditTool();
             public bool PlayTone = true;
+            /// <summary>Legacy; migrated to <see cref="RealTimePitchMode"/> on load.</summary>
+            public bool RealTimePitchGeneration = false;
+            public int RealTimePitchMode = (int)LivePitchMode.Off;
             public bool ShowVibrato = true;
             public bool ShowPitch = true;
             public bool ShowFinalPitch = true;
@@ -212,7 +236,11 @@ namespace OpenUtau.Core.Util {
             public int OtoEditor = 0;
             public string VLabelerPath = string.Empty;
             public string SetParamPath = string.Empty;
-            public bool Beta = false;
+            public bool Beta = false; // deprecated, migrated to Channel
+            /// <summary>
+            /// Release channel for the auto updater: "stable", "beta" or "alpha".
+            /// </summary>
+            public string Channel = "stable";
             public bool RememberMid = false;
             public bool RememberUst = true;
             public bool RememberVsqx = true;
@@ -273,6 +301,18 @@ errors.txt
             // Legacy
             [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
             public int? Theme;
+            public bool? PreferPortAudio = false;
+
+            public void MigrateRealTimePitchMode() {
+                if (RealTimePitchGeneration && RealTimePitchMode == (int)LivePitchMode.Off) {
+                    RealTimePitchMode = (int)LivePitchMode.Normal;
+                }
+                RealTimePitchGeneration = false;
+                if (RealTimePitchMode < (int)LivePitchMode.Off
+                    || RealTimePitchMode > (int)LivePitchMode.Fast) {
+                    RealTimePitchMode = (int)LivePitchMode.Off;
+                }
+            }
         }
 
         /// <summary>

@@ -42,7 +42,8 @@ namespace OpenUtau.App.ViewModels {
             get => sortingOrder;
             set => this.RaiseAndSetIfChanged(ref sortingOrder, value);
         }
-        [Reactive] public partial bool Beta { get; set; }
+        // Release channel index: 0 = stable, 1 = beta, 2 = alpha.
+        [Reactive] public partial int Channel { get; set; }
 
         // Playback
         private List<AudioOutputDevice>? audioOutputDevices;
@@ -58,9 +59,13 @@ namespace OpenUtau.App.ViewModels {
         }
         [Reactive] public partial bool UseSystemDefaultDevice { get; set; }
         [Reactive] public partial int PreferPortAudio { get; set; }
+        [Reactive] public partial uint AudioBackEnd { get; set; }
         [Reactive] public partial int LockStartTime { get; set; }
         [Reactive] public partial int PlaybackAutoScroll { get; set; }
         [Reactive] public partial double PlayPosMarkerMargin { get; set; }
+        [Reactive] public partial int MetronomeVolume { get; set; }
+        [Reactive] public partial int MetronomeHighFrequency { get; set; }
+        [Reactive] public partial int MetronomeLowFrequency { get; set; }
 
         // Paths
         public string SingerPath => PathManager.Inst.SingersPath;
@@ -106,6 +111,9 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowPortrait { get; set; }
         [Reactive] public partial bool ShowIcon { get; set; }
         [Reactive] public partial bool ShowGhostNotes { get; set; }
+        [Reactive] public partial bool NoteHoverGlow { get; set; }
+        [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
+        [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool DetachPianoRoll { get; set; }
         [Reactive] public partial bool ThemeEditable { get; set; }
         public List<string> ThemeItems => ThemeManager.GetAvailableThemes();
@@ -149,9 +157,12 @@ namespace OpenUtau.App.ViewModels {
                 }
             }
             UseSystemDefaultDevice = Preferences.Default.UseSystemDefaultAudioDevice;
-            PreferPortAudio = Preferences.Default.PreferPortAudio ? 1 : 0;
+            AudioBackEnd = Preferences.Default.AudioBackEnd;
             PlaybackAutoScroll = Preferences.Default.PlaybackAutoScroll;
             PlayPosMarkerMargin = Preferences.Default.PlayPosMarkerMargin;
+            MetronomeVolume = Preferences.Default.MetronomeVolume;
+            MetronomeHighFrequency = Preferences.Default.MetronomeHighFrequency;
+            MetronomeLowFrequency = Preferences.Default.MetronomeLowFrequency;
             LockStartTime = Preferences.Default.LockStartTime;
             InstallToAdditionalSingersPath = Preferences.Default.InstallToAdditionalSingersPath;
             LoadDeepFolders = Preferences.Default.LoadDeepFolderSinger;
@@ -177,8 +188,9 @@ namespace OpenUtau.App.ViewModels {
             OnnxRunner = String.IsNullOrEmpty(Preferences.Default.OnnxRunner) ?
                OnnxRunnerOptions[0] : Preferences.Default.OnnxRunner;
             OnnxGpuOptions = Onnx.getGpuInfo();
-            OnnxGpu = OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0]);
-            ShowOnnxGpu = OnnxRunner == "DirectML";
+            OnnxGpu = OnnxGpuOptions.Count > 0
+                ? OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0])
+                : new GpuInfo();            ShowOnnxGpu = (OnnxRunner == "DirectML" || OnnxRunner == "CUDA");
             // GAME backend: ONNX is the default, GGML is available when installed.
             // The options list always includes both so the ComboBox UX is stable.
             GameBackend = Preferences.Default.GameBackend switch {
@@ -200,8 +212,15 @@ namespace OpenUtau.App.ViewModels {
             ShowPortrait = Preferences.Default.ShowPortrait;
             ShowIcon = Preferences.Default.ShowIcon;
             ShowGhostNotes = Preferences.Default.ShowGhostNotes;
+            NoteHoverGlow = Preferences.Default.NoteHoverGlow;
+            ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;
+            ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
             DetachPianoRoll = Preferences.Default.DetachPianoRoll;
-            Beta = Preferences.Default.Beta;
+            Channel = Preferences.Default.Channel switch {
+                "beta" => 1,
+                "alpha" => 2,
+                _ => 0
+            };
             LyricsHelper = LyricsHelpers.FirstOrDefault(option => option.klass.Equals(ActiveLyricsHelper.Inst.GetPreferred()));
             LyricsHelperBrackets = Preferences.Default.LyricsHelperBrackets;
             OtoEditor = Preferences.Default.OtoEditor;
@@ -234,9 +253,9 @@ namespace OpenUtau.App.ViewModels {
                         }
                     }
                 });
-            this.WhenAnyValue(vm => vm.PreferPortAudio)
+            this.WhenAnyValue(vm => vm.AudioBackEnd)
                 .Subscribe(index => {
-                    Preferences.Default.PreferPortAudio = index > 0;
+                    Preferences.Default.AudioBackEnd = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.PlaybackAutoScroll)
@@ -247,6 +266,21 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.PlayPosMarkerMargin)
                 .Subscribe(playPosMarkerMargin => {
                     Preferences.Default.PlayPosMarkerMargin = playPosMarkerMargin;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.MetronomeVolume)
+                .Subscribe(metronomeVolume => {
+                    Preferences.Default.MetronomeVolume = metronomeVolume;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.MetronomeHighFrequency)
+                .Subscribe(metronomeHighFrequency => {
+                    Preferences.Default.MetronomeHighFrequency = metronomeHighFrequency;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.MetronomeLowFrequency)
+                .Subscribe(metronomeLowFrequency => {
+                    Preferences.Default.MetronomeLowFrequency = metronomeLowFrequency;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LockStartTime)
@@ -326,15 +360,37 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
                 });
+            this.WhenAnyValue(vm => vm.NoteHoverGlow)
+                .Subscribe(noteHoverGlow => {
+                    Preferences.Default.NoteHoverGlow = noteHoverGlow;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.ShowPlaybackNoteHighlight)
+                .Subscribe(showPlaybackNoteHighlight => {
+                    Preferences.Default.ShowPlaybackNoteHighlight = showPlaybackNoteHighlight;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new PianorollRefreshEvent("PlaybackNoteHighlight"));
+                });
+            this.WhenAnyValue(vm => vm.ShowPlaybackNoteBounce)
+                .Subscribe(showPlaybackNoteBounce => {
+                    Preferences.Default.ShowPlaybackNoteBounce = showPlaybackNoteBounce;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new PianorollRefreshEvent("PlaybackNoteBounce"));
+                });
             this.WhenAnyValue(vm => vm.DetachPianoRoll)
                 .Subscribe(detachPianoRoll => {
                     Preferences.Default.DetachPianoRoll = detachPianoRoll;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Attachment"));
                 });
-            this.WhenAnyValue(vm => vm.Beta)
-                .Subscribe(beta => {
-                    Preferences.Default.Beta = beta;
+            this.WhenAnyValue(vm => vm.Channel)
+                .Subscribe(channel => {
+                    Preferences.Default.Channel = channel switch {
+                        1 => "beta",
+                        2 => "alpha",
+                        _ => "stable"
+                    };
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LyricsHelper)
@@ -369,7 +425,7 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(index => {
                     Preferences.Default.OnnxRunner = index;
                     Preferences.Save();
-                    ToggleOnnxGpuDisplay(index == "DirectML");
+                    ToggleOnnxGpuDisplay(index == "DirectML" || index == "CUDA");
                 });
             this.WhenAnyValue(vm => vm.OnnxGpu)
                 .Subscribe(index => {
@@ -455,6 +511,26 @@ namespace OpenUtau.App.ViewModels {
                 Log.Error(e, "Failed to play test sound.");
                 DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("Failed to play test sound.", e));
             }
+        }
+        public void TestMetronome() {
+            try {
+                PlaybackManager.Inst.PlayMetronomeClick();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to play metronome preview.");
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("Failed to play metronome preview.", e));
+            }
+        }
+
+        public void ResetMetronomeVolume() {
+            MetronomeVolume = new Preferences.SerializablePreferences().MetronomeVolume;
+        }
+
+        public void ResetMetronomeHighFrequency() {
+            MetronomeHighFrequency = new Preferences.SerializablePreferences().MetronomeHighFrequency;
+        }
+
+        public void ResetMetronomeLowFrequency() {
+            MetronomeLowFrequency = new Preferences.SerializablePreferences().MetronomeLowFrequency;
         }
 
         public void OpenResamplerLocation() {

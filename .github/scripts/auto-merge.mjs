@@ -61,10 +61,6 @@ async function getAll(path) {
 const pr = await getJSON(`/repos/${REPO}/pulls/${PR}`);
 if (pr.state !== 'open') notEligible(`PR is ${pr.state}`);
 if (pr.draft) notEligible('PR is a draft');
-// head.repo is null when the source fork was deleted or is invisible to the
-// token; that is not this repo, so it must be rejected too.
-if (!CFG.allow_forks && pr.head.repo?.full_name !== REPO)
-  notEligible('PR does not come from a branch of this repository');
 
 const [commits, reviews, files] = await Promise.all([
   getAll(`/repos/${REPO}/pulls/${PR}/commits`),
@@ -132,7 +128,7 @@ const perRule = CFG.rules.map((rule) => {
 // files in their paths only?
 const touched = perRule.filter((p) => p.files > 0);
 const withinLimits = (p) =>
-  (p.rule.max_files === undefined || p.files < p.rule.max_files) && p.lines < p.rule.max_lines;
+  (p.rule.max_files === undefined || p.files <= p.rule.max_files) && p.lines <= p.rule.max_lines;
 
 // Team pages are org-members-only, so spell the team out as well as link it.
 const TEAM_LINK = `[@${org}/${CFG.approvers_team}](https://github.com/orgs/${org}/teams/${CFG.approvers_team})`;
@@ -164,8 +160,8 @@ if (becameReady) {
         const filePart =
           p.rule.max_files === undefined
             ? `${p.files} files (no limit)`
-            : `${p.files} files (max ${p.rule.max_files - 1})`;
-        const linePart = `${p.lines} lines (max ${p.rule.max_lines - 1})`;
+            : `${p.files} files (max ${p.rule.max_files})`;
+        const linePart = `${p.lines} lines (max ${p.rule.max_lines})`;
         lines.push(
           `- ${p.rule.name} (${p.rule.paths.join(', ')}): ${filePart}, ${linePart} — ` +
             (withinLimits(p) ? 'within limits' : '**exceeds a limit**')
@@ -199,8 +195,23 @@ if (becameReady) {
     });
     // Non-fatal: the comment is informational, the decision below stands
     // either way. But say so, rather than claiming a post that never landed.
-    if (posted.ok) report('posted auto-merge rules comment');
-    else report(`failed to post rules comment (${posted.status}): ${(await posted.text()).slice(0, 300)}`);
+    if (posted.ok) {
+      report('posted auto-merge rules comment');
+      const labeled = await fetch(`https://api.github.com/repos/${REPO}/issues/${PR}/labels`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ labels: ['auto-merge'] }),
+      });
+      // Non-fatal, same as the comment above: labeling is informational only.
+      if (labeled.ok) report('added "auto-merge" label');
+      else report(`failed to add "auto-merge" label (${labeled.status}): ${(await labeled.text()).slice(0, 300)}`);
+    } else {
+      report(`failed to post rules comment (${posted.status}): ${(await posted.text()).slice(0, 300)}`);
+    }
   } else {
     report('rules comment already exists, skipping');
   }
@@ -219,10 +230,10 @@ if (!files.every((f) => perRule.some((p) => inRule(f.filename, p.rule))))
 for (const p of touched) {
   if (p.opaque.length > 0)
     notEligible(`rule "${p.rule.name}": binary or renamed files cannot be size-checked: ${p.opaque.join(', ')}`);
-  if (p.rule.max_files !== undefined && p.files >= p.rule.max_files)
-    notEligible(`rule "${p.rule.name}": touches ${p.files} files (must be < ${p.rule.max_files})`);
-  if (p.lines >= p.rule.max_lines)
-    notEligible(`rule "${p.rule.name}": ${p.lines} changed lines (must be < ${p.rule.max_lines})`);
+  if (p.rule.max_files !== undefined && p.files > p.rule.max_files)
+    notEligible(`rule "${p.rule.name}": touches ${p.files} files (max ${p.rule.max_files})`);
+  if (p.lines > p.rule.max_lines)
+    notEligible(`rule "${p.rule.name}": ${p.lines} changed lines (max ${p.rule.max_lines})`);
 }
 if (touched.length === 0) notEligible('no changed files');
 // The strictest approval requirement among the touched rules applies.

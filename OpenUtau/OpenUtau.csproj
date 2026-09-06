@@ -55,6 +55,7 @@
   <ItemGroup>
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
     <PackageReference Include="Avalonia.Wayland" Version="12.1.0" />
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
     <PackageReference Include="Dotnet.Bundle" Version="0.9.13" />
     <PackageReference Include="DynamicData" Version="9.4.33" />
     <PackageReference Include="MonoMac.Core" Version="0.0.23728" />
@@ -85,14 +86,8 @@
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
     <None Include="..\runtimes\win-x64\native\**" CopyToOutputDirectory="PreserveNewest" LinkBase="." />
   </ItemGroup>
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x86'">
-    <None Include="..\runtimes\win-x86\native\**" CopyToOutputDirectory="PreserveNewest" LinkBase="." />
-  </ItemGroup>
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-arm64'">
     <None Include="..\runtimes\win-arm64\native\**" CopyToOutputDirectory="PreserveNewest" LinkBase="." />
-  </ItemGroup>
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'osx-x64'">
-    <None Include="..\runtimes\osx\native\**" CopyToOutputDirectory="PreserveNewest" LinkBase="." />
   </ItemGroup>
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'osx-arm64'">
     <None Include="..\runtimes\osx\native\**" CopyToOutputDirectory="PreserveNewest" LinkBase="." />

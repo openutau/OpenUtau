@@ -492,4 +492,43 @@
     <Setter Property="Margin" Value="0"/>
   </Style>
 
+  <Style Selector="NotificationCard">
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <LayoutTransformControl Name="PART_LayoutTransformControl">
+          <Border Name="PART_ShadowBorder"
+                  CornerRadius="{TemplateBinding CornerRadius}"
+                  BoxShadow="0 4 12 0 #20000000"
+                  Margin="0,0,0,8">
+            <Border Name="PART_Border"
+                    Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="{TemplateBinding CornerRadius}"
+                    ClipToBounds="True">
+              <Grid ColumnDefinitions="6, *, Auto">
+                <Rectangle Name="PART_AccentBar"
+                           Grid.Column="0"
+                           Width="6"
+                           VerticalAlignment="Stretch"
+                           Fill="{DynamicResource AccentBrush1}"/>
+                <ContentPresenter Name="PART_ContentPresenter"
+                                  Grid.Column="1"
+                                  Content="{TemplateBinding Content}"
+                                  Margin="14,10"
+                                  VerticalAlignment="Center">
+                  <ContentPresenter.ContentTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Message}"
+                                 TextWrapping="Wrap"
+                                 VerticalAlignment="Center"/>
+                    </DataTemplate>
+                  </ContentPresenter.ContentTemplate>
+                </ContentPresenter>
+              </Grid>
+            </Border>
+          </Border>
+        </LayoutTransformControl>
+      </ControlTemplate>
+    </Setter>
+  </Style>
 </Styles>

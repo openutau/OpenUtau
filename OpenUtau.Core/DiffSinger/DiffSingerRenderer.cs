@@ -79,6 +79,15 @@ namespace OpenUtau.Core.DiffSinger {
             };
         }
 
+        public (double HeadMs, double TailMs) PhrasePadding(USinger singer, IEnumerable<UPhoneme> phonemes) {
+            var dsSinger = singer as DiffSingerSinger;
+            if (dsSinger == null) {
+                return (0, 0);
+            }
+            double frameMs = dsSinger.dsConfig.frameMs();
+            return (DiffSingerUtils.GetHeadMs(frameMs), DiffSingerUtils.GetTailMs(frameMs));
+        }
+
         public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var task = Task.Run(() => {
                 lock (lockObj) {
@@ -124,7 +133,9 @@ namespace OpenUtau.Core.DiffSinger {
                     if (result.samples != null) {
                         Renderers.ApplyDynamics(phrase, result);
                         PlaybackManager.Inst.LiveWaveformCache[phrase.hash.ToString()] = (trackNo, phrase.positionMs - phrase.leadingMs, result.samples, DateTime.Now);
-                        DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                        Task.Factory.StartNew(() => {
+                            DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                        }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
                     }
                     progress.Complete(phrase.phones.Length, progressInfo);
                     return result;
@@ -233,11 +244,9 @@ namespace OpenUtau.Core.DiffSinger {
             //durations: phoneme duration in frames
             //f0: pitch curve in Hz by frame
             //speedup: Diffusion render speedup, int
-            var tokens = phrase.phones
-                .Select(p => p.phoneme)
-                .Prepend("SP")
-                .Append("SP")
-                .Select(phoneme => (Int64)singer.PhonemeTokenize(phoneme))
+            var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            var tokens = segments
+                .Select(segment => (Int64)singer.PhonemeTokenize(segment.Phoneme))
                 .ToList();
             var durations = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames)
                 .ToList();
@@ -294,13 +303,10 @@ namespace OpenUtau.Core.DiffSinger {
             }
             //Language id
             if(singer.dsConfig.use_lang_id){
-                var langIdByPhone = phrase.phones
-                    .Select(p => (long)singer.languageIds.GetValueOrDefault(
-                        DiffSingerUtils.PhonemeLanguage(p.phoneme),0
-                        ))
-                    .Prepend(0)
-                    .Append(0)
-                    .ToArray();
+                var langIdByPhone = DiffSingerUtils.PaddedLanguageIds(
+                    phrase, frameMs, headFrames, tailFrames,
+                    phoneme => (long)singer.languageIds.GetValueOrDefault(
+                        DiffSingerUtils.PhonemeLanguage(phoneme), 0));
                 var langIdTensor = new DenseTensor<Int64>(langIdByPhone, new int[] { langIdByPhone.Length }, false)
                     .Reshape(new int[] { 1, langIdByPhone.Length });
                 acousticInputs.Add(NamedOnnxValue.CreateFromTensor("languages", langIdTensor));
@@ -355,9 +361,8 @@ namespace OpenUtau.Core.DiffSinger {
                     throw new Exception(
                         "This singer has no variance predictor but its acoustic model requires one.");
                 }
-                var variancePredictor = singer.getVariancePredictor();
                 VarianceResult varianceResult;
-                lock(variancePredictor){
+                lock(singer.SessionLock){
                     if(cancellation.IsCancellationRequested) {
                         return null;
                     }
@@ -454,7 +459,7 @@ namespace OpenUtau.Core.DiffSinger {
                 : null;
             var acousticOutputs = acousticCache?.Load();
             if (acousticOutputs is null) {
-                lock(acousticModel){
+                lock(singer.SessionLock){
                     if(cancellation.IsCancellationRequested) {
                         return null;
                     }
@@ -494,7 +499,7 @@ namespace OpenUtau.Core.DiffSinger {
                 : null;
             var vocoderOutputs = vocoderCache?.Load();
             if (vocoderOutputs is null) {
-                lock(vocoder){
+                lock(singer.SessionLock){
                     if(cancellation.IsCancellationRequested) {
                         return null;
                     }
@@ -519,19 +524,38 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase) {
+            return LoadRenderedPitch(phrase, pitchSteps: null);
+        }
+
+        public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase, double? pitchSteps, bool fastRealtime = false) {
             DiffSingerSinger singer = (DiffSingerSinger) phrase.singer;
             if (!singer.HasPitchPredictor) {
                 throw new Exception("This singer has no pitch predictor.");
             }
             var pitchPredictor = singer.getPitchPredictor()!;
-            lock (pitchPredictor) {
-                return pitchPredictor.Process(phrase);
+            lock (singer.SessionLock) {
+                return pitchPredictor.Process(phrase, pitchSteps, fastRealtime);
             }
         }
 
         public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase, HashSet<int> selectedNotePositions) {
-            if (!Preferences.Default.DiffSingerLocalRetaking) {
-                return LoadRenderedPitch(phrase);
+            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false, forceLocalRetake: false);
+        }
+
+        /// <summary>Live pitch: partial retake for changed notes with fast sampling settings.</summary>
+        internal RenderPitchResult LoadRenderedPitchLive(
+            RenderPhrase phrase, HashSet<int> selectedNotePositions, double pitchSteps, bool fastRealtime) {
+            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps, fastRealtime, forceLocalRetake: true);
+        }
+
+        RenderPitchResult LoadRenderedPitch(
+            RenderPhrase phrase,
+            HashSet<int> selectedNotePositions,
+            double? pitchSteps,
+            bool fastRealtime,
+            bool forceLocalRetake) {
+            if (!forceLocalRetake && !Preferences.Default.DiffSingerLocalRetaking) {
+                return LoadRenderedPitch(phrase, pitchSteps, fastRealtime);
             }
             DiffSingerSinger singer = (DiffSingerSinger) phrase.singer;
             if (!singer.HasPitchPredictor) {
@@ -545,8 +569,8 @@ namespace OpenUtau.Core.DiffSinger {
             var retakeNoteIndexes = DiffSingerRetake.MapSelectedPositionsToNoteIndexes(
                 phrase.position, noteRelativePositions, selectedNotePositions);
             if (retakeNoteIndexes.Count == 0 || retakeNoteIndexes.Count == phrase.notes.Length) {
-                lock (pitchPredictor) {
-                    return pitchPredictor.Process(phrase);
+                lock (singer.SessionLock) {
+                    return pitchPredictor.Process(phrase, pitchSteps, fastRealtime);
                 }
             }
             var frameMs = pitchPredictor.FrameMs;
@@ -556,8 +580,8 @@ namespace OpenUtau.Core.DiffSinger {
             int totalFrames = ph_dur.Sum();
             var existingPitch = DiffSingerUtils.SampleCurve(phrase, phrase.pitches, 0, frameMs, totalFrames, headFrames, tailFrames,
                 x => x * 0.01).Select(f => (float)f).ToArray();
-            lock (pitchPredictor) {
-                return pitchPredictor.Process(phrase, retakeNoteIndexes, existingPitch);
+            lock (singer.SessionLock) {
+                return pitchPredictor.Process(phrase, pitchSteps, fastRealtime, retakeNoteIndexes, existingPitch);
             }
         }
 
@@ -574,7 +598,7 @@ namespace OpenUtau.Core.DiffSinger {
                 return new List<RenderRealCurveResult>(0);
             }
             var variancePredictor = singer.getVariancePredictor()!;
-            lock (variancePredictor) {
+            lock (singer.SessionLock) {
                 var result = variancePredictor.Process(phrase);
                 return BuildRenderedRealCurves(phrase, result);
             }

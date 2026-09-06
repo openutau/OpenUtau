@@ -95,7 +95,14 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         // russian specific replacements
-        protected override string ValidateAlias(string alias) {
+        protected override string ValidateAlias(string alias, int tone = 0) {
+            string baseResolved = base.ValidateAlias(alias, tone);
+            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
+                if (HasOto(baseResolved, tone)) {
+                    return baseResolved;
+                }
+                alias = baseResolved;
+            }
             foreach (var consonant in new[] { "'", "~" }) {
                 alias = alias.Replace(consonant + "y", consonant + "i");
             }
@@ -105,18 +112,13 @@ namespace OpenUtau.Plugin.Builtin {
             return aliasesFallback.ContainsKey(alias) ? aliasesFallback[alias] : alias;
         }
 
-        protected override double GetTransitionBasicLengthMs(string alias = "") {
-            foreach (var c in shortConsonants) {
-                if (alias.EndsWith(c)) {
-                    return base.GetTransitionBasicLengthMs() * 0.75;
-                }
-            }
-            foreach (var c in longConsonants) {
-                if (alias.EndsWith(c)) {
-                    return base.GetTransitionBasicLengthMs() * 1.5;
-                }
-            }
-            return base.GetTransitionBasicLengthMs();
+        // Endings has 50 ticks gap
+        protected override bool NoGap => true;
+
+        protected override double GetTransitionBasicLengthMs(string alias, int tone, PhonemeAttributes attr) {
+            double otoLength = GetTransitionBasicLengthMsByOto(alias, tone, attr);
+
+            return otoLength;
         }
 
     }

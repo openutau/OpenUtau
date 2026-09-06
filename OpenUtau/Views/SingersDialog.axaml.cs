@@ -168,18 +168,37 @@ namespace OpenUtau.App.Views {
             await dialog.ShowDialog(this);
         }
 
+        private CancellationTokenSource? _otoLoadCts;
+        private bool _isChangingSinger;
+
         void OnSelectedSingerChanged(object sender, SelectionChangedEventArgs e) {
-            OtoPlot.WaveFile = null;
+            _isChangingSinger = true;
+
+            _otoLoadCts?.Cancel();
+            _otoLoadCts = null;
+
             var playBack = PlaybackManager.Inst.AudioOutput;
-            var playbackState = playBack.PlaybackState;
-            if (playbackState == PlaybackState.Playing) {
+            if (playBack.PlaybackState == PlaybackState.Playing) {
                 playBack.Stop();
             }
+
+            wav = null;
+            wavPath = null;
+            OtoPlot.WaveFile = null;
+            OtoPlot.F0 = null;
+
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+                _isChangingSinger = false;
+            }, Avalonia.Threading.DispatcherPriority.Background);
         }
 
         void OnSelectedOtoChanged(object sender, SelectionChangedEventArgs e) {
+            if (_isChangingSinger) {
+                return;
+            }
+
             var viewModel = (DataContext as SingersViewModel)!;
-            if (viewModel.Singer == null || e.AddedItems.Count < 1) {
+            if (viewModel?.Singer == null || e.AddedItems.Count < 1) {
                 return;
             }
             var oto = (UOto?)e.AddedItems[0];
@@ -328,38 +347,39 @@ namespace OpenUtau.App.Views {
             }
         }
 
-        string? FindSample(USinger singer){
+        async Task<string?> FindSampleAsync(USinger singer) {
             var sample = singer.Sample;
-            if(sample!=null && File.Exists(sample)){
+            if (sample != null && File.Exists(sample)) {
                 return sample;
-            } else if (singer.SingerType == USingerType.Classic || singer.SingerType == USingerType.Voicevox) {
+            }
+
+            if (singer.SingerType == USingerType.Classic || singer.SingerType == USingerType.Voicevox) {
                 var path = singer.Location;
-                if(!Directory.Exists(path)){
+                if (!Directory.Exists(path)) {
                     return null;
                 }
-                string[] files = Directory.EnumerateFiles(path, "*.wav", SearchOption.AllDirectories)
-                        .Union(Directory.EnumerateFiles(path, "*.mp3", SearchOption.AllDirectories))
-                        .Union(Directory.EnumerateFiles(path, "*.flac", SearchOption.AllDirectories))
-                        .Union(Directory.EnumerateFiles(path, "*.aiff", SearchOption.AllDirectories))
-                        .Union(Directory.EnumerateFiles(path, "*.ogg", SearchOption.AllDirectories))
-                        .Union(Directory.EnumerateFiles(path, "*.opus", SearchOption.AllDirectories))
-                        .ToArray();
-                if(files.Length==0){
-                    return null;
-                }
-                Random rnd = new Random(Guid.NewGuid().GetHashCode());
-                int choice = rnd.Next(0, files.Length - 1);
-                string soundFile = files[choice];
-                return soundFile;
+
+                return await Task.Run(() => {
+                    var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+                        ".wav", ".mp3", ".flac", ".aiff", ".ogg", ".opus"
+                    };
+
+                    var soundFile = Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
+                        .Where(f => extensions.Contains(Path.GetExtension(f)))
+                        .OrderBy(_ => Guid.NewGuid())
+                        .FirstOrDefault();
+
+                    return soundFile;
+                });
             }
             return null;
         }
 
-        public void OnPlayCharacterSample(object sender, RoutedEventArgs e) {
+        public async void OnPlayCharacterSample(object sender, RoutedEventArgs e) {
             var viewModel = (DataContext as SingersViewModel)!;
             if (viewModel.Singer != null) {
-                var sample = FindSample(viewModel.Singer);
-                if(sample == null){
+                var sample = await FindSampleAsync(viewModel.Singer);
+                if (sample == null) {
                     return;
                 }
 
@@ -403,6 +423,10 @@ namespace OpenUtau.App.Views {
                 }, scheduler);
             }
         }
+        async void DrawOto(UOto? oto) {
+            _otoLoadCts?.Cancel();
+            _otoLoadCts = new CancellationTokenSource();
+            var token = _otoLoadCts.Token;
 
         async void GenerateRendererAnalysis(object? sender, RoutedEventArgs args) {
             if (OtoGrid == null || sender is not Control { Tag: RendererAnalysisOption option }) return;
@@ -441,6 +465,7 @@ namespace OpenUtau.App.Views {
                 OtoPlot.F0 = null;
                 return;
             }
+
             OtoPlot.Timing = new() {
                 cutoff = oto.Cutoff,
                 offset = oto.Offset,
@@ -448,37 +473,54 @@ namespace OpenUtau.App.Views {
                 preutter = oto.Preutter,
                 overlap = oto.Overlap,
             };
-            OtoPlot.WaveFile = loadWav(oto);
-            OtoPlot.F0 = LoadF0(oto.File);
+
+            var targetFile = oto.File;
+
+            try {
+                var wavTask = Task.Run(() => LoadWav(targetFile), token);
+                var f0Task = Task.Run(() => LoadF0(targetFile), token);
+
+                await Task.WhenAll(wavTask, f0Task);
+
+                if (token.IsCancellationRequested) {
+                    return;
+                }
+
+                wav = await wavTask;
+                wavPath = targetFile;
+
+                OtoPlot.WaveFile = wav;
+                OtoPlot.F0 = await f0Task;
+            } catch (OperationCanceledException) {
+                // Ignore cancellations from fast navigation
+            } catch (Exception e) {
+                Log.Error(e, $"Failed to draw OTO for {targetFile}");
+            }
         }
 
-        WaveFile? loadWav(UOto oto) {
-            if (wavPath == oto.File) {
+        WaveFile? LoadWav(string filePath) {
+            if (wavPath == filePath && wav != null) {
                 return wav;
             }
             try {
-                using (var memStream = new MemoryStream()) {
-                    using (var waveStream = Core.Format.Wave.OpenFile(oto.File)) {
-                        NAudio.Wave.WaveFileWriter.WriteWavFileToStream(memStream, waveStream);
-                    }
-                    memStream.Seek(0, SeekOrigin.Begin);
-                    wav = new WaveFile(memStream);
-                    wavPath = oto.File;
-                    return wav;
+                using var memStream = new MemoryStream();
+                using (var waveStream = Core.Format.Wave.OpenFile(filePath)) {
+                    NAudio.Wave.WaveFileWriter.WriteWavFileToStream(memStream, waveStream);
                 }
+                memStream.Seek(0, SeekOrigin.Begin);
+                return new WaveFile(memStream);
             } catch (Exception e) {
-                Log.Error(e, "failed to load wav");
-            }
-            return null;
-        }
-
-        Tuple<int, double[]>? LoadF0(string wavPath) {
-            var frq = new Classic.Frq();
-            if (frq.Load(wavPath)) {
-                return Tuple.Create(frq.hopSize, frq.f0);
-            } else {
+                Log.Error(e, $"Failed to load wav: {filePath}");
                 return null;
             }
+        }
+
+        Tuple<int, double[]>? LoadF0(string filePath) {
+            var frq = new Classic.Frq();
+            if (frq.Load(filePath)) {
+                return Tuple.Create(frq.hopSize, frq.f0);
+            }
+            return null;
         }
 
         void OnKeyDown(object sender, KeyEventArgs args) {

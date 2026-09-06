@@ -1,7 +1,7 @@
 # Auto-merge small PRs that meet all of:
 #   - every changed file falls inside some rule's paths
-#   - for each rule touched: changed lines < max_lines AND (if the rule has a
-#     max_files) changed files < max_files — counted per rule over the files
+#   - for each rule touched: changed lines <= max_lines AND (if the rule has a
+#     max_files) changed files <= max_files — counted per rule over the files
 #     in that rule's paths only
 #   - no CHANGES_REQUESTED review on the current head commit
 #   - at least `required_approvals` distinct approvals (max over all touched rules)

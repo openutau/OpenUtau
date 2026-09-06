@@ -87,6 +87,30 @@ namespace OpenUtau.Core {
         }
     }
 
+    public class SetTrackNoCommand : TrackCommand {
+        public readonly int oldIndex;
+        public readonly int newIndex;
+        public SetTrackNoCommand(UProject project, UTrack track, int idx) {
+            this.project = project;
+            this.track = track;
+            newIndex = idx;
+            oldIndex = track.TrackNo;
+        }
+        public override string ToString() => "Set track number";
+        public override void Execute() {
+            UTrack item = project.tracks[oldIndex];
+            project.tracks.RemoveAt(oldIndex);
+            project.tracks.Insert(newIndex, item);
+            UpdateTrackNo();
+        }
+        public override void Unexecute() {
+            UTrack item = project.tracks[newIndex];
+            project.tracks.RemoveAt(newIndex);
+            project.tracks.Insert(oldIndex, item);
+            UpdateTrackNo();
+        }
+    }
+
     public class RenameTrackCommand : TrackCommand {
         readonly string newName, oldName;
         public RenameTrackCommand(UProject project, UTrack track, string name) {
