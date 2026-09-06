@@ -23,7 +23,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool IsFlag { get; set; }
         [Reactive] public partial string Flag { get; set; }
         [Reactive] public partial string OptionValues { get; set; }
-        [Reactive] public partial bool SkipOutputIfDefault { get; set; } = false;
+        [Reactive] public partial bool SkipOutputIfDefault { get; set; } = true;
 
         public bool IsCustom => isCustom.Value;
         public bool IsRemovable => isRemovable.Value;

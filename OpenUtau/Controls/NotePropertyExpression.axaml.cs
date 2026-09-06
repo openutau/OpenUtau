@@ -31,6 +31,16 @@ namespace OpenUtau.App.Controls {
                 SetNumericalExpressions(textBox.Text);
             }
         }
+        void OnFlagBoxLostFocus(object? sender, RoutedEventArgs args) {
+            Log.Debug("Note property textbox lost focus");
+            if (sender is TextBox textBox && textBoxValue != textBox.Text) {
+                if (DataContext is NotePropertyExpViewModel viewModel) {
+                    NotePropertiesViewModel.PanelControlPressed = true;
+                    viewModel.SetFlagFromText(textBox.Text);
+                    NotePropertiesViewModel.PanelControlPressed = false;
+                }
+            }
+        }
 
         // slider
         void SliderPointerPressed(object? sender, PointerPressedEventArgs args) {
