@@ -34,8 +34,6 @@ namespace OpenUtau.Core.Format {
         public const string SHFC = "shfc";
         public const string TENC = "tenc";
         public const string VOIC = "voic";
-        public const string CLRY = "clry";
-        public const string XSY = "xsy";
 
         public static readonly string[] required = { DYN, PITD, CLR, ENG, VEL, VOL, ATK, DEC };
 
@@ -62,9 +60,6 @@ namespace OpenUtau.Core.Format {
             project.RegisterExpression(new UExpressionDescriptor("tone shift (curve)", SHFC, -1200, 1200, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("tension (curve)", TENC, -100, 100, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("voicing (curve)", VOIC, 0, 100, 100) { type = UExpressionType.Curve });
-            project.RegisterExpression(new UExpressionDescriptor("voice color y", CLRY, false, new string[0]));
-            project.RegisterExpression(new UExpressionDescriptor("cross synthesis (curve)", XSY, 0, 100, 0) { type = UExpressionType.Curve });
-
             string message = string.Empty;
             if (ValidateExpression(project, "g", GEN)) {
                 message += $"\ng flag -> gender";

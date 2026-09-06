@@ -1870,7 +1870,7 @@ namespace OpenUtau.App.Views {
             if (abbr.StartsWith("cl", StringComparison.OrdinalIgnoreCase)) return false;
             return abbr != Ustx.DYN && abbr != Ustx.PITD && abbr != Ustx.TENC &&
                 abbr != Ustx.BREC && abbr != Ustx.GENC && abbr != Ustx.VOIC &&
-                abbr != Ustx.SHFC && abbr != Ustx.CLR && abbr != Ustx.CLRY &&
+                abbr != Ustx.SHFC && abbr != Ustx.CLR &&
                 abbr != "opec";
         }
         async Task VoiceColorRemappingAsync(UTrack track, string[] oldColors, string[] newColors) {

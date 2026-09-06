@@ -321,8 +321,8 @@
             <ToggleSwitch IsChecked="{Binding PhaseLocked}" />
           </Grid>
           <Grid>
-            <TextBlock Text="{DynamicResource prefs.advanced.phraselevelmorphing}" HorizontalAlignment="Left" />
-            <ToggleSwitch IsChecked="{Binding PhraseLevelMorphing}" />
+            <TextBlock Text="{DynamicResource prefs.advanced.autodeletemorphcache}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding AutoDeleteMorphCache}" />
           </Grid>
         </StackPanel>
 

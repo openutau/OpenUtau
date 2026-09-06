@@ -122,7 +122,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial int OtoEditor { get; set; }
         public string VLabelerPath => Preferences.Default.VLabelerPath;
         public string SetParamPath => Preferences.Default.SetParamPath;
-        [Reactive] public partial bool PhraseLevelMorphing { get; set; }
+        [Reactive] public partial bool AutoDeleteMorphCache { get; set; }
         [Reactive] public partial bool PhaseLocked { get; set; }
 
         // Diffsinger
@@ -223,7 +223,7 @@ namespace OpenUtau.App.ViewModels {
             RememberUst = Preferences.Default.RememberUst;
             RememberVsqx = Preferences.Default.RememberVsqx;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
-            PhraseLevelMorphing = Preferences.Default.PhraseLevelMorphing;
+            AutoDeleteMorphCache = Preferences.Default.AutoDeleteMorphCache;
             PhaseLocked = Preferences.Default.PhaseLocked;
             Wayland = Preferences.Default.UseWayland;
 
@@ -484,9 +484,9 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks;
                     Preferences.Save();
                 });
-            this.WhenAnyValue(vm => vm.PhraseLevelMorphing)
+            this.WhenAnyValue(vm => vm.AutoDeleteMorphCache)
                 .Subscribe(index => {
-                    Preferences.Default.PhraseLevelMorphing = index;
+                    Preferences.Default.AutoDeleteMorphCache = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.PhaseLocked)

@@ -81,7 +81,6 @@ namespace OpenUtau.Core.Ustx {
                 if (singer_ != value) {
                     singer_ = value;
                     VoiceColorExp = null;
-                    VoiceColor2Exp = null;
                 }
             }
         }
@@ -93,15 +92,13 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public bool Muted { set; get; }
         public bool Mute { get; set; }
         public bool Solo { get; set; }
-        // Per-track post-processing FX.  null = no FX configured (bypass).
-        // Backwards compatible: older ustx files simply load with this null.
+        // Per-track post-processing FX. null = no FX configured (bypass).
         public UMixFx MixFx { get; set; }
         public double Volume { set; get; }
         public double Pan { set; get; }
 
         public List<UExpressionDescriptor> TrackExpressions { get; set; } = new List<UExpressionDescriptor>();
         [YamlIgnore] public UExpressionDescriptor VoiceColorExp { set; get; }
-        [YamlIgnore] public UExpressionDescriptor VoiceColor2Exp { set; get; }
         public string[] VoiceColorNames { get; set; } = new string[] { "" };
 
         public UTrack() {
@@ -123,9 +120,6 @@ namespace OpenUtau.Core.Ustx {
         public bool TryGetExpDescriptor(UProject project, string abbr, out UExpressionDescriptor descriptor) {
             if (abbr == Format.Ustx.CLR && VoiceColorExp != null) {
                 descriptor = VoiceColorExp;
-                return true;
-            } else if (abbr == Format.Ustx.CLRY && VoiceColor2Exp != null) {
-                descriptor = VoiceColor2Exp;
                 return true;
             }
             var trackExp = TrackExpressions.FirstOrDefault(e => e.abbr == abbr);
@@ -158,7 +152,6 @@ namespace OpenUtau.Core.Ustx {
                 Singer = USinger.CreateMissing(Singer.Name);
             }
             VoiceColorExp = null;
-            VoiceColor2Exp = null;
         }
 
         public void Validate(ValidateOptions options, UProject project) {
@@ -175,14 +168,6 @@ namespace OpenUtau.Core.Ustx {
                     var colors = Singer.Subbanks.Select(subbank => subbank.Color).ToHashSet();
                     VoiceColorExp.options = colors.OrderBy(c => c).ToArray();
                     VoiceColorExp.max = VoiceColorExp.options.Length - 1;
-                }
-            }
-            if (project.expressions.TryGetValue(Format.Ustx.CLRY, out var descriptor2)) {
-                if (VoiceColor2Exp == null && Singer != null && Singer.Found && Singer.Loaded) {
-                    VoiceColor2Exp = descriptor2.Clone();
-                    var colors = Singer.Subbanks.Select(subbank => subbank.Color).ToHashSet();
-                    VoiceColor2Exp.options = colors.OrderBy(c => c).ToArray();
-                    VoiceColor2Exp.max = VoiceColor2Exp.options.Length - 1;
                 }
             }
         }

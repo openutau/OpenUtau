@@ -657,7 +657,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.rendering.threads.numthreads">Maximum Render Threads</system:String>
   <system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>
   <system:String x:Key="prefs.utau">UTAU</system:String>
-  <system:String x:Key="prefs.advanced.phraselevelmorphing">Phrase Level Morphing</system:String>
+  <system:String x:Key="prefs.advanced.autodeletemorphcache">Auto Delete Morph Cache</system:String>
   <system:String x:Key="prefs.advanced.phasemorphing">Auto Phase-locked Morphing</system:String>
 
   <system:String x:Key="progress.cachecleared">Cache cleared.</system:String>
