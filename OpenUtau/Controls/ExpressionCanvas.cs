@@ -262,10 +262,6 @@ namespace OpenUtau.App.Controls {
                             continue;
                         }
                         var geometry = new PathGeometry();
-                        // allinone: #2148 moved this fill's anchor from the canvas bottom to the
-                        // default-value line together with the new envelope fill. The envelope fill
-                        // is intended upstream behavior and stays; the real curve's own fill keeps
-                        // its pre-#2148 shape (curve down to the bottom of the canvas).
                         var figure = new PathFigure {
                             IsClosed = false
                         };
