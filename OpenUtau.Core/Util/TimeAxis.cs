@@ -35,10 +35,23 @@ namespace OpenUtau.Core {
             public int Ticks => tickEnd - tickPos;
         }
 
+        const double DefaultBpm = 120.0;
+        const int DefaultBeatPerBar = 4;
+        const int DefaultBeatUnit = 4;
+
         readonly List<TimeSigSegment> timeSigSegments = new List<TimeSigSegment>();
         readonly List<TempoSegment> tempoSegments = new List<TempoSegment>();
 
         public long Timestamp { get; private set; }
+
+        /// <summary>
+        /// A bpm is only usable if it can be divided by. Zero, NaN or infinity turns
+        /// msPerTick into infinity or NaN, which then poisons msPos of every following
+        /// segment and every ms value derived from them.
+        /// </summary>
+        static bool IsValidBpm(double bpm) {
+            return double.IsFinite(bpm) && bpm > 0;
+        }
 
         public void BuildSegments(UProject project) {
             Timestamp = DateTime.Now.ToFileTimeUtc();
@@ -55,13 +68,29 @@ namespace OpenUtau.Core {
                         throw new Exception("First time signature must be at bar 0.");
                     }
                 }
+                // A non-positive beat unit divides by zero here, and a non-positive
+                // beat per bar makes ticksPerBar zero, which divides by zero later.
+                var beatPerBar = timesig.beatPerBar > 0 ? timesig.beatPerBar : DefaultBeatPerBar;
+                var beatUnit = timesig.beatUnit > 0 ? timesig.beatUnit : DefaultBeatUnit;
                 timeSigSegments.Add(new TimeSigSegment {
                     barPos = timesig.barPosition,
                     tickPos = posTick,
-                    beatPerBar = timesig.beatPerBar,
-                    beatUnit = timesig.beatUnit,
-                    ticksPerBar = project.resolution * 4 * timesig.beatPerBar / timesig.beatUnit,
-                    ticksPerBeat = project.resolution * 4 / timesig.beatUnit,
+                    beatPerBar = beatPerBar,
+                    beatUnit = beatUnit,
+                    ticksPerBar = project.resolution * 4 * beatPerBar / beatUnit,
+                    ticksPerBeat = project.resolution * 4 / beatUnit,
+                });
+            }
+            if (timeSigSegments.Count == 0) {
+                // Without this a project with no time signature leaves every bar/beat
+                // lookup with nothing to return, and leaves tempoSegments empty too.
+                timeSigSegments.Add(new TimeSigSegment {
+                    barPos = 0,
+                    tickPos = 0,
+                    beatPerBar = DefaultBeatPerBar,
+                    beatUnit = DefaultBeatUnit,
+                    ticksPerBar = project.resolution * 4 * DefaultBeatPerBar / DefaultBeatUnit,
+                    ticksPerBeat = project.resolution * 4 / DefaultBeatUnit,
                 });
             }
             for (var i = 0; i < timeSigSegments.Count - 1; ++i) {
@@ -101,8 +130,13 @@ namespace OpenUtau.Core {
                     });
                 }
             }
+            if (!IsValidBpm(tempoSegments[0].bpm)) {
+                // No tempo at tick 0, or one that cannot be divided by. Everything
+                // after inherits from here, so this segment must be valid.
+                tempoSegments[0].bpm = DefaultBpm;
+            }
             for (var i = 0; i < tempoSegments.Count - 1; ++i) {
-                if (tempoSegments[i + 1].bpm == 0) {
+                if (!IsValidBpm(tempoSegments[i + 1].bpm)) {
                     tempoSegments[i + 1].bpm = tempoSegments[i].bpm;
                 }
                 tempoSegments[i].tickEnd = tempoSegments[i + 1].tickPos;
@@ -117,26 +151,83 @@ namespace OpenUtau.Core {
             }
         }
 
+        /// <summary>
+        /// Finds the tempo segment containing a tick. Never throws: a tick past the
+        /// last segment, or a NaN one, is clamped instead. These lookups run on the
+        /// render thread, where an exception takes the whole app down.
+        /// </summary>
+        TempoSegment TempoSegmentAtTick(double tick) {
+            if (!double.IsNaN(tick)) {
+                for (var i = 0; i < tempoSegments.Count; ++i) { // TODO: optimize
+                    var segment = tempoSegments[i];
+                    if (segment.tickPos == tick || segment.tickEnd > tick) {
+                        return segment;
+                    }
+                }
+            }
+            return tempoSegments[tempoSegments.Count - 1];
+        }
+
+        /// <summary>
+        /// Ms counterpart of <see cref="TempoSegmentAtTick"/>. Also never throws.
+        /// </summary>
+        TempoSegment TempoSegmentAtMsPos(double ms) {
+            if (!double.IsNaN(ms)) {
+                for (var i = 0; i < tempoSegments.Count; ++i) { // TODO: optimize
+                    var segment = tempoSegments[i];
+                    if (segment.msPos == ms || segment.msEnd > ms) {
+                        return segment;
+                    }
+                }
+            }
+            return tempoSegments[tempoSegments.Count - 1];
+        }
+
+        TimeSigSegment TimeSigSegmentAtTick(int tick) {
+            for (var i = 0; i < timeSigSegments.Count; ++i) { // TODO: optimize
+                var segment = timeSigSegments[i];
+                if (segment.tickPos == tick || segment.tickEnd > tick) {
+                    return segment;
+                }
+            }
+            return timeSigSegments[timeSigSegments.Count - 1];
+        }
+
+        TimeSigSegment TimeSigSegmentAtBar(int bar) {
+            for (var i = 0; i < timeSigSegments.Count; ++i) { // TODO: optimize
+                var segment = timeSigSegments[i];
+                if (segment.barPos == bar || segment.barEnd > bar) {
+                    return segment;
+                }
+            }
+            return timeSigSegments[timeSigSegments.Count - 1];
+        }
+
         public double GetBpmAtTick(int tick) {
-            var segment = tempoSegments.First(seg => seg.tickPos == tick || seg.tickEnd > tick); // TODO: optimize
+            var segment = TempoSegmentAtTick(tick);
             return segment.bpm;
         }
 
         public double TickPosToMsPos(double tick) {
-            var segment = tempoSegments.First(seg => seg.tickPos == tick || seg.tickEnd > tick); // TODO: optimize
+            var segment = TempoSegmentAtTick(tick);
             return segment.msPos + segment.msPerTick * (tick - segment.tickPos);
         }
 
         public double MsPosToNonExactTickPos(double ms) {
-            var segment = tempoSegments.First(seg => seg.msPos == ms || seg.msEnd > ms); // TODO: optimize
+            var segment = TempoSegmentAtMsPos(ms);
             double tickPos = segment.tickPos + (ms - segment.msPos) * segment.ticksPerMs;
             return tickPos;
         }
 
         public int MsPosToTickPos(double ms) {
-            var segment = tempoSegments.First(seg => seg.msPos == ms || seg.msEnd > ms); // TODO: optimize
+            var segment = TempoSegmentAtMsPos(ms);
             double tickPos = segment.tickPos + (ms - segment.msPos) * segment.ticksPerMs;
-            return (int)Math.Round(tickPos);
+            if (!double.IsFinite(tickPos)) {
+                // Casting NaN or infinity saturates silently, which hides the bad
+                // value. Fall back to the segment start instead.
+                return segment.tickPos;
+            }
+            return (int)Math.Round(Math.Clamp(tickPos, int.MinValue, int.MaxValue));
         }
 
         public int TicksBetweenMsPos(double msPos, double msEnd) {
@@ -160,7 +251,7 @@ namespace OpenUtau.Core {
         }
 
         public void TickPosToBarBeat(int tick, out int bar, out int beat, out int remainingTicks) {
-            var segment = timeSigSegments.First(seg => seg.tickPos == tick || seg.tickEnd > tick); // TODO: optimize
+            var segment = TimeSigSegmentAtTick(tick);
             bar = segment.barPos + (tick - segment.tickPos) / segment.ticksPerBar;
             int tickInBar = tick - segment.tickPos - segment.ticksPerBar * (bar - segment.barPos);
             beat = tickInBar / segment.ticksPerBeat;
@@ -168,14 +259,14 @@ namespace OpenUtau.Core {
         }
 
         public int BarBeatToTickPos(int bar, int beat) {
-            var segment = timeSigSegments.First(seg => seg.barPos == bar || seg.barEnd > bar); // TODO: optimize
+            var segment = TimeSigSegmentAtBar(bar);
             return segment.tickPos + segment.ticksPerBar * (bar - segment.barPos) + segment.ticksPerBeat * beat;
         }
 
         public void NextBarBeat(int bar, int beat, out int nextBar, out int nextBeat) {
             nextBar = bar;
             nextBeat = beat + 1;
-            var segment = timeSigSegments.First(seg => seg.barPos == bar || seg.barEnd > bar); // TODO: optimize
+            var segment = TimeSigSegmentAtBar(bar);
             if (nextBeat >= segment.beatPerBar) {
                 nextBar++;
                 nextBeat = 0;
@@ -191,7 +282,7 @@ namespace OpenUtau.Core {
         }
 
         public UTimeSignature TimeSignatureAtTick(int tick) {
-            var segment = timeSigSegments.First(seg => seg.tickPos == tick || seg.tickEnd > tick); // TODO: optimize
+            var segment = TimeSigSegmentAtTick(tick);
             return new UTimeSignature {
                 barPosition = segment.barPos,
                 beatPerBar = segment.beatPerBar,
@@ -200,7 +291,7 @@ namespace OpenUtau.Core {
         }
 
         public UTimeSignature TimeSignatureAtBar(int bar) {
-            var segment = timeSigSegments.First(seg => seg.barPos == bar || seg.barEnd > bar); // TODO: optimize
+            var segment = TimeSigSegmentAtBar(bar);
             return new UTimeSignature {
                 barPosition = segment.barPos,
                 beatPerBar = segment.beatPerBar,

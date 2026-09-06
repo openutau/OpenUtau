@@ -99,5 +99,97 @@ namespace OpenUtau.Core {
             Assert.Equal(0, beat);
             Assert.Equal(440, remainingTicks);
         }
+
+        [Theory]
+        [InlineData(0.0)]
+        [InlineData(-120.0)]
+        [InlineData(double.NaN)]
+        [InlineData(double.PositiveInfinity)]
+        public void InvalidFirstTempoTest(double bpm) {
+            var timeAxis = new TimeAxis();
+            var project = new UProject();
+            project.tempos[0].bpm = bpm;
+            timeAxis.BuildSegments(project);
+
+            // Falls back to the default tempo instead of producing NaN or infinity.
+            Assert.Equal(120, timeAxis.GetBpmAtTick(0));
+            Assert.Equal(500, timeAxis.TickPosToMsPos(480), 6);
+            Assert.Equal(480, timeAxis.MsPosToTickPos(500));
+        }
+
+        [Theory]
+        [InlineData(0.0)]
+        [InlineData(double.NaN)]
+        [InlineData(double.PositiveInfinity)]
+        public void InvalidLaterTempoTest(double bpm) {
+            var timeAxis = new TimeAxis();
+            var project = new UProject();
+            project.tempos.Add(new UTempo(4800, bpm));
+            timeAxis.BuildSegments(project);
+
+            // An unusable tempo inherits the previous one. Without this, msPos of
+            // every following segment becomes NaN or infinity, and any ms value
+            // derived from it kills the render thread on lookup.
+            Assert.Equal(120, timeAxis.GetBpmAtTick(4800));
+            Assert.Equal(10000, timeAxis.TickPosToMsPos(9600), 6);
+            Assert.Equal(9600, timeAxis.MsPosToTickPos(10000));
+        }
+
+        [Fact]
+        public void NoTemposTest() {
+            var timeAxis = new TimeAxis();
+            var project = new UProject();
+            project.tempos.Clear();
+            timeAxis.BuildSegments(project);
+
+            Assert.Equal(120, timeAxis.GetBpmAtTick(0));
+            Assert.Equal(500, timeAxis.TickPosToMsPos(480), 6);
+        }
+
+        [Fact]
+        public void NoTimeSignaturesTest() {
+            var timeAxis = new TimeAxis();
+            var project = new UProject();
+            project.timeSignatures.Clear();
+            timeAxis.BuildSegments(project);
+
+            Assert.Equal(120, timeAxis.GetBpmAtTick(0));
+            Assert.Equal(1920, timeAxis.BarBeatToTickPos(1, 0));
+            timeAxis.TickPosToBarBeat(1920, out int bar, out int beat, out int remainingTicks);
+            Assert.Equal(1, bar);
+            Assert.Equal(0, beat);
+            Assert.Equal(0, remainingTicks);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(4)]
+        [InlineData(-1)]
+        public void InvalidBeatUnitTest(int beatUnit) {
+            var timeAxis = new TimeAxis();
+            var project = new UProject();
+            project.timeSignatures[0].beatUnit = beatUnit;
+            timeAxis.BuildSegments(project);
+
+            // A non-positive beat unit used to divide by zero while building.
+            Assert.Equal(1920, timeAxis.BarBeatToTickPos(1, 0));
+        }
+
+        [Theory]
+        [InlineData(double.NaN)]
+        [InlineData(double.PositiveInfinity)]
+        [InlineData(double.NegativeInfinity)]
+        public void NonFiniteLookupTest(double value) {
+            var timeAxis = new TimeAxis();
+            var project = new UProject();
+            timeAxis.BuildSegments(project);
+
+            // Callers on the render thread pass values derived from phoneme
+            // envelopes, which can go non-finite. These must not throw.
+            var tickPos = timeAxis.MsPosToTickPos(value);
+            Assert.InRange(tickPos, int.MinValue, int.MaxValue);
+            timeAxis.MsPosToNonExactTickPos(value);
+            timeAxis.TickPosToMsPos(value);
+        }
     }
 }
