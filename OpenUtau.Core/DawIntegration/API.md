@@ -90,8 +90,10 @@ side.
 
 The plugin publishes one JSON file per instance:
 
-- **Path:** `%TEMP%/OpenUtau/PluginServers/<name>.json` (the per-user temporary directory
-  on every supported OS).
+- **Path:** `%TEMP%/OpenUtau/PluginServers/<name>.json` — the per-user temporary directory on
+  Windows and macOS. On Linux, where `TMPDIR` may resolve to a shared directory such as `/tmp`,
+  OpenUtau enforces the trust boundary of §11 before scanning or publishing (owner-only
+  directory permissions; a directory it does not own is refused).
 - **Schema:**
 
 ```json
@@ -404,14 +406,19 @@ disconnect (user)  → optional final update → "close" → teardown
 - Version identification lives in the discovery file and the `init` response (§4.2).
 - **1.1 → 1.2:** `updateTracks` gained the optional per-track `singer` and `engine`
   informational fields. Nothing else changed; 1.1 implementations interoperate unchanged.
+  The newer side **MUST** omit these two fields when the peer negotiated a minor below 2.
 
 ## 11. Security and Trust Model
 
 - Loopback only, dynamic port, no authentication. Any local process running as the same
   user can read the project document and rendered audio. This matches the trust model of
   comparable bridge tools (e.g. ACE Studio's bridge) and is accepted for this version.
-- Mitigations: random high port, per-user discovery directory, no cross-machine path.
-- Caveat: do not run OpenUtau in multi-user shared sessions.
+- Mitigations: random high port, owner-only discovery directory (on Unix the discovery
+  directory is tightened to mode 0700 before scanning and publishing, and a directory this
+  user does not own is refused outright), published files carry mode 0600, no cross-machine path.
+- Caveat: on a shared-`/tmp` Linux system, a file planted in the discovery directory *before*
+  OpenUtau first tightens it could still be scanned. Do not run OpenUtau in multi-user shared
+  sessions.
 
 ## 12. Error Handling
 

@@ -48,26 +48,21 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         private DawManager? manager;
-        private readonly ITestOutputHelper output;
 
-        /// <summary>
-        /// xUnit v3 has a runtime skip API, but a missing OPENUTAU_BRIDGE_DISCOVERY is reported
-        /// through the test output instead of silently passing, and the early return keeps CI
-        /// unaffected either way.
-        /// </summary>
-        public DawRealPluginTest(ITestOutputHelper output) {
-            this.output = output;
-        }
+        public DawRealPluginTest() { }
 
         public void Dispose() => manager?.Dispose();
 
         /// <summary>
         /// One track at unity and centre, one part from 2000 ms to 3000 ms. Project defaults are
         /// 4/4 at 120 bpm with 480 ticks per beat, so 480 ticks is 500 ms: the part sits at ticks
-        /// 1920..2880.
+        /// 1920..2880. <c>FilePath</c> is set because <c>DawManager.OpenConnectionAsync</c>
+        /// serializes the project for the init handshake, and the USTX serializer refuses an
+        /// unsaved project (see <c>DawConformanceTest.BuildProject</c>).
         /// </summary>
         private static UProject BuildProject() {
             var built = new UProject();
+            built.FilePath = Path.Combine(Path.GetTempPath(), "real-plugin-test.ustx");
             built.tracks.Clear();
             built.tracks.Add(new UTrack("Live") { TrackNo = 0, Volume = 0, Pan = 0 });
             var live = new UVoicePart { name = "Live A", trackNo = 0, position = 1920, duration = 960 };
@@ -82,11 +77,10 @@ namespace OpenUtau.Core.DawIntegration {
             string? directory = Environment.GetEnvironmentVariable("OPENUTAU_BRIDGE_DISCOVERY");
             if (string.IsNullOrEmpty(directory)) {
                 // Opt-in live test: needs a running bridge-host publishing its discovery file.
-                // xUnit v2 on this branch has no runtime skip, so report and return instead.
-                output.WriteLine(
-                    "SKIPPED (reported as pass): set OPENUTAU_BRIDGE_DISCOVERY to a running " +
-                    "bridge-host's discovery directory to run this live handshake test.");
-                return;
+                // xUnit v3's runtime skip keeps CI unaffected without disguising the skip as a pass.
+                Assert.Skip(
+                    "Set OPENUTAU_BRIDGE_DISCOVERY to a running bridge-host's discovery " +
+                    "directory to run this live handshake test.");
             }
             Assert.True(Directory.Exists(directory), $"No such directory: {directory}");
 

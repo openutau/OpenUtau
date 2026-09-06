@@ -220,16 +220,22 @@ namespace OpenUtau.Core.DawIntegration {
         /// <summary>
         /// v1.2: the track's singer display name (<see cref="Ustx.UTrack.Singer"/>), or the
         /// empty string when the track has none yet. Informational — the plugin's GUI shows
-        /// it next to the track name; it does not affect the audio.
+        /// it next to the track name; it does not affect the audio. Omitted on the wire when
+        /// the peer negotiated a minor below 2 (§10: the newer side omits fields the older
+        /// minor does not know).
         /// </summary>
-        [JsonPropertyName("singer")] public string Singer { get; set; } = string.Empty;
+        [JsonPropertyName("singer")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Singer { get; set; } = string.Empty;
 
         /// <summary>
         /// v1.2: the track's render engine key (<see cref="Ustx.URenderSettings.renderer"/>,
         /// e.g. CLASSIC, WORLDLINE-R, DIFFSINGER), or the empty string when the track has no
-        /// usable singer/renderer yet. Informational only.
+        /// usable singer/renderer yet. Informational only; version-gated like <see cref="Singer"/>.
         /// </summary>
-        [JsonPropertyName("engine")] public string Engine { get; set; } = string.Empty;
+        [JsonPropertyName("engine")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Engine { get; set; } = string.Empty;
     }
 
     /// <summary><c>updateTracks</c> notification payload (PROTOCOL.md §6.1).</summary>

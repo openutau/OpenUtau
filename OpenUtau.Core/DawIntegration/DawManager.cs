@@ -244,6 +244,9 @@ namespace OpenUtau.Core.DawIntegration {
             public DawTransport? Transport;
             public bool ClosingLocally;
             public bool Reconnecting;
+            /// <summary>The init answer's minor (§4.2). Defaults to this build's own, so a
+            /// connection that has not finished its handshake is treated as fully capable.</summary>
+            public int NegotiatedMinor = DawApiVersion.Current.Minor;
         }
 
         private readonly DawSyncScheduler scheduler;
@@ -367,6 +370,11 @@ namespace OpenUtau.Core.DawIntegration {
                     connections.Remove(conn);
                 }
                 RecomputeState();
+                // OpenConnectionAsync may already have subscribed and started the pump before a
+                // post-init sync failed; a failed connect must not leave either behind (matching
+                // CloseConnectionAsync and the reconnect ladder's teardown).
+                StopPumpIfIdle();
+                UnsubscribeIfIdle();
                 throw;
             }
         }
@@ -399,6 +407,9 @@ namespace OpenUtau.Core.DawIntegration {
                     throw new DawProtocolException(
                         $"Plugin answered init with api '{response.ApiVersion}', " +
                         $"which this build cannot speak.");
+                }
+                lock (stateLock) {
+                    conn.NegotiatedMinor = version.Minor;
                 }
                 Subscribe();
                 RecomputeState();
@@ -453,7 +464,9 @@ namespace OpenUtau.Core.DawIntegration {
 
         private void Subscribe() {
             lock (stateLock) {
-                if (subscribed) {
+                // A reconnect handshake can complete after Dispose ran: without this check the
+                // disposed manager would re-register on DocManager for the process lifetime.
+                if (subscribed || Volatile.Read(ref disposed) != 0) {
                     return;
                 }
                 DocManager.Inst.AddSubscriber(this);
@@ -473,6 +486,10 @@ namespace OpenUtau.Core.DawIntegration {
 
         private void RecomputeState() {
             DawConnectionState next;
+            bool changed;
+            // One atomic scope: concurrent callers (the transport read loop, reconnects, user
+            // connects) would otherwise interleave between computing and assigning, and a later
+            // caller could publish an older value.
             lock (stateLock) {
                 if (connections.Any(c => c.Transport?.IsConnected == true)) {
                     next = DawConnectionState.Connected;
@@ -483,9 +500,6 @@ namespace OpenUtau.Core.DawIntegration {
                 } else {
                     next = DawConnectionState.Disconnected;
                 }
-            }
-            bool changed;
-            lock (stateLock) {
                 changed = State != next;
                 State = next;
             }
@@ -621,7 +635,9 @@ namespace OpenUtau.Core.DawIntegration {
                     break;
                 }
                 case DawSyncKind.Tracks: {
-                    var payload = await BuildTracksAsync();
+                    // §10: the v1.2 informational fields are omitted for peers that negotiated a
+                    // lower minor, so the payload carries the minimum across the targets.
+                    var payload = await BuildTracksAsync(MinNegotiatedMinor(live));
                     await BroadcastAsync(live, (conn, token) =>
                         conn.Transport!.SendNotificationAsync(DawMessageKind.UpdateTracks, payload, token),
                         cancellation);
@@ -654,8 +670,8 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         /// <summary>
-        /// Sends one pre-built payload to every live connection. A request timeout drops only
-        /// the connection it happened on (§8); the others stay synced.
+        /// Sends one pre-built payload to every live connection. Any failure a connection raises
+        /// drops only that connection (§8); the others still receive the payload.
         /// </summary>
         private async Task BroadcastAsync(List<Connection> targets,
                 Func<Connection, CancellationToken, Task> send, CancellationToken cancellation) {
@@ -666,8 +682,12 @@ namespace OpenUtau.Core.DawIntegration {
                 }
                 try {
                     await send(conn, cancellation);
-                } catch (TimeoutException e) {
-                    Log.Warning(e, $"DAW: sync to '{conn.Server.Name}' timed out; dropping it.");
+                } catch (OperationCanceledException) {
+                    throw;
+                } catch (Exception e) {
+                    // Not only timeouts: a protocol fault or socket error on one connection must
+                    // not leave the remaining targets stale until the next edit re-arms the stream.
+                    Log.Warning(e, $"DAW: sync to '{conn.Server.Name}' failed; dropping it.");
                     await DropConnectionAsync(conn);
                 }
             }
@@ -688,7 +708,8 @@ namespace OpenUtau.Core.DawIntegration {
                     break;
                 case DawSyncKind.Tracks:
                     await live.SendNotificationAsync(
-                        DawMessageKind.UpdateTracks, await BuildTracksAsync(), cancellation);
+                        DawMessageKind.UpdateTracks,
+                        await BuildTracksAsync(minor: GetNegotiatedMinor(conn)), cancellation);
                     break;
                 case DawSyncKind.ProjectInfo:
                     await live.SendNotificationAsync(
@@ -700,7 +721,21 @@ namespace OpenUtau.Core.DawIntegration {
             }
         }
 
-        private Task<UpdateTracksNotification> BuildTracksAsync() {
+        /// <summary>The lowest minor any of the targets negotiated, so a shared payload is safe for all of them.</summary>
+        private int MinNegotiatedMinor(List<Connection> targets) {
+            lock (stateLock) {
+                return targets.Aggregate(DawApiVersion.Current.Minor, (min, conn) => Math.Min(min, conn.NegotiatedMinor));
+            }
+        }
+
+        private int GetNegotiatedMinor(Connection conn) {
+            lock (stateLock) {
+                return conn.NegotiatedMinor;
+            }
+        }
+
+        private Task<UpdateTracksNotification> BuildTracksAsync(int minor) {
+            bool emitV12Fields = minor >= 2;
             return OnDocumentThreadAsync(() => new UpdateTracksNotification {
                 Tracks = ProjectSource().tracks
                     .Select(track => new DawTrackInfo {
@@ -712,9 +747,9 @@ namespace OpenUtau.Core.DawIntegration {
                         Muted = track.Muted,
                         // v1.2: informational fields for the plugin's GUI. Singer changes and
                         // renderer changes are TrackCommands, so the same Tracks sync keeps
-                        // these fresh without new triggers.
-                        Singer = track.Singer?.Name ?? string.Empty,
-                        Engine = track.RendererSettings.renderer ?? string.Empty,
+                        // these fresh without new triggers. Omitted for lower minors (§10).
+                        Singer = emitV12Fields ? track.Singer?.Name ?? string.Empty : null,
+                        Engine = emitV12Fields ? track.RendererSettings.renderer ?? string.Empty : null,
                     })
                     .ToList(),
             });
@@ -848,6 +883,14 @@ namespace OpenUtau.Core.DawIntegration {
             }
             if (!TryResolveAudio(hash, out byte[] pcm)) {
                 await request.RespondAsync(DawResult.Fail($"No audio for hash {hash}."));
+                return;
+            }
+            if (pcm.Length > DawAudio.MaxFrameBytes) {
+                // A frame above the bound would make the receiver refuse the header and stop the
+                // transport (§6.1, §8); refuse here with an envelope instead of wedging the peer.
+                await request.RespondAsync(DawResult.Fail(
+                    $"Audio for hash {hash} is {pcm.Length} bytes, above the " +
+                    $"{DawAudio.MaxFrameBytes}-byte data-plane bound."));
                 return;
             }
             await request.RespondWithAudioAsync(hash, pcm);
@@ -1112,9 +1155,13 @@ namespace OpenUtau.Core.DawIntegration {
                 conn.Transport?.Dispose();
                 conn.Transport = null;
             }
-            if (subscribed) {
-                DocManager.Inst.RemoveSubscriber(this);
-                subscribed = false;
+            // Same lock discipline as Subscribe/UnsubscribeIfIdle: a reconnect handshake racing
+            // the dispose must not re-add the subscriber after it is removed here.
+            lock (stateLock) {
+                if (subscribed) {
+                    DocManager.Inst.RemoveSubscriber(this);
+                    subscribed = false;
+                }
             }
             scheduler.Clear();
             audioCache.Clear();

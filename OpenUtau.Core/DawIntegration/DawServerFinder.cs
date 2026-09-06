@@ -46,8 +46,15 @@ namespace OpenUtau.Core.DawIntegration {
     /// reports version compatibility (PROTOCOL.md §4). The directory is injectable so tests
     /// never touch the real per-user temp path.
     /// </summary>
+    /// <remarks>
+    /// Trust boundary (§11): on Windows <c>%TEMP%</c> is already private to the user. On Unix a
+    /// shared <c>TMPDIR</c> would let another local user plant an advertisement whose port they
+    /// listen on, so the directory is tightened to owner-only permissions before scanning or
+    /// publishing; a directory this user does not own is refused outright.
+    /// </remarks>
     public sealed class DawServerFinder {
-        /// <summary>The protocol path: <c>%TEMP%/OpenUtau/PluginServers</c>, per-user on every OS.</summary>
+        /// <summary>The protocol path: <c>%TEMP%/OpenUtau/PluginServers</c>, per-user on Windows
+        /// and macOS; on Unix the owner-only enforcement below closes the shared-<c>TMPDIR</c> case.</summary>
         public static string DefaultDirectory => Path.Combine(Path.GetTempPath(), "OpenUtau", "PluginServers");
 
         public static DawServerFinder Default { get; } = new DawServerFinder(DefaultDirectory);
@@ -66,6 +73,9 @@ namespace OpenUtau.Core.DawIntegration {
         public List<DawServer> Scan(bool removeStale = true) {
             var servers = new List<DawServer>();
             if (!System.IO.Directory.Exists(Directory)) {
+                return servers;
+            }
+            if (!EnsureOwnerPrivateDirectory()) {
                 return servers;
             }
             foreach (string path in System.IO.Directory.GetFiles(Directory, "*.json")) {
@@ -118,15 +128,51 @@ namespace OpenUtau.Core.DawIntegration {
         /// Writes an advertisement. Production plugins publish their own file; this exists for the
         /// conformance harness and tests, which play the plugin side.
         /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// The discovery directory is not owner-private and could not be tightened (Unix).
+        /// </exception>
         public string Publish(string name, int port, string apiVersion = DawApiVersion.CurrentString) {
             System.IO.Directory.CreateDirectory(Directory);
+            if (!EnsureOwnerPrivateDirectory()) {
+                throw new InvalidOperationException(
+                    $"Discovery directory '{Directory}' is not user-private; refusing to publish.");
+            }
             string path = Path.Combine(Directory, name + ".json");
             var info = new DawServerInfo { Port = port, Name = name, ApiVersion = apiVersion };
             File.WriteAllText(path, DawJson.Serialize(info), Encoding.UTF8);
+            if (!OperatingSystem.IsWindows()) {
+                File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            }
             return path;
         }
 
         public void Remove(string path) => TryDelete(path);
+
+        /// <summary>
+        /// Tightens the discovery directory to owner-only (mode 0700) on Unix. False when the
+        /// directory is shared and not ours — its contents were not placed by this user, so
+        /// neither scanning nor publishing may trust them.
+        /// </summary>
+        private bool EnsureOwnerPrivateDirectory() {
+            if (OperatingSystem.IsWindows()) {
+                return true;
+            }
+            try {
+                var mode = File.GetUnixFileMode(Directory);
+                const UnixFileMode shared =
+                    UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.GroupExecute |
+                    UnixFileMode.OtherRead | UnixFileMode.OtherWrite | UnixFileMode.OtherExecute;
+                if ((mode & shared) != 0) {
+                    File.SetUnixFileMode(Directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+                }
+                return true;
+            } catch (Exception e) {
+                Log.Warning(e,
+                    $"DAW: discovery directory '{Directory}' is not user-private and could not be " +
+                    $"tightened; refusing to touch it (§11).");
+                return false;
+            }
+        }
 
         private static void TryDelete(string path) {
             try {

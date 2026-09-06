@@ -19,6 +19,8 @@ namespace OpenUtau.Core.DawIntegration {
         HeartbeatTimeout,
         /// <summary>Framing violation. Never retried without a fresh handshake.</summary>
         ProtocolError,
+        /// <summary>A control request outlived its timeout budget, so the peer is wedged (§8).</summary>
+        RequestTimeout,
         /// <summary>Socket ended or faulted.</summary>
         StreamClosed,
         /// <summary>We asked to close.</summary>
@@ -271,6 +273,12 @@ namespace OpenUtau.Core.DawIntegration {
             }
             // A short read here is unrecoverable: the stream position is lost (§8).
             byte[] payload = await reader.ReadExactlyAsync(length, cancellation);
+            // §5.2: the header names the hash of the payload that follows. A peer that labels
+            // unrelated bytes with the requested hash would otherwise be served as a cache hit,
+            // so the payload is verified before any waiter is completed.
+            if (!string.Equals(DawAudio.FormatHash(DawAudio.Hash(payload)), hash, StringComparison.Ordinal)) {
+                throw new DawProtocolException($"Audio payload does not match its declared hash {hash}.");
+            }
             if (pendingAudio.TryRemove(hash, out var waiter)) {
                 waiter.TrySetResult(payload);
                 return;
@@ -450,14 +458,29 @@ namespace OpenUtau.Core.DawIntegration {
 
         /// <summary>
         /// Writes a data-plane frame: header line then exactly <c>pcm.Length</c> bytes, under the
-        /// same write mutex so no control line can interleave into the payload (§5.2).
+        /// same write mutex so no control line can interleave into the payload (§5.2). The two
+        /// writes are separate: copying header and payload into one buffer would double the peak
+        /// memory of a legal 256 MiB frame.
         /// </summary>
+        /// <exception cref="DawProtocolException">The payload exceeds the data-plane bound (§6.1).</exception>
         public async Task SendAudioFrameAsync(string hash, byte[] pcm, CancellationToken cancellation = default) {
+            if (pcm.Length > DawAudio.MaxFrameBytes) {
+                throw new DawProtocolException(
+                    $"Audio frame of {pcm.Length} bytes exceeds the {DawAudio.MaxFrameBytes}-byte data-plane bound.");
+            }
             var header = DawAudio.BuildFrameHeader(hash, pcm.Length);
-            var frame = new byte[header.Length + pcm.Length];
-            Buffer.BlockCopy(header, 0, frame, 0, header.Length);
-            Buffer.BlockCopy(pcm, 0, frame, header.Length, pcm.Length);
-            await WriteAsync(frame, cancellation);
+            if (!IsConnected) {
+                throw new DawProtocolException("Connection is closed.");
+            }
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellation, shutdown.Token);
+            await writeLock.WaitAsync(linked.Token);
+            try {
+                await stream.WriteAsync(header, linked.Token);
+                await stream.WriteAsync(pcm, linked.Token);
+                await stream.FlushAsync(linked.Token);
+            } finally {
+                writeLock.Release();
+            }
         }
 
         /// <summary>User-initiated teardown: bare <c>close</c>, then stop (§5.1, §9).</summary>
@@ -495,6 +518,10 @@ namespace OpenUtau.Core.DawIntegration {
             try {
                 return await task.WaitAsync(timeout, linked.Token);
             } catch (TimeoutException) {
+                // §8: a peer that never answers is wedged — it can keep pinging forever without
+                // ever answering a request. Stop the transport so the heartbeat cannot mask the
+                // wedge and reconnect handling starts now, then report the timeout to the caller.
+                Stop(DawDisconnectReason.RequestTimeout, $"{what} timed out after {timeout.TotalSeconds:F1}s.");
                 throw new TimeoutException($"{what} timed out after {timeout.TotalSeconds:F1}s.");
             } catch (OperationCanceledException) when (shutdown.IsCancellationRequested && !cancellation.IsCancellationRequested) {
                 throw new DawProtocolException($"Connection closed while waiting for {what}.");

@@ -158,9 +158,41 @@ namespace OpenUtau.Core.DawIntegration {
             var (openutau, plugin) = await PairAsync();
             // A handler that never answers is exactly the §8 case: the peer is wedged.
             plugin.RequestHandler = _ => new TaskCompletionSource<bool>().Task;
+            var ended = new TaskCompletionSource<DawDisconnectReason>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            openutau.Disconnected += (reason, _) => ended.TrySetResult(reason);
 
             await Assert.ThrowsAsync<TimeoutException>(() => openutau.SendRequestAsync(
                 DawMessageKind.Init, new DawEmptyPayload(), TimeSpan.FromMilliseconds(150)));
+
+            // §8: a wedged peer can keep pinging forever, so the transport must not stay
+            // connected after a request timeout — reconnect handling has to start now.
+            Assert.Equal(DawDisconnectReason.RequestTimeout, await ended.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.False(openutau.IsConnected);
+        }
+
+        [Fact]
+        public async Task AudioFrameWithMismatchedHashIsRejected() {
+            var (openutau, plugin) = await PairAsync();
+            byte[] pcm = Enumerable.Range(0, 1024).Select(i => (byte)(i % 256)).ToArray();
+            var ended = new TaskCompletionSource<DawDisconnectReason>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            openutau.Disconnected += (reason, _) => ended.TrySetResult(reason);
+            // §5.2: the header must name the hash of the payload that follows. The plugin answers
+            // with a header hash that does not describe the bytes it sends — a lying peer that
+            // would otherwise poison the audio cache with unrelated bytes.
+            string wrongHash = DawAudio.FormatHash(DawAudio.Hash(pcm) ^ 0x5a5a5a5aUL);
+            plugin.RequestHandler = request => request.RespondWithAudioAsync(
+                request.ReadPayload<GetAudioRequest>().Hash, pcm);
+
+            // The read loop rejects the frame before completing the waiter and stops the
+            // transport, so the caller observes the stop — either as the protocol detail or as
+            // the shutdown, depending on which wins the race — never a completed pull.
+            await Assert.ThrowsAnyAsync<DawProtocolException>(
+                () => openutau.GetAudioAsync(wrongHash, TimeSpan.FromSeconds(5)));
+
+            // A framing-level lie is a protocol error, not something to keep the socket open for.
+            Assert.Equal(DawDisconnectReason.ProtocolError, await ended.Task.WaitAsync(TimeSpan.FromSeconds(5)));
         }
 
         [Fact]
