@@ -109,7 +109,7 @@ namespace OpenUtau.Core.DiffSinger
             return token;
         }
         
-        public RenderPitchResult Process(RenderPhrase phrase, HashSet<int>? retakeNoteIndexes = null, float[]? existingPitch = null){
+        public RenderPitchResult Process(RenderPhrase phrase, double? pitchStepsOverride = null, bool fastRealtime = false, HashSet<int>? retakeNoteIndexes = null, float[]? existingPitch = null){
             var startMs = phrase.phones[0].positionMs - DiffSingerUtils.GetHeadMs(frameMs);
             int headFrames = DiffSingerUtils.headFrames;
             int tailFrames = DiffSingerUtils.tailFrames;
@@ -122,12 +122,8 @@ namespace OpenUtau.Core.DiffSinger
             }
             //Linguistic Encoder
             var linguisticInputs = new List<NamedOnnxValue>();
-            var tokens = phrase.phones
-                .Select(p => p.phoneme)
-                .Prepend("SP")
-                .Append("SP")
-                .Select(x => (Int64)PhonemeTokenize(x))
-                .ToArray();
+            var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            var tokens = segments.Select(x => (Int64)PhonemeTokenize(x.Phoneme)).ToArray();
             var ph_dur = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames);
             int totalFrames = ph_dur.Sum();
             linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("tokens",
@@ -135,7 +131,7 @@ namespace OpenUtau.Core.DiffSinger
                 .Reshape(new int[] { 1, tokens.Length })));
             if(dsConfig.predict_dur){
                 //if predict_dur is true, use word encode mode
-                var (word_div, word_dur) = DiffSingerUtils.PaddedWordDivAndDur(phrase, ph_dur, g2p.IsVowel);
+                var (word_div, word_dur) = DiffSingerUtils.PaddedWordDivAndDur(phrase, ph_dur, g2p.IsVowel, frameMs, headFrames, tailFrames);
                 linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_div",
                     new DenseTensor<Int64>(word_div, new int[] { word_div.Length }, false)
                     .Reshape(new int[] { 1, word_div.Length })));
@@ -150,13 +146,10 @@ namespace OpenUtau.Core.DiffSinger
             }
             //Language id
             if(dsConfig.use_lang_id){
-                var langIdByPhone = phrase.phones
-                    .Select(p => (long)languageIds.GetValueOrDefault(
-                        DiffSingerUtils.PhonemeLanguage(p.phoneme),0
-                        ))
-                    .Prepend(0)
-                    .Append(0)
-                    .ToArray();
+                var langIdByPhone = DiffSingerUtils.PaddedLanguageIds(
+                    phrase, frameMs, headFrames, tailFrames,
+                    phoneme => (long)languageIds.GetValueOrDefault(
+                        DiffSingerUtils.PhonemeLanguage(phoneme), 0));
                 var langIdTensor = new DenseTensor<Int64>(langIdByPhone, new int[] { langIdByPhone.Length }, false)
                     .Reshape(new int[] { 1, langIdByPhone.Length });
                 linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("languages", langIdTensor));
@@ -169,8 +162,10 @@ namespace OpenUtau.Core.DiffSinger
             var linguisticOutputs = linguisticCache?.Load();
             if (linguisticOutputs is null) {
                 linguisticOutputs = linguisticModel.Run(linguisticInputs).Cast<NamedOnnxValue>().ToList();
-                linguisticCache?.Save(linguisticOutputs);
-                phrase.AddCacheFile(linguisticCache?.Filename);
+                if (!fastRealtime) {
+                    linguisticCache?.Save(linguisticOutputs);
+                    phrase.AddCacheFile(linguisticCache?.Filename);
+                }
             }
             Tensor<float> encoder_out = linguisticOutputs
                 .Where(o => o.Name == "encoder_out")
@@ -286,18 +281,11 @@ namespace OpenUtau.Core.DiffSinger
             pitchInputs.Add(NamedOnnxValue.CreateFromTensor("retake",
                 new DenseTensor<bool>(retake, new int[] { retake.Length }, false)
                 .Reshape(new int[] { 1, retake.Length })));
-            var steps = Preferences.Default.DiffSingerStepsPitch;
-            if (dsConfig.useContinuousAcceleration) {
-                pitchInputs.Add(NamedOnnxValue.CreateFromTensor("steps",
-                    new DenseTensor<long>(new long[] { steps }, new int[] { 1 }, false)));
+            if (pitchStepsOverride.HasValue) {
+                AddPitchSamplingInputs(pitchInputs, pitchStepsOverride.Value);
             } else {
-                // find a largest integer speedup that are less than 1000 / steps and is a factor of 1000
-                long speedup = Math.Max(1, 1000 / steps);
-                while (1000 % speedup != 0 && speedup > 1) {
-                    speedup--;
-                }
-                pitchInputs.Add(NamedOnnxValue.CreateFromTensor("speedup",
-                    new DenseTensor<long>(new long[] { speedup }, new int[] { 1 },false)));
+                var steps = Preferences.Default.DiffSingerStepsPitch;
+                AddPitchSamplingInputs(pitchInputs, steps);
             }
 
             //expressiveness
@@ -352,6 +340,56 @@ namespace OpenUtau.Core.DiffSinger
                     retakeMask = retakeNoteIndexes != null ? retake : null,
                 };
             }
+        }
+
+        const int DiffusionTimesteps = 1000;
+
+        /// <summary>
+        /// Maps requested sampling steps to ONNX inputs. Values below 1 use shallow depth (0.5 → depth 0.5)
+        /// when the pitch model exposes a depth input; otherwise falls back to the fastest single step.
+        /// </summary>
+        void AddPitchSamplingInputs(List<NamedOnnxValue> pitchInputs, double steps) {
+            var inputNames = pitchModel.InputNames.ToHashSet();
+            if (steps < 1.0 && inputNames.Contains("depth")) {
+                double depth = Math.Clamp(steps, 0.01, 1.0);
+                long samplingSteps = 1;
+                if (dsConfig.useContinuousAcceleration) {
+                    pitchInputs.Add(NamedOnnxValue.CreateFromTensor("depth",
+                        new DenseTensor<float>(new float[] { (float)depth }, new int[] { 1 }, false)));
+                    pitchInputs.Add(NamedOnnxValue.CreateFromTensor("steps",
+                        new DenseTensor<long>(new long[] { samplingSteps }, new int[] { 1 }, false)));
+                } else {
+                    long int64Depth = Math.Clamp((long)Math.Round(depth * DiffusionTimesteps), 1, DiffusionTimesteps);
+                    long speedup = Math.Max(1, int64Depth / samplingSteps);
+                    while (int64Depth % speedup != 0 && speedup > 1) {
+                        speedup--;
+                    }
+                    int64Depth = int64Depth / speedup * speedup;
+                    pitchInputs.Add(NamedOnnxValue.CreateFromTensor("depth",
+                        new DenseTensor<long>(new long[] { int64Depth }, new int[] { 1 }, false)));
+                    pitchInputs.Add(NamedOnnxValue.CreateFromTensor("speedup",
+                        new DenseTensor<long>(new long[] { speedup }, new int[] { 1 }, false)));
+                }
+                return;
+            }
+            if (dsConfig.useContinuousAcceleration) {
+                long intSteps = (long)Math.Max(1, Math.Round(steps));
+                pitchInputs.Add(NamedOnnxValue.CreateFromTensor("steps",
+                    new DenseTensor<long>(new long[] { intSteps }, new int[] { 1 }, false)));
+                return;
+            }
+            long fullSpeedup = ComputePitchSpeedup(steps);
+            pitchInputs.Add(NamedOnnxValue.CreateFromTensor("speedup",
+                new DenseTensor<long>(new long[] { fullSpeedup }, new int[] { 1 }, false)));
+        }
+
+        static long ComputePitchSpeedup(double steps) {
+            steps = Math.Max(0.5, steps);
+            long speedup = (long)Math.Max(1, Math.Round(DiffusionTimesteps / steps));
+            while (DiffusionTimesteps % speedup != 0 && speedup > 1) {
+                speedup--;
+            }
+            return speedup;
         }
 
         private bool disposedValue;

@@ -44,12 +44,11 @@ namespace OpenUtau.App.ViewModels {
                         Preview = ThemeManager.GetString("errors.lyrics.regexpreview");
                     }
                 });
-            this.WhenValueChanged(x => SelectedPreset)
-                .OfType<ReplacePreset>()
+            this.WhenAnyValue(x => x.SelectedPreset)
                 .Subscribe(p => {
-                    if (SelectedPreset != null) {
-                        OldValue = SelectedPreset.OldValue;
-                        NewValue = SelectedPreset.NewValue;
+                    if (p != null) {
+                        OldValue = p.OldValue;
+                        NewValue = p.NewValue;
                     }
                 });
         }

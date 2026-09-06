@@ -1,6 +1,5 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using DynamicData.Binding;
 using OpenUtau.Core;
@@ -55,23 +54,36 @@ namespace OpenUtau.App.ViewModels {
                 return;
             }
             var scheduler = TaskScheduler.FromCurrentSynchronizationContext();
-            Task.Run(() => singer.GetSuggestions(Text ?? "").Select(oto => new SuggestionItem() {
-                Alias = oto.Alias,
-                Source = string.IsNullOrEmpty(oto.Set) ? singer.Id : $"{oto.Set}",
+            Task.Run(() => singer.GetSuggestions(Text ?? "", IsAliasBox).Select(oto => new SuggestionItem() {
+                Alias = oto.Key,
+                Source = string.IsNullOrEmpty(oto.Value.Set)
+                    ? singer.Id
+                    : oto.Key == oto.Value.Alias
+                        ? $"{oto.Value.Set}"
+                        : ThemeManager.GetString("oto.phonetic"),
             }).Take(32).ToList()).ContinueWith(task => {
                 Suggestions.Clear();
                 if (!string.IsNullOrEmpty(Text) && Core.Util.ActiveLyricsHelper.Inst.Current != null) {
                     string text = Core.Util.ActiveLyricsHelper.Inst.Current.Convert(Text);
-                    if (Core.Util.Preferences.Default.LyricsHelperBrackets) {
-                        text = $"[{text}]";
-                    }
                     Suggestions.Add(new SuggestionItem() {
                         Alias = text,
                         Source = Core.Util.ActiveLyricsHelper.Inst.Current.Source,
                     });
+                    if (Core.Util.Preferences.Default.LyricsHelperBrackets) {
+                        text = $"[{text}]";
+                        Suggestions.Add(new SuggestionItem() {
+                            Alias = text,
+                            Source = Core.Util.ActiveLyricsHelper.Inst.Current.Source,
+                        });
+                    }
                 }
                 if (!task.IsFaulted) {
-                    Suggestions.AddRange(task.Result);
+                    var seenAliases = Suggestions
+                        .Select(s => s.Alias)
+                        .ToHashSet();
+                    var uniqueResults = ((Task<List<SuggestionItem>>)task).Result
+                        .Where(s => !string.IsNullOrEmpty(s.Alias) && seenAliases.Add(s.Alias));
+                    Suggestions.AddRange(uniqueResults);
                 }
             }, scheduler);
         }

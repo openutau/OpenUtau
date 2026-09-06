@@ -81,8 +81,12 @@
             </ComboBox.ItemTemplate>
           </ComboBox>
           <Grid Margin="0,5,0,0">
-            <TextBlock Text="{DynamicResource prefs.advanced.beta}" HorizontalAlignment="Left"/>
-            <ToggleSwitch IsChecked="{Binding Beta}"/>
+            <TextBlock Text="{DynamicResource prefs.channel}" HorizontalAlignment="Left"/>
+            <ComboBox SelectedIndex="{Binding Channel}" HorizontalAlignment="Right" Width="120">
+              <ComboBoxItem Content="{DynamicResource prefs.channel.stable}"/>
+              <ComboBoxItem Content="{DynamicResource prefs.channel.beta}"/>
+              <ComboBoxItem Content="{DynamicResource prefs.channel.alpha}"/>
+            </ComboBox>
           </Grid>
           <TextBlock Classes="restart"/>
         </StackPanel>
@@ -98,9 +102,10 @@
           <ComboBox ItemsSource="{Binding AudioOutputDevices}" SelectedItem="{Binding AudioOutputDevice}" IsEnabled="{Binding !UseSystemDefaultDevice}"/>
           <Button Content="{DynamicResource prefs.playback.test}" HorizontalAlignment="Stretch" Command="{Binding TestAudioOutputDevice}"/>
           <TextBlock Text="{DynamicResource prefs.playback.backend}" Margin="0,10,0,0"/>
-          <ComboBox SelectedIndex="{Binding PreferPortAudio}">
+          <ComboBox SelectedIndex="{Binding AudioBackEnd}">
             <ComboBoxItem Content="{DynamicResource prefs.playback.backend.auto}"/>
             <ComboBoxItem Content="{DynamicResource prefs.playback.backend.mini}"/>
+            <ComboBoxItem Content="{DynamicResource prefs.playback.backend.sdl3}"/>
           </ComboBox>
           <TextBlock Classes="restart"/>
           <TextBlock Text="{DynamicResource prefs.playback.lockstarttime}" Margin="0,10,0,0"/>
@@ -127,6 +132,47 @@
             <Slider Grid.Column="4" Classes="fader" Value="{Binding PlayPosMarkerMargin}" Minimum="0" Maximum="1"
                     TickPlacement="BottomRight" TickFrequency="0.1" IsSnapToTickEnabled="true"/>
           </Grid>
+          <TextBlock Text="{DynamicResource prefs.playback.metronome}" Margin="0,10,0,0"/>
+          <Grid ColumnDefinitions="Auto,8,30,8,*" Margin="0,10,0,0">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.playback.metronome.volume}"/>
+            <TextBlock Grid.Column="2">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="{}{0:#0}">
+                  <Binding Path="MetronomeVolume"/>
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding MetronomeVolume}" Minimum="0" Maximum="100" Tag="MetronomeVolume"
+                    PointerPressed="OnMetronomeSliderPointerPressed"
+                    TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="true"/>
+          </Grid>
+          <Grid ColumnDefinitions="Auto,8,40,8,*" Margin="0,10,0,0">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.playback.metronome.highfrequency}"/>
+            <TextBlock Grid.Column="2">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="{}{0:#0}">
+                  <Binding Path="MetronomeHighFrequency"/>
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding MetronomeHighFrequency}" Minimum="20" Maximum="5000" Tag="MetronomeHighFrequency"
+                    PointerPressed="OnMetronomeSliderPointerPressed"
+                    TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="true"/>
+          </Grid>
+          <Grid ColumnDefinitions="Auto,8,40,8,*" Margin="0,10,0,0">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.playback.metronome.lowfrequency}"/>
+            <TextBlock Grid.Column="2">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="{}{0:#0}">
+                  <Binding Path="MetronomeLowFrequency"/>
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding MetronomeLowFrequency}" Minimum="20" Maximum="3000" Tag="MetronomeLowFrequency"
+                    PointerPressed="OnMetronomeSliderPointerPressed"
+                    TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="true"/>
+          </Grid>
+          <Button Content="{DynamicResource prefs.playback.test}" HorizontalAlignment="Stretch" Command="{Binding TestMetronome}"/>
         </StackPanel>
 
         <!-- Paths -->
@@ -264,6 +310,18 @@
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.showghostnotes}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding ShowGhostNotes}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.appearance.notehoverglow}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding NoteHoverGlow}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.appearance.playbacknotehighlight}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding ShowPlaybackNoteHighlight}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.appearance.playbacknotebounce}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding ShowPlaybackNoteBounce}"/>
           </Grid>
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.detachpianoroll}" HorizontalAlignment="Left"/>

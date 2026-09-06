@@ -53,6 +53,12 @@ namespace OpenUtau.App.Controls {
         private DateTime mixUnlockTime = DateTime.MinValue;
         private bool wasRendering = false;
 
+        // Waveform peak color, shared by the bitmap peaks and the phrase bound border.
+        private const int WaveformArgb = 0x7F7F7F7F;
+        private static readonly IBrush WaveformBorderBrush = new SolidColorBrush(Color.FromArgb(0x7F, 0x7F, 0x7F, 0x7F));
+        private IBrush? cachedFillBrush;
+        private Color? cachedFillColor;
+
         public WaveformImage() {
             MessageBus.Current.Listen<WaveformRefreshEvent>()
                 .Subscribe(e => {
@@ -142,12 +148,80 @@ namespace OpenUtau.App.Controls {
 
                         if (snapProgress < 1.0) needsAnotherFrame = true;
 
+                        // Phrase audio-range bounds, drawn behind the waveform.
+                        {
+                            double width = Bounds.Width;
+                            double h = Bounds.Height;
+                            IBrush fill;
+                            if (ThemeManager.BackgroundBrush is SolidColorBrush bg) {
+                                if (cachedFillBrush == null || cachedFillColor != bg.Color) {
+                                    cachedFillBrush = new SolidColorBrush(bg.Color) { Opacity = 0.75 };
+                                    cachedFillColor = bg.Color;
+                                }
+                                fill = cachedFillBrush;
+                            } else {
+                                fill = ThemeManager.BackgroundBrush;
+                            }
+                            var pen = new Pen(WaveformBorderBrush, 0.5);
+                            double xOrigin = viewModel.TickOrigin + viewModel.TickOffset;
+                            // Clip so out-of-viewport phrases don't draw into the keys or scroll bar.
+                            using (var state = context.PushClip(new RoundedRect(new Rect(0, 0, width, h), 0, 0))) {
+                                // Fills then borders, so a border isn't hidden by an overlapping fill.
+                                for (int pass = 0; pass < 2; pass++) {
+                                    var brush = pass == 0 ? fill : null;
+                                    var stroke = pass == 0 ? null : pen;
+                                    foreach (var phrase in part.renderPhrases) {
+                                        (double pStartMs, double pEndMs) = phrase.AudioRange;
+                                        double x1 = Math.Round((project.timeAxis.MsPosToTickPos(pStartMs) - xOrigin) * viewModel.TickWidth) + 0.5;
+                                        double x2 = Math.Round((project.timeAxis.MsPosToTickPos(pEndMs) - xOrigin) * viewModel.TickWidth) + 0.5;
+                                        if (x2 < 0 || x1 > width) {
+                                            continue;
+                                        }
+                                        var rect = new Rect(x1, 0.5, Math.Max(1.0, x2 - x1), Math.Max(1.0, h - 1.0));
+                                        double radius = h / 4.0;
+                                        context.DrawGeometry(brush, stroke, new RectangleGeometry(rect, radius, radius));
+                                    }
+                                }
+                            }
+                        }
+
+                        // Phrase audio ranges as [startMs, endMs] pairs, matching
+                        // the WaveSource layout of the mix, so that time ranges
+                        // without any phrase are left blank instead of drawing a
+                        // zero-volume line. Silence inside a phrase still draws.
+                        double[]? phraseRanges = null;
+                        if (part.renderPhrases.Count > 0) {
+                            phraseRanges = new double[part.renderPhrases.Count * 2];
+                            for (int p = 0; p < part.renderPhrases.Count; ++p) {
+                                (double rangeStartMs, double rangeEndMs) = part.renderPhrases[p].AudioRange;
+                                phraseRanges[p * 2] = rangeStartMs;
+                                phraseRanges[p * 2 + 1] = rangeEndMs;
+                            }
+                        }
+
                         int startSample = 0;
+                        double columnStartMs = leftMs;
                         for (int i = 0; i < bitmap.PixelSize.Width; ++i) {
                             double endTick = viewModel.TickOrigin + viewModel.TickOffset + (i + 1.0) / viewModel.TickWidth;
                             double endMs = project.timeAxis.TickPosToMsPos(endTick);
                             int endSample = Math.Clamp((int)((endMs - leftMs) * 44100 / 1000) * 2, 0, sampleCount);
-                            
+
+                            // Skip drawing where no phrase has audio.
+                            bool covered = false;
+                            if (phraseRanges != null) {
+                                for (int p = 0; p < phraseRanges.Length; p += 2) {
+                                    if (phraseRanges[p + 1] > columnStartMs && phraseRanges[p] < endMs) {
+                                        covered = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!covered) {
+                                startSample = endSample;
+                                columnStartMs = endMs;
+                                continue;
+                            }
+
                             if (endSample > startSample) {
                                 float rawMin = float.MaxValue;
                                 float rawMax = float.MinValue;
@@ -167,6 +241,7 @@ namespace OpenUtau.App.Controls {
                                 DrawPeak(bitmapData, bitmap.PixelSize.Width, i, (int)Math.Round(yMin), (int)Math.Round(yMax));
                             }
                             startSample = endSample;
+                            columnStartMs = endMs;
                         }
 
                         if (needsAnotherFrame) {
@@ -205,7 +280,7 @@ namespace OpenUtau.App.Controls {
         }
 
         private void DrawPeak(int[] data, int width, int x, int y1, int y2) {
-            const int color = 0x7F7F7F7F;
+            int color = WaveformArgb;
             if (y1 > y2) {
                 int temp = y2;
                 y2 = y1;

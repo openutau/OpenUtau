@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using OpenUtau.App.ViewModels;
@@ -15,6 +16,28 @@ namespace OpenUtau.App.Views {
 
         public PreferencesDialog() {
             InitializeComponent();
+        }
+
+        void OnMetronomeSliderPointerPressed(object? sender, PointerPressedEventArgs e) {
+            if (sender is not Slider slider || viewModel == null) {
+                return;
+            }
+            var point = e.GetCurrentPoint(slider);
+            if (!point.Properties.IsRightButtonPressed) {
+                return;
+            }
+            switch (slider.Tag as string) {
+                case "MetronomeVolume":
+                    viewModel.ResetMetronomeVolume();
+                    break;
+                case "MetronomeHighFrequency":
+                    viewModel.ResetMetronomeHighFrequency();
+                    break;
+                case "MetronomeLowFrequency":
+                    viewModel.ResetMetronomeLowFrequency();
+                    break;
+            }
+            e.Handled = true;
         }
 
         void OpenSingersFolder(object sender, RoutedEventArgs e) {

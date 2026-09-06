@@ -18,21 +18,32 @@ using Serilog;
 
 namespace OpenUtau.App.ViewModels {
     public partial class UpdaterViewModel : ViewModelBase {
-        class GithubReleaseAsset {
+        public class GithubReleaseAsset {
             public string name = string.Empty;
             public string browser_download_url = string.Empty;
         }
-        class GithubRelease {
+        public class GithubRelease {
 #pragma warning disable 0649
             public string html_url = string.Empty;
             public long id = long.MaxValue;
             public bool draft;
             public bool prerelease;
+            public string tag_name = string.Empty;
             public string name = string.Empty;
             public GithubReleaseAsset[] assets = new GithubReleaseAsset[0];
 #pragma warning restore 0649
         }
-        public string AppVersion => $"v{System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}";
+        public string AppVersion {
+            get {
+                // The channel is derived from the build's own version, not the
+                // update channel pref, which the user may have switched to a
+                // different one.
+                Version? version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version;
+                string suffix = Core.Util.ReleaseChannel.FromVersion(version) is { } channel
+                    ? $" ({channel})" : string.Empty;
+                return $"v{version}{suffix}";
+            }
+        }
         public bool IsDarkMode => ThemeManager.IsDarkMode;
         [Reactive] public partial string UpdaterStatus { get; set; }
         [Reactive] public partial bool UpdateAvailable { get; set; }
@@ -79,12 +90,29 @@ namespace OpenUtau.App.ViewModels {
             }
         }
 
+        // Channel filter for GitHub releases. Alpha builds are published as
+        // prereleases tagged `<version>-alpha`, beta builds as prereleases
+        // tagged `<version>-beta`. The alpha channel is the superset: it
+        // sees both alpha and beta releases.
+        public static bool IsReleaseForChannel(GithubRelease release, string channel) {
+            if (release.draft) {
+                return false;
+            }
+            return channel switch {
+                "alpha" => release.prerelease,
+                "beta" => release.prerelease && !release.tag_name.EndsWith("-alpha"),
+                _ => !release.prerelease,
+            };
+        }
+
         static async Task<GithubRelease?> SelectRelease() {
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.DefaultRequestHeaders.Add("User-Agent", "Other");
             client.Timeout = TimeSpan.FromSeconds(30);
-            using var resposne = await client.GetAsync("https://api.github.com/repos/stakira/OpenUtau/releases");
+            // per_page=100: with frequent alpha releases, the default 30-item
+            // page could push the release of the current channel off-page.
+            using var resposne = await client.GetAsync("https://api.github.com/repos/stakira/OpenUtau/releases?per_page=100");
             resposne.EnsureSuccessStatusCode();
             string respBody = await resposne.Content.ReadAsStringAsync();
             List<GithubRelease>? releases = JsonConvert.DeserializeObject<List<GithubRelease>>(respBody);
@@ -92,7 +120,7 @@ namespace OpenUtau.App.ViewModels {
                 return null;
             }
             return releases
-                .Where(r => !r.draft && r.prerelease == Preferences.Default.Beta)
+                .Where(r => IsReleaseForChannel(r, Preferences.Default.Channel))
                 .OrderByDescending(r => r.id)
                 .FirstOrDefault();
         }
@@ -183,7 +211,9 @@ namespace OpenUtau.App.ViewModels {
                 updateInfo.Status == UpdateStatus.UserSkipped) &&
                 updateInfo.Updates.Count > 0) {
                 Log.Information($"Skipping update {updateInfo.Updates[0].Version}");
-                Preferences.Default.SkipUpdate = updateInfo.Updates[0].Version.ToString();
+                // Skip is per-channel so that skipping e.g. an alpha build does
+                // not suppress the same-target beta or stable release.
+                Preferences.Default.SkipUpdate = $"{Preferences.Default.Channel}:{updateInfo.Updates[0].Version}";
                 Preferences.Save();
             }
         }

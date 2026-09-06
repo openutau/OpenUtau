@@ -17,6 +17,9 @@ namespace OpenUtau.App {
         public override void Initialize() {
             Log.Information("Initializing application.");
             AvaloniaXamlLoader.Load(this);
+#if DEBUG
+            this.AttachDeveloperTools();
+#endif
             InitializeCulture();
             InitializeTheme();
             Log.Information("Initialized application.");

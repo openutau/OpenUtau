@@ -136,11 +136,8 @@ namespace OpenUtau.Core.DiffSinger{
             }
             //Linguistic Encoder
             var linguisticInputs = new List<NamedOnnxValue>();
-            var tokens = phrase.phones.Select(p => p.phoneme)
-                .Prepend("SP")
-                .Append("SP")
-                .Select(x => (Int64)PhonemeTokenize(x))
-                .ToArray();
+            var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            var tokens = segments.Select(x => (Int64)PhonemeTokenize(x.Phoneme)).ToArray();
             var ph_dur = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames);
             int totalFrames = ph_dur.Sum();
             linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("tokens",
@@ -148,7 +145,7 @@ namespace OpenUtau.Core.DiffSinger{
                 .Reshape(new int[] { 1, tokens.Length })));
             if(dsConfig.predict_dur){
                 //if predict_dur is true, use word encode mode
-                var (word_div, word_dur) = DiffSingerUtils.PaddedWordDivAndDur(phrase, ph_dur, g2p.IsVowel);
+                var (word_div, word_dur) = DiffSingerUtils.PaddedWordDivAndDur(phrase, ph_dur, g2p.IsVowel, frameMs, headFrames, tailFrames);
                 linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_div",
                     new DenseTensor<Int64>(word_div, new int[] { word_div.Length }, false)
                     .Reshape(new int[] { 1, word_div.Length })));
@@ -163,13 +160,10 @@ namespace OpenUtau.Core.DiffSinger{
             }
             //Language id
             if(dsConfig.use_lang_id){
-                var langIdByPhone = phrase.phones
-                    .Select(p => (long)languageIds.GetValueOrDefault(
-                        DiffSingerUtils.PhonemeLanguage(p.phoneme),0
-                        ))
-                    .Prepend(0)
-                    .Append(0)
-                    .ToArray();
+                var langIdByPhone = DiffSingerUtils.PaddedLanguageIds(
+                    phrase, frameMs, headFrames, tailFrames,
+                    phoneme => (long)languageIds.GetValueOrDefault(
+                        DiffSingerUtils.PhonemeLanguage(phoneme), 0));
                 var langIdTensor = new DenseTensor<Int64>(langIdByPhone, new int[] { langIdByPhone.Length }, false)
                     .Reshape(new int[] { 1, langIdByPhone.Length });
                 linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("languages", langIdTensor));
