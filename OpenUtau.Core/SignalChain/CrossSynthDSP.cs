@@ -62,6 +62,8 @@ namespace OpenUtau.Core.SignalChain {
             int totalFrames = (maxLen - FFT_SIZE) / HOP_SIZE + 1;
             if (totalFrames <= 0) return (float[])baseAudio.Clone();
 
+            bool usePhaseLocked = Preferences.Default.PhaseLocked;
+
             for (int f = 0; f < totalFrames; f++) {
                 int posBase = f * HOP_SIZE;
 
@@ -75,7 +77,7 @@ namespace OpenUtau.Core.SignalChain {
                     sumWeights += weights[c];
                 }
 
-                // Bypass unmodulated segments: Exact OLA reconstruction
+                // Bypass unmodulated frames
                 if (sumWeights < BYPASS_RATIO) {
                     for (int i = 0; i < FFT_SIZE; i++) {
                         float w = win[i];
@@ -120,7 +122,7 @@ namespace OpenUtau.Core.SignalChain {
                 for (int k = 0; k < HALF; k++) {
                     double magBase = Math.Sqrt(reBase[k] * reBase[k] + imBase[k] * imBase[k]);
 
-                    // Equal-power / Geometric magnitude blend prevents volume inflation
+                    // Equal-power / Geometric magnitude blend
                     double linMag = baseWeight * magBase;
                     double logMag = baseWeight * Math.Log(magBase + EPS);
                     double minMag = magBase;
@@ -140,9 +142,7 @@ namespace OpenUtau.Core.SignalChain {
                     double silenceGate = Math.Clamp(magBase / 0.001, 0.0, 1.0);
                     magOut *= silenceGate;
 
-                    // Phase locked to base voice
-                    bool usePhaseLocked = Preferences.Default.PhaseLocked;
-
+                    // Complex vector sum
                     Complex targetComplex = new Complex(reBase[k], imBase[k]) * baseWeight;
                     for (int c = 0; c < numColors; c++) {
                         targetComplex += new Complex(reColors[c][k], imColors[c][k]) * weights[c];
@@ -152,18 +152,17 @@ namespace OpenUtau.Core.SignalChain {
                     Complex blended;
 
                     if (usePhaseLocked) {
-                        // Coherence measurement: checks if phase cancellation is happening
+                        // Auto phase-locking: adaptive coherence transition
                         double compMag = targetComplex.Magnitude;
                         double coherence = (magOut > 1e-8) ? Math.Clamp(compMag / magOut, 0.0, 1.0) : 1.0;
-                        
-                        // Smooth S-curve transition between locked base phase and complex phase
                         double blendFactor = coherence * coherence * (3.0 - 2.0 * coherence);
+
                         Complex pureLocked = Complex.FromPolarCoordinates(magOut, phsBase);
                         Complex freeComplex = Complex.FromPolarCoordinates(magOut, targetComplex.Phase);
 
                         blended = (pureLocked * (1.0 - blendFactor)) + (freeComplex * blendFactor);
                     } else {
-                        // Unlocked: follows the natural vector phase sum
+                        // Unlocked: follows complex phase sum
                         blended = Complex.FromPolarCoordinates(magOut, targetComplex.Phase);
                     }
 
@@ -179,7 +178,8 @@ namespace OpenUtau.Core.SignalChain {
                 fft.Inverse(reOut, imOut);
                 for (int i = 0; i < FFT_SIZE; i++) {
                     float w = win[i];
-                    output[posBase + i] += reOut[i] * invN * w;
+                    // Symmetric w * w ensures proper normalization at boundaries
+                    output[posBase + i] += reOut[i] * invN * w * w;
                     wsum[posBase + i] += w * w;
                 }
             }
