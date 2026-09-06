@@ -171,6 +171,7 @@ namespace OpenUtau.Core.Util {
             public int NumRenderThreads = 2;
             public string DefaultRenderer = string.Empty;
             public int WorldlineR = 0;
+            public bool ExtendEndingPhonemes = false;
             public string OnnxRunner = string.Empty;
             public int OnnxGpu = 0;
             /// <summary>

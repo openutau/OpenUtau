@@ -136,6 +136,11 @@ namespace OpenUtau.Api {
             /// </summary>
             public List<PhonemeExpression> expressions;
 
+            /// <summary>
+            /// When set to false, disables clumping specifically for this individual phoneme.
+            /// </summary>
+            public bool? clump;
+
             public override string ToString() => $"\"{phoneme}\" pos:{position}";
         }
 
@@ -320,5 +325,11 @@ namespace OpenUtau.Api {
             }
             return phoneme;
         }
+
+        /// <summary>
+        /// Controls whether ending/tail phonemes are clamped to note bounds or allowed to extend into trailing rests.
+        /// Set to false to allow dynamic, free-hanging release tails.
+        /// </summary>
+        public virtual bool ClumpEndingPhonemes => true;
     }
 }

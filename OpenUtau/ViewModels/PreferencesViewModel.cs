@@ -81,6 +81,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial LyricsHelperOption? LyricsHelper { get; set; }
         [Reactive] public partial bool LyricsHelperBrackets { get; set; }
         [Reactive] public partial bool PenPlusDefault { get; set; }
+        [Reactive] public partial bool ExtendEndingPhonemes { get; set; }
 
         // Render
         [Reactive] public partial bool PreRender { get; set; }
@@ -229,6 +230,7 @@ namespace OpenUtau.App.ViewModels {
             RememberVsqx = Preferences.Default.RememberVsqx;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
             Wayland = Preferences.Default.UseWayland;
+            ExtendEndingPhonemes = Preferences.Default.ExtendEndingPhonemes;
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
                 .Subscribe(_ => this.RaisePropertyChanged(nameof(IsThemeEditorOpen)));
@@ -501,6 +503,15 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(skipRenderingMutedTracks => {
                     Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks;
                     Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.ExtendEndingPhonemes)
+                .Subscribe(extend => {
+                    Preferences.Default.ExtendEndingPhonemes = extend;
+                    Preferences.Save();
+                    if (DocManager.Inst.Project != null) {
+                        DocManager.Inst.Project.ValidateFull();
+                        DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
+                    }
                 });
         }
 
