@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using K4os.Hash.xxHash;
 using NAudio.Wave;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
@@ -126,14 +125,14 @@ namespace OpenUtau.Core.Voicevox {
                                     }
                                 });
                                 VoicevoxUtils.InitializedSpeaker(speakerID.ToString(), false);
-                                var queryurl = new VoicevoxURL() { method = "POST", path = "/frame_synthesis", query = new Dictionary<string, string> { { "speaker", speakerID.ToString() } }, body = JsonConvert.SerializeObject(vsParams), accept = "audio/wav" };
+                                var queryurl = new VoicevoxURL() { method = "POST", path = "/frame_synthesis", query = new Dictionary<string, string> { { "speaker", speakerID.ToString() } }, body = Json.Serialize(vsParams), accept = "audio/wav" };
                                 var response = VoicevoxClient.Inst.SendRequest(queryurl);
                                 byte[] bytes = null;
                                 if (!response.Item2.Equals(null)) {
                                     bytes = response.Item2;
                                 } else if (!string.IsNullOrEmpty(response.Item1)) {
-                                    var jObj = JObject.Parse(response.Item1);
-                                    if (jObj.ContainsKey("detail")) {
+                                    var jObj = JsonObject.Parse(response.Item1);
+                                    if (jObj?.AsObject().ContainsKey("detail") == true) {
                                         Log.Error($"Voice synthesis failed with the VOICEVOX engine. : {jObj}");
                                     }
                                 }

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using K4os.Hash.xxHash;
 using NetMQ;
 using NetMQ.Sockets;
-using Newtonsoft.Json;
 using OpenUtau.Core;
 using Serilog;
 
@@ -86,7 +85,7 @@ namespace OpenUtau.Integrations {
         private bool Heartbeat() {
             using (var client = new RequestSocket()) {
                 client.Connect("tcp://localhost:32342");
-                string reqStr = JsonConvert.SerializeObject(new HeartbeatRequest());
+                string reqStr = Json.Serialize(new HeartbeatRequest());
                 client.SendFrame(reqStr);
                 if (client.TryReceiveFrameString(TimeSpan.FromMilliseconds(1000), out string? respStr)) {
                     return true;
@@ -116,7 +115,7 @@ namespace OpenUtau.Integrations {
             }
             using (var client = new RequestSocket()) {
                 client.Connect("tcp://localhost:32342");
-                string reqStr = JsonConvert.SerializeObject(request);
+                string reqStr = Json.Serialize(request);
                 client.SendFrame(reqStr);
                 if (!client.TryReceiveFrameString(TimeSpan.FromMilliseconds(1000), out string? respStr)) {
                     Log.Warning($"Failed to OpenOrCreate with vLabeler");

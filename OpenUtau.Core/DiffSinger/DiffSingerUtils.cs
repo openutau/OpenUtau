@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.ML.OnnxRuntime.Tensors;
-using Newtonsoft.Json;
 using OpenUtau.Core.Render;
 
 namespace OpenUtau.Core.DiffSinger {
@@ -348,7 +347,7 @@ namespace OpenUtau.Core.DiffSinger {
 
         static Dictionary<string, int> LoadPhonemesFromJson(string filePath){
             var json = File.ReadAllText(filePath, Encoding.UTF8);
-            return JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+            return Json.Deserialize<Dictionary<string, int>>(json);
         }
 
         static Dictionary<string, int> LoadPhonemesFromTxt(string filePath){
@@ -362,7 +361,7 @@ namespace OpenUtau.Core.DiffSinger {
 
         public static Dictionary<string, int> LoadLanguageIds(string filePath){
             var json = File.ReadAllText(filePath, Encoding.UTF8);
-            return JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+            return Json.Deserialize<Dictionary<string, int>>(json);
         }
 
         public static string PhonemeLanguage(string phoneme){

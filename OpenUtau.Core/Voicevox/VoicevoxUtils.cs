@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using OpenUtau.Core.Render;
 using Serilog;
 
@@ -42,7 +41,7 @@ namespace OpenUtau.Core.Voicevox {
         public List<double> f0 = new List<double>();
         public List<double> volume = new List<double>();
         public List<Phonemes> phonemes = new List<Phonemes>();
-        public int volumeScale = 1;
+        public double volumeScale = 1;
         public int outputSamplingRate = 24000;
         public bool outputStereo = false;
 
@@ -185,15 +184,15 @@ namespace OpenUtau.Core.Voicevox {
         public static bool InitializedSpeaker(string id, bool skipReinit = false) {
             var queryurl = new VoicevoxURL() { method = "GET", path = "/is_initialized_speaker", query = new Dictionary<string, string> { { "speaker", id } } };
             var response = VoicevoxClient.Inst.SendRequest(queryurl);
-            var jObj = JObject.Parse(response.Item1);
-            if (jObj.ContainsKey("detail")) {
+            var jObj = JsonObject.Parse(response.Item1) as JsonObject;
+            if (jObj?.AsObject().ContainsKey("detail") == true) {
                 Log.Error($"Response was incorrect. : {jObj}");
                 return false;
-            } else if (jObj.TryGetValue("json", out var jsonToken)) {
-                if (!jsonToken.Value<bool>()) {
+            } else if (jObj.TryGetPropertyValue("json", out var jsonToken)) {
+                if (!jsonToken.GetValue<bool>()) {
                     queryurl = new VoicevoxURL() { method = "POST", path = "/initialize_speaker", query = new Dictionary<string, string> { { "speaker", id }, { "skip_reinit", skipReinit.ToString() } } };
                     response = VoicevoxClient.Inst.SendRequest(queryurl);
-                    jObj = JObject.Parse(response.Item1);
+                    jObj = JsonObject.Parse(response.Item1) as JsonObject;
                     if (jObj.ContainsKey("detail")) {
                         Log.Error($"Response was incorrect. : {jObj}");
                         return false;
@@ -207,14 +206,14 @@ namespace OpenUtau.Core.Voicevox {
         }
 
         public static VoicevoxSynthParams VoicevoxVoiceBase(VoicevoxQueryMain vqMain, string id) {
-            var queryurl = new VoicevoxURL() { method = "POST", path = "/sing_frame_audio_query", query = new Dictionary<string, string> { { "speaker", id } }, body = JsonConvert.SerializeObject(vqMain) };
+            var queryurl = new VoicevoxURL() { method = "POST", path = "/sing_frame_audio_query", query = new Dictionary<string, string> { { "speaker", id } }, body = Json.Serialize(vqMain) };
             var response = VoicevoxClient.Inst.SendRequest(queryurl);
-            var jObj = JObject.Parse(response.Item1);
+            var jObj = JsonObject.Parse(response.Item1) as JsonObject;
             if (jObj.ContainsKey("detail")) {
                 Log.Error($"Response was incorrect. : {jObj}");
                 throw new VoicevoxException($"Response was incorrect. : \n{jObj}\nScore:{string.Join(" ", vqMain.notes.Select(n => n.lyric))}");
             }
-            return jObj.ToObject<VoicevoxSynthParams>();
+            return Json.Deserialize<VoicevoxSynthParams>(jObj);
         }
 
         public static void Loaddic(VoicevoxSinger singer) {
@@ -351,30 +350,30 @@ namespace OpenUtau.Core.Voicevox {
 
         public static List<double> QueryToF0(VoicevoxQueryMain vqMain, VoicevoxSynthParams vsParams, string id) {
             VoicevoxQueryParams vqParams = new VoicevoxQueryParams() { score = vqMain, frame_audio_query = vsParams };
-            var queryurl = new VoicevoxURL() { method = "POST", path = "/sing_frame_f0", query = new Dictionary<string, string> { { "speaker", id } }, body = JsonConvert.SerializeObject(vqParams) };
+            var queryurl = new VoicevoxURL() { method = "POST", path = "/sing_frame_f0", query = new Dictionary<string, string> { { "speaker", id } }, body = Json.Serialize(vqParams) };
             var response = VoicevoxClient.Inst.SendRequest(queryurl);
             List<double> f0s = new List<double>();
-            var jObj = JObject.Parse(response.Item1);
+            var jObj = JsonObject.Parse(response.Item1) as JsonObject;
             if (jObj.ContainsKey("detail")) {
                 Log.Error($"Response was incorrect. : {jObj}");
                 throw new VoicevoxException($"Response was incorrect. : \n{jObj}\nScore:{string.Join(" ", vqMain.notes.Select(n => n.lyric))}");
             } else {
-                f0s = jObj["json"].ToObject<List<double>>();
+                f0s = Json.Deserialize<List<double>>(jObj?["json"]);
             }
             return f0s;
         }
 
         public static List<double> QueryToVolume(VoicevoxQueryMain vqMain, VoicevoxSynthParams vsParams, string id) {
             VoicevoxQueryParams vqParams = new VoicevoxQueryParams() { score = vqMain, frame_audio_query = vsParams };
-            var queryurl = new VoicevoxURL() { method = "POST", path = "/sing_frame_volume", query = new Dictionary<string, string> { { "speaker", id } }, body = JsonConvert.SerializeObject(vqParams) };
+            var queryurl = new VoicevoxURL() { method = "POST", path = "/sing_frame_volume", query = new Dictionary<string, string> { { "speaker", id } }, body = Json.Serialize(vqParams) };
             var response = VoicevoxClient.Inst.SendRequest(queryurl);
             List<double> volumes = new List<double>();
-            var jObj = JObject.Parse(response.Item1);
+            var jObj = JsonObject.Parse(response.Item1) as JsonObject;
             if (jObj.ContainsKey("detail")) {
                 Log.Error($"Response was incorrect. : {jObj}");
                 throw new VoicevoxException($"Response was incorrect. : \n{jObj}\nScore:{string.Join(" ", vqMain.notes.Select(n => n.lyric))}");
             } else {
-                volumes = jObj["json"].ToObject<List<double>>();
+                volumes = Json.Deserialize<List<double>>(jObj?["json"]);
             }
             return volumes;
         }

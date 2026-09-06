@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
+using OpenUtau.Core;
 
 namespace OpenUtau.Plugin.Builtin.EnunuOnnx {
     public class ScalerLine {
@@ -24,7 +24,7 @@ namespace OpenUtau.Plugin.Builtin.EnunuOnnx {
             if (encoding == null) {
                 encoding = Encoding.UTF8;
             }
-            return JsonConvert.DeserializeObject<Scaler>(
+            return Json.Deserialize<Scaler>(
                 File.ReadAllText(path, encoding));
         }
 
