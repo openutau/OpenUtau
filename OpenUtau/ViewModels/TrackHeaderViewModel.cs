@@ -23,7 +23,7 @@ namespace OpenUtau.App.ViewModels {
         public int TrackNo => track.TrackNo + 1;
         public USinger Singer => track.Singer;
         public Phonemizer Phonemizer => track.Phonemizer;
-        public string PhonemizerTag => track.Phonemizer.Tag;
+        public string PhonemizerTag => track.Phonemizer.Tag == "DEFAULT" ? "Phonemizer: DEFAULT" : track.Phonemizer.Tag;
         public Core.Render.IRenderer Renderer => track.RendererSettings.Renderer;
         public IReadOnlyList<MenuItemViewModel>? SingerMenuItems { get; set; }
         public ReactiveCommand<USinger, RxVoid> SelectSingerCommand { get; }
