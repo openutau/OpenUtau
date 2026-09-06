@@ -7,6 +7,8 @@ using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 
 namespace OpenUtau.Core.Render {
+    public readonly record struct RendererOption(string Id, string Name);
+
     public static class Renderers {
         public const string CLASSIC = "CLASSIC";
         public const string WORLDLINE_R = "WORLDLINE-R";
@@ -24,27 +26,39 @@ namespace OpenUtau.Core.Render {
         static readonly string[] noRenderers = new string[0];
 
         public static string[] GetSupportedRenderers(USingerType singerType) {
-            switch (singerType) {
-                case USingerType.Classic:
-                    return classicRenderers;
-                case USingerType.Enunu:
-                    return enunuRenderers;
-                case USingerType.Vogen:
-                    return vogenRenderers;
-                case USingerType.DiffSinger:
-                    return diffSingerRenderers;
-                case USingerType.Voicevox:
-                    return voicevoxRenderers;
-                default:
-                    return noRenderers;
+            return GetSupportedRendererOptions(singerType).Select(option => option.Id).ToArray();
+        }
+
+        public static RendererOption[] GetSupportedRendererOptions(USingerType singerType) {
+            if (singerType == USingerType.Classic) {
+                return classicRenderers.Select(name => new RendererOption(name, name)).Concat(
+                    ExternalRendererRegistry.Renderers
+                        .Where(renderer => renderer.SingerType == singerType)
+                        .Select(renderer => new RendererOption(renderer.Id, renderer.Name))).ToArray();
             }
+            string[] names;
+            switch (singerType) {
+                case USingerType.Enunu:
+                    names = enunuRenderers; break;
+                case USingerType.Vogen:
+                    names = vogenRenderers; break;
+                case USingerType.DiffSinger:
+                    names = diffSingerRenderers; break;
+                case USingerType.Voicevox:
+                    names = voicevoxRenderers; break;
+                default:
+                    names = noRenderers; break;
+            }
+            return names.Select(name => new RendererOption(name, name)).ToArray();
         }
 
         public static List<string> getRendererOptions() {
-            return new List<string> {
+            var options = new List<string> {
                 "WORLDLINE-R",
                 "Classic"
             };
+            options.AddRange(ExternalRendererRegistry.Renderers.Select(renderer => renderer.Id));
+            return options;
         }
 
         public static string GetDefaultRenderer(USingerType singerType) {
@@ -71,7 +85,19 @@ namespace OpenUtau.Core.Render {
             } else if (renderer == VOICEVOX) {
                 return new Voicevox.VoicevoxRenderer();
             }
-            return null;
+            return ExternalRendererRegistry.CreateRenderer(renderer);
+        }
+
+        public static string GetRendererId(IRenderer renderer) =>
+            renderer is IExternalRendererIdentity external ? external.Id : renderer?.ToString();
+
+        public static bool IsRenderer(string idOrName, IRenderer renderer) {
+            if (renderer == null) return false;
+            if (renderer is IExternalRendererIdentity external) {
+                return string.Equals(idOrName, external.Id, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(idOrName, external.Name, StringComparison.OrdinalIgnoreCase);
+            }
+            return string.Equals(idOrName, renderer.ToString(), StringComparison.Ordinal);
         }
 
         readonly static ConcurrentDictionary<string, object> cacheLockMap

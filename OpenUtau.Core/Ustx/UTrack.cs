@@ -12,12 +12,15 @@ namespace OpenUtau.Core.Ustx {
         public string renderer;
         public string resampler;
         public string wavtool;
+        public Dictionary<string, string> rendererSettings = new Dictionary<string, string>();
 
         [YamlIgnore] public IRenderer Renderer { get; set; }
         [YamlIgnore] public IResampler Resampler { get; set; }
         [YamlIgnore] public IWavtool Wavtool { get; set; }
+        [YamlIgnore] public string RendererLoadError { get; private set; }
 
-        public void Validate(UTrack track) {
+        public void Validate(UTrack track, bool fallbackUnavailableRenderer = true) {
+            rendererSettings ??= new Dictionary<string, string>();
             if (track.Singer == null || !track.Singer.Found) {
                 renderer = null;
                 Renderer = null;
@@ -25,15 +28,42 @@ namespace OpenUtau.Core.Ustx {
                 Resampler = null;
                 wavtool = null;
                 Wavtool = null;
+                RendererLoadError = null;
                 return;
             }
             if (string.IsNullOrEmpty(renderer)) {
                 renderer = Renderers.GetDefaultRenderer(track.Singer.SingerType);
             }
-            if (renderer != Renderer?.ToString()) {
-                Renderer = Renderers.CreateRenderer(renderer);
+            if (!Renderers.IsRenderer(renderer, Renderer)) {
+                var requestedRenderer = renderer;
+                IRenderer nextRenderer;
+                try {
+                    nextRenderer = Renderers.CreateRenderer(requestedRenderer);
+                    if (nextRenderer == null) {
+                        throw new KeyNotFoundException(
+                            $"Renderer '{requestedRenderer}' is not installed.");
+                    }
+                    RendererLoadError = null;
+                } catch (Exception exception) {
+                    if (!fallbackUnavailableRenderer) throw;
+                    RendererLoadError = exception.Message;
+                    Log.Warning(exception,
+                        "Renderer {RendererId} is unavailable; using the default renderer for this session.",
+                        requestedRenderer);
+                    var fallback = Renderers.GetDefaultRenderer(track.Singer.SingerType);
+                    nextRenderer = Renderers.CreateRenderer(fallback)
+                        ?? throw new InvalidOperationException(
+                            $"Default renderer '{fallback}' could not be created.", exception);
+                }
+                if (Renderer is IDisposable disposable) {
+                    disposable.Dispose();
+                }
+                Renderer = nextRenderer;
+                if (RendererLoadError == null) {
+                    renderer = Renderers.GetRendererId(Renderer);
+                }
             }
-            if (renderer == Renderers.CLASSIC) {
+            if (Renderers.GetRendererId(Renderer) == Renderers.CLASSIC) {
                 if (string.IsNullOrEmpty(resampler)) {
                     if (!Util.Preferences.Default.DefaultResamplers.TryGetValue(renderer, out resampler)) {
                         resampler = null;
@@ -55,6 +85,14 @@ namespace OpenUtau.Core.Ustx {
             } else {
                 wavtool = null;
                 Wavtool = null;
+                var descriptor = ExternalRendererRegistry.Renderers.FirstOrDefault(item =>
+                    string.Equals(item.Id, Renderers.GetRendererId(Renderer),
+                        StringComparison.OrdinalIgnoreCase));
+                if (descriptor != null) {
+                    foreach (var setting in descriptor.Metadata.Settings) {
+                        rendererSettings.TryAdd(setting.Key, setting.Value.DefaultValue);
+                    }
+                }
             }
         }
 
@@ -63,6 +101,7 @@ namespace OpenUtau.Core.Ustx {
                 renderer = renderer,
                 resampler = resampler,
                 wavtool = wavtool,
+                rendererSettings = new Dictionary<string, string>(rendererSettings ?? new Dictionary<string, string>()),
             };
         }
     }
@@ -169,6 +208,7 @@ namespace OpenUtau.Core.Ustx {
                 RendererSettings = new URenderSettings();
             }
             RendererSettings.Validate(this);
+            RegisterRendererExpressions(project);
             if (project.expressions.TryGetValue(Format.Ustx.CLR, out var descriptor)) {
                 if (VoiceColorExp == null && Singer != null && Singer.Found && Singer.Loaded) {
                     VoiceColorExp = descriptor.Clone();
@@ -183,6 +223,18 @@ namespace OpenUtau.Core.Ustx {
                     var colors = Singer.Subbanks.Select(subbank => subbank.Color).ToHashSet();
                     VoiceColor2Exp.options = colors.OrderBy(c => c).ToArray();
                     VoiceColor2Exp.max = VoiceColor2Exp.options.Length - 1;
+                }
+            }
+        }
+
+        public void RegisterRendererExpressions(UProject project) {
+            if (RendererSettings.Renderer == null || Singer == null || !Singer.Found) {
+                return;
+            }
+            foreach (var descriptor in RendererSettings.Renderer.GetSuggestedExpressions(
+                    Singer, RendererSettings) ?? Array.Empty<UExpressionDescriptor>()) {
+                if (descriptor != null && !string.IsNullOrWhiteSpace(descriptor.abbr)) {
+                    project.RegisterExpression(descriptor);
                 }
             }
         }

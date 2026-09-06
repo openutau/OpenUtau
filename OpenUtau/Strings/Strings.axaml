@@ -712,6 +712,8 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singers.editoto.gotosource">Goto Source File</system:String>
   <system:String x:Key="singers.editoto.regenfrq">Regenerate FRQ</system:String>
   <system:String x:Key="singers.editoto.regenfrq.regenerating">Regenerating FRQ</system:String>
+  <system:String x:Key="singers.editoto.rendereranalysis">Generate renderer analysis</system:String>
+  <system:String x:Key="singers.editoto.rendereranalysis.generating">Generating renderer analysis</system:String>
   <system:String x:Key="singers.editoto.reset">Reset Otos</system:String>
   <system:String x:Key="singers.editoto.save">Save Otos</system:String>
   <system:String x:Key="singers.editoto.searchalias">Search Alias</system:String>

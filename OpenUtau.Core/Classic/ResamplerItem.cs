@@ -38,11 +38,11 @@ namespace OpenUtau.Classic {
 
         public ulong hash;
 
-        public ResamplerItem(RenderPhrase phrase, RenderPhone phone) {
+        public ResamplerItem(RenderPhrase phrase, RenderPhone phone, IResampler? resamplerOverride = null) {
             this.phrase = phrase;
             this.phone = phone;
 
-            resampler = ToolsManager.Inst.GetResampler(phone.resampler);
+            resampler = resamplerOverride ?? ToolsManager.Inst.GetResampler(phone.resampler);
             inputFile = phone.oto.File;
             inputTemp = VoicebankFiles.Inst.GetSourceTempPath(phrase.singer.Id, phone.oto, ".wav");
             tone = phone.tone;

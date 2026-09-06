@@ -107,8 +107,15 @@ namespace OpenUtau.App.ViewModels {
                     renderer = name,
                 };
                 DocManager.Inst.StartUndoGroup("command.track.setting");
-                DocManager.Inst.ExecuteCmd(new TrackChangeRenderSettingCommand(DocManager.Inst.Project, track, settings));
-                DocManager.Inst.EndUndoGroup();
+                try {
+                    DocManager.Inst.ExecuteCmd(new TrackChangeRenderSettingCommand(DocManager.Inst.Project, track, settings));
+                    DocManager.Inst.EndUndoGroup();
+                } catch (Exception e) {
+                    Log.Error(e, "Failed to select renderer {Renderer}", name);
+                    DocManager.Inst.RollBackUndoGroup();
+                    DocManager.Inst.EndUndoGroup();
+                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification($"Failed to load renderer {name}.", e));
+                }
                 this.RaisePropertyChanged(nameof(Renderer));
             });
 
@@ -489,11 +496,11 @@ namespace OpenUtau.App.ViewModels {
         public void RefreshRenderers() {
             var items = new List<MenuItemViewModel>();
             if (track != null && track.Singer != null && track.Singer.Found) {
-                items.AddRange(Core.Render.Renderers.GetSupportedRenderers(track.Singer.SingerType)
-                    .Select(name => new MenuItemViewModel() {
-                        Header = name,
+                items.AddRange(Core.Render.Renderers.GetSupportedRendererOptions(track.Singer.SingerType)
+                    .Select(option => new MenuItemViewModel() {
+                        Header = option.Name,
                         Command = SelectRendererCommand,
-                        CommandParameter = name,
+                        CommandParameter = option.Id,
                     }));
             }
             RenderersMenuItems = items.ToArray();

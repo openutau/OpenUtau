@@ -14,6 +14,15 @@ using Serilog;
 
 namespace OpenUtau.Classic {
     public class ClassicRenderer : IRenderer {
+        readonly IResampler? resamplerOverride;
+        readonly string rendererName;
+
+        public ClassicRenderer() : this(null, Renderers.CLASSIC) { }
+
+        public ClassicRenderer(IResampler? resampler, string rendererName) {
+            resamplerOverride = resampler;
+            this.rendererName = rendererName;
+        }
         static readonly HashSet<string> supportedExp = new HashSet<string>(){
             Ustx.DYN,
             Ustx.PITD,
@@ -49,8 +58,10 @@ namespace OpenUtau.Classic {
             };
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
-            if (phrase.wavtool == SharpWavtool.nameConvergence || phrase.wavtool == SharpWavtool.nameSimple) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo,
+                CancellationTokenSource cancellation, bool isPreRender,
+                RenderPhraseEvents? renderEvents = null) {
+            if (resamplerOverride != null || phrase.wavtool == SharpWavtool.nameConvergence || phrase.wavtool == SharpWavtool.nameSimple) {
                 return RenderInternal(phrase, progress, trackNo, cancellation, isPreRender);
             } else {
                 return RenderExternal(phrase, progress, trackNo, cancellation, isPreRender);
@@ -60,7 +71,7 @@ namespace OpenUtau.Classic {
         public Task<RenderResult> RenderInternal(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
             var resamplerItems = new List<ResamplerItem>();
             foreach (var phone in phrase.phones) {
-                resamplerItems.Add(new ResamplerItem(phrase, phone));
+                resamplerItems.Add(new ResamplerItem(phrase, phone, resamplerOverride));
             }
             var task = Task.Run(() => {
                 Parallel.ForEach(source: resamplerItems, parallelOptions: new ParallelOptions() {
@@ -103,7 +114,7 @@ namespace OpenUtau.Classic {
         public Task<RenderResult> RenderExternal(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
             var resamplerItems = new List<ResamplerItem>();
             foreach (var phone in phrase.phones) {
-                resamplerItems.Add(new ResamplerItem(phrase, phone));
+                resamplerItems.Add(new ResamplerItem(phrase, phone, resamplerOverride));
             }
             var task = Task.Run(() => {
                 string progressInfo = $"Track {trackNo + 1} : {phrase.wavtool} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
@@ -148,13 +159,13 @@ namespace OpenUtau.Classic {
         }
 
         public UExpressionDescriptor[] GetSuggestedExpressions(USinger singer, URenderSettings renderSettings) {
-            var manifest= renderSettings.Resampler.Manifest;
+            var manifest = resamplerOverride?.Manifest ?? renderSettings.Resampler?.Manifest;
             if (manifest == null) {
                 return new UExpressionDescriptor[] { };
             }
             return manifest.expressions.Values.ToArray();
         }
 
-        public override string ToString() => Renderers.CLASSIC;
+        public override string ToString() => rendererName;
     }
 }
