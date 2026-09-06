@@ -69,10 +69,6 @@ namespace OpenUtau.Plugin.Builtin {
                 .ToDictionary(parts => parts[0], parts => parts[1]);
         private bool isTimitPhonemes = false;
 
-        private Dictionary<string, string> diphthongTails = new Dictionary<string, string>() {
-            { "ay", "ay-" }, { "ey", "ey-" }, { "oy", "oy-" }, { "aw", "aw-" }, { "ow", "ow-" }
-        };
-
         private readonly string[] ccvException = { "ch", "dh", "dx", "fh", "gh", "hh", "jh", "kh", "ph", "ng", "sh", "th", "vh", "wh", "zh" };
         private readonly string[] RomajiException = { "a", "e", "i", "o", "u" };
         protected override string[] GetSymbols(Note note) {
@@ -162,50 +158,12 @@ namespace OpenUtau.Plugin.Builtin {
             base.SetSinger(singer);
 
             if (this.singer != null && this.singer.Loaded) {
-                
-                string globalFile = Path.Combine(PluginDir, YamlFileName);
-                string singerFile = Path.Combine(this.singer.Location, YamlFileName);
-
-                var filesToParse = new List<string>();
-                if (File.Exists(globalFile)) filesToParse.Add(globalFile);
-                if (File.Exists(singerFile) && globalFile != singerFile) filesToParse.Add(singerFile);
-
-                c_cR = Array.Empty<string>();
-
-                foreach (var file in filesToParse) {
-                    try {
-                        var data = Core.Yaml.DefaultDeserializer.Deserialize<YAMLData>(File.ReadAllText(file));
-
-                        if (data?.symbols != null) {
-                            
-                            string[] targetTypes = { "nasal", "liquid", "semivowel", "fricative", "aspirate" };
-                            var newCcR = data.symbols
-                                .Where(s => targetTypes.Contains(s.type?.ToLower()))
-                                .Select(s => s.symbol)
-                                .ToArray();
-                                
-                            c_cR = c_cR.Concat(newCcR).Distinct().ToArray();
-
-                            var yamlDiphthongs = data.symbols
-                                .Where(s => s.type?.ToLower() == "diphthong")
-                                .Select(s => s.symbol)
-                                .Distinct()
-                                .ToArray();
-
-                            foreach (var d in yamlDiphthongs) {
-                                if (!diphthongSplits.ContainsKey(d)) {
-                                    diphthongTails[d] = d + "-";
-                                }
-                            }
-                        }
-                        
-                    } catch (Exception ex) {
-                        Log.Error($"Failed to parse symbols from {file}: {ex.Message}");
-                    }
-                }
+                consExceptions.Clear();
+                if (stop != null) consExceptions.AddRange(stop);
+                if (tap != null) consExceptions.AddRange(tap);
+                consExceptions = consExceptions.Distinct().ToList();
             }
         }
-
         protected override List<string> ProcessSyllable(Syllable syllable) {
             syllable.prevV = tails.Contains(syllable.prevV) ? "" : syllable.prevV;
             var replacedPrevV = ReplacePhoneme(syllable.prevV, syllable.tone);
@@ -864,6 +822,16 @@ namespace OpenUtau.Plugin.Builtin {
             var stop_def = 1.4;
             var tap_def = 0.5;
             var affricate_def = 1.5;
+
+            var sortedOverrides = PhonemeOverrides.OrderByDescending(kv => kv.Key.Length);
+            foreach (var kvp in sortedOverrides) {
+                var symbol = kvp.Key;
+                var value = kvp.Value;
+
+                if (Regex.IsMatch(alias, $@"(?<![a-zA-Z]){Regex.Escape(symbol)}(?![a-zA-Z])")) {
+                    return baseMultiplier * value;
+                }
+            }
 
             foreach (var c in fricative) {
                 if (PhonemeIsPresent(alias, c)) return fricative_def;

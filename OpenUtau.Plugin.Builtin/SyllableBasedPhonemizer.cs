@@ -399,15 +399,23 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         private static YAMLData LoadYamlCached(string filePath) {
-            var lastWrite = File.GetLastWriteTimeUtc(filePath);
-            if (YamlCache.TryGetValue(filePath, out var cached) && cached.lastModified == lastWrite) {
+            string fullPath = Path.GetFullPath(filePath);
+            var lastWrite = File.GetLastWriteTimeUtc(fullPath);
+
+            if (YamlCache.TryGetValue(fullPath, out var cached) && cached.lastModified == lastWrite) {
                 return cached.data;
             }
 
-            using var reader = new StreamReader(filePath, Encoding.UTF8);
-            var parsed = TolerantDeserializer.Deserialize<YAMLData>(reader);
-            YamlCache[filePath] = (lastWrite, parsed);
-            return parsed;
+            try {
+                using var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+                var parsed = TolerantDeserializer.Deserialize<YAMLData>(reader);
+                YamlCache[fullPath] = (lastWrite, parsed);
+                return parsed;
+            } catch (Exception ex) {
+                Log.Error(ex, $"Failed to deserialize YAML at '{fullPath}'");
+                return null;
+            }
         }
 
         public override void SetSinger(USinger singer) {
@@ -603,13 +611,11 @@ namespace OpenUtau.Plugin.Builtin {
                             var dynamicTails = consonants.OrderByDescending(c => c.Length).ToArray();
 
                             foreach (var d in yamlDiphthongs) {
-                                if (!diphthongSplits.ContainsKey(d)) {
-                                    foreach (var tail in dynamicTails) {
-                                        if (d.EndsWith(tail) && d != tail) {
-                                            diphthongTails[d] = tail;
-                                            break;
-                                        }
-                                    }
+                                var customMapping = data.diphthongs?.FirstOrDefault(dt => dt.from == d);
+                                if (customMapping != null && !string.IsNullOrEmpty(customMapping.to)) {
+                                    diphthongTails[d] = customMapping.to;
+                                } else {
+                                    diphthongTails[d] = d + "-";
                                 }
                             }
                         }
@@ -1475,10 +1481,10 @@ namespace OpenUtau.Plugin.Builtin {
             public DiphthongData[] diphthongs { get; set; } = Array.Empty<DiphthongData>();
             public VowelSustainData[] vowelsustains { get; set; } = Array.Empty<VowelSustainData>();
 
-            public struct SymbolData { public string symbol { get; set; } public string type { get; set; } }
-            public struct Timings { public string symbol { get; set; } public double value { get; set; } }
-            public struct DiphthongData { public string from { get; set; } public string to { get; set; } }
-            public struct VowelSustainData { public string symbol { get; set; } public string sustain { get; set; } public double offset { get; set; } }
+            public class SymbolData { public string symbol { get; set; } public string type { get; set; } }
+            public class Timings { public string symbol { get; set; } public double value { get; set; } }
+            public class DiphthongData { public string from { get; set; } public string to { get; set; } }
+            public class VowelSustainData { public string symbol { get; set; } public string sustain { get; set; } public double offset { get; set; } }
         }
 
         public class Replacement {
