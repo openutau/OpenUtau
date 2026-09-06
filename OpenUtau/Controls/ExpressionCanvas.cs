@@ -262,17 +262,21 @@ namespace OpenUtau.App.Controls {
                             continue;
                         }
                         var geometry = new PathGeometry();
+                        // allinone: #2148 moved this fill's anchor from the canvas bottom to the
+                        // default-value line together with the new envelope fill. The envelope fill
+                        // is intended upstream behavior and stays; the real curve's own fill keeps
+                        // its pre-#2148 shape (curve down to the bottom of the canvas).
                         var figure = new PathFigure {
-                            IsClosed = true
+                            IsClosed = false
                         };
                         for (int i = start; i < end; ++i) {
                             float tick = curve.realXs[i];
                             float value = curve.realYs[i];
                             double x = viewModel.TickToneToPoint(tick, 0).X;
                             double y = Bounds.Height * (1 - value / 1000.0);
-                            
+
                             if (i == start) {
-                                figure.StartPoint = new Point(x, defaultHeight);
+                                figure.StartPoint = new Point(x, Bounds.Height);
                             }
                             figure.Segments!.Add(new LineSegment {
                                 Point = new Point(x, y),
@@ -280,7 +284,7 @@ namespace OpenUtau.App.Controls {
                             });
                             if (i == end - 1) {
                                 figure.Segments!.Add(new LineSegment {
-                                    Point = new Point(x, defaultHeight),
+                                    Point = new Point(x, Bounds.Height),
                                     IsStroked = false
                                 });
                             }
