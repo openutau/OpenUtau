@@ -703,7 +703,7 @@ namespace OpenUtau.App.Views {
             if (descriptor == null) {
                 return;
             }
-            if (descriptor.type != UExpressionType.Curve) {
+            if (descriptor.type != UExpressionType.Curve && descriptor.type != UExpressionType.MorphingCurve) {
                 UpdatePhonemeExp(pointer, point);
             } else {
                 UpdateCurveExp(pointer, point);
@@ -848,7 +848,7 @@ namespace OpenUtau.App.Views {
             if (descriptor == null) {
                 return;
             }
-            if (descriptor.type != UExpressionType.Curve) {
+            if (descriptor.type != UExpressionType.Curve && descriptor.type != UExpressionType.MorphingCurve) {
                 ResetPhonemeExp(pointer, point);
             } else {
                 ResetCurveExp(pointer, point);

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using NAudio.Wave;
@@ -34,8 +33,6 @@ namespace OpenUtau.Classic {
             Ustx.DYN,
             Ustx.PITD,
             Ustx.CLR,
-            Ustx.CLRY,
-            Ustx.XSY,
             Ustx.SHFT,
             Ustx.VEL,
             Ustx.VOL,
@@ -54,7 +51,11 @@ namespace OpenUtau.Classic {
         public bool SupportsRenderPitch => false;
 
         public bool SupportsExpression(UExpressionDescriptor descriptor) {
-            return supportedExp.Contains(descriptor.abbr);
+            return descriptor.isFlag
+                || !string.IsNullOrEmpty(descriptor.flag)
+                || supportedExp.Contains(descriptor.abbr)
+                || descriptor.type == UExpressionType.MorphingCurve
+                || descriptor.abbr.StartsWith("cl", StringComparison.OrdinalIgnoreCase);
         }
 
         public RenderResult Layout(RenderPhrase phrase) {
@@ -76,11 +77,17 @@ namespace OpenUtau.Classic {
                 phrase.AddCacheFile(wavPath);
                 string progressInfo = $"Track {trackNo + 1}: {this} {string.Join(" ", phrase.phones.Select(p => p.phoneme))}";
                 progress.Complete(0, progressInfo);
-                if (File.Exists(wavPath)) {
-                    using (var waveStream = Wave.OpenFile(wavPath)) {
-                        result.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
+
+                lock (Renderers.GetCacheLock(wavPath)) {
+                    if (File.Exists(wavPath)) {
+                        try {
+                            using (var waveStream = Wave.OpenFile(wavPath)) {
+                                result.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
+                            }
+                        } catch { }
                     }
                 }
+
                 if (result.samples == null) {
                     var phraseSynth = new Worldline.PhraseSynthV2(44100, version == 1 ? 441 : 512, 2048);
                     double posOffsetMs = phrase.positionMs - phrase.leadingMs;
@@ -96,19 +103,19 @@ namespace OpenUtau.Classic {
                         try {
                             phraseSynth.AddRequest(item, posMs, skipMs, lengthMs, fadeInMs, fadeOutMs);
                         } catch (SynthRequestError e) {
-                            if (e is CutOffExceedDurationError cee) {
+                            if (e is CutOffExceedDurationError) {
                                 throw new MessageCustomizableException(
                                     $"Failed to render\n Oto error: cutoff exceeds audio duration \n{item.phone.phoneme}",
                                     $"<translate:errors.failed.synth.cutoffexceedduration>\n{item.phone.phoneme}",
                                     e);
                             }
-                            if (e is CutOffBeforeOffsetError cbe) {
+                            if (e is CutOffBeforeOffsetError) {
                                 throw new MessageCustomizableException(
                                     $"Failed to render\n Oto error: cutoff before offset \n{item.phone.phoneme}",
                                     $"<translate:errors.failed.synth.cutoffbeforeoffset>\n{item.phone.phoneme}",
                                     e);
                             }
-                            throw e;
+                            throw;
                         }
                     }
                     int frames = (int)Math.Ceiling(result.estimatedLengthMs / frameMs);
@@ -182,9 +189,11 @@ namespace OpenUtau.Classic {
                         var samplesCopy = (float[])result.samples.Clone();
                         Task.Run(() => {
                             try {
-                                var source = new WaveSource(0, 0, 0, 1);
-                                source.SetSamples(samplesCopy);
-                                WaveFileWriter.CreateWaveFile16(wavPath, new ExportAdapter(source).ToMono(1, 0));
+                                lock (Renderers.GetCacheLock(wavPath)) {
+                                    var source = new WaveSource(0, 0, 0, 1);
+                                    source.SetSamples(samplesCopy);
+                                    WaveFileWriter.CreateWaveFile16(wavPath, new ExportAdapter(source).ToMono(1, 0));
+                                }
                             } catch (Exception e) {
                                 Serilog.Log.Error(e, $"Failed to write cache file: {wavPath}");
                             }
@@ -256,10 +265,27 @@ namespace OpenUtau.Classic {
         }
 
         public UExpressionDescriptor[] GetSuggestedExpressions(USinger singer, URenderSettings renderSettings) {
-            return new UExpressionDescriptor[] { };
+            var expressions = new List<UExpressionDescriptor>();
+            if (singer != null && singer.Subbanks != null) {
+                var uniqueColors = singer.Subbanks.Select(s => s.Color).Where(c => !string.IsNullOrEmpty(c)).Distinct().ToList();
+                int colorIndex = 1;
+                foreach (var colorName in uniqueColors) {
+                    expressions.Add(new UExpressionDescriptor {
+                        name = $"voice color {colorIndex:D2} {colorName}",
+                        abbr = $"cl{colorIndex:D2}",
+                        type = UExpressionType.MorphingCurve,
+                        min = 0,
+                        max = 100,
+                        defaultValue = 0,
+                        isFlag = false,
+                        flag = ""
+                    });
+                    colorIndex++;
+                }
+            }
+            return expressions.ToArray();
         }
 
         public override string ToString() => version == 1 ? Renderers.WORLDLINE_R : Renderers.WORLDLINE_R2;
     }
 }
-

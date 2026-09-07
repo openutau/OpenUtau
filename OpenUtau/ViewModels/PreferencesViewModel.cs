@@ -125,6 +125,8 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial int OtoEditor { get; set; }
         public string VLabelerPath => Preferences.Default.VLabelerPath;
         public string SetParamPath => Preferences.Default.SetParamPath;
+        [Reactive] public partial bool AutoDeleteMorphCache { get; set; }
+        [Reactive] public partial bool PhaseLocked { get; set; }
 
         // Diffsinger
         public List<int> DiffSingerStepsOptions { get; } = new List<int> { 2, 5, 10, 20, 50, 100, 200, 500, 1000 };
@@ -228,6 +230,8 @@ namespace OpenUtau.App.ViewModels {
             RememberUst = Preferences.Default.RememberUst;
             RememberVsqx = Preferences.Default.RememberVsqx;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
+            AutoDeleteMorphCache = Preferences.Default.AutoDeleteMorphCache;
+            PhaseLocked = Preferences.Default.PhaseLocked;
             Wayland = Preferences.Default.UseWayland;
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
@@ -500,6 +504,16 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.SkipRenderingMutedTracks)
                 .Subscribe(skipRenderingMutedTracks => {
                     Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.AutoDeleteMorphCache)
+                .Subscribe(index => {
+                    Preferences.Default.AutoDeleteMorphCache = index;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.PhaseLocked)
+                .Subscribe(index => {
+                    Preferences.Default.PhaseLocked = index;
                     Preferences.Save();
                 });
         }

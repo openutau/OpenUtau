@@ -62,6 +62,7 @@
           <ComboBoxItem Content="{DynamicResource exps.type.numerical}"/>
           <ComboBoxItem Content="{DynamicResource exps.type.options}"/>
           <ComboBoxItem Content="{DynamicResource exps.type.curve}"/>
+          <ComboBoxItem Content="{DynamicResource exps.type.morphingcurve}"/>
         </ComboBox>
       </DockPanel>
       <DockPanel IsVisible="{Binding Expression.IsOptions}">

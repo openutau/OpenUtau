@@ -8,6 +8,7 @@ namespace OpenUtau.Core.Ustx {
         Numerical = 0,
         Options = 1,
         Curve = 2,
+        MorphingCurve = 3,
     }
 
     /// <summary>
