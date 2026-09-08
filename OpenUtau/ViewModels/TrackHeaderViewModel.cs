@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
@@ -262,6 +262,7 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.RecentSingers.RemoveRange(
                         16, Preferences.Default.RecentSingers.Count - 16);
                 }
+                InvalidateSingerMenuCache();
             }
         }
 
@@ -293,16 +294,15 @@ namespace OpenUtau.App.ViewModels {
             singersMenuDirty = true;
         }
 
-        public async System.Threading.Tasks.Task RefreshSingersAsync() {
+        public async Task RefreshSingersAsync() {
             // Skip rebuild if cache is still valid
             if (!singersMenuDirty && SingerMenuItems != null && SingerMenuItems.Count > 0) {
                 return;
             }
-
             var allSingers = SingerManager.Inst.Singers;
 
             // Move the menu tree creation off the UI thread
-            var items = await System.Threading.Tasks.Task.Run(() => {
+            var items = await Task.Run(() => {
                 var list = new List<MenuItemViewModel>();
 
                 if (allSingers.Count > 0) {
