@@ -4,7 +4,6 @@
 
   <system:String x:Key="button.apply">Apply</system:String>
   <system:String x:Key="button.cancel">Cancel</system:String>
-  <system:String x:Key="button.close">Close</system:String>
   <system:String x:Key="button.no">No</system:String>
   <system:String x:Key="button.off">Off</system:String>
   <system:String x:Key="button.ok">Ok</system:String>

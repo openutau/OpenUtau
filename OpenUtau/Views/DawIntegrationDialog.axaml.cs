@@ -28,8 +28,6 @@ namespace OpenUtau.App.Views {
 
         void OnRefresh(object sender, RoutedEventArgs e) => Refresh();
 
-        void OnClose(object sender, RoutedEventArgs e) => Close();
-
         async void Refresh() {
             try {
                 if (DataContext is DawIntegrationViewModel vm) {

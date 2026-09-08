@@ -20,11 +20,11 @@
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.port}"
                             Binding="{Binding Port}" Width="70"/>
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.apiversion}"
-                            Binding="{Binding ApiVersion}" Width="60"/>
+                            Binding="{Binding ApiVersion}" Width="Auto"/>
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.compatibility}"
-                            Binding="{Binding Compatibility}" Width="130"/>
+                            Binding="{Binding Compatibility}" Width="Auto"/>
         <DataGridTextColumn Header="{DynamicResource dawintegration.col.state}"
-                            Binding="{Binding StateText}" Width="110"/>
+                            Binding="{Binding StateText}" Width="Auto"/>
       </DataGrid.Columns>
     </DataGrid>
 
@@ -38,7 +38,6 @@
               IsEnabled="{Binding ConnectEnabled}"/>
       <Button Content="{DynamicResource dawintegration.disconnect}" Click="OnDisconnect"
               IsEnabled="{Binding DisconnectEnabled}"/>
-      <Button Content="{DynamicResource button.close}" Click="OnClose" Width="90"/>
     </StackPanel>
   </Grid>
 </Window>
