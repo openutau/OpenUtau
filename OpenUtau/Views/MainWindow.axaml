@@ -232,7 +232,7 @@
                   </TextBlock.Text>
                 </TextBlock>
                 <TextBlock Width="42" HorizontalAlignment="Right"
-                            Background="Transparent" PointerPressed="OnEditBpm">
+                            Background="Transparent" PointerPressed="OnEditBpm" PointerWheelChanged="OnEditBpmScroll">
                   <TextBlock.Text>
                     <MultiBinding StringFormat="{}{0:#0.00}">
                       <Binding Path="PlaybackViewModel.Bpm"/>
