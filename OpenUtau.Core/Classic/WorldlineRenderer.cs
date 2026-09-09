@@ -17,6 +17,7 @@ using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Classic {
     public class WorldlineRenderer : IRenderer {
+        const string POWC = "powc";
         readonly int version;
         readonly double frameMs;
         byte[]? vocoderBytes;
@@ -43,7 +44,7 @@ namespace OpenUtau.Classic {
             Ustx.GENC,
             Ustx.BREC,
             Ustx.TENC,
-            Ustx.POWC,
+            POWC,
             Ustx.VOIC,
             Ustx.DIR,
         };
@@ -72,7 +73,7 @@ namespace OpenUtau.Classic {
                 phrase.AddCacheFile(wavPath);
                 string progressInfo = $"Track {trackNo + 1}: {this} {string.Join(" ", phrase.phones.Select(p => p.phoneme))}";
                 progress.Complete(0, progressInfo);
-                var powerCurve = phrase.curves.FirstOrDefault(c => c.Item1 == Ustx.POWC)?.Item2;
+                var powerCurve = phrase.curves.FirstOrDefault(c => c.Item1 == POWC)?.Item2;
                 bool hasPower = powerCurve?.Any(value => value != 0) == true;
                 if (File.Exists(wavPath)) {
                     using (var waveStream = Wave.OpenFile(wavPath)) {
@@ -111,19 +112,26 @@ namespace OpenUtau.Classic {
                     }
                     int frames = (int)Math.Ceiling(result.estimatedLengthMs / frameMs);
                     var f0 = SampleCurve(phrase, phrase.pitches, 0, frames, x => MusicMath.ToneToFreq(x * 0.01));
-                    var gender = SampleCurve(phrase, phrase.gender, 0, frames, x => x);
-                    var tension = SampleCurve(phrase, phrase.tension, 0, frames, x => x);
-                    var breathiness = SampleCurve(phrase, phrase.breathiness, 0, frames, x => x);
-                    var voicing = SampleCurve(phrase, phrase.voicing, 100, frames, x => x);
                     if (hasPower) {
                         var power = SampleCurve(phrase, powerCurve!, 0, frames, x => Math.Clamp(x, -100, 100));
-                        ApplyPowerToExpressions(power, gender, tension, breathiness, voicing);
+                        var genderExp = SampleCurve(phrase, phrase.gender, 0, frames, x => x);
+                        var tensionExp = SampleCurve(phrase, phrase.tension, 0, frames, x => x);
+                        var breathinessExp = SampleCurve(phrase, phrase.breathiness, 0, frames, x => x);
+                        var voicingExp = SampleCurve(phrase, phrase.voicing, 100, frames, x => x);
+                        ApplyPowerToExpressions(power, genderExp, tensionExp, breathinessExp, voicingExp);
+                        phraseSynth.SetCurves(
+                            f0,
+                            genderExp.Select(x => 0.5 + 0.005 * x).ToArray(),
+                            tensionExp.Select(x => 0.5 + 0.005 * x).ToArray(),
+                            breathinessExp.Select(x => 0.5 + 0.005 * x).ToArray(),
+                            voicingExp.Select(x => 0.01 * x).ToArray());
+                    } else {
+                        var gender = SampleCurve(phrase, phrase.gender, 0.5, frames, x => 0.5 + 0.005 * x);
+                        var tension = SampleCurve(phrase, phrase.tension, 0.5, frames, x => 0.5 + 0.005 * x);
+                        var breathiness = SampleCurve(phrase, phrase.breathiness, 0.5, frames, x => 0.5 + 0.005 * x);
+                        var voicing = SampleCurve(phrase, phrase.voicing, 1.0, frames, x => 0.01 * x);
+                        phraseSynth.SetCurves(f0, gender, tension, breathiness, voicing);
                     }
-                    gender = gender.Select(x => 0.5 + 0.005 * x).ToArray();
-                    tension = tension.Select(x => 0.5 + 0.005 * x).ToArray();
-                    breathiness = breathiness.Select(x => 0.5 + 0.005 * x).ToArray();
-                    voicing = voicing.Select(x => 0.01 * x).ToArray();
-                    phraseSynth.SetCurves(f0, gender, tension, breathiness, voicing);
                     if (version == 1) {
                         result.samples = phraseSynth.Synth();
                     } else {
@@ -232,9 +240,9 @@ namespace OpenUtau.Classic {
             double[] voicing) {
             const double maxGenderChange = 4;
             const double maxTensionChange = 75;
-            const double maxStrongBreathinessChange = 40;
-            const double maxWeakBreathinessChange = 80;
-            const double maxWeakVoicingChange = 75;
+            const double maxPositiveBreathinessChange = 40;
+            const double maxNegativeBreathinessChange = 80;
+            const double maxNegativeVoicingChange = 75;
 
             for (int i = 0; i < power.Length; ++i) {
                 double normalizedPower = Math.Clamp(power[i], -100, 100) / 100;
@@ -248,17 +256,17 @@ namespace OpenUtau.Classic {
                     100);
                 if (normalizedPower >= 0) {
                     breathiness[i] = Math.Clamp(
-                        breathiness[i] - maxStrongBreathinessChange * normalizedPower,
+                        breathiness[i] - maxPositiveBreathinessChange * normalizedPower,
                         -100,
                         100);
                 } else {
-                    double weakness = -normalizedPower;
+                    double negativePower = -normalizedPower;
                     breathiness[i] = Math.Clamp(
-                        breathiness[i] + maxWeakBreathinessChange * weakness,
+                        breathiness[i] + maxNegativeBreathinessChange * negativePower,
                         -100,
                         100);
                     voicing[i] = Math.Clamp(
-                        voicing[i] - maxWeakVoicingChange * weakness,
+                        voicing[i] - maxNegativeVoicingChange * negativePower,
                         0,
                         100);
                 }
@@ -290,18 +298,19 @@ namespace OpenUtau.Classic {
         private static float CombineDynamicsAndPower(float dynamics, float power) {
             const double minDynamicsDb = -24;
             const double maxDynamicsDb = 12;
-            const double maxPowerChangeDb = 1.5;
+            const double maxPowerDynamicsChangeDb = 1.5;
 
-            if (dynamics <= 0) {
-                return 0;
-            }
-            double dynamicsDb = 20 * Math.Log10(dynamics);
-            double powerDb = Math.Clamp(power, -100, 100) / 100 * maxPowerChangeDb;
+            double dynamicsDb = dynamics <= 0
+                ? minDynamicsDb
+                : 20 * Math.Log10(dynamics);
+            double powerDb = Math.Clamp(power, -100, 100) / 100 * maxPowerDynamicsChangeDb;
             double combinedDb = Math.Clamp(
                 dynamicsDb + powerDb,
                 minDynamicsDb,
                 maxDynamicsDb);
-            return (float)MusicMath.DecibelToLinear(combinedDb);
+            return combinedDb <= minDynamicsDb
+                ? 0
+                : (float)MusicMath.DecibelToLinear(combinedDb);
         }
         private static void AddDirects(RenderPhrase phrase, List<ResamplerItem> resamplerItems, RenderResult result) {
             foreach (var item in resamplerItems) {
@@ -331,7 +340,17 @@ namespace OpenUtau.Classic {
         }
 
         public UExpressionDescriptor[] GetSuggestedExpressions(USinger singer, URenderSettings renderSettings) {
-            return new UExpressionDescriptor[] { };
+            return new UExpressionDescriptor[] {
+                new UExpressionDescriptor {
+                    name = "power (curve)",
+                    abbr = POWC,
+                    type = UExpressionType.Curve,
+                    min = -100,
+                    max = 100,
+                    defaultValue = 0,
+                    isFlag = false,
+                },
+            };
         }
 
         public override string ToString() => version == 1 ? Renderers.WORLDLINE_R : Renderers.WORLDLINE_R2;
