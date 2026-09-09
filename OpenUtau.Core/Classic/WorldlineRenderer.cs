@@ -17,7 +17,6 @@ using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Classic {
     public class WorldlineRenderer : IRenderer {
-
         readonly int version;
         readonly double frameMs;
         byte[]? vocoderBytes;
@@ -29,7 +28,6 @@ namespace OpenUtau.Classic {
             this.version = version;
             frameMs = version == 1 ? 10 : 512.0 * 1000.0 / 44100.0;
         }
-
         static readonly HashSet<string> supportedExp = new HashSet<string>(){
             Ustx.DYN,
             Ustx.PITD,
@@ -45,10 +43,10 @@ namespace OpenUtau.Classic {
             Ustx.GENC,
             Ustx.BREC,
             Ustx.TENC,
+            Ustx.POWC,
             Ustx.VOIC,
             Ustx.DIR,
         };
-
         public USingerType SingerType => USingerType.Classic;
 
         public bool SupportsRenderPitch => false;
@@ -56,7 +54,6 @@ namespace OpenUtau.Classic {
         public bool SupportsExpression(UExpressionDescriptor descriptor) {
             return supportedExp.Contains(descriptor.abbr);
         }
-
         public RenderResult Layout(RenderPhrase phrase) {
             return new RenderResult() {
                 leadingMs = phrase.leadingMs,
@@ -64,7 +61,6 @@ namespace OpenUtau.Classic {
                 estimatedLengthMs = phrase.durationMs + phrase.leadingMs,
             };
         }
-
         public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var resamplerItems = new List<ResamplerItem>();
             foreach (var phone in phrase.phones) {
@@ -76,6 +72,8 @@ namespace OpenUtau.Classic {
                 phrase.AddCacheFile(wavPath);
                 string progressInfo = $"Track {trackNo + 1}: {this} {string.Join(" ", phrase.phones.Select(p => p.phoneme))}";
                 progress.Complete(0, progressInfo);
+                var powerCurve = phrase.curves.FirstOrDefault(c => c.Item1 == Ustx.POWC)?.Item2;
+                bool hasPower = powerCurve?.Any(value => value != 0) == true;
                 if (File.Exists(wavPath)) {
                     using (var waveStream = Wave.OpenFile(wavPath)) {
                         result.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
@@ -113,10 +111,18 @@ namespace OpenUtau.Classic {
                     }
                     int frames = (int)Math.Ceiling(result.estimatedLengthMs / frameMs);
                     var f0 = SampleCurve(phrase, phrase.pitches, 0, frames, x => MusicMath.ToneToFreq(x * 0.01));
-                    var gender = SampleCurve(phrase, phrase.gender, 0.5, frames, x => 0.5 + 0.005 * x);
-                    var tension = SampleCurve(phrase, phrase.tension, 0.5, frames, x => 0.5 + 0.005 * x);
-                    var breathiness = SampleCurve(phrase, phrase.breathiness, 0.5, frames, x => 0.5 + 0.005 * x);
-                    var voicing = SampleCurve(phrase, phrase.voicing, 1.0, frames, x => 0.01 * x);
+                    var gender = SampleCurve(phrase, phrase.gender, 0, frames, x => x);
+                    var tension = SampleCurve(phrase, phrase.tension, 0, frames, x => x);
+                    var breathiness = SampleCurve(phrase, phrase.breathiness, 0, frames, x => x);
+                    var voicing = SampleCurve(phrase, phrase.voicing, 100, frames, x => x);
+                    if (hasPower) {
+                        var power = SampleCurve(phrase, powerCurve!, 0, frames, x => Math.Clamp(x, -100, 100));
+                        ApplyPowerToExpressions(power, gender, tension, breathiness, voicing);
+                    }
+                    gender = gender.Select(x => 0.5 + 0.005 * x).ToArray();
+                    tension = tension.Select(x => 0.5 + 0.005 * x).ToArray();
+                    breathiness = breathiness.Select(x => 0.5 + 0.005 * x).ToArray();
+                    voicing = voicing.Select(x => 0.01 * x).ToArray();
                     phraseSynth.SetCurves(f0, gender, tension, breathiness, voicing);
                     if (version == 1) {
                         result.samples = phraseSynth.Synth();
@@ -191,13 +197,16 @@ namespace OpenUtau.Classic {
                 }
                 progress.Complete(phrase.phones.Length, progressInfo);
                 if (result.samples != null) {
-                    Renderers.ApplyDynamics(phrase, result);
+                    if (hasPower) {
+                        ApplyPowerDynamics(phrase, result, powerCurve!);
+                    } else {
+                        Renderers.ApplyDynamics(phrase, result);
+                    }
                 }
                 return result;
             });
             return task;
         }
-
         double[] SampleCurve(RenderPhrase phrase, float[] curve, double defaultValue, int length, Func<double, double> convert) {
             const int interval = 5;
             var result = new double[length];
@@ -215,7 +224,85 @@ namespace OpenUtau.Classic {
             }
             return result;
         }
+        private static void ApplyPowerToExpressions(
+            double[] power,
+            double[] gender,
+            double[] tension,
+            double[] breathiness,
+            double[] voicing) {
+            const double maxGenderChange = 4;
+            const double maxTensionChange = 75;
+            const double maxStrongBreathinessChange = 40;
+            const double maxWeakBreathinessChange = 80;
+            const double maxWeakVoicingChange = 75;
 
+            for (int i = 0; i < power.Length; ++i) {
+                double normalizedPower = Math.Clamp(power[i], -100, 100) / 100;
+                gender[i] = Math.Clamp(
+                    gender[i] - maxGenderChange * normalizedPower,
+                    -100,
+                    100);
+                tension[i] = Math.Clamp(
+                    tension[i] + maxTensionChange * normalizedPower,
+                    -100,
+                    100);
+                if (normalizedPower >= 0) {
+                    breathiness[i] = Math.Clamp(
+                        breathiness[i] - maxStrongBreathinessChange * normalizedPower,
+                        -100,
+                        100);
+                } else {
+                    double weakness = -normalizedPower;
+                    breathiness[i] = Math.Clamp(
+                        breathiness[i] + maxWeakBreathinessChange * weakness,
+                        -100,
+                        100);
+                    voicing[i] = Math.Clamp(
+                        voicing[i] - maxWeakVoicingChange * weakness,
+                        0,
+                        100);
+                }
+            }
+        }
+        private static void ApplyPowerDynamics(RenderPhrase phrase, RenderResult result, float[] power) {
+            const int interval = 5;
+            int startTick = phrase.position - phrase.leading;
+            double startMs = result.positionMs - result.leadingMs;
+            int startSample = 0;
+            int curveLength = Math.Max(phrase.dynamics?.Length ?? 0, power.Length);
+            for (int i = 0; i < curveLength; ++i) {
+                int endTick = startTick + interval;
+                double endMs = phrase.timeAxis.TickPosToMsPos(endTick);
+                int endSample = Math.Min((int)((endMs - startMs) / 1000 * 44100), result.samples.Length);
+                float dynamicsA = phrase.dynamics != null && i < phrase.dynamics.Length ? phrase.dynamics[i] : 1;
+                float dynamicsB = phrase.dynamics != null && i + 1 < phrase.dynamics.Length ? phrase.dynamics[i + 1] : dynamicsA;
+                float powerA = i < power.Length ? power[i] : 0;
+                float powerB = i + 1 < power.Length ? power[i + 1] : powerA;
+                float a = CombineDynamicsAndPower(dynamicsA, powerA);
+                float b = CombineDynamicsAndPower(dynamicsB, powerB);
+                for (int j = startSample; j < endSample; ++j) {
+                    result.samples[j] *= a + (b - a) * (j - startSample) / (endSample - startSample);
+                }
+                startTick = endTick;
+                startSample = endSample;
+            }
+        }
+        private static float CombineDynamicsAndPower(float dynamics, float power) {
+            const double minDynamicsDb = -24;
+            const double maxDynamicsDb = 12;
+            const double maxPowerChangeDb = 1.5;
+
+            if (dynamics <= 0) {
+                return 0;
+            }
+            double dynamicsDb = 20 * Math.Log10(dynamics);
+            double powerDb = Math.Clamp(power, -100, 100) / 100 * maxPowerChangeDb;
+            double combinedDb = Math.Clamp(
+                dynamicsDb + powerDb,
+                minDynamicsDb,
+                maxDynamicsDb);
+            return (float)MusicMath.DecibelToLinear(combinedDb);
+        }
         private static void AddDirects(RenderPhrase phrase, List<ResamplerItem> resamplerItems, RenderResult result) {
             foreach (var item in resamplerItems) {
                 if (!item.phone.direct) {
@@ -239,7 +326,6 @@ namespace OpenUtau.Classic {
                 }
             }
         }
-
         public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase) {
             return null;
         }
@@ -251,4 +337,3 @@ namespace OpenUtau.Classic {
         public override string ToString() => version == 1 ? Renderers.WORLDLINE_R : Renderers.WORLDLINE_R2;
     }
 }
-

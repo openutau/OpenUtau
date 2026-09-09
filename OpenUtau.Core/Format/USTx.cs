@@ -11,7 +11,6 @@ using Serilog;
 namespace OpenUtau.Core.Format {
     public class Ustx {
         public static readonly Version kUstxVersion = new Version(0, 9);
-
         public const string DYN = "dyn";
         public const string PITD = "pitd";
         public const string CLR = "clr";
@@ -33,12 +32,11 @@ namespace OpenUtau.Core.Format {
         public const string SHFT = "shft";
         public const string SHFC = "shfc";
         public const string TENC = "tenc";
+        public const string POWC = "powc";
         public const string VOIC = "voic";
         public const string CLRY = "clry";
         public const string XSY = "xsy";
-
         public static readonly string[] required = { DYN, PITD, CLR, ENG, VEL, VOL, ATK, DEC };
-
         public static void AddDefaultExpressions(UProject project) {
             project.RegisterExpression(new UExpressionDescriptor("dynamics (curve)", DYN, -240, 120, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("pitch deviation (curve)", PITD, -1200, 1200, 0) { type = UExpressionType.Curve });
@@ -61,10 +59,10 @@ namespace OpenUtau.Core.Format {
             project.RegisterExpression(new UExpressionDescriptor("tone shift", SHFT, -36, 36, 0));
             project.RegisterExpression(new UExpressionDescriptor("tone shift (curve)", SHFC, -1200, 1200, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("tension (curve)", TENC, -100, 100, 0) { type = UExpressionType.Curve });
+            project.RegisterExpression(new UExpressionDescriptor("power (curve)", POWC, -100, 100, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("voicing (curve)", VOIC, 0, 100, 100) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("voice color y", CLRY, false, new string[0]));
             project.RegisterExpression(new UExpressionDescriptor("cross synthesis (curve)", XSY, 0, 100, 0) { type = UExpressionType.Curve });
-
             string message = string.Empty;
             if (ValidateExpression(project, "g", GEN)) {
                 message += $"\ng flag -> gender";
@@ -91,13 +89,11 @@ namespace OpenUtau.Core.Format {
             }
             return false;
         }
-
         public static UProject Create() {
             UProject project = new UProject() { Saved = false };
             AddDefaultExpressions(project);
             return project;
         }
-
         public static void Save(string filePath, UProject project) {
             try {
                 project.ustxVersion = kUstxVersion;
@@ -114,7 +110,6 @@ namespace OpenUtau.Core.Format {
                 DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
             }
         }
-
         public static void AutoSave(string filePath, UProject project) {
             try {
                 project.ustxVersion = kUstxVersion;
@@ -127,7 +122,6 @@ namespace OpenUtau.Core.Format {
                 Log.Error(ex, $"Failed to autosave: {filePath}");
             }
         }
-
         public static UProject Load(string filePath) {
             string text = File.ReadAllText(filePath, Encoding.UTF8);
             UProject project = Yaml.DefaultDeserializer.Deserialize<UProject>(text);
