@@ -21,6 +21,12 @@ namespace OpenUtau.Plugins {
         }
 
         [Fact]
+        public void TetoUsesE() {
+            SameAltsTonesColorsTest("en_teto", new string[] { "teto" },
+                new string[] { "- tE", "E t", "to", "o U^" }, "", "C4", "");
+        }
+
+        [Fact]
         public void ToneShiftTest() {
             RunPhonemizeTest("en_delta0", new NoteParams[] {
                 new NoteParams {

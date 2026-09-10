@@ -148,3 +148,7 @@ symbols:
 entries:
   - grapheme: openutau
     phonemes: [ow, p, ah, n, uw, t, aw]
+  - grapheme: kasane
+    phonemes: [k, '{', s, V, n, E]
+  - grapheme: teto
+    phonemes: [t, E, t, oU]

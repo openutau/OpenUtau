@@ -1,0 +1,6 @@
+subbanks:
+- color: ""
+  prefix: ""
+  suffix: ""
+  tone_ranges:
+  - C1-B7
