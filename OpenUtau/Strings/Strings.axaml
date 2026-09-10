@@ -279,6 +279,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="languages.vi">Vietnamese</system:String>
   <system:String x:Key="languages.zh">Chinese</system:String>
   <system:String x:Key="languages.zh-yue">Cantonese</system:String>
+  <system:String x:Key="languages.id">Indonesian</system:String>
 
   <system:String x:Key="lyrics.applyselected">Apply only to selected notes</system:String>
   <system:String x:Key="lyrics.caption">Edit Lyrics</system:String>
@@ -549,8 +550,6 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.expressions">View Expressions (L)</system:String>
   <system:String x:Key="pianoroll.toggle.finalpitch">View Final Pitch to Render (R)</system:String>
   <system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>
-  <system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>
-  <system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>
   <system:String x:Key="pianoroll.toggle.noteparams">View Note Parameters (\)</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">Toggle Overwrite Pitch Mode</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">View Phonemes (O)</system:String>
@@ -563,6 +562,8 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.tone">Toggle Note Tone (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">View Vibrato (U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">View Waveform (W)</system:String>
+  <system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>
+  <system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>
   <system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (Shift + 1)
     Left click to draw
     Right click to reset
