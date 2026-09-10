@@ -147,7 +147,7 @@ namespace OpenUtau.Api {
                     var thisLast = notes[i].Last();
                     nextIsNeighbour = thisLast.position + thisLast.duration >= next.Value.position;
                 }
-                if (next != null && result.Count > 0 && result[0].Length > 0) {
+                if (next != null && nextIsNeighbour && result.Count > 0 && result[0].Length > 0) {
                     var end = notes[i].Last().position + notes[i].Last().duration;
                     int endPushback = Math.Min(0, result[0][0].position - end);
                     notes[i][notes[i].Length - 1].duration += endPushback;

@@ -357,6 +357,10 @@
             <Button Grid.Column="2" Content="{DynamicResource button.select}"
                     HorizontalAlignment="Stretch" Click="SelectSetParamPath"/>
           </Grid>
+          <Grid>
+            <TextBlock Text="{DynamicResource prefs.extendendingphonemes}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding ExtendEndingPhonemes}"/>
+          </Grid>
         </StackPanel>
 
         <!-- DiffSinger -->

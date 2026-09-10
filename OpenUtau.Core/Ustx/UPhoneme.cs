@@ -54,27 +54,52 @@ namespace OpenUtau.Core.Ustx {
 
         public void Validate(ValidateOptions options, UProject project, UTrack track, UVoicePart part, UNote note) {
             Error = note.Error;
-            ValidateDuration(project, part);
+            ValidateOto(track, note);
+            ValidateDuration(project, track, part);
             if (ErrorException != null) {
                 Error = true;
             }
-            ValidateOto(track, note);
             ValidateOverlap(project, track, part, note);
             ValidateEnvelope(project, track, note);
         }
 
-        void ValidateDuration(UProject project, UVoicePart part) {
+        void ValidateDuration(UProject project, UTrack track, UVoicePart part) {
             if (Error) {
                 return;
             }
             var leadingNote = Parent.Extends ?? Parent;
-            Duration = leadingNote.ExtendedEnd - position;
-            if (Next != null && Parent != null) {
-                if (Next.Parent == Parent.Next && Parent.End == Next.Parent.position) {
-                    Duration = int.MaxValue;
+            bool hasNextInSameNote = Next != null && (Next.Parent == Parent || (Next.Parent?.Extends ?? Next.Parent) == leadingNote);
+            bool clump = !Util.Preferences.Default.ExtendEndingPhonemes;
+
+            if (hasNextInSameNote || clump) {
+                Duration = leadingNote.ExtendedEnd - position;
+                if (Next != null) {
+                    Duration = Math.Min(Duration, Next.position - position);
                 }
-                Duration = Math.Min(Duration, Next.position - position);
+            } else {
+                double consonantStretch = Math.Pow(2.0, 1.0 - GetExpression(project, track, Format.Ustx.VEL).Item1 / 100.0);
+                double tailMs = 5.0;
+                if (!string.IsNullOrEmpty(phonemeMapped) && oto.Consonant > 0) {
+                    if (oto.Cutoff < 0) {
+                        double effectiveLength = Math.Abs(oto.Cutoff);
+                        tailMs = Math.Max(35.0, (effectiveLength - oto.Preutter) * consonantStretch);
+                    } else {
+                        tailMs = Math.Max(35.0, (oto.Consonant - oto.Preutter) * consonantStretch);
+                    }
+                } else {
+                    tailMs *= consonantStretch;
+                }
+
+                int tailTicks = project.timeAxis.MsPosToTickPos(tailMs) - project.timeAxis.MsPosToTickPos(0);
+                int naturalEnd = Math.Max(leadingNote.ExtendedEnd, position + tailTicks);
+
+                if (Next != null) {
+                    naturalEnd = Math.Min(naturalEnd, Next.position);
+                }
+
+                Duration = naturalEnd - position;
             }
+
             PositionMs = project.timeAxis.TickPosToMsPos(part.position + position);
             EndMs = project.timeAxis.TickPosToMsPos(part.position + End);
             Error = Duration <= 0;
@@ -180,6 +205,8 @@ namespace OpenUtau.Core.Ustx {
             p0.X = (float)-preutter;
             p1.X = (float)Math.Max(p0.X + 5, p0.X + GetFadeIn() + (attackTimeDelta ?? 0));
             p2.X = Math.Max(0f, p1.X);
+
+            // If Next == null (ending into rest), allow p4 to extend dynamically past the zero mark
             p4.X = (float)(DurationMs - tailIntrude + tailOverlap);
             p3.X = (float)Math.Max(p2.X, p4.X - GetFadeOut() - (releaseTimeDelta ?? 0));
 
