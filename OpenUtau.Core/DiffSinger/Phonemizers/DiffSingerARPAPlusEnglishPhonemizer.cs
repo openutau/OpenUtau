@@ -10,7 +10,7 @@ using OpenUtau.Core.Ustx;
 using Serilog;
 
 namespace OpenUtau.Core.DiffSinger {
-    [Phonemizer("DiffSinger English+ Phonemizer", "DIFFS EN+", language: "EN", author: "Cadlaxa")]
+    [Phonemizer("DiffSinger English+ Phonemizer", "DIFFS EN+", language: "EN", author: "Cadlaxa", engine: "Diffsinger")]
     public class DiffSingerARPAPlusEnglishPhonemizer : DiffSingerG2pPhonemizer
     // cadlaxa here, this diffsinger english phonemizer just uses the ARPA+ G2p so arpasing+ and this phonemizer
     // have same g2p mechanics such as triggering of glottal stop with ('), manual relaxed consonants

@@ -14,16 +14,19 @@ namespace OpenUtau.Api {
         public string Tag { get; private set; }
         public string Author { get; private set; }
         public string Language { get; private set; }
+        public string Engine { get; private set; }
 
         /// <param name="name">Name of phonemizer. Required.</param>
         /// <param name="tag">Use IETF language code + phonetic type as tag, e.g., "EN ARPA", "JA VCV", etc. Required.</param>
         /// <param name="author">Author of this phonemizer.</param>
         /// <param name="language">IETF language code of this phonemizer's singing language, e.g., "EN", "JA"</param>
-        public PhonemizerAttribute(string name, string tag, string author = null, string language = null) {
+        /// <param name="engine">Engine of the phonemizer to categorize them.</param>
+        public PhonemizerAttribute(string name, string tag, string author = null, string language = null, string engine = null) {
             Name = name;
             Tag = tag;
             Author = author;
             Language = language;
+            Engine = engine;
         }
     }
 
@@ -152,6 +155,7 @@ namespace OpenUtau.Api {
         public string Name { get; set; }
         public string Tag { get; set; }
         public string Language { get; set; }
+        public string Engine { get; set; }
         internal Exception? SetUpException { get; set; }
 
         protected double bpm;
