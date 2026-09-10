@@ -27,6 +27,12 @@ namespace OpenUtau.Plugins {
         }
 
         [Fact]
+        public void KasaneUsesE() {
+            SameAltsTonesColorsTest("en_teto", new string[] { "kasane" },
+                new string[] { "- k{", "{ s", "s @", "n E", "E -" }, "", "C4", "");
+        }
+
+        [Fact]
         public void ToneShiftTest() {
             RunPhonemizeTest("en_delta0", new NoteParams[] {
                 new NoteParams {
