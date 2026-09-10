@@ -129,7 +129,7 @@
       <Button Margin="10" HorizontalAlignment="Right" IsEnabled="{Binding !IsTrackOverride}"
             Content="{DynamicResource exps.getsuggestions}" Command="{Binding GetSuggestions}"/>
       <Button Margin="10" Width="80" HorizontalAlignment="Right"
-            Content="{DynamicResource exps.apply}" Click="ApplyButtonClicked"/>
+            Content="{DynamicResource button.apply}" Click="ApplyButtonClicked"/>
     </StackPanel>
   </Grid>
 </Window>

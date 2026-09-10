@@ -30,8 +30,7 @@ namespace Classic {
         public bool MustVC { get; set; } = false;
         public string CFlags { get; set; } = "p0";
         public bool VCLengthFromCV { get; set; } = true;
-        /**  
-            <summary>
+        /** <summary>
                 0: not 1: add ending note 2: convert last note
             </summary>
         */
@@ -39,199 +38,211 @@ namespace Classic {
 
         public Dictionary<string, PresampPhoneme> PhonemeList { get; set; } = new Dictionary<string, PresampPhoneme>();
 
-        public Presamp() {
+        public void Reset() {
             SetVowels(defVowels);
             SetConsonants(defConsonants);
-            Replace = defReplace;
-            Nums = defNums;
-            Appends = defAppends;
-            Pitches = defPitches;
+            Priorities = new List<string> { "k", "ky", "g", "gy", "t", "ty", "d", "dy", "ch", "ts", "b", "by", "p", "py", "r", "ry" };
+            Replace = new Dictionary<string, string>(defReplace);
+            AliasRules = new PresampAliasRules();
+            Prefixs = new List<string>(); 
+            SuffixOrder = new List<string> { "%num%", "%append%", "%pitch%" };
+            Nums = new List<string>(defNums);
+            Appends = new List<string>(defAppends);
+            Pitches = new List<string>(defPitches);
+            AliasPriorityDefault = new List<string> { "VCV", "CVVC", "CROSS_CV", "CV", "BEGINING_CV" };
+            AliasPriorityDifAppend = new List<string> { "CVVC", "VCV", "CROSS_CV", "CV", "BEGINING_CV" };
+            AliasPriorityDifPitch = new List<string> { "CVVC", "VCV", "CROSS_CV", "CV", "BEGINING_CV" };
+            Split = true;
+            MustVC = false;
+            CFlags = "p0";
+            VCLengthFromCV = true;
+            AddEnding = 1;
+        }
 
+        public Presamp() {
+            Reset();
             MakePhonemeList();
         }
 
         public void ReadPresampIni(string dirPath, Encoding textFileEncoding) {
+            Reset();
             try {
                 string iniPath = Path.Combine(dirPath, "presamp.ini");
                 if (!File.Exists(iniPath)) {
                     FileExists = false;
-                } else {
-                    FileExists = true;
+                    MakePhonemeList();
+                    return;
+                }
+                FileExists = true;
 
-                    List<IniBlock> blocks;
-                    using (var reader = new StreamReader(iniPath, textFileEncoding)) {
-                        blocks = Ini.ReadBlocks(reader, iniPath, @"\[\w+\]", false);
-                    }
+                // Smart Encoding Auto-Detection (UTF-8 -> Strict ANSI -> Fallbacks)
+                byte[] bytes = File.ReadAllBytes(iniPath);
+                Encoding encoding = textFileEncoding;
+                
+                try {
+                    // UTF-8
+                    var utf8 = new UTF8Encoding(false, true);
+                    utf8.GetString(bytes);
+                    encoding = Encoding.UTF8;
+                } catch {
+                    bool parsed = false;
+                    // singer's default text encoding
+                    try {
+                        var strictDef = Encoding.GetEncoding(textFileEncoding.CodePage, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
+                        strictDef.GetString(bytes);
+                        encoding = textFileEncoding;
+                        parsed = true;
+                    } catch { }
 
-                    if (TryGetLinesFromIniBrocks(blocks, "[VOWEL]", out List<IniLine> vowelLines)) {
-                        SetVowels(vowelLines.Select(l => l.line).ToList());
-                    }
-
-                    if (TryGetLinesFromIniBrocks(blocks, "[CONSONANT]", out List<IniLine> consonantLines)) {
-                        SetConsonants(consonantLines.Select(l => l.line).ToList());
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[PRIORITY]", out List<IniLine> priority)) {
-                        Priorities.Clear();
-                        if (priority.Count > 0) {
-                            Priorities.AddRange(priority[0].line.Split(','));
-                        }
-                    }
-
-                    if (TryGetLinesFromIniBrocks(blocks, "[REPLACE]", out List<IniLine> replace)) {
-                        Replace.Clear();
-                        replace.ForEach(r => {
-                            var s = r.line.Split('=');
-                            Replace.Add(s[0], s[1]);
-                        });
-                    }
-
-                    // AliasRules
-                    if (TryGetLinesFromIniBrocks(blocks, "[ALIAS]", out List<IniLine> alias)) {
-                        foreach (IniLine line in alias) {
-                            var parts = line.line.Split('=');
-                            switch (parts[0]) {
-                                case "VCV":
-                                    AliasRules.VCV = parts[1];
-                                    break;
-                                case "BEGINING_CV":
-                                    AliasRules.BEGINING_CV = parts[1];
-                                    break;
-                                case "CROSS_CV":
-                                    AliasRules.CROSS_CV = parts[1];
-                                    break;
-                                case "VC":
-                                    AliasRules.VC = parts[1];
-                                    break;
-                                case "CV":
-                                    AliasRules.CV = parts[1];
-                                    break;
-                                case "C":
-                                    AliasRules.C = parts[1];
-                                    break;
-                                case "LONG_V":
-                                    AliasRules.LONG_V = parts[1];
-                                    break;
-                                case "VCPAD":
-                                    AliasRules.VCPAD = parts[1];
-                                    break;
-                                case "VCVPAD":
-                                    AliasRules.VCVPAD = parts[1];
-                                    break;
-                                case "ENDING1":
-                                    AliasRules.ENDING1 = parts[1];
-                                    break;
-                                case "ENDING2":
-                                    AliasRules.ENDING2 = parts[1];
-                                    break;
-                            }
-                        }
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[ENDTYPE]", out List<IniLine> endtype) && endtype.Count > 0) {
-                        AliasRules.ENDING1 = endtype[0].line;
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[ENDTYPE1]", out List<IniLine> endtype1) && endtype1.Count > 0) {
-                        AliasRules.ENDING1 = endtype1[0].line;
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[ENDTYPE2]", out List<IniLine> endtype2) && endtype2.Count > 0) {
-                        AliasRules.ENDING2 = endtype2[0].line;
-                    }
-                    // Ignore [VCPAD] block as it was not used.
-
-                    if (TryGetLinesFromIniBrocks(blocks, "[PRE]", out List<IniLine> pre)) {
-                        Prefixs.Clear();
-                        pre.ForEach(p => { Prefixs.Add(p.line); });
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[SU]", out List<IniLine> su) && su.Count > 0) {
-                        SuffixOrder.Clear();
-                        string str = su[0].line;
-                        for (int i = 1; i < 3 && str != ""; i++) {
-                            if (str.StartsWith("%num%")) {
-                                SuffixOrder.Add("%num%");
-                                str = str.Replace("%num%", "");
-                            }
-                            if (str.StartsWith("%append%")) {
-                                SuffixOrder.Add("%append%");
-                                str = str.Replace("%append%", "");
-                            }
-                            if (str.StartsWith("%pitch%")) {
-                                SuffixOrder.Add("%pitch%");
-                                str = str.Replace("%pitch%", "");
-                            }
-                        }
-                    }
-
-                    // think about @UNDERBAR@ @NOREPEAT@ when you need it.
-                    if (TryGetLinesFromIniBrocks(blocks, "[NUM]", out List<IniLine> num)) {
-                        Nums.Clear();
-                        foreach (var n in num) {
-                            if (!Regex.IsMatch(n.line, "^@.+@$")) {
-                                Nums.Add(n.line);
-                            }
-                        }
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[APPEND]", out List<IniLine> append)) {
-                        Appends.Clear();
-                        foreach (var a in append) {
-                            if (!Regex.IsMatch(a.line, "^@.+@$")) {
-                                Appends.Add(a.line);
-                            }
-                        }
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[PITCH]", out List<IniLine> pitch)) {
-                        Pitches.Clear();
-                        foreach (var p in pitch) {
-                            if (!Regex.IsMatch(p.line, "^@.+@$")) {
-                                Pitches.Add(p.line);
-                            }
-                        }
-                    }
-
-                    // ALIAS_PRIORITY
-                    if (TryGetLinesFromIniBrocks(blocks, "[ALIAS_PRIORITY]", out List<IniLine> ap1)) {
-                        AliasPriorityDefault.Clear();
-                        ap1.ForEach(a => AliasPriorityDefault.Add(a.line));
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[ALIAS_PRIORITY_DIFAPPEND]", out List<IniLine> ap2)) {
-                        AliasPriorityDifAppend.Clear();
-                        ap2.ForEach(a => AliasPriorityDifAppend.Add(a.line));
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[ALIAS_PRIORITY_DIFPITCH]", out List<IniLine> ap3)) {
-                        AliasPriorityDifPitch.Clear();
-                        ap3.ForEach(a => AliasPriorityDifPitch.Add(a.line));
-                    }
-
-                    if (TryGetLinesFromIniBrocks(blocks, "[SPLIT]", out List<IniLine> split) && split.Count > 0) {
-                        if (split[0].line == "0") {
-                            Split = false;
-                        } else if (split[0].line == "1") {
-                            Split = true;
-                        }
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[MUSTVC]", out List<IniLine> mustVC) && mustVC.Count > 0) {
-                        if (mustVC[0].line == "0") {
-                            MustVC = false;
-                        } else if (mustVC[0].line == "1") {
-                            MustVC = true;
-                        }
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[CFLAGS]", out List<IniLine> cflags) && cflags.Count > 0) {
-                        CFlags = cflags[0].line;
-                    }
-                    if (TryGetLinesFromIniBrocks(blocks, "[VCLENGTH]", out List<IniLine> vcLength) && vcLength.Count > 0) {
-                        if (vcLength[0].line == "0") {
-                            VCLengthFromCV = true;
-                        } else if (vcLength[0].line == "1") {
-                            VCLengthFromCV = false;
-                        }
-                    }
-
-                    if (TryGetLinesFromIniBrocks(blocks, "[ENDFLAG]", out List<IniLine> endflag) && endflag.Count > 0) {
-                        if (int.TryParse(endflag[0].line, out int result)) {
-                            AddEnding = result;
+                    // cycle through common ANSI encodings (Japanese, Chinese, Korean, Traditional Chinese)
+                    if (!parsed) {
+                        int[] codePages = { 932, 936, 949, 950 }; // Shift-JIS, GBK, EUC-KR, Big5
+                        foreach (var cp in codePages) {
+                            try {
+                                var enc = Encoding.GetEncoding(cp, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
+                                enc.GetString(bytes);
+                                encoding = Encoding.GetEncoding(cp);
+                                break;
+                            } catch { }
                         }
                     }
                 }
+
+                // Manual Parsing to preserve exact Case Sensitivity
+                // Bypasses OpenUtau's native Ini.ReadBlocks which forces lowercase
+                string[] lines = File.ReadAllLines(iniPath, encoding);
+                string currentBlock = "";
                 
+                var vowelLines = new List<string>();
+                var consonantLines = new List<string>();
+
+                foreach (var rawLine in lines) {
+                    string line = rawLine.Trim();
+                    if (string.IsNullOrEmpty(line) || line.StartsWith(";")) continue;
+
+                    if (line.StartsWith("[") && line.EndsWith("]")) {
+                        currentBlock = line.ToUpper();
+                        
+                        // Clear lists upon entering block to prepare for custom data overriding defaults
+                        if (currentBlock == "[NUM]") Nums.Clear();
+                        else if (currentBlock == "[APPEND]") Appends.Clear();
+                        else if (currentBlock == "[PITCH]") Pitches.Clear();
+                        else if (currentBlock == "[PRE]") Prefixs.Clear();
+                        else if (currentBlock == "[ALIAS_PRIORITY]") AliasPriorityDefault.Clear();
+                        else if (currentBlock == "[ALIAS_PRIORITY_DIFAPPEND]") AliasPriorityDifAppend.Clear();
+                        else if (currentBlock == "[ALIAS_PRIORITY_DIFPITCH]") AliasPriorityDifPitch.Clear();
+                        else if (currentBlock == "[REPLACE]") Replace.Clear();
+                        continue;
+                    }
+
+                    try {
+                        switch (currentBlock) {
+                            case "[VOWEL]":
+                                vowelLines.Add(line);
+                                break;
+                            case "[CONSONANT]":
+                                consonantLines.Add(line);
+                                break;
+                            case "[PRIORITY]":
+                                Priorities.Clear();
+                                Priorities.AddRange(line.Split(','));
+                                break;
+                            case "[REPLACE]":
+                                var s = rawLine.Split(new char[] { '=' }, 2);
+                                if (s.Length >= 2) {
+                                    Replace[s[0].Trim()] = s[1];
+                                }
+                                break;
+                            case "[ALIAS]":
+                                var parts = rawLine.Split(new char[] { '=' }, 2);
+                                if (parts.Length < 2) break;
+                                switch (parts[0].Trim().ToUpper()) {
+                                    case "VCV": AliasRules.VCV = parts[1]; break;
+                                    case "BEGINING_CV": AliasRules.BEGINING_CV = parts[1]; break;
+                                    case "CROSS_CV": AliasRules.CROSS_CV = parts[1]; break;
+                                    case "VC": AliasRules.VC = parts[1]; break;
+                                    case "CV": AliasRules.CV = parts[1]; break;
+                                    case "C": AliasRules.C = parts[1]; break;
+                                    case "LONG_V": AliasRules.LONG_V = parts[1]; break;
+                                    case "VCPAD": AliasRules.VCPAD = parts[1]; break;
+                                    case "VCVPAD": AliasRules.VCVPAD = parts[1]; break;
+                                    case "ENDING1": AliasRules.ENDING1 = parts[1]; break;
+                                    case "ENDING2": AliasRules.ENDING2 = parts[1]; break;
+                                }
+                                break;
+                            case "[ENDTYPE]":
+                            case "[ENDTYPE1]":
+                                AliasRules.ENDING1 = line;
+                                break;
+                            case "[ENDTYPE2]":
+                                AliasRules.ENDING2 = line;
+                                break;
+                            case "[PRE]":
+                                if(!Prefixs.Contains(line)) Prefixs.Add(line);
+                                break;
+                            case "[SU]":
+                                SuffixOrder.Clear();
+                                string str = line;
+                                for (int i = 1; i < 3 && str != ""; i++) {
+                                    if (str.StartsWith("%num%")) { SuffixOrder.Add("%num%"); str = str.Replace("%num%", ""); }
+                                    if (str.StartsWith("%append%")) { SuffixOrder.Add("%append%"); str = str.Replace("%append%", ""); }
+                                    if (str.StartsWith("%pitch%")) { SuffixOrder.Add("%pitch%"); str = str.Replace("%pitch%", ""); }
+                                }
+                                break;
+                            case "[NUM]":
+                                if (!Regex.IsMatch(line, "^@.+@$")) {
+                                    Nums.Add(line);
+                                }
+                                break;
+                            case "[APPEND]":
+                                if (!Regex.IsMatch(line, "^@.+@$")) {
+                                    Appends.Add(line);
+                                }
+                                break;
+                            case "[PITCH]":
+                                if (!Regex.IsMatch(line, "^@.+@$")) {
+                                    Pitches.Add(line);
+                                }
+                                break;
+                            case "[ALIAS_PRIORITY]":
+                                if(AliasPriorityDefault.Count >= 5) AliasPriorityDefault.Clear(); // default count is 5
+                                AliasPriorityDefault.Add(line);
+                                break;
+                            case "[ALIAS_PRIORITY_DIFAPPEND]":
+                                if(AliasPriorityDifAppend.Count >= 5) AliasPriorityDifAppend.Clear();
+                                AliasPriorityDifAppend.Add(line);
+                                break;
+                            case "[ALIAS_PRIORITY_DIFPITCH]":
+                                if(AliasPriorityDifPitch.Count >= 5) AliasPriorityDifPitch.Clear();
+                                AliasPriorityDifPitch.Add(line);
+                                break;
+                            case "[SPLIT]":
+                                if (line == "0") Split = false;
+                                else if (line == "1") Split = true;
+                                break;
+                            case "[MUSTVC]":
+                                if (line == "0") MustVC = false;
+                                else if (line == "1") MustVC = true;
+                                break;
+                            case "[CFLAGS]":
+                                CFlags = line;
+                                break;
+                            case "[VCLENGTH]":
+                                if (line == "0") VCLengthFromCV = true;
+                                else if (line == "1") VCLengthFromCV = false;
+                                break;
+                            case "[ENDFLAG]":
+                                if (int.TryParse(line, out int result)) {
+                                    AddEnding = result;
+                                }
+                                break;
+                        }
+                    } catch { }
+                }
+
+                if (vowelLines.Count > 0) SetVowels(vowelLines);
+                if (consonantLines.Count > 0) SetConsonants(consonantLines);
+
             } catch (Exception e) {
                 Log.Error(e, "failed to load presamp.ini");
             }
@@ -300,8 +311,7 @@ namespace Classic {
         }
 
 
-        /**  
-            <summary>
+        /** <summary>
                 Break down lyric.
             </summary>
             <returns>
@@ -313,15 +323,20 @@ namespace Classic {
             string phoneme = lyric;
             string suffix = "";
 
-            if (phoneme.Contains(AliasRules.VCPAD)) {
-                var split = phoneme.Split(AliasRules.VCPAD);
+            if (!string.IsNullOrEmpty(AliasRules.VCPAD) && phoneme.Contains(AliasRules.VCPAD)) {
+                var split = phoneme.Split(new string[] { AliasRules.VCPAD }, StringSplitOptions.None);
                 preVowel = split[0];
-                phoneme = split[1];
-            } else if (phoneme.Contains(AliasRules.VCVPAD)) {
-                var split = phoneme.Split(AliasRules.VCVPAD);
+                if (split.Length > 1) {
+                    phoneme = split[1];
+                }
+            } else if (!string.IsNullOrEmpty(AliasRules.VCVPAD) && phoneme.Contains(AliasRules.VCVPAD)) {
+                var split = phoneme.Split(new string[] { AliasRules.VCVPAD }, StringSplitOptions.None);
                 preVowel = split[0];
-                phoneme = split[1];
+                if (split.Length > 1) {
+                    phoneme = split[1];
+                }
             }
+            
             if(phoneme == "") {
                 return new string[] { preVowel, phoneme, suffix };
             }
@@ -331,21 +346,21 @@ namespace Classic {
 
             Nums.ForEach(n => {
                 if (phoneme.Contains(n)) {
-                    var split = phoneme.Split(n);
+                    var split = phoneme.Split(new string[] { n }, StringSplitOptions.None);
                     suffix = new Regex(split[0]).Replace(phoneme, "", 1) + suffix;
                     phoneme = split[0];
                 };
             });
             Appends.ForEach(a => {
                 if (phoneme.Contains(a)) {
-                    var split = phoneme.Split(a);
+                    var split = phoneme.Split(new string[] { a }, StringSplitOptions.None);
                     suffix = new Regex(split[0]).Replace(phoneme, "", 1) + suffix;
                     phoneme = split[0];
                 };
             });
             Pitches.ForEach(p => {
                 if (phoneme.Contains(p)) {
-                    var split = phoneme.Split(p);
+                    var split = phoneme.Split(new string[] { p }, StringSplitOptions.None);
                     suffix = new Regex(split[0]).Replace(phoneme, "", 1) + suffix;
                     phoneme = split[0];
                 };
@@ -364,7 +379,8 @@ namespace Classic {
             foreach (var line in list) {
                 var parts = line.Split('=');
 
-                if (parts.Length >= 4) {
+                // FIX: Allow length >= 3 to support omitted volume parameter
+                if (parts.Length >= 3) {
                     var vowel = new PresampVowel();
                     vowel.VowelLower = parts[0];
                     vowel.VowelUpper = parts[1];
@@ -372,10 +388,12 @@ namespace Classic {
                     foreach (var sound in sounds) {
                         vowel.Phonemes.Add(sound);
                     }
-                    if (int.TryParse(parts[3], out var vol)) {
+                    if (parts.Length >= 4 && int.TryParse(parts[3], out var vol)) {
                         vowel.Vol = vol;
                     }
-                    dict.Add(vowel.VowelLower, vowel);
+                    
+                    // Assign via indexer to bypass Duplicate Key crashes
+                    dict[vowel.VowelLower] = vowel; 
                 }
             }
             Vowels = dict;
@@ -383,22 +401,26 @@ namespace Classic {
         public void SetVowels(Dictionary<string, PresampVowel> dict) {
             Vowels = dict;
         }
+        
         public void SetConsonants(List<string> list) {
             var dict = new Dictionary<string, PresampConsonant>();
             foreach (var line in list) {
                 var parts = line.Split('=');
 
-                if (parts.Length >= 3) {
+                // FIX: Allow length >= 2 to support omitted crossfade parameter (e.g. N=N,nn,NN)
+                if (parts.Length >= 2) {
                     var consonant = new PresampConsonant();
                     consonant.Consonant = parts[0];
                     string[] sounds = parts[1].Split(',');
                     foreach (var sound in sounds) {
                         consonant.Phonemes.Add(sound);
                     }
-                    if (parts[2] == "1") {
+                    if (parts.Length >= 3 && parts[2] == "1") {
                         consonant.NotClossfade = true;
                     }
-                    dict.Add(consonant.Consonant, consonant);
+                    
+                    // Assign via indexer to bypass Duplicate Key crashes
+                    dict[consonant.Consonant] = consonant;
                 }
             }
             Consonants = dict;

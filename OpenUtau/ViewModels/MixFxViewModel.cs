@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reactive;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using OpenUtau.Core.SignalChain.Effects;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
     /// <summary>
@@ -17,7 +16,7 @@ namespace OpenUtau.App.ViewModels {
     /// Operates on a single <see cref="UTrack"/>'s <see cref="UMixFx"/> instance.
     /// User presets (full-rack snapshots) live in <see cref="Preferences"/>.
     /// </summary>
-    public class MixFxViewModel : ViewModelBase {
+    public partial class MixFxViewModel : ViewModelBase {
         public class PresetOption {
             public string Key { get; }
             public string Label { get; }
@@ -40,36 +39,36 @@ namespace OpenUtau.App.ViewModels {
         // deleted or overwritten and never persisted into Preferences.
         private readonly Preferences.MixFxUserPreset defaultPreset;
 
-        [Reactive] public bool Enabled { get; set; }
-        [Reactive] public PresetOption? SelectedEq { get; set; }
-        [Reactive] public PresetOption? SelectedComp { get; set; }
-        [Reactive] public PresetOption? SelectedReverb { get; set; }
-        [Reactive] public Preferences.MixFxUserPreset? SelectedUserPreset { get; set; }
+        [Reactive] public partial bool Enabled { get; set; }
+        [Reactive] public partial PresetOption? SelectedEq { get; set; }
+        [Reactive] public partial PresetOption? SelectedComp { get; set; }
+        [Reactive] public partial PresetOption? SelectedReverb { get; set; }
+        [Reactive] public partial Preferences.MixFxUserPreset? SelectedUserPreset { get; set; }
 
-        [Reactive] public double EqLowDb { get; set; }
-        [Reactive] public double EqMidFreq { get; set; }
-        [Reactive] public double EqMidDb { get; set; }
-        [Reactive] public double EqHighDb { get; set; }
+        [Reactive] public partial double EqLowDb { get; set; }
+        [Reactive] public partial double EqMidFreq { get; set; }
+        [Reactive] public partial double EqMidDb { get; set; }
+        [Reactive] public partial double EqHighDb { get; set; }
 
-        [Reactive] public double CompThresholdDb { get; set; }
-        [Reactive] public double CompRatio { get; set; }
-        [Reactive] public double CompMakeupDb { get; set; }
+        [Reactive] public partial double CompThresholdDb { get; set; }
+        [Reactive] public partial double CompRatio { get; set; }
+        [Reactive] public partial double CompMakeupDb { get; set; }
 
-        [Reactive] public double ReverbSize { get; set; }
-        [Reactive] public double ReverbDamp { get; set; }
-        [Reactive] public double ReverbWet { get; set; }
-        [Reactive] public double ReverbPreDelayMs { get; set; }
+        [Reactive] public partial double ReverbSize { get; set; }
+        [Reactive] public partial double ReverbDamp { get; set; }
+        [Reactive] public partial double ReverbWet { get; set; }
+        [Reactive] public partial double ReverbPreDelayMs { get; set; }
 
-        [Reactive] public bool ApplyOnExportMixdown { get; set; }
+        [Reactive] public partial bool ApplyOnExportMixdown { get; set; }
 
         // True when the currently-selected library entry is user-deletable
         // (anything except the protected Default entry).
         public bool CanDeleteSelectedPreset => canDeleteSelectedPreset.Value;
         private readonly ObservableAsPropertyHelper<bool> canDeleteSelectedPreset;
 
-        public ReactiveCommand<Unit, Unit> ApplyRecommendedCommand { get; }
-        public ReactiveCommand<Unit, Unit> SaveUserPresetCommand { get; }
-        public ReactiveCommand<Unit, Unit> DeleteUserPresetCommand { get; }
+        public ReactiveCommand<RxVoid, RxVoid> ApplyRecommendedCommand { get; }
+        public ReactiveCommand<RxVoid, RxVoid> SaveUserPresetCommand { get; }
+        public ReactiveCommand<RxVoid, RxVoid> DeleteUserPresetCommand { get; }
 
         public Func<Task<string?>>? AskForName;
 
@@ -126,10 +125,10 @@ namespace OpenUtau.App.ViewModels {
             }
 
             // Picking a preset reloads its parameters into the sliders.
-            this.WhenAnyValue(x => x.SelectedEq).Subscribe(opt => { if (opt != null) LoadEqPreset(opt.Key); });
-            this.WhenAnyValue(x => x.SelectedComp).Subscribe(opt => { if (opt != null) LoadCompPreset(opt.Key); });
-            this.WhenAnyValue(x => x.SelectedReverb).Subscribe(opt => { if (opt != null) LoadReverbPreset(opt.Key); });
-            this.WhenAnyValue(x => x.SelectedUserPreset).Subscribe(p => { if (p != null) LoadUserPreset(p); });
+            this.WhenAnyValue(x => x.SelectedEq).OfType<PresetOption>().Subscribe(opt => { if (opt != null) LoadEqPreset(opt.Key); });
+            this.WhenAnyValue(x => x.SelectedComp).OfType<PresetOption>().Subscribe(opt => { if (opt != null) LoadCompPreset(opt.Key); });
+            this.WhenAnyValue(x => x.SelectedReverb).OfType<PresetOption>().Subscribe(opt => { if (opt != null) LoadReverbPreset(opt.Key); });
+            this.WhenAnyValue(x => x.SelectedUserPreset).OfType<Preferences.MixFxUserPreset>().Subscribe(p => { if (p != null) LoadUserPreset(p); });
 
             this.WhenAnyValue(x => x.SelectedUserPreset)
                 .Select(p => p != null && !ReferenceEquals(p, defaultPreset))

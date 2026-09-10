@@ -74,6 +74,17 @@ namespace OpenUtau.Core.Render {
             return null;
         }
 
+        // One instance per renderer id. Renderers are stateless or globally
+        // serialized (the static lockObj fields), so sharing an instance across
+        // tracks is behaviourally identical to today while an undo/redo that
+        // toggles the renderer no longer re-creates the pipeline object.
+        static readonly ConcurrentDictionary<string, IRenderer> rendererCache =
+            new ConcurrentDictionary<string, IRenderer>();
+
+        public static IRenderer GetOrCreate(string renderer) {
+            return rendererCache.GetOrAdd(renderer ?? string.Empty, CreateRenderer);
+        }
+
         readonly static ConcurrentDictionary<string, object> cacheLockMap
             = new ConcurrentDictionary<string, object>();
 

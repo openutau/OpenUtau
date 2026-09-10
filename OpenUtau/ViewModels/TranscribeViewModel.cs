@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Core.Analysis;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
     public enum TranscribeAlgorithm {
@@ -11,14 +12,14 @@ namespace OpenUtau.App.ViewModels {
         GAME,
     }
 
-    public class TranscribeViewModel : ViewModelBase {
+    public partial class TranscribeViewModel : ViewModelBase {
         // --- Availability ---
         public bool SomeAvailable { get; }
         public bool GameAvailable { get; }
         public bool RmvpeAvailable { get; }
 
         // --- Algorithm selection ---
-        [Reactive] public TranscribeAlgorithm SelectedAlgorithm { get; set; }
+        [Reactive] public partial TranscribeAlgorithm SelectedAlgorithm { get; set; }
 
         // Convenience bool bindings for RadioButtons
         public bool UseSome {
@@ -46,27 +47,27 @@ namespace OpenUtau.App.ViewModels {
             (SelectedAlgorithm == TranscribeAlgorithm.SOME && SomeAvailable) ||
             (SelectedAlgorithm == TranscribeAlgorithm.GAME && GameAvailable);
 
-        [Reactive] public bool PredictPitd { get; set; } = false;
+        [Reactive] public partial bool PredictPitd { get; set; } = false;
 
         // --- GAME options ---
         public List<int> SamplingStepsOptions { get; } = new List<int> { 1, 2, 4, 8, 16 };
 
-        [Reactive] public int SamplingStepsIndex { get; set; } = 3;
+        [Reactive] public partial int SamplingStepsIndex { get; set; } = 3;
 
         public int SamplingSteps => SamplingStepsIndex >= 0 && SamplingStepsIndex < SamplingStepsOptions.Count
             ? SamplingStepsOptions[SamplingStepsIndex]
             : 1;
 
-        [Reactive] public float BoundaryThreshold { get; set; } = 0.2f;
-        [Reactive] public int BoundaryRadius { get; set; } = 2;
-        [Reactive] public float ScoreThreshold { get; set; } = 0.2f;
+        [Reactive] public partial float BoundaryThreshold { get; set; } = 0.2f;
+        [Reactive] public partial int BoundaryRadius { get; set; } = 2;
+        [Reactive] public partial float ScoreThreshold { get; set; } = 0.2f;
 
         // --- GAME batch inference ---
         /// <summary>Maximum number of audio chunks per batch. 1 = no batching.</summary>
-        [Reactive] public int BatchSize { get; set; } = 1;
+        [Reactive] public partial int BatchSize { get; set; } = 1;
 
         /// <summary>Maximum total padded audio duration per batch in seconds (0 = unlimited).</summary>
-        [Reactive] public float MaxBatchDuration { get; set; } = 60f;
+        [Reactive] public partial float MaxBatchDuration { get; set; } = 60f;
 
         // Internal language code list (null = Auto); parallel to LanguageDisplayOptions
         private readonly List<string?> languageCodes;
@@ -76,7 +77,7 @@ namespace OpenUtau.App.ViewModels {
 
         public bool GameHasLanguages { get; }
 
-        [Reactive] public int LanguageDisplayIndex { get; set; } = 0;
+        [Reactive] public partial int LanguageDisplayIndex { get; set; } = 0;
 
         /// <summary>The selected language code (null = Auto/universal).</summary>
         public string? LanguageCode => LanguageDisplayIndex >= 1 && LanguageDisplayIndex < languageCodes.Count
@@ -100,10 +101,15 @@ namespace OpenUtau.App.ViewModels {
                 SelectedAlgorithm = TranscribeAlgorithm.SOME;
             }
 
-            // Load GAME config (no model sessions) to populate options
+            // Load config from the backend that will actually run (no model sessions).
+            // In particular, GGML-only installs must not probe the ONNX package.
             GameConfig? gameConfig = null;
             if (GameAvailable) {
-                gameConfig = Game.LoadConfig();
+                try {
+                    gameConfig = GameBackendFactory.LoadResolvedConfig();
+                } catch {
+                    GameAvailable = false;
+                }
             }
 
             GameHasLanguages = (gameConfig?.Languages?.Count ?? 0) > 0;

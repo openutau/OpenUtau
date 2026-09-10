@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 using OpenUtau.Classic;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
@@ -29,20 +29,20 @@ namespace OpenUtau.App.ViewModels {
             return $"{Name} -> {NewName}";
         }
     }
-    public class MergeVoicebankViewModel : ViewModelBase {
-        [Reactive] public int Step { get; set; }
+    public partial class MergeVoicebankViewModel : ViewModelBase {
+        [Reactive] public partial int Step { get; set; }
         public List<ClassicSinger> Voicebanks{ get; set; }
         public ClassicSinger thisSinger;
-        [Reactive] public ClassicSinger? OtherSinger { get; set; }
+        [Reactive] public partial ClassicSinger? OtherSinger { get; set; }
         List<string> existingDirs = new List<string>();
-        [Reactive] public ObservableCollection<ConvertItem> FolderRenames { get; set; }
-        [Reactive] public string FolderNameErrors { get; set; } = "";
+        [Reactive] public partial ObservableCollection<ConvertItem> FolderRenames { get; set; }
+        [Reactive] public partial string FolderNameErrors { get; set; } = "";
         List<string> existingSubbanks = new List<string>();
-        [Reactive] public ObservableCollection<ConvertItem> SubbankRenames { get; set; }
-        [Reactive] public string SubbankNameErrors { get; set; } = "";
+        [Reactive] public partial ObservableCollection<ConvertItem> SubbankRenames { get; set; }
+        [Reactive] public partial string SubbankNameErrors { get; set; } = "";
         List<string> existingVoiceColors = new List<string>();
-        [Reactive] public ObservableCollection<ConvertItem> VoiceColorRenames { get; set; }
-        [Reactive] public string VoiceColorNameErrors { get; set; } = "";
+        [Reactive] public partial ObservableCollection<ConvertItem> VoiceColorRenames { get; set; }
+        [Reactive] public partial string VoiceColorNameErrors { get; set; } = "";
         string[] supportedAudioTypes = new string[]{".wav", ".flac", ".ogg", ".mp3", ".aiff", ".aif", ".aifc"};
         public MergeVoicebankViewModel(ClassicSinger thisVoicebank) {
             this.thisSinger = thisVoicebank;

@@ -18,6 +18,7 @@ namespace OpenUtau.Core {
         //groups is a two-dimensional array of Note, each Note[] represents a lyrical note and its following slur notes
         //Run phoneme timing model in sections to prevent butterfly effect
         public override void SetUp(Note[][] groups, UProject project, UTrack track) {
+            base.SetUp(groups, project, track);
             SetUpException = null;
             lastProcessPartException = null;
             partResult.Clear();

@@ -10,7 +10,7 @@ using Serilog;
 using WanaKanaNet;
 
 namespace OpenUtau.Classic {
-    public class ClassicSinger : USinger {
+    public class ClassicSinger : USinger, IDisposable {
         public override string Id => voicebank.Id;
         public override string Name => voicebank.Name;
         public override Dictionary<string, string> LocalizedNames => voicebank.LocalizedNames;
@@ -33,6 +33,7 @@ namespace OpenUtau.Classic {
         public override Encoding TextFileEncoding => voicebank.TextFileEncoding;
         public override IList<USubbank> Subbanks => subbanks;
         public override IList<UOto> Otos => otos;
+        public object SessionLock { get; } = new object();
 
         Voicebank voicebank;
         List<string> errors = new List<string>();
@@ -160,6 +161,23 @@ namespace OpenUtau.Classic {
                 otoWatcher.Paused = false;
             }
         }
+        
+        public void Dispose() {
+            otoWatcher?.Dispose();
+            otoWatcher = null;
+        }
+
+        public override void FreeMemory() {
+            Log.Information($"Freeing memory for singer {Id}");
+            lock (SessionLock) {
+                Dispose();
+                subbanks.Clear();
+                otoSets.Clear();
+                otos.Clear();
+                otoMap.Clear();
+                errors.Clear();
+            }
+        }
 
         public override bool TryGetOto(string phoneme, out UOto oto) {
             if (otoMap.TryGetValue(phoneme, out oto)) {
@@ -186,13 +204,33 @@ namespace OpenUtau.Classic {
             return TryGetMappedOto(phoneme, tone, out oto);
         }
 
-        public override IEnumerable<UOto> GetSuggestions(string text) {
+        public override Dictionary<string, UOto> GetSuggestions(string text, bool isAlias) {
             if (text != null) {
                 text = text.ToLowerInvariant().Replace(" ", "");
             }
             bool all = string.IsNullOrEmpty(text);
-            return otoMap.Values
-                .Where(oto => all || oto.SearchTerms.Exists(term => term.Contains(text)));
+            var filtered = otoMap.Values
+                .Where(oto => all || oto.SearchTerms.Exists(term => term.Contains(text)))
+                .ToList();
+
+            var result = new Dictionary<string, UOto>();
+            if (!isAlias) {
+                foreach (var oto in filtered) {
+                    if (!string.IsNullOrEmpty(oto.Phonetic)) {
+                        result.TryAdd(oto.Phonetic, oto);
+                    }
+                }
+                result = result
+                    .OrderBy(pair => pair.Key.Length)
+                    .ThenBy(pair => pair.Key)
+                    .ToDictionary(pair => pair.Key, pair => pair.Value);
+            }
+            foreach (var oto in filtered) {
+                if (!string.IsNullOrEmpty(oto.Alias)) {
+                    result.TryAdd(oto.Alias, oto);
+                }
+            }
+            return result;
         }
 
         public override byte[] LoadPortrait() {

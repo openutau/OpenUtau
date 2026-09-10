@@ -166,14 +166,17 @@ namespace OpenUtau.Core.Voicevox {
             return false;
         }
 
-        public override IEnumerable<UOto> GetSuggestions(string text) {
+        public override Dictionary<string, UOto> GetSuggestions(string text, bool isAlias) {
             if (text != null) {
                 text = text.ToLowerInvariant().Replace(" ", "");
             }
             bool all = string.IsNullOrEmpty(text);
             return table.Keys
                 .Where(key => all || key.Contains(text))
-                .Select(key => UOto.OfDummy(key));
+                .ToDictionary(
+                    key => key,
+                    key => UOto.OfDummy(key)
+                );
         }
 
         public override byte[] LoadPortrait() {

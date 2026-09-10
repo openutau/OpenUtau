@@ -70,6 +70,25 @@ namespace OpenUtau.Core.Format {
             return GetSamples(provider);
         }
 
+        /// <summary>Writes a 44.1 kHz mono float buffer as a 16-bit WAV — the renderer cache file format.</summary>
+        public static void WriteMono16Wav(string path, float[] samples) {
+            using var writer = new WaveFileWriter(path, new WaveFormat(44100, 16, 1));
+            var pcm = new byte[samples.Length * 2];
+            for (int i = 0; i < samples.Length; ++i) {
+                float v = samples[i];
+                if (v > 1f) {
+                    v = 1f;
+                }
+                if (v < -1f) {
+                    v = -1f;
+                }
+                var s = (short)(v * short.MaxValue);
+                pcm[i * 2] = (byte)(s & 0xFF);
+                pcm[i * 2 + 1] = (byte)((s >> 8) & 0xFF);
+            }
+            writer.Write(pcm, 0, pcm.Length);
+        }
+
         public static float[] GetSamples(ISampleProvider sampleProvider) {
             if (sampleProvider.WaveFormat.SampleRate != 44100) {
                 sampleProvider = new WdlResamplingSampleProvider(sampleProvider, 44100);

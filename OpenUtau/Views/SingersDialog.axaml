@@ -92,7 +92,7 @@
           </ContextMenu>
         </Button.ContextMenu>
       </Button>
-      <TextBox Text="{Binding SearchAlias}" Watermark="{DynamicResource singers.editoto.searchalias}" Margin="0"
+      <TextBox Text="{Binding SearchAlias}" PlaceholderText="{DynamicResource singers.editoto.searchalias}" Margin="0"
                MinWidth="160" HorizontalAlignment="Stretch" Focusable="True" IsVisible="{Binding UseSearchAlias}" />
     </StackPanel>
     <StackPanel Grid.Row="0" Spacing="5" Margin="0,0,0,0" Height="20"
@@ -124,7 +124,12 @@
               BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}"
               ItemsSource="{Binding DisplayedOtos}" SelectedItem="{Binding SelectedOto}" SelectedIndex="{Binding SelectedIndex}"
               SelectionChanged="OnSelectedOtoChanged"
-              BeginningEdit="OnBeginningEdit" CellEditEnded="OnCellEditEnded">
+              BeginningEdit="OnBeginningEdit" CellEditEnded="OnCellEditEnded"
+              ScrollViewer.VerticalScrollBarVisibility="Auto"
+              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+              ScrollViewer.IsScrollInertiaEnabled="True"
+              AutoGenerateColumns="False"
+              RowHeight="24">
       <DataGrid.ContextMenu>
         <ContextMenu IsVisible="{Binding IsClassic}">
           <MenuItem Header="{DynamicResource singers.editoto.gotosource}" Click="GotoSourceFile"/>

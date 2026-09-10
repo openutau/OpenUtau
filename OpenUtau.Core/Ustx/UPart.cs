@@ -8,7 +8,6 @@ using NWaves.Operations;
 using NWaves.Signals;
 using OpenUtau.Api;
 using OpenUtau.Core.Render;
-using OpenUtau.Core.SignalChain;
 using Serilog;
 using SharpCompress;
 using YamlDotNet.Serialization;
@@ -19,6 +18,11 @@ namespace OpenUtau.Core.Ustx {
         public string comment = string.Empty;
         public int trackNo;
         public int position = 0;
+
+        /// <summary>
+        /// Stable identity that survives clone / cut-paste / reload.
+        /// </summary>
+        [YamlIgnore] public Pipeline.PartId Id { get; internal set; } = Pipeline.PartId.New();
 
         [YamlIgnore] public virtual string DisplayName { get; }
         [YamlIgnore] public virtual int Duration { set; get; }
@@ -54,10 +58,7 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] private long notesTimestamp;
         [YamlIgnore] private long phonemesTimestamp;
 
-        [YamlIgnore] private ISignalSource mix;
-
         [YamlIgnore] public bool PhonemesUpToDate => notesTimestamp == phonemesTimestamp;
-        [YamlIgnore] public ISignalSource Mix => mix;
 
         public override string DisplayName => name;
         public override int Duration { get => duration; set => duration = value; }
@@ -95,6 +96,10 @@ namespace OpenUtau.Core.Ustx {
                 }
             }
         }
+
+        [YamlIgnore] internal long phraseGeneration;
+        [YamlIgnore] internal long phraseAppliedGeneration;
+        [YamlIgnore] internal readonly Pipeline.PhraseBuildGate phraseGate = new Pipeline.PhraseBuildGate();
 
         public override void Validate(ValidateOptions options, UProject project, UTrack track) {
             UNote lastNote = null;
@@ -282,10 +287,65 @@ namespace OpenUtau.Core.Ustx {
                     phoneme.Validate(options, project, track, this, note);
                 }
             }
-            renderPhrases.Clear();
-            if (PhonemesUpToDate) {
-                renderPhrases.AddRange(RenderPhrase.FromPart(project, track, this));
+        // Snapshot on the UI thread; the heavy phrase build runs off-thread
+        // and fills renderPhrases when it lands.
+            if (!PhonemesUpToDate) {
+                lock (this) {
+                    renderPhrases.Clear();
+                }
+                return;
             }
+            long generation = ++phraseGeneration;
+            var source = Pipeline.PhraseSource.FromPart(project, track, this, generation);
+            if (source == null) {
+                lock (this) {
+                    renderPhrases.Clear();
+                }
+                return;
+            }
+            Pipeline.DocumentSnapshotStore.Inst.SetPart(this, source);
+            phraseGate.MarkPending(generation);
+            var builder = Pipeline.PhraseSourceBuilder.Current;
+            if (builder != null && builder.Push(source, this)) {
+                return;
+            }
+            // No worker (test hosts): build inline.
+            try {
+                ApplyPhraseSourceResult(source, source.BuildPhrases());
+            } catch (Exception e) {
+                Log.Error(e, "Failed to build phrase source {part}", Id);
+                lock (this) {
+                    renderPhrases.Clear();
+                }
+                phraseGate.MarkCompleted(generation);
+            }
+        }
+
+        internal void ApplyPhraseSourceResult(Pipeline.PhraseSource source, RenderPhrase[] phrases) {
+            bool applied;
+            lock (this) {
+                applied = source.Generation > phraseAppliedGeneration;
+                if (applied) {
+                    phraseAppliedGeneration = source.Generation;
+                    renderPhrases.Clear();
+                    renderPhrases.AddRange(phrases);
+                }
+            }
+            if (!applied) {
+                return;
+            }
+            phraseGate.MarkCompleted(source.Generation);
+            if (DocManager.Inst.MainScheduler != null) {
+                RenderView.Inst.InvalidateAll();
+            }
+        }
+
+        /// <summary>
+        /// Bounded wait for the latest phrase-source build to land. Must not
+        /// be called while holding the project lock.
+        /// </summary>
+        internal bool WaitPhraseSource(TimeSpan timeout) {
+            return phraseGate.WaitFor(phraseGeneration, timeout);
         }
 
         internal void SetPhonemizerResponse(PhonemizerResponse response) {
@@ -305,14 +365,9 @@ namespace OpenUtau.Core.Ustx {
             }
         }
 
-        internal void SetMix(ISignalSource mix) {
-            lock (this) {
-                this.mix = mix;
-            }
-        }
-
         public override UPart Clone() {
             return new UVoicePart() {
+                Id = Id,
                 name = name,
                 comment = comment,
                 trackNo = trackNo,
@@ -378,6 +433,7 @@ namespace OpenUtau.Core.Ustx {
 
         public override UPart Clone() {
             var part = new UWavePart() {
+                Id = Id,
                 _filePath = _filePath,
                 relativePath = relativePath,
                 skip = skip,
@@ -473,19 +529,19 @@ namespace OpenUtau.Core.Ustx {
             Load(project);
         }
 
-        public ISignalSource TrimSamples(UProject project) {
+        /// <summary>
+        /// The wave part's placement and trimmed pcm (fades applied to a copy; the
+        /// document's <see cref="Samples"/> is never mutated). Used by the slot-based
+        /// transport (playback and export).
+        /// </summary>
+        public (double offsetMs, double estimatedLengthMs, int channels, float[] pcm) GetTrimmedSamples(UProject project) {
             double offsetMs = project.timeAxis.TickPosToMsPos(position);
             double estimatedLengthMs = project.timeAxis.TickPosToMsPos(End) - offsetMs;
-            var waveSource = new WaveSource(
-                offsetMs,
-                estimatedLengthMs,
-                0, channels);
             int skipCount = (int)(GetSkipMs(project) * sampleRate / 1000) * channels;
             int trimCount = (int)(GetTrimMs(project) * sampleRate / 1000) * channels;
             int remainingCount = Samples.Length - skipCount - trimCount;
             if (remainingCount <= 0) {
-                waveSource.SetSamples(new float[0]);
-                return waveSource;
+                return (offsetMs, estimatedLengthMs, channels, new float[0]);
             }
             float[] trimmedSamples = new float[remainingCount];
             Array.Copy(Samples, skipCount, trimmedSamples, 0, remainingCount);
@@ -507,8 +563,8 @@ namespace OpenUtau.Core.Ustx {
                     }
                 }
             }
-            waveSource.SetSamples(trimmedSamples);
-            return waveSource;
+            return (offsetMs, estimatedLengthMs, channels, trimmedSamples);
         }
+
     }
 }

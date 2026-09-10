@@ -8,16 +8,17 @@ using DynamicData.Binding;
 using OpenUtau.Classic;
 using OpenUtau.Core;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 using SharpCompress.Archives;
 using SharpCompress.Common;
 using SharpCompress.Readers;
 
 namespace OpenUtau.App.ViewModels {
-    public class SingerSetupViewModel : ViewModelBase {
-        [Reactive] public int Step { get; set; }
+    public partial class SingerSetupViewModel : ViewModelBase {
+        [Reactive] public partial int Step { get; set; }
         public ObservableCollection<string> TextItems => textItems;
-        [Reactive] public string ArchiveFilePath { get; set; } = string.Empty;
+        [Reactive] public partial string ArchiveFilePath { get; set; } = string.Empty;
         public Encoding[] Encodings { get; set; } = new Encoding[] {
             Encoding.GetEncoding("shift_jis"),
             Encoding.UTF8,
@@ -27,11 +28,11 @@ namespace OpenUtau.App.ViewModels {
             Encoding.GetEncoding("Windows-1252"),
             Encoding.GetEncoding("macintosh"),
         };
-        [Reactive] public Encoding ArchiveEncoding { get; set; }
-        [Reactive] public Encoding TextEncoding { get; set; }
-        [Reactive] public bool MissingInfo { get; set; }
+        [Reactive] public partial Encoding ArchiveEncoding { get; set; }
+        [Reactive] public partial Encoding TextEncoding { get; set; }
+        [Reactive] public partial bool MissingInfo { get; set; }
         public string[] SingerTypes { get; set; } = new[] { "utau", "enunu", "diffsinger" };
-        [Reactive] public string SingerType { get; set; }
+        [Reactive] public partial string SingerType { get; set; }
 
         private ObservableCollectionExtended<string> textItems;
 

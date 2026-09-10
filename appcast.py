@@ -3,13 +3,17 @@ from datetime import datetime
 
 def main():
     parser = argparse.ArgumentParser('Writes Appcast XML file')
-    parser.add_argument('-v', '--version', help='Version number', required=True)
+    parser.add_argument('-v', '--version', help='Version number (4-component, e.g. 1.5.0.103)', required=True)
+    parser.add_argument('--tag', help='Release tag for the download URL (defaults to version)', default='')
     parser.add_argument('-o', '--os', help='OS name', required=True)
     parser.add_argument('-r', '--rid', help='RID', required=True)
     parser.add_argument('-f', '--file', help='File name', required=True)
     args = parser.parse_args()
 
     appcast_ver = args.version
+    # Short (display) version: drop the channel-encoding 4th component.
+    appcast_short = appcast_ver.rsplit('.', 1)[0] if appcast_ver.count('.') == 3 else appcast_ver
+    appcast_tag = args.tag or appcast_ver
     appcast_os = args.os
     appcast_rid = args.rid
     appcast_file = args.file
@@ -30,8 +34,8 @@ def main():
                 sparkle:signature="" />
     </item>
 </channel>
-</rss>''' % (appcast_ver, datetime.now().strftime("%a, %d %b %Y %H:%M:%S %z"),
-             appcast_ver, appcast_file, appcast_ver, appcast_ver, appcast_os)
+</rss>''' % (appcast_short, datetime.now().strftime("%a, %d %b %Y %H:%M:%S %z"),
+             appcast_tag, appcast_file, appcast_ver, appcast_short, appcast_os)
 
     with open("appcast.%s.xml" % (appcast_rid), 'w') as f:
         f.write(xml)

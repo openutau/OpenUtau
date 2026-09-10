@@ -1,5 +1,4 @@
 ﻿using Xunit;
-using Xunit.Abstractions;
 
 namespace OpenUtau.Core.G2p {
     public class G2pTest {

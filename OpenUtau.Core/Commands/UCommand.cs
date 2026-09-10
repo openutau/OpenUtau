@@ -6,6 +6,11 @@ namespace OpenUtau.Core {
     public abstract class UCommand {
         public virtual bool Silent => false;
         public virtual ValidateOptions ValidateOptions => default;
+        /// <summary>
+        /// The blast radius of this command, driving fine-grained snapshot
+        /// invalidation. The default is conservative: project-wide.
+        /// </summary>
+        public virtual Pipeline.ImpactSet Impact => Pipeline.ImpactSet.All;
         public abstract void Execute();
         public abstract void Unexecute();
         public virtual bool CanMerge(IList<UCommand> commands) => false;

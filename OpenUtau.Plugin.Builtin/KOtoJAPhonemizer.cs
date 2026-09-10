@@ -313,6 +313,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// Apply Korean sandhi rules to Hangeul lyrics.
         /// </summary>
         public override void SetUp(Note[][] groups, UProject project, UTrack track) {
+            base.SetUp(groups, project, track);
             // variate lyrics 
             RomanizeNotes(groups, false);
         }
@@ -393,19 +394,19 @@ namespace OpenUtau.Plugin.Builtin {
             int? alt2;
 
             PhonemeAttributes attr = note.phonemeAttributes.FirstOrDefault(a => a.index == 0);
-            color = attr.voiceColor;
-            shift = attr.toneShift;
-            alt = attr.alternate;
+            color = attr.voiceColor ?? GetParentVoiceColor();
+            shift = attr.toneShift ?? GetParentToneShift();
+            alt = attr.alternate ?? GetParentAlternate();
 
             PhonemeAttributes attr1 = note.phonemeAttributes.FirstOrDefault(a => a.index == 1);
-            color1 = attr1.voiceColor;
-            shift1 = attr1.toneShift;
-            alt1 = attr1.alternate;
+            color1 = attr1.voiceColor ?? GetParentVoiceColor();
+            shift1 = attr1.toneShift ?? GetParentToneShift();
+            alt1 = attr1.alternate ?? GetParentAlternate();
 
             PhonemeAttributes attr2 = note.phonemeAttributes.FirstOrDefault(a => a.index == 2);
-            color2 = attr2.voiceColor;
-            shift2 = attr2.toneShift;
-            alt2 = attr2.alternate;
+            color2 = attr2.voiceColor ?? GetParentVoiceColor();
+            shift2 = attr2.toneShift ?? GetParentToneShift();
+            alt2 = attr2.alternate ?? GetParentAlternate();
 
             string[] currIMF;
             string currPhoneme;
@@ -648,7 +649,7 @@ namespace OpenUtau.Plugin.Builtin {
                             }
                         }
                         // vcLength depends on the Vel of the current base note
-                        vcLength = Convert.ToInt32(Math.Min(totalDuration / 2, vcLength * (attr1.consonantStretchRatio ?? 1)));
+                        vcLength = Convert.ToInt32(Math.Min(totalDuration / 2, vcLength * (attr1.consonantStretchRatio ?? GetParentConsonantStretchRatio())));
 
                         if (string.IsNullOrEmpty(prevIMF[2])) {
                             if (prevIMF[1][0] == 'w' || prevIMF[1][0] == 'y') {

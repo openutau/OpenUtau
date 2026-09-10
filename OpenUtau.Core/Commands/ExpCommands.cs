@@ -9,6 +9,7 @@ namespace OpenUtau.Core {
         public UVoicePart Part;
         public UNote Note;
         public string Key;
+        public override Pipeline.ImpactSet Impact => Pipeline.ImpactSet.CurvesOf(Part, Key);
         public override ValidateOptions ValidateOptions
             => new ValidateOptions {
                 SkipTiming = true,
@@ -327,6 +328,7 @@ namespace OpenUtau.Core {
         public SetCurveCommand(UProject project, UVoicePart part, string abbr, int x, int y, int lastX, int lastY) : base(part) {
             this.project = project;
             this.abbr = abbr;
+            Key = abbr;
             this.x = x;
             this.y = y;
             this.lastX = lastX;
@@ -388,6 +390,7 @@ namespace OpenUtau.Core {
             string abbr, int[] oldXs, int[] oldYs, int[] newXs, int[] newYs, bool setReal = false) : base(part) {
             this.project = project;
             this.abbr = abbr;
+            Key = setReal ? string.Empty : abbr;
             this.oldXs = oldXs;
             this.oldYs = oldYs;
             this.newXs = newXs;
@@ -439,6 +442,7 @@ namespace OpenUtau.Core {
         public PasteCurveCommand(UProject project, UVoicePart part, string abbr, IEnumerable<int> xs, IEnumerable<int> ys) : base(part) {
             this.project = project;
             this.abbr = abbr;
+            Key = abbr;
             this.xs = xs.ToArray();
             this.ys = ys.ToArray();
             var curve = part.curves.FirstOrDefault(c => c.abbr == abbr);
@@ -448,6 +452,7 @@ namespace OpenUtau.Core {
         public PasteCurveCommand(UProject project, UVoicePart part, string abbr, int startX, int startY, int endX, int endY) : base(part) {
             this.project = project;
             this.abbr = abbr;
+            Key = abbr;
             this.xs = new int[] { startX, endX };
             this.ys = new int[] { startY, endY };
             var curve = part.curves.FirstOrDefault(c => c.abbr == abbr);
@@ -499,6 +504,7 @@ namespace OpenUtau.Core {
         readonly int[] oldYs;
         public ClearCurveCommand(UVoicePart part, string abbr) : base(part) {
             this.abbr = abbr;
+            Key = abbr;
             var curve = Part.curves.FirstOrDefault(curve => curve.abbr == abbr);
             if (curve != null) {
                 oldXs = curve.xs.ToArray();

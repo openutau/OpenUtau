@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -16,6 +17,9 @@ namespace OpenUtau.App {
         public override void Initialize() {
             Log.Information("Initializing application.");
             AvaloniaXamlLoader.Load(this);
+#if DEBUG
+            this.AttachDeveloperTools();
+#endif
             InitializeCulture();
             InitializeTheme();
             Log.Information("Initialized application.");
@@ -82,8 +86,14 @@ namespace OpenUtau.App {
             }
         }
 
-        static void InitializeTheme() {
+        static async void InitializeTheme() {
             Log.Information("Initializing theme.");
+            try {
+                CustomTheme.ListThemes();
+                await OudepLoaderRegistry.LoadAllAsync();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to load themes from packages.");
+            }
             SetTheme();
             Log.Information("Initialized theme.");
         }

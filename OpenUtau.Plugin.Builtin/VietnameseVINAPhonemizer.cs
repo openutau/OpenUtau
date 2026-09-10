@@ -2417,9 +2417,9 @@ namespace OpenUtau.Plugin.Builtin {
             int noteIndex = 0;
             for (int i = 0; i < phonemes.Count; i++) {
                 var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == i) ?? default;
-                string alt = attr.alternate?.ToString() ?? string.Empty;
-                string color = attr.voiceColor;
-                int toneShift = attr.toneShift;
+                string alt = (attr.alternate ?? GetParentAlternate())?.ToString() ?? string.Empty;
+                string color = attr.voiceColor ?? GetParentVoiceColor();
+                int toneShift = attr.toneShift ?? GetParentToneShift();
                 var phoneme1 = phonemes[i];
                 while (noteIndex < notes.Length - 1 && notes[noteIndex].position - note.position < phoneme1.position) {
                     noteIndex++;

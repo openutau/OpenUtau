@@ -7,8 +7,13 @@ using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 
 namespace OpenUtau.App.Controls {
-    static class PhonemeUIRender{
-        public static string getLangCode(UVoicePart part){
+    static class PhonemeUIRender {
+        public static bool IsDiffSinger(UVoicePart part) {
+            var track = DocManager.Inst.Project.tracks[part.trackNo];
+            return track.Phonemizer is DiffSingerBasePhonemizer;
+        }
+
+        public static string getLangCode(UVoicePart part) {
             int trackNo = part.trackNo;
             var track = DocManager.Inst.Project.tracks[trackNo];
             string langCode = "";
@@ -22,11 +27,11 @@ namespace OpenUtau.App.Controls {
         //Calculates the position of a phoneme alias on a piano roll view, 
         //considering factors like tick width, phoneme text, and text layout. 
         //It returns the x-coordinate and text y-coordinate of the alias
-        public static (double textX, double textY, Size size, TextLayout textLayout) 
-            AliasPosition(NotesViewModel viewModel, UPhoneme phoneme, string? langCode, ref double lastTextEndX, ref bool raiseText){
+        public static (double textX, double textY, Size size, TextLayout textLayout)
+            AliasPosition(NotesViewModel viewModel, UPhoneme phoneme, string? langCode, ref double lastTextEndX, ref bool raiseText) {
 
             string phonemeText = !string.IsNullOrEmpty(phoneme.phonemeMapped) ? phoneme.phonemeMapped : phoneme.phoneme;
-            if (Preferences.Default.DiffSingerLangCodeHide && !string.IsNullOrEmpty(langCode) && phonemeText.StartsWith(langCode+"/")) {
+            if (Preferences.Default.DiffSingerLangCodeHide && !string.IsNullOrEmpty(langCode) && phonemeText.StartsWith(langCode + "/")) {
                 phonemeText = phonemeText.Substring(langCode.Length + 1);
             }
             var x = viewModel.TickToneToPoint(phoneme.position, 0).X;

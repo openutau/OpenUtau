@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace OpenUtau.Core.Util {
     public enum EditTools {
@@ -9,47 +9,32 @@ namespace OpenUtau.Core.Util {
         PenTool = 10,
         PenPlusTool = 11,
         EraserTool = 20,
-        DrawPitchTool = 30,
-        OverwritePitchTool = 31,
-        DrawLinePitchTool = 40,
-        OverwriteLinePitchTool = 41,
-        KnifeTool = 50
+        KnifeTool = 30,
+        PitchPointTool = 40,
+        DrawPitchTool = 50,
+        PitchLineTool = 60,
+        PitchSCurveTool = 70,
+        PitchSineWaveTool = 80,
+        PitchSmoothenTool = 90
     }
 
     public class EditTool {
         public int BaseTool { get; set; } = 1;
         public int PenToolVariation { get; set; } = 0;
-        public int DrawPitchToolVariation { get; set; } = 0;
-        public int DrawLinePitchToolVariation { get; set; } = 0;
+        public bool OverwritePitch { get; set; } = false;
 
         [JsonIgnore]
         public EditTools CurrentTool {
             get {
                 switch (BaseTool) {
                     case 1:
-                        if (PenToolVariation == 1) {
-                            return EditTools.PenPlusTool;
-                        } else {
-                            return EditTools.PenTool;
-                        }
-                    case 3:
-                        if (DrawPitchToolVariation == 1) {
-                            return EditTools.OverwritePitchTool;
-                        } else {
-                            return EditTools.DrawPitchTool;
-                        }
-                    case 4:
-                        if (DrawLinePitchToolVariation == 1) {
-                            return EditTools.OverwriteLinePitchTool;
-                        } else {
-                            return EditTools.DrawLinePitchTool;
-                        }
+                        return PenToolVariation == 1 ? EditTools.PenPlusTool : EditTools.PenTool;
                     default:
                         return (EditTools)(BaseTool * 10);
                 }
             }
         }
-        [JsonIgnore] public bool IsPitchTool => BaseTool == 3 || BaseTool == 4;
+        [JsonIgnore] public bool IsPitchTool => BaseTool >= 5 && BaseTool <= 9;
         public bool IsMatch(IEnumerable<EditTools> tools) => tools.Contains(CurrentTool);
     }
 }

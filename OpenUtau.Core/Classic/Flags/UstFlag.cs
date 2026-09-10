@@ -10,5 +10,9 @@ namespace OpenUtau.Classic.Flags {
             Key = key ?? throw new ArgumentNullException(nameof(key));
             Value = value;
         }
+
+        public override string ToString() {
+            return Key + Value;
+        }
     }
 }

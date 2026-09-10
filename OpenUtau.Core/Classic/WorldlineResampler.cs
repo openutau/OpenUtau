@@ -1,8 +1,7 @@
 ﻿using System.IO;
-using NAudio.Wave;
 using OpenUtau.Core;
+using OpenUtau.Core.Format;
 using OpenUtau.Core.Render;
-using OpenUtau.Core.SignalChain;
 using Serilog;
 
 namespace OpenUtau.Classic {
@@ -37,10 +36,8 @@ namespace OpenUtau.Classic {
 
         public string DoResamplerReturnsFile(ResamplerItem item, ILogger logger) {
             var samples = DoResampler(item, logger);
-            var source = new WaveSource(0, 0, 0, 1);
-            source.SetSamples(samples);
             lock (Renderers.GetCacheLock(item.outputFile)) {
-                WaveFileWriter.CreateWaveFile16(item.outputFile, new ExportAdapter(source).ToMono(1, 0));
+                Wave.WriteMono16Wav(item.outputFile, samples);
             }
             return item.outputFile;
         }

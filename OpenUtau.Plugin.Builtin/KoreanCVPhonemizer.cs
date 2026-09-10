@@ -192,6 +192,10 @@ namespace OpenUtau.Plugin.Builtin {
             string thisMidVowelHead;
             string thisMidVowelTail;
 
+            if (kocvS == null) {
+                return GenerateResult(FindInOto(notes[0].lyric, notes[0])); // If kocvS is null, return the original lyric's phoneme
+            }
+
             int totalDuration = notes.Sum(n => n.duration);
             Note note = notes[0];
             bool isItNeedsFrontCV;
@@ -339,7 +343,7 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         private string? FindInOto(String phoneme, Note note, bool nullIfNotFound=false){
-            return BaseKoreanPhonemizer.FindInOto(singer, phoneme, note, nullIfNotFound);
+            return FindInOto(singer, phoneme, note, nullIfNotFound);
         }
 
 

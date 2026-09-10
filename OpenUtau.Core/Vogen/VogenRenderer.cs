@@ -53,7 +53,7 @@ namespace OpenUtau.Core.Vogen {
             };
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender = false) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender = false, RenderPhraseEvents? renderEvents = null) {
             var task = Task.Run(() => {
                 lock (lockObj) {
                     if (cancellation.IsCancellationRequested) {
@@ -75,9 +75,7 @@ namespace OpenUtau.Core.Vogen {
                     }
                     if (result.samples == null) {
                         result.samples = InvokeVogen(phrase);
-                        var source = new WaveSource(0, 0, 0, 1);
-                        source.SetSamples(result.samples);
-                        WaveFileWriter.CreateWaveFile16(wavPath, new ExportAdapter(source).ToMono(1, 0));
+                        Wave.WriteMono16Wav(wavPath, result.samples);
                     }
                     if (result.samples != null) {
                         Renderers.ApplyDynamics(phrase, result);

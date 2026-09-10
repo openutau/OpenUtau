@@ -4,13 +4,13 @@ using OpenUtau.Classic;
 using OpenUtau.Core;
 using OpenUtau.Core.Util;
 using OpenUtau.Core.Ustx;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class SingerPublishViewModel : ViewModelBase {
+    public partial class SingerPublishViewModel : ViewModelBase {
         public USinger singer;
-        [Reactive] public bool UseIgnore { get; set; }
-        [Reactive] public string IgnoreTypes { get; set; }
+        [Reactive] public partial bool UseIgnore { get; set; }
+        [Reactive] public partial string IgnoreTypes { get; set; }
 
         public SingerPublishViewModel(USinger singer) {
             this.singer = singer;

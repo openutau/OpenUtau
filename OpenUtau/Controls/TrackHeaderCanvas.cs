@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
+using Avalonia.Media;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
+using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.Controls {
     class TrackHeaderCanvas : Canvas {
@@ -40,6 +42,8 @@ namespace OpenUtau.App.Controls {
             get => _items;
             set => SetAndRaise(ItemsProperty, ref _items, value);
         }
+
+        public Line? TrackMover { get; private set; }
 
         private double trackHeight;
         private double trackOffset;
@@ -98,6 +102,14 @@ namespace OpenUtau.App.Controls {
                         }
                     }
                 });
+            MessageBus.Current.Listen<MixFxChangedNotification>()
+                .Subscribe(e => {
+                    foreach (var (track, header) in trackHeaders) {
+                        if (header.ViewModel != null && track.TrackNo == e.trackNo) {
+                            header.ViewModel.ManuallyRaise();
+                        }
+                    }
+                });
             MessageBus.Current.Listen<TrackSelectionEvent>()
                 .Subscribe(e => {
                     var selectedTracks = new HashSet<UTrack>(e.selectedTracks);
@@ -119,7 +131,17 @@ namespace OpenUtau.App.Controls {
             base.OnInitialized();
             trackAdder = new TrackAdder();
             trackAdder.Bind(this);
+            TrackMover = new() {
+                IsVisible = false,
+                StartPoint = new(0, 0),
+                EndPoint = new (300, 0),
+                StrokeThickness = 3
+            };
+            TrackMover.Bind(Shape.StrokeProperty,
+                this.GetResourceObservable("SystemAccentColor")
+                    .Select(c => new SolidColorBrush((Color)c!)));
             Children.Add(trackAdder);
+            Children.Add(TrackMover);
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {

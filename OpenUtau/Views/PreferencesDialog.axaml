@@ -3,8 +3,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:OpenUtau.App.ViewModels"
-        xmlns:controls="clr-namespace:Material.Styles.Controls;assembly=Material.Styles"
-        xmlns:styles="clr-namespace:Material.Styles;assembly=Material.Styles"
         mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="460"
         x:Class="OpenUtau.App.Views.PreferencesDialog"
         Icon="/Assets/open-utau.ico"
@@ -34,8 +32,8 @@
       <Setter Property="Margin" Value="4,0"/>
     </Style>
     <Style Selector="ToggleSwitch">
-      <Setter Property="OnContent" Value="{DynamicResource prefs.on}"/>
-      <Setter Property="OffContent" Value="{DynamicResource prefs.off}"/>
+      <Setter Property="OnContent" Value="{DynamicResource button.on}"/>
+      <Setter Property="OffContent" Value="{DynamicResource button.off}"/>
       <Setter Property="HorizontalAlignment" Value="Right"/>
     </Style>
   </Window.Styles>
@@ -83,8 +81,12 @@
             </ComboBox.ItemTemplate>
           </ComboBox>
           <Grid Margin="0,5,0,0">
-            <TextBlock Text="{DynamicResource prefs.advanced.beta}" HorizontalAlignment="Left"/>
-            <ToggleSwitch IsChecked="{Binding Beta}"/>
+            <TextBlock Text="{DynamicResource prefs.channel}" HorizontalAlignment="Left"/>
+            <ComboBox SelectedIndex="{Binding Channel}" HorizontalAlignment="Right" Width="120">
+              <ComboBoxItem Content="{DynamicResource prefs.channel.stable}"/>
+              <ComboBoxItem Content="{DynamicResource prefs.channel.beta}"/>
+              <ComboBoxItem Content="{DynamicResource prefs.channel.alpha}"/>
+            </ComboBox>
           </Grid>
           <TextBlock Classes="restart"/>
         </StackPanel>
@@ -100,9 +102,10 @@
           <ComboBox ItemsSource="{Binding AudioOutputDevices}" SelectedItem="{Binding AudioOutputDevice}" IsEnabled="{Binding !UseSystemDefaultDevice}"/>
           <Button Content="{DynamicResource prefs.playback.test}" HorizontalAlignment="Stretch" Command="{Binding TestAudioOutputDevice}"/>
           <TextBlock Text="{DynamicResource prefs.playback.backend}" Margin="0,10,0,0"/>
-          <ComboBox SelectedIndex="{Binding PreferPortAudio}">
+          <ComboBox SelectedIndex="{Binding AudioBackEnd}">
             <ComboBoxItem Content="{DynamicResource prefs.playback.backend.auto}"/>
             <ComboBoxItem Content="{DynamicResource prefs.playback.backend.mini}"/>
+            <ComboBoxItem Content="{DynamicResource prefs.playback.backend.sdl3}"/>
           </ComboBox>
           <TextBlock Classes="restart"/>
           <TextBlock Text="{DynamicResource prefs.playback.lockstarttime}" Margin="0,10,0,0"/>
@@ -113,7 +116,7 @@
           </ComboBox>
           <TextBlock Text="{DynamicResource prefs.playback.autoscroll}" Margin="0,10,0,0"/>
           <ComboBox  SelectedIndex="{Binding PlaybackAutoScroll}">
-            <ComboBoxItem Content="{DynamicResource prefs.off}"/>
+            <ComboBoxItem Content="{DynamicResource prefs.playback.autoscrollmode.off}"/>
             <ComboBoxItem Content="{DynamicResource prefs.playback.autoscrollmode.stationarycursor}"/>
             <ComboBoxItem Content="{DynamicResource prefs.playback.autoscrollmode.pagescroll}"/>
           </ComboBox>
@@ -129,6 +132,47 @@
             <Slider Grid.Column="4" Classes="fader" Value="{Binding PlayPosMarkerMargin}" Minimum="0" Maximum="1"
                     TickPlacement="BottomRight" TickFrequency="0.1" IsSnapToTickEnabled="true"/>
           </Grid>
+          <TextBlock Text="{DynamicResource prefs.playback.metronome}" Margin="0,10,0,0"/>
+          <Grid ColumnDefinitions="Auto,8,30,8,*" Margin="0,10,0,0">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.playback.metronome.volume}"/>
+            <TextBlock Grid.Column="2">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="{}{0:#0}">
+                  <Binding Path="MetronomeVolume"/>
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding MetronomeVolume}" Minimum="0" Maximum="100" Tag="MetronomeVolume"
+                    PointerPressed="OnMetronomeSliderPointerPressed"
+                    TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="true"/>
+          </Grid>
+          <Grid ColumnDefinitions="Auto,8,40,8,*" Margin="0,10,0,0">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.playback.metronome.highfrequency}"/>
+            <TextBlock Grid.Column="2">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="{}{0:#0}">
+                  <Binding Path="MetronomeHighFrequency"/>
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding MetronomeHighFrequency}" Minimum="20" Maximum="5000" Tag="MetronomeHighFrequency"
+                    PointerPressed="OnMetronomeSliderPointerPressed"
+                    TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="true"/>
+          </Grid>
+          <Grid ColumnDefinitions="Auto,8,40,8,*" Margin="0,10,0,0">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.playback.metronome.lowfrequency}"/>
+            <TextBlock Grid.Column="2">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="{}{0:#0}">
+                  <Binding Path="MetronomeLowFrequency"/>
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding MetronomeLowFrequency}" Minimum="20" Maximum="3000" Tag="MetronomeLowFrequency"
+                    PointerPressed="OnMetronomeSliderPointerPressed"
+                    TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="true"/>
+          </Grid>
+          <Button Content="{DynamicResource prefs.playback.test}" HorizontalAlignment="Stretch" Command="{Binding TestMetronome}"/>
         </StackPanel>
 
         <!-- Paths -->
@@ -136,17 +180,17 @@
           <TextBlock Text="{DynamicResource prefs.paths.singer}"/>
           <Grid ColumnDefinitions="*,10,Auto" Margin="4,0,0,10" HorizontalAlignment="Stretch">
             <TextBlock TextWrapping="Wrap" FontSize="11" Text="{Binding SingerPath}"/>
-            <Button Content="{DynamicResource prefs.paths.open}" Grid.Column="2" Click="OpenSingersFolder"/>
+            <Button Content="{DynamicResource button.open}" Grid.Column="2" Click="OpenSingersFolder"/>
           </Grid>
           <TextBlock Text="{DynamicResource prefs.paths.addlsinger}"/>
           <Grid ColumnDefinitions="*,10,Auto" Margin="4,0,0,0" HorizontalAlignment="Stretch">
             <TextBlock TextWrapping="Wrap" FontSize="11" Text="{Binding AdditionalSingersPath}"/>
-            <Button Content="{DynamicResource prefs.paths.open}" Grid.Column="2" Click="OpenAddlSingersFolder"/>
+            <Button Content="{DynamicResource button.open}" Grid.Column="2" Click="OpenAddlSingersFolder"/>
           </Grid>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*,10,*">
-            <Button Grid.Column="0" Content="{DynamicResource prefs.paths.reset}"
+            <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetAddlSingersPath"/>
-            <Button Grid.Column="2" Content="{DynamicResource prefs.paths.select}"
+            <Button Grid.Column="2" Content="{DynamicResource button.select}"
                     HorizontalAlignment="Stretch" Click="SelectAddlSingersPath"/>
             <Button Grid.Column="4" Content="{DynamicResource singers.refresh}"
                     HorizontalAlignment="Stretch" Click="ReloadSingers"/>
@@ -207,6 +251,8 @@
             <ComboBox ItemsSource="{Binding OnnxGpuOptions}" SelectedItem="{Binding OnnxGpu}"/>
             <TextBlock Classes="restart"/>
           </StackPanel>
+          <TextBlock Text="{DynamicResource prefs.rendering.gamebackend}" Margin="0,10,0,0"/>
+          <ComboBox ItemsSource="{Binding GameBackendOptions}" SelectedItem="{Binding GameBackend}"/>
         </StackPanel>
 
         <!-- Appearance -->
@@ -265,6 +311,22 @@
             <TextBlock Text="{DynamicResource prefs.appearance.showghostnotes}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding ShowGhostNotes}"/>
           </Grid>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.appearance.notehoverglow}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding NoteHoverGlow}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.appearance.playbacknotehighlight}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding ShowPlaybackNoteHighlight}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.appearance.playbacknotebounce}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding ShowPlaybackNoteBounce}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.appearance.detachpianoroll}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding DetachPianoRoll}"/>
+          </Grid>
         </StackPanel>
 
         <!-- UTAU -->
@@ -281,18 +343,18 @@
           <TextBlock HorizontalAlignment="Stretch" Margin="4"
                       TextWrapping="Wrap" FontSize="11" Text="{Binding VLabelerPath}"/>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*">
-            <Button Grid.Column="0" Content="{DynamicResource prefs.paths.reset}"
+            <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetVLabelerPath"/>
-            <Button Grid.Column="2" Content="{DynamicResource prefs.paths.select}"
+            <Button Grid.Column="2" Content="{DynamicResource button.select}"
                     HorizontalAlignment="Stretch" Click="SelectVLabelerPath"/>
           </Grid>
           <TextBlock Text="{DynamicResource prefs.otoeditor.setparampath}" Margin="0,10,0,0"/>
           <TextBlock HorizontalAlignment="Stretch" Margin="4"
                       TextWrapping="Wrap" FontSize="11" Text="{Binding SetParamPath}"/>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*">
-            <Button Grid.Column="0" Content="{DynamicResource prefs.paths.reset}"
+            <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetSetParamPath"/>
-            <Button Grid.Column="2" Content="{DynamicResource prefs.paths.select}"
+            <Button Grid.Column="2" Content="{DynamicResource button.select}"
                     HorizontalAlignment="Stretch" Click="SelectSetParamPath"/>
           </Grid>
         </StackPanel>
@@ -322,8 +384,16 @@
             <ToggleSwitch IsChecked="{Binding DiffSingerTensorCache}" />
           </Grid>
           <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.rendering.diffsingervariancelocalpitchpatch}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding DiffSingerVarianceLocalPitchPatch}" IsEnabled="{Binding DiffSingerTensorCache}" />
+          </Grid>
+          <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.diffsingerlangcodehide}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerLangCodeHide}" />
+          </Grid>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.rendering.diffsingerpitchlocalretaking}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding DiffSingerLocalRetaking}" />
           </Grid>
         </StackPanel>
 
@@ -338,6 +408,11 @@
             <CheckBox IsChecked="{Binding RememberVsqx}" Grid.Column="0" Grid.Row="2" VerticalAlignment="Center"/>
             <TextBlock Text=" .vsqx" Grid.Column="1" Grid.Row="2" VerticalAlignment="Center"/>
           </Grid>
+          <Grid IsVisible="{OnPlatform Default=false, Linux=True}" Margin="0,10,0,0">
+            <TextBlock Text="{DynamicResource prefs.advanced.wayland}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding Wayland}"/>
+          </Grid>
+          <TextBlock Classes="restart" IsVisible="{OnPlatform Default=false, Linux=True}"/>
           <TextBlock Text="{DynamicResource prefs.advanced.winepath}" 
                       IsVisible="{OnPlatform Windows=False, Default=True}" Margin="0,10,0,0"/>
           <TextBlock HorizontalAlignment="Stretch" Margin="4"
@@ -345,9 +420,9 @@
                       IsVisible="{OnPlatform Windows=False, Default=True}" />
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*,10,*"
                 IsVisible="{OnPlatform Windows=False, Default=True}">
-            <Button Grid.Column="0" Content="{DynamicResource prefs.paths.reset}"
+            <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetWinePath"/>
-            <Button Grid.Column="2" Content="{DynamicResource prefs.paths.select}"
+            <Button Grid.Column="2" Content="{DynamicResource button.select}"
                     HorizontalAlignment="Stretch" Click="SelectWinePath"/>
             <Button Grid.Column="4" Content="{DynamicResource prefs.paths.detect}"
                     HorizontalAlignment="Stretch" Click="DetectWinePath"/>

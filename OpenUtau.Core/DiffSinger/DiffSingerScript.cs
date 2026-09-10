@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 
@@ -45,16 +44,11 @@ namespace OpenUtau.Core.DiffSinger {
                 .Prepend("SP")
                 .Append("SP")
                 .ToArray();
-            ph_seq = phones
-                .Select(p => p.phoneme)
-                .Prepend("SP")
-                .Append("SP")
-                .ToArray();
-            phDurMs = phones
-                .Select(p => p.durationMs)
-                .Prepend(headMs)
-                .Append(tailMs)
-                .ToArray();
+            frameMs = singer?.dsConfig.frameMs() ?? 10;
+            var segments = DiffSingerUtils.PaddedSegments(
+                phrase, frameMs, DiffSingerUtils.headFrames, DiffSingerUtils.tailFrames);
+            ph_seq = segments.Select(s => s.Phoneme).ToArray();
+            phDurMs = segments.Select(s => s.DurationMs).ToArray();
             //ph_num
             var phNumList = new List<int>();
             int ep = 4;
@@ -71,6 +65,20 @@ namespace OpenUtau.Core.DiffSinger {
             phNumList.Add(phCount - prevNotePhId);
             phNumList.Add(1);
             ++phNumList[0];
+            var nonSlurNotes = notes.Where(n=>!n.lyric.StartsWith("+")).ToArray();
+            for (int i = 1; i < phCount; ++i) {
+                if (phones[i].positionMs <= phones[i - 1].endMs) {
+                    continue;
+                }
+                int owner = -1;
+                for (int k = 0; k < nonSlurNotes.Length; ++k) {
+                    if (phones[i - 1].position < nonSlurNotes[k].position - ep) {
+                        owner = k;
+                        break;
+                    }
+                }
+                ++phNumList[owner < 0 ? nonSlurNotes.Length : owner];
+            }
             ph_num = phNumList.ToArray();
 
             //Build note arrays with rest notes inserted for gaps between notes
@@ -97,8 +105,6 @@ namespace OpenUtau.Core.DiffSinger {
             noteSeq = noteSeqList.ToArray();
             noteDurMs = noteDurList.ToArray();
             note_slur = noteSlurList.ToArray();
-
-            frameMs = singer?.dsConfig.frameMs() ?? 10;
 
             var phDurFrames = DiffSingerUtils.DurationsMsToFrames(phDurMs, frameMs);
             int headFrames = phDurFrames[0];
@@ -136,7 +142,7 @@ namespace OpenUtau.Core.DiffSinger {
                 if (options.exportVariance && singer.HasVariancePredictor) {
                     var variancePredictor = singer.getVariancePredictor();
                     VarianceResult varianceResult;
-                    lock (variancePredictor) {
+                    lock (singer.SessionLock) {
                         varianceResult = variancePredictor.Process(phrase);
                     }
                     if (varianceResult.energy != null) {
@@ -199,7 +205,7 @@ namespace OpenUtau.Core.DiffSinger {
                 .Select(x => new DiffSingerScript(x, options).toRaw())
                 .ToArray();
             File.WriteAllText(filePath,
-                JsonConvert.SerializeObject(ScriptArray, Formatting.Indented),
+                Json.Serialize(ScriptArray),
                 new UTF8Encoding(false));
         }
     }

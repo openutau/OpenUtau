@@ -72,10 +72,10 @@
                 SelectedItem="{Binding ApplyPortamentoPreset}" HorizontalAlignment="Stretch"/>
             </Grid>
             <Grid ColumnDefinitions="123,20,*,20,*">
-              <Button Grid.Column="2" Content="{DynamicResource notedefaults.preset.save}"
+              <Button Grid.Column="2" Content="{DynamicResource button.save}"
                       HorizontalAlignment="Stretch" Click="OnSavePortamentoPreset"
                       ToolTip.Tip="{DynamicResource notedefaults.preset.save.tooltip}"/>
-              <Button Grid.Column="4" Content="{DynamicResource notedefaults.preset.remove}"
+              <Button Grid.Column="4" Content="{DynamicResource button.remove}"
                       HorizontalAlignment="Stretch" Command="{Binding RemoveAppliedPortamentoPreset}"
                       ToolTip.Tip="{DynamicResource notedefaults.preset.remove.tooltip}"/>
             </Grid>
@@ -108,7 +108,7 @@
 
         <Expander Header="{DynamicResource notedefaults.vibrato}" HorizontalAlignment="Stretch" Margin="0,2,4,2">
           <StackPanel IsEnabled="{Binding IsNoteSelected}">
-            <ToggleSwitch IsChecked="{Binding VibratoEnable, Mode=OneWay}" OnContent="{DynamicResource prefs.on}" OffContent="{DynamicResource prefs.off}"
+            <ToggleSwitch IsChecked="{Binding VibratoEnable, Mode=OneWay}" OnContent="{DynamicResource button.on}" OffContent="{DynamicResource button.off}"
                           Click="VibratoEnableClicked"/>
             <Grid ColumnDefinitions="123,20,*">
               <Label Content="{DynamicResource notedefaults.preset}"/>
@@ -116,10 +116,10 @@
                 SelectedItem="{Binding ApplyVibratoPreset}" HorizontalAlignment="Stretch" />
             </Grid>
             <Grid ColumnDefinitions="123,20,*,20,*">
-              <Button Grid.Column="2" Content="{DynamicResource notedefaults.preset.save}"
+              <Button Grid.Column="2" Content="{DynamicResource button.save}"
                       HorizontalAlignment="Stretch" Click="OnSaveVibratoPreset"
                       ToolTip.Tip="{DynamicResource notedefaults.preset.save.tooltip}"/>
-              <Button Grid.Column="4" Content="{DynamicResource notedefaults.preset.remove}"
+              <Button Grid.Column="4" Content="{DynamicResource button.remove}"
                 HorizontalAlignment="Stretch" Command="{Binding RemoveAppliedVibratoPreset}"
                 ToolTip.Tip="{DynamicResource notedefaults.preset.remove.tooltip}"/>
             </Grid>

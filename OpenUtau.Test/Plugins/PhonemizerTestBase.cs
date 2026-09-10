@@ -8,7 +8,6 @@ using OpenUtau.Api;
 using OpenUtau.Classic;
 using OpenUtau.Core.Format;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace OpenUtau.Plugins {
     public abstract class PhonemizerTestBase {
@@ -148,7 +147,7 @@ namespace OpenUtau.Plugins {
                         index = j,
                         consonantStretchRatio = 1,
                         toneShift = phonemeParams.shift,
-                        alternate = phonemeParams.alt,
+                        alternate = phonemeParams.alt == 0 ? null : phonemeParams.alt, // 0 means no alt (nothing added)
                         voiceColor = phonemeParams.color
                     };
                 }

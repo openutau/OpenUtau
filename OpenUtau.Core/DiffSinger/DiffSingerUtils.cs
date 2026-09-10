@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.ML.OnnxRuntime.Tensors;
-using Newtonsoft.Json;
 using OpenUtau.Core.Render;
 
 namespace OpenUtau.Core.DiffSinger {
@@ -64,35 +63,88 @@ namespace OpenUtau.Core.DiffSinger {
             return result.ToArray();
         }
 
+        /// <summary>
+        /// Model segments of a phrase: head "SP", phonemes (with an "SP"
+        /// silence segment per inter-phoneme gap, since merged phrases can
+        /// bridge gaps), and tail "SP". PhoneIndex is -1 for non-phonemes.
+        /// </summary>
+        public static List<(string Phoneme, double DurationMs, int PhoneIndex)> PaddedSegments(
+            RenderPhrase phrase, double frameMs, int headFrames, int tailFrames) {
+            var result = new List<(string, double, int)> { ("SP", headFrames * frameMs, -1) };
+            for (int i = 0; i < phrase.phones.Length; ++i) {
+                if (i > 0) {
+                    double gapMs = phrase.phones[i].positionMs - phrase.phones[i - 1].endMs;
+                    if (gapMs > 0) {
+                        result.Add(("SP", gapMs, -1));
+                    }
+                }
+                result.Add((phrase.phones[i].phoneme, phrase.phones[i].durationMs, i));
+            }
+            result.Add(("SP", tailFrames * frameMs, -1));
+            return result;
+        }
+
         public static int[] PaddedPhoneDurations(RenderPhrase phrase, double frameMs, int headFrames, int tailFrames) {
             return DurationsMsToFrames(
-                phrase.phones
-                    .Select(p => p.durationMs)
-                    .Prepend(headFrames * frameMs)
-                    .Append(tailFrames * frameMs),
+                PaddedSegments(phrase, frameMs, headFrames, tailFrames).Select(s => s.DurationMs),
                 frameMs);
         }
 
+        /// <summary>
+        /// Per-frame voiced flag for the padded frame layout. Segments that are
+        /// not real phonemes (head "SP", inter-phoneme gap "SP", tail "SP") are
+        /// unvoiced: the pitch model has no ground truth there, and any value it
+        /// returns for those frames is an artifact rather than a curve to follow.
+        /// </summary>
+        public static bool[] PaddedVoicedMask(
+            IReadOnlyList<(string Phoneme, double DurationMs, int PhoneIndex)> segments,
+            IReadOnlyList<int> durations) {
+            int totalFrames = 0;
+            for (int i = 0; i < durations.Count; ++i) {
+                totalFrames += durations[i];
+            }
+            var mask = new bool[totalFrames];
+            int frame = 0;
+            for (int i = 0; i < segments.Count && i < durations.Count; ++i) {
+                bool voiced = segments[i].PhoneIndex >= 0;
+                for (int f = 0; f < durations[i] && frame < mask.Length; ++f) {
+                    mask[frame++] = voiced;
+                }
+            }
+            return mask;
+        }
+
+        public static long[] PaddedLanguageIds(
+            RenderPhrase phrase, double frameMs, int headFrames, int tailFrames, Func<string, long> langIdByPhoneme) {
+            return PaddedSegments(phrase, frameMs, headFrames, tailFrames)
+                .Select(s => s.PhoneIndex >= 0 ? langIdByPhoneme(phrase.phones[s.PhoneIndex].phoneme) : 0L)
+                .ToArray();
+        }
+
         public static (Int64[] wordDiv, Int64[] wordDur) PaddedWordDivAndDur(
-            RenderPhrase phrase, int[] phDur, Func<string, bool> isVowel) {
-            if (phrase.phones.Length == 0) {
+            RenderPhrase phrase, int[] phDur, Func<string, bool> isVowel, double frameMs, int headFrames, int tailFrames) {
+            var segments = PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            if (segments.Count == 0) {
                 throw new InvalidDataException("DiffSinger word mode requires at least one phoneme.");
             }
-            if (phDur.Length != phrase.phones.Length + 2) {
+            if (phDur.Length != segments.Count) {
                 throw new InvalidDataException(
-                    $"DiffSinger word mode duration length mismatch: {phDur.Length} durations for {phrase.phones.Length + 2} padded tokens.");
+                    $"DiffSinger word mode duration length mismatch: {phDur.Length} durations for {segments.Count} padded tokens.");
             }
 
-            var vowelIds = Enumerable.Range(0, phrase.phones.Length)
-                .Where(i => isVowel(phrase.phones[i].phoneme))
+            var vowelIds = Enumerable.Range(0, segments.Count)
+                .Where(i => segments[i].PhoneIndex >= 0 && isVowel(segments[i].Phoneme))
                 .ToArray();
             if (vowelIds.Length == 0) {
-                vowelIds = new int[] { phrase.phones.Length - 1 };
+                // The last real phoneme (the tail "SP" is the last segment).
+                vowelIds = new int[] { segments.Count - 2 };
             }
 
+            // Vowel indexes are in segment space (phones shifted by +1 for
+            // the head "SP"), hence no +1 on the first word.
             var wordDiv = vowelIds.Zip(vowelIds.Skip(1), (a, b) => (Int64)(b - a))
-                .Prepend(vowelIds[0] + 1)
-                .Append(phrase.phones.Length - vowelIds[^1] + 1)
+                .Prepend((Int64)vowelIds[0])
+                .Append((Int64)segments.Count - vowelIds[^1])
                 .ToArray();
 
             if (wordDiv.Any(d => d <= 0)) {
@@ -319,7 +371,7 @@ namespace OpenUtau.Core.DiffSinger {
 
         static Dictionary<string, int> LoadPhonemesFromJson(string filePath){
             var json = File.ReadAllText(filePath, Encoding.UTF8);
-            return JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+            return Json.Deserialize<Dictionary<string, int>>(json);
         }
 
         static Dictionary<string, int> LoadPhonemesFromTxt(string filePath){
@@ -333,7 +385,7 @@ namespace OpenUtau.Core.DiffSinger {
 
         public static Dictionary<string, int> LoadLanguageIds(string filePath){
             var json = File.ReadAllText(filePath, Encoding.UTF8);
-            return JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+            return Json.Deserialize<Dictionary<string, int>>(json);
         }
 
         public static string PhonemeLanguage(string phoneme){

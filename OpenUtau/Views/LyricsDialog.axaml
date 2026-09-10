@@ -5,7 +5,7 @@
         mc:Ignorable="d" MinWidth="400" MinHeight="200" Width="600" Height="300"
         x:Class="OpenUtau.App.Views.LyricsDialog" WindowStartupLocation="CenterOwner"
         Icon="/Assets/open-utau.ico"
-        Title="{StaticResource lyrics.caption}"
+        Title="{DynamicResource lyrics.caption}"
         Opened="OnOpened">
   <Window.Styles>
     <StyleInclude Source="/Styles/PianoRollStyles.axaml"/>
@@ -64,9 +64,9 @@
       </ToggleSwitch>
     </StackPanel>
     <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
-      <Button Content="{StaticResource lyrics.reset}" Margin="0" Command="{Binding Reset}"/>
-      <Button Content="{StaticResource lyrics.cancel}" Margin="0" Click="OnCancel"/>
-      <Button Content="{StaticResource lyrics.apply}" Margin="0" Click="OnFinish"/>
+      <Button Content="{DynamicResource button.reset}" Margin="0" Command="{Binding Reset}"/>
+      <Button Content="{DynamicResource button.cancel}" Margin="0" Click="OnCancel"/>
+      <Button Content="{DynamicResource button.apply}" Margin="0" Click="OnFinish"/>
     </StackPanel>
   </Grid>
 </Window>

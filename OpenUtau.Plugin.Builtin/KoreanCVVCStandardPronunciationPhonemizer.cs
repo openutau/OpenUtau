@@ -277,7 +277,7 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         private string? FindInOto(String phoneme, Note note, bool nullIfNotFound=false){
-            return BaseKoreanPhonemizer.FindInOto(singer, phoneme, note, nullIfNotFound);
+            return FindInOto(singer, phoneme, note, nullIfNotFound);
         }
 
         private bool IsENPhoneme(String phoneme) {

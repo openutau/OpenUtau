@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="Layer_1"
+   data-name="Layer 1"
+   viewBox="0 0 240 240"
+   version="1.1"
+   sodipodi:docname="Artboard 1.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2"
+     inkscape:cx="-37.25"
+     inkscape:cy="133"
+     inkscape:window-width="2560"
+     inkscape:window-height="1291"
+     inkscape:window-x="0"
+     inkscape:window-y="31"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Layer_1" />
+  <defs
+     id="defs1">
+    <style
+       id="style1">.cls-1,.cls-4{fill:#ff71a3;}.cls-1,.cls-2,.cls-3,.cls-5{fill-rule:evenodd;}.cls-2{fill:#333;}.cls-3{fill:#4ea6ea;}.cls-5,.cls-6{fill:#fff;}</style>
+  </defs>
+  <title
+     id="title1">Artboard 1</title>
+  <path
+     class="cls-5"
+     d="M177.26,58v2.48a11.26,11.26,0,0,1-22.52,0V40H132V60.85C132,79.33,147.05,94,166,94c18.72,0,34-14.67,34-33.15V53.21Z"
+     id="path5" />
+</svg>

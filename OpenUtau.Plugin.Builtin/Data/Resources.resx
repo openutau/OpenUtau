@@ -124,6 +124,9 @@
   <data name="de_vccv_template" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>de_vccv.template.yaml;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="en2ja_template" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>en2ja.template.yaml;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="envccv_template" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>envccv.template.yaml;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
@@ -132,6 +135,9 @@
   </data>
   <data name="en_xsampa_template" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\en-xsampa.template.yaml;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="fil2ja_template" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>fil2ja.template.yaml;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="filipino_template" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>filipino-template.yaml;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>

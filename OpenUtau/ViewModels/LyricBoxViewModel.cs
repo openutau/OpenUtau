@@ -1,26 +1,26 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using DynamicData.Binding;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.Primitives;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    class LyricBoxViewModel : ViewModelBase {
+    partial class LyricBoxViewModel : ViewModelBase {
         public class SuggestionItem {
             public string Alias { get; set; } = string.Empty;
             public string Source { get; set; } = string.Empty;
         }
 
-        [Reactive] public UVoicePart? Part { get; set; }
-        [Reactive] public LyricBoxNoteOrPhoneme? NoteOrPhoneme { get; set; }
-        [Reactive] public bool IsVisible { get; set; }
-        [Reactive] public string? Text { get; set; }
-        [Reactive] public SuggestionItem? SelectedSuggestion { get; set; }
-        [Reactive] public ObservableCollectionExtended<SuggestionItem> Suggestions { get; set; }
+        [Reactive] public partial UVoicePart? Part { get; set; }
+        [Reactive] public partial LyricBoxNoteOrPhoneme? NoteOrPhoneme { get; set; }
+        [Reactive] public partial bool IsVisible { get; set; }
+        [Reactive] public partial string? Text { get; set; }
+        [Reactive] public partial SuggestionItem? SelectedSuggestion { get; set; }
+        [Reactive] public partial ObservableCollectionExtended<SuggestionItem> Suggestions { get; set; }
 
         public bool IsAliasBox => isAliasBox.Value;
         private readonly ObservableAsPropertyHelper<bool> isAliasBox;
@@ -32,7 +32,7 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(x => x.Text, x => x.IsVisible)
                 .Subscribe(_ => UpdateSuggestion());
             this.WhenAnyValue(x => x.SelectedSuggestion)
-                .WhereNotNull()
+                .OfType<SuggestionItem>()
                 .Subscribe(ss => Serilog.Log.Information(ss.Alias));
 
             isAliasBox = this.WhenAnyValue(x => x.NoteOrPhoneme)
@@ -54,23 +54,36 @@ namespace OpenUtau.App.ViewModels {
                 return;
             }
             var scheduler = TaskScheduler.FromCurrentSynchronizationContext();
-            Task.Run(() => singer.GetSuggestions(Text ?? "").Select(oto => new SuggestionItem() {
-                Alias = oto.Alias,
-                Source = string.IsNullOrEmpty(oto.Set) ? singer.Id : $"{oto.Set}",
+            Task.Run(() => singer.GetSuggestions(Text ?? "", IsAliasBox).Select(oto => new SuggestionItem() {
+                Alias = oto.Key,
+                Source = string.IsNullOrEmpty(oto.Value.Set)
+                    ? singer.Id
+                    : oto.Key == oto.Value.Alias
+                        ? $"{oto.Value.Set}"
+                        : ThemeManager.GetString("oto.phonetic"),
             }).Take(32).ToList()).ContinueWith(task => {
                 Suggestions.Clear();
                 if (!string.IsNullOrEmpty(Text) && Core.Util.ActiveLyricsHelper.Inst.Current != null) {
                     string text = Core.Util.ActiveLyricsHelper.Inst.Current.Convert(Text);
-                    if (Core.Util.Preferences.Default.LyricsHelperBrackets) {
-                        text = $"[{text}]";
-                    }
                     Suggestions.Add(new SuggestionItem() {
                         Alias = text,
                         Source = Core.Util.ActiveLyricsHelper.Inst.Current.Source,
                     });
+                    if (Core.Util.Preferences.Default.LyricsHelperBrackets) {
+                        text = $"[{text}]";
+                        Suggestions.Add(new SuggestionItem() {
+                            Alias = text,
+                            Source = Core.Util.ActiveLyricsHelper.Inst.Current.Source,
+                        });
+                    }
                 }
                 if (!task.IsFaulted) {
-                    Suggestions.AddRange(task.Result);
+                    var seenAliases = Suggestions
+                        .Select(s => s.Alias)
+                        .ToHashSet();
+                    var uniqueResults = ((Task<List<SuggestionItem>>)task).Result
+                        .Where(s => !string.IsNullOrEmpty(s.Alias) && seenAliases.Add(s.Alias));
+                    Suggestions.AddRange(uniqueResults);
                 }
             }, scheduler);
         }

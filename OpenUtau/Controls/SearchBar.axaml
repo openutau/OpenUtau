@@ -11,7 +11,7 @@
     
     <TextBox Grid.Column="2" Name="box" Padding="4,3" Margin="0" Height="24" VerticalAlignment="Center" HorizontalAlignment="Stretch"
              Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-             Text="{Binding SearchWord}" Focusable="True" Watermark="{Binding Watermark}"
+             Text="{Binding SearchWord}" Focusable="True" PlaceholderText="{Binding Watermark}"
              GotFocus="Box_GotFocus"  KeyDown="Box_KeyDown"/>
     
     <TextBlock Grid.Column="3" Text="{Binding ResultCount}" Width="54" VerticalAlignment="Center" TextAlignment="Center"/>

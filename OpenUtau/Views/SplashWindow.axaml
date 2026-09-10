@@ -7,10 +7,9 @@
         Title="SplashWindow"
         Icon="/Assets/open-utau.ico"
         CanResize="False"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         ExtendClientAreaToDecorationsHint="True"
-        SystemDecorations="BorderOnly"
+        WindowDecorations="BorderOnly"
         WindowStartupLocation="CenterScreen">
   <Grid>
     <Image Margin="20" Width="96" Height="96"

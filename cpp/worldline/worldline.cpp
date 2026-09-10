@@ -28,6 +28,11 @@ static double** to2d(double* const arr, int length, int width) {
 
 DLL_API int F0(float* samples, int length, int fs, double frame_period,
                int method, double** f0) {
+  // Check if there's an issue with the WAV file
+  if (length <= 0) {
+    *f0 = new double[0];
+    return 0;
+  }
   std::unique_ptr<worldline::F0Estimator> estimator;
   switch (method) {
     case -1: {
@@ -141,7 +146,7 @@ DLL_API void WorldAnalysisF0In(const AnalysisConfig* config, float* samples,
 
   D4COption d4c_option;
   InitializeD4COption(&d4c_option);
-  // d4c_option.threshold = 0;
+  d4c_option.threshold = 0;
   D4C(samples_vec.data(), samples_vec.size(), config->fs, ts_vec.data(), f0_in,
       num_frames, config->fft_size, &d4c_option, ap_2d);
 

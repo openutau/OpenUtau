@@ -73,9 +73,9 @@
       <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,10,0,0">
         <CheckBox Grid.Column="0" IsChecked="{Binding ApplyOnExportMixdown}" VerticalAlignment="Center"/>
         <TextBlock Grid.Column="1" Classes="lbl" Margin="0,0,12,0" Text="{DynamicResource mixfx.applyonexport}"/>
-        <Button Grid.Column="3" Content="{DynamicResource dialogs.messagebox.cancel}"
+        <Button Grid.Column="3" Content="{DynamicResource button.cancel}"
                 MinWidth="70" Margin="0,0,8,0" Click="OnCancelClicked"/>
-        <Button Grid.Column="4" Content="{DynamicResource dialogs.messagebox.ok}"
+        <Button Grid.Column="4" Content="{DynamicResource button.ok}"
                 MinWidth="70" Click="OnOkClicked"/>
       </Grid>
 

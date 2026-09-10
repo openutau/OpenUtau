@@ -104,13 +104,16 @@ namespace OpenUtau.Core.DiffSinger
             var singer = phrase.singer;
             var hiddenSize = dsConfig.hiddenSize;
             var speakerEmbeds = getSpeakerEmbeds();
-            //get default speaker for each phoneme
-            var headDefaultSpk = getSpeakerIndexBySuffix(phrase.phones[0].suffix);
-            var tailDefaultSpk = getSpeakerIndexBySuffix(phrase.phones[^1].suffix);
-            var defaultSpkByFrame = Enumerable.Repeat(headDefaultSpk, headFrames).ToList();
-            defaultSpkByFrame.AddRange(Enumerable.Range(0, phrase.phones.Length)
-                .SelectMany(phIndex => Enumerable.Repeat(getSpeakerIndexBySuffix(phrase.phones[phIndex].suffix), durations[phIndex+1])));
-            defaultSpkByFrame.AddRange(Enumerable.Repeat(tailDefaultSpk, tailFrames));
+            //get default speaker for each padded segment
+            var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            var defaultSpkByFrame = new List<int>();
+            var currentSpk = getSpeakerIndexBySuffix(phrase.phones[0].suffix);
+            for (int i = 0; i < segments.Count; ++i) {
+                if (segments[i].PhoneIndex >= 0) {
+                    currentSpk = getSpeakerIndexBySuffix(phrase.phones[segments[i].PhoneIndex].suffix);
+                }
+                defaultSpkByFrame.AddRange(Enumerable.Repeat(currentSpk, durations[i]));
+            }
             //get speaker curves
             NDArray spkCurves = np.zeros<float>(totalFrames, dsConfig.speakers.Count);
             foreach(var curve in phrase.curves) {

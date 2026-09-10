@@ -12,6 +12,7 @@ using Avalonia.Media.Imaging;
 using NWaves.Signals;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
+using ReactiveUI.Primitives;
 using Serilog;
 
 namespace OpenUtau.App.Controls {

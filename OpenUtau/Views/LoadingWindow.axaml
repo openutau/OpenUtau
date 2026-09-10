@@ -7,10 +7,9 @@
         Title="Loading" MinWidth="300" MinHeight="150"
         Icon="/Assets/open-utau.ico" 
         WindowStartupLocation="CenterScreen"
-        ExtendClientAreaChromeHints="NoChrome"
         ExtendClientAreaTitleBarHeightHint="-1"
         ExtendClientAreaToDecorationsHint="True"
-        SystemDecorations="BorderOnly">
+        WindowDecorations="BorderOnly">
 
     <Grid>
         <Image Margin="20" Width="80" Height="80"

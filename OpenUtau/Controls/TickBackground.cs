@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using OpenUtau.App.ViewModels;
 using ReactiveUI;
+using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.Controls {
     class TickBackground : TemplatedControl {
@@ -151,8 +152,8 @@ namespace OpenUtau.App.Controls {
                     using (var state = context.PushTransform(Matrix.CreateTranslation(x + 3, 10))) {
                         textLayout.Draw(context, new Point());
                     }
-                    context.DrawLine(penBar, new Point(x, y), new Point(x, Bounds.Height + 0.5f));
                 }
+                context.DrawLine(penBar, new Point(x, y), new Point(x, Bounds.Height + 0.5f));
                 // Lines between bars.
                 var timeSig = project.timeAxis.TimeSignatureAtBar(bar);
                 int nextBarTick = project.timeAxis.BarBeatToTickPos(bar + 1, 0);

@@ -68,7 +68,7 @@ namespace OpenUtau.Plugin.Builtin {
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
 
             foreach (string test in input) {
-                if (singer.TryGetMappedOto(test, note.tone + attr.toneShift, attr.voiceColor, out var otoCandidacy)) {
+                if (singer.TryGetMappedOto(test, note.tone + (attr.toneShift ?? GetParentToneShift()), attr.voiceColor ?? GetParentVoiceColor(), out var otoCandidacy)) {
                     oto = otoCandidacy;
                     return true;
                 }
@@ -180,7 +180,7 @@ namespace OpenUtau.Plugin.Builtin {
                             nextCheck = nextTh.Consonant + nextTh.Dipthong + nextTh.Vowel;
                         }
                         var nextAttr = nextNeighbour.Value.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
-                        if (singer.TryGetMappedOto(nextCheck, nextNeighbour.Value.tone + nextAttr.toneShift, nextAttr.voiceColor, out var nextOto)) {
+                        if (singer.TryGetMappedOto(nextCheck, nextNeighbour.Value.tone + (nextAttr.toneShift ?? GetParentToneShift()), nextAttr.voiceColor ?? GetParentVoiceColor(), out var nextOto)) {
                             if (oto.Overlap > 0) {
                                 vcPosition = noteDuration - MsToTick(nextOto.Overlap) - MsToTick(nextOto.Preutter);
                             }

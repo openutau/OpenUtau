@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using Newtonsoft.Json;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using Serilog;
@@ -77,9 +75,7 @@ namespace OpenUtau.Core.Vogen {
                     throw new ArgumentException("missing meta.json");
                 }
                 using (var stream = metaEntry.OpenEntryStream()) {
-                    using var reader = new StreamReader(stream, Encoding.UTF8);
-                    JsonSerializer serializer = new JsonSerializer();
-                    meta = (VogenMeta)serializer.Deserialize(reader, typeof(VogenMeta));
+                    meta = Json.Deserialize<VogenMeta>(stream);
                 }
                 model = Zip.ExtractBytes(archive, "model.onnx");
                 if (model == null) {

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Classic;
 using OpenUtau.Api;
 using OpenUtau.Classic;
+using OpenUtau.Core;
 using OpenUtau.Core.G2p;
 using OpenUtau.Core.Ustx;
 using Serilog;
@@ -36,8 +38,7 @@ namespace OpenUtau.Plugin.Builtin {
                 .Where(parts => parts[0] != parts[1])
                 .ToDictionary(parts => parts[0], parts => parts[1]);
         }
-        
-        private bool isYamlFallbacks = false;
+        private bool useConvel = true;
 
         private readonly Dictionary<string, string> vcExceptions =
             new Dictionary<string, string>() {
@@ -68,7 +69,8 @@ namespace OpenUtau.Plugin.Builtin {
                 //{"i r","Er"},
                 {"ir","Er"},
                 {"ir-","Er-"},
-                {"6 r","or-"},
+                {"6r-","or-"},
+                {"6r","or"},
             };
 
         private readonly Dictionary<string, string> vvExceptions =
@@ -117,35 +119,13 @@ namespace OpenUtau.Plugin.Builtin {
         private readonly string[] ccNoParsing = { "sk", "sm", "sn", "sp", "st", "hy" };
         private readonly string[] stopCs = { "b", "d", "g", "k", "p", "t" };
         private readonly string[] ucvCs = { "r", "l", "w", "y", "f"};
-        private readonly string[] starlightccs = { "rl", "ll", "nn", "mm", "rf", "mf", "lf" };
+        private readonly string[] starlightccs = { "rl", "ll", "nn", "mm" };
 
         protected override string[] GetVowels() => vowels;
         protected override string[] GetConsonants() => consonants;
         protected override string GetDictionaryName() => "";
-        protected override IG2p LoadBaseDictionary() {
-            var g2ps = new List<IG2p>();
-
-            // Load dictionary from plugin folder.
-            string path = Path.Combine(PluginDir, YamlFileName);
-            if (!File.Exists(path)) {
-                Directory.CreateDirectory(PluginDir);
-                File.WriteAllBytes(path, YamlTemplate);
-            }
-            g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(path)).Build());
-
-            // Load dictionary from singer folder.
-            if (singer != null && singer.Found && singer.Loaded) {
-                string file = Path.Combine(singer.Location, YamlFileName);
-                if (File.Exists(file)) {
-                    try {
-                        g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(file)).Build());
-                    } catch (Exception e) {
-                        Log.Error(e, $"Failed to load {file}");
-                    }
-                }
-            }
-            g2ps.Add(new ArpabetG2p());
-            return new G2pFallbacks(g2ps.ToArray());
+        protected override IG2p[] GetBaseG2ps() {
+            return new IG2p[] { new ArpabetG2p() };
         }
 
         protected override string[] GetSymbols(Note note) {
@@ -155,6 +135,11 @@ namespace OpenUtau.Plugin.Builtin {
             }
             if (original == null) {
                 return null;
+            }
+            for (int i = 0; i < original.Length; i++) {
+                if (dictionaryReplacements.TryGetValue(original[i], out string replaced)) {
+                    original[i] = replaced;
+                }
             }
             List<string> finalProcessedPhonemes = new List<string>();
             string[] tr_dr = new[] { "tr", "dr"};
@@ -175,7 +160,7 @@ namespace OpenUtau.Plugin.Builtin {
         public override void SetSinger(USinger singer) {
             base.SetSinger(singer);
 
-            if (this.singer == null) return;
+            if (this.singer == null || !this.singer.Loaded) return;
 
             string file = null;
             if (singer != null && singer.Found && singer.Loaded && !string.IsNullOrEmpty(singer.Location)) {
@@ -187,7 +172,7 @@ namespace OpenUtau.Plugin.Builtin {
             if (string.IsNullOrEmpty(file) || !File.Exists(file)) return;
 
             try {
-                var data = Core.Yaml.DefaultDeserializer.Deserialize<VcVowelYAMLData>(File.ReadAllText(file));
+                var data = Core.Yaml.DefaultDeserializer.Deserialize<VCCVYAMLData>(File.ReadAllText(file));
                 if (data?.vcvowels != null) {
                     vcVowels.Clear();
                     foreach (var kvp in data.vcvowels) {
@@ -196,25 +181,208 @@ namespace OpenUtau.Plugin.Builtin {
                         }
                     }
                 }
+
+                if (data?.useconvel != null) {
+                    useConvel = data.useconvel.Value;
+                }
             } catch (Exception ex) {
-                Log.Error($"Failed to load vcvowels from {YamlFileName}: {ex.Message}");
+                Log.Error($"Failed to load vccv specific features from {YamlFileName}: {ex.Message}");
             }
         }
 
-        private class VcVowelYAMLData {
+        private class VCCVYAMLData {
             public Dictionary<string, string> vcvowels { get; set; } = new Dictionary<string, string>();
+            public bool? useconvel { get; set; }
         }
-        // prioritize yaml replacements over dictionary replacements
-        private string ReplacePhoneme(string phoneme, int tone) {
-            // If the original phoneme has an OTO, use it directly.
-            if (HasOto(phoneme, tone) || HasOto(ValidateAlias(phoneme), tone)) {
-                return phoneme;
+        
+        // this lets us get the unotes and utrack for convel
+        private List<UNote> unotes = new();
+        private UTrack utrack;
+        private int partPos = 0;
+
+        public override void SetUp(Note[][] notes, UProject project, UTrack track) {
+            base.SetUp(notes, project, track);
+            utrack = track;
+
+            var firstNote = notes.FirstOrDefault(n => n.Length > 0)?[0];
+            int firstNotePos = firstNote?.position ?? 0;
+
+            int trackNo = project.tracks.IndexOf(track);
+            var parts = project.parts.OfType<UVoicePart>()
+                .Where(p => trackNo < 0 || p.trackNo == trackNo)
+                .ToList();
+
+            var part = parts.FirstOrDefault(p => firstNotePos >= p.position && firstNotePos < (p.position + p.Duration))
+                       ?? parts.FirstOrDefault();
+
+            if (part != null && part.notes.Count > 0) {
+                partPos = part.position;
+                unotes = part.notes.OrderBy(n => n.position).ToList();
+            } else {
+                // Test fixture fallback: create synthetic UNotes from the passed Note[][]
+                partPos = 0;
+                unotes = notes.SelectMany(group => group)
+                              .Select(n => new UNote {
+                                  position = n.position,
+                                  duration = n.duration,
+                                  tone = n.tone,
+                                  lyric = n.lyric
+                              })
+                              .OrderBy(n => n.position)
+                              .ToList();
             }
-            // Otherwise, try to apply the dictionary replacement.
-            if (dictionaryReplacements.TryGetValue(phoneme, out var replaced)) {
-                return replaced;
+        }
+        private (Regex pattern, string type)[] patterns;
+
+        private void InitPatterns() {
+            if (patterns != null) return;
+            string Alt(IEnumerable<string> symbols) =>
+                $"({string.Join("|", symbols.Select(Regex.Escape).OrderByDescending(s => s.Length))})";
+
+            string V  = Alt(vowels);
+            string C  = Alt(consonants);
+            string C2 = Alt(ucvCs);
+
+            patterns = new (Regex pattern, string type)[] {
+                (new Regex($@"^-{V}$"),       "-V"),
+                (new Regex($@"^_{V}$"),       "_V"),
+                (new Regex($@"^{V}-$"),       "V-"),
+                (new Regex($@"^-{C}{V}$"),    "-CV"),
+                (new Regex($@"^-{C}{C2}$"),   "-CC"),
+                (new Regex($@"^_{C}{V}$"),    "_CV"),
+                (new Regex($@"^{V}{C}{C}-$"), "VCC-"),
+                (new Regex($@"^{V}{C}{C}$"),  "VCC"),
+                (new Regex($@"^{V}{C}-$"),    "VC-"),
+                (new Regex($@"^{C}{C}-$"),    "CC-"),
+                (new Regex($@"^{V} {C}$"),    "V C"),
+                (new Regex($@"^{C} {C}$"),    "C C"),
+                (new Regex($@"^{V}{C} {C}$"), "VC C"),
+                (new Regex($@"^{V}{C}$"),     "VC"),
+                (new Regex($@"^{C}{C2}$"),    "onsetCC"),
+                (new Regex($@"^{C}{C}$"),     "codaCC"),
+                (new Regex($@"^{C}{V}$"),     "CV"),
+                (new Regex($@"^{V}$"),        "V"),
+            };
+        }
+
+        private string Classify(string alias) {
+            if (starlightccs.Contains(alias)) return "codaCC";
+            InitPatterns();
+            foreach (var (pattern, type) in patterns)
+                if (pattern.IsMatch(alias)) return type;
+            return "Unknown";
+        }
+
+        float CalcConvel(UNote note) {
+            if (note == null) return 100f;
+            int absTick = partPos + note.position;
+            float bpm = timeAxis != null ? (float)timeAxis.GetBpmAtTick(absTick) : 120f;
+            float baseConvel = 100 * (bpm / 120f);
+            float finalConvel;
+            var trackVel = utrack?.TrackExpressions?.FirstOrDefault(e => e.abbr == "vel");
+            float velMin = trackVel?.min ?? 0f;
+            float velMax = trackVel?.max ?? 200f;
+            
+            if (note.duration >= 480)
+                finalConvel = baseConvel + (50 - 100 * ((float)note.duration / 960));
+            else
+                finalConvel = baseConvel + (100 - (100 * ((float)note.duration / 480)));
+            
+            return Math.Clamp(finalConvel, velMin, velMax);
+        }
+
+        private (UNote un, UNote unNext) UNoteAt(int absPos) {
+            if (unotes.Count == 0) return (null, null);
+            int relPos = absPos - partPos;
+            var un = unotes.LastOrDefault(n => n.position <= relPos) ?? unotes[0];
+            int idx = unotes.IndexOf(un);
+            return (un, idx + 1 < unotes.Count ? unotes[idx + 1] : null);
+        }
+        
+        // Automatic convel
+        public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevs) {
+            var result = base.Process(notes, prev, next, prevNeighbour, nextNeighbour, prevs);
+            if (unotes.Count == 0 || !useConvel || result.phonemes == null) return result;
+
+            Note GetNoteForPhoneme(Phoneme phoneme, Note[] currentNotes) {
+                int absPos = currentNotes[0].position + phoneme.position;
+                return currentNotes.FirstOrDefault(
+                    n => n.position <= absPos && absPos < n.position + n.duration,
+                    currentNotes[0]);
             }
-            return phoneme;
+            
+            var (curUN, nextUN) = UNoteAt(notes[0].position);
+            int curIdx = unotes.IndexOf(curUN);
+            var prevUN = curIdx > 0 ? unotes[curIdx - 1] : null;
+
+            var prevVel = prevUN != null ? (float?)CalcConvel(prevUN) : null;
+            var nextVel = nextUN != null ? (float?)CalcConvel(nextUN) : null;
+
+            for (int i = 0; i < result.phonemes.Length; i++) {
+                var phoneme = result.phonemes[i];
+                if (phoneme.phoneme == null) continue;
+
+                int absPos = notes[0].position + phoneme.position;
+                var (phonemeUN, _) = UNoteAt(absPos);
+                float noteVel = CalcConvel(phonemeUN);
+
+                if (i < result.phonemes.Length - 1 && result.phonemes[i + 1].phoneme != null) {
+                    var nextPhoneme = result.phonemes[i + 1];
+                    int nextAbsPos = notes[0].position + nextPhoneme.position;
+                    var (nextPhonemeUN, _) = UNoteAt(nextAbsPos);
+                    if (nextPhonemeUN != null) {
+                        nextVel = CalcConvel(nextPhonemeUN);
+                    }
+                }
+
+                // Check for manual user override
+                bool isManualOverride = false;
+                float vel = noteVel;
+
+                if (phonemeUN?.phonemeExpressions != null && phonemeUN.phonemeExpressions.Count > 0) {
+                    var userExp = phonemeUN.phonemeExpressions.FirstOrDefault(e => 
+                        (e.abbr == "vel" || e.descriptor?.abbr == "vel") && (e.index ?? 0) == i);
+                    if (userExp != null) {
+                        vel = userExp.value;
+                        isManualOverride = true;
+                    }
+                }
+
+                // Automatic ConVel assignment
+                if (!isManualOverride) {
+                    string type = Classify(phoneme.phoneme);
+                    switch (type) {
+                        case "V C": case "VC": case "VC-":
+                        case "VCC": case "VCC-": case "codaCC": case "C C":
+                        case "VC C": case "V-": case "CC-": 
+                            var n = GetNoteForPhoneme(phoneme, notes);
+                            if (n.lyric == "+" || n.lyric == "+~" || n.lyric.StartsWith("+")) {
+                                vel = noteVel;
+                                break;
+                            }
+                            vel = prevVel ?? noteVel;
+                            break;
+
+                        case "onsetCC": case "-CC":
+                            vel = nextVel ?? noteVel;
+                            break;
+
+                        default:
+                            vel = noteVel;
+                            break;
+                    }
+                }
+
+                phoneme.expressions = new List<PhonemeExpression> {
+                    new PhonemeExpression { abbr = "vel", value = vel }
+                };
+                result.phonemes[i] = phoneme;
+
+                // Transitions inherit this phoneme's velocity as their preceding anchor
+                prevVel = vel;
+            }
+
+            return result;
         }
 
         protected override List<string> ProcessSyllable(Syllable syllable) {
@@ -231,12 +399,6 @@ namespace OpenUtau.Plugin.Builtin {
             int prevWordConsonantsCount = syllable.prevWordConsonantsCount;
             int lastCPrevWord = syllable.prevWordConsonantsCount;
 
-            foreach (var entry in yamlFallbacks) {
-                if (!HasOto(entry.Key, syllable.tone) && !HasOto(entry.Key, syllable.tone)) {
-                    isYamlFallbacks = true;
-                    break;
-                }
-            }
             string basePhoneme = null;
             var phonemes = new List<string>();
             // --------------------------- STARTING V ------------------------------- //
@@ -316,6 +478,10 @@ namespace OpenUtau.Plugin.Builtin {
                             basePhoneme = ccv;
                         }
                     }
+                    if (liquid.Contains(cc[2]) || semivowel.Contains(cc[2])
+                        || liquid.Contains(ValidateAlias(cc[2])) || semivowel.Contains(ValidateAlias(cc[2]))) {
+                        glides(ccv);
+                    }
                 }
 
                 // if there still is no match, add [-CC] + [CC] etc.
@@ -329,6 +495,10 @@ namespace OpenUtau.Plugin.Builtin {
                         }
                         if (HasOto(currentCc, syllable.tone)) {
                             phonemes.Add(currentCc);
+                        }
+                        if (liquid.Contains(cc[i + 1]) || semivowel.Contains(cc[i + 1])
+                            || liquid.Contains(ValidateAlias(cc[i + 1])) || semivowel.Contains(ValidateAlias(cc[i + 1]))) {
+                            glides(currentCc);
                         }
                     }
                 }
@@ -369,9 +539,10 @@ namespace OpenUtau.Plugin.Builtin {
                         }
 
                     if (!HasOto(vc, syllable.vowelTone)) {
-                        if (vcVowels.ContainsKey(prevV))
+                        if (vcVowels.ContainsKey(prevV)) {
                             vc = $"{prevV}-";
-                        parsingCC = $"{vcVowels[prevV]} {cc[0]}";
+                            parsingCC = $"{vcVowels[prevV]} {cc[0]}";
+                        }
                     }
 
                     vc = CheckVCExceptions(vc);
@@ -456,6 +627,11 @@ namespace OpenUtau.Plugin.Builtin {
                                 }
                                 phonemes.Add(parsingVCC);
                                 phonemes.Add(parsingCC);
+
+                                if (liquid.Contains(cc[1]) || semivowel.Contains(cc[1])
+                                    || liquid.Contains(ValidateAlias(cc[1])) || semivowel.Contains(ValidateAlias(cc[1]))) {
+                                    glides(parsingCC);
+                                }
                             } else {
                                 // bonehead [On-] + [n h] + [he]
                                 parsingCC = $"{cc[0]} {cc[1]}";
@@ -531,7 +707,8 @@ namespace OpenUtau.Plugin.Builtin {
                         var ccNoParse = $"{cc[cc.Length - 3]}{cc[cc.Length - 2]}{cc[cc.Length - 1]}";
                         bool dontParse = false;
                         var lastCforLoop = cc.Length - 1;
-
+                        bool leadingCBeforeCluster = false;
+                        
                         // str exceptions
                         if (cccExceptions.Contains($"{ccNoParse}") && cc.Length - 3 >= lastCPrevWord) {
                             var vc = $"{prevV}{cc[0]}-";
@@ -543,7 +720,13 @@ namespace OpenUtau.Plugin.Builtin {
                                 vc = $"{prevV} {vccE}";
                             }
                             if (cc.Length == 4) {
-                                vc = $"{prevV}{cc[0]}";
+                                if (HasOto($"{cc[0]} {cc[1]}", syllable.vowelTone)) {
+                                    vc = $"{prevV}{cc[0]}-";
+                                    leadingCBeforeCluster = true;
+                                } else {
+                                    vc = $"{prevV}{cc[0]}";
+                                    lastCforLoop = 0;
+                                }
                             }
 
                             if (vc == "ing")
@@ -552,6 +735,11 @@ namespace OpenUtau.Plugin.Builtin {
                             phonemes.Add(vc);
                             startingC = 0;
                             lastCforLoop -= 2;
+
+                            if (liquid.Contains(cc.Last()) || semivowel.Contains(cc.Last())
+                                                           || liquid.Contains(ValidateAlias(cc.Last())) || semivowel.Contains(ValidateAlias(cc.Last()))) {
+                                glides(ccNoParse);
+                            }
                         } else {
                             ccNoParse = $"{cc[cc.Length - 2]}{cc[cc.Length - 1]}";
                             var ccSP = $"{cc[0]}{cc[1]}";
@@ -563,6 +751,10 @@ namespace OpenUtau.Plugin.Builtin {
                                         dontParse = true;
                                         break;
                                     }
+                                }
+                                if (liquid.Contains(cc[1]) || semivowel.Contains(cc[1])
+                                    || liquid.Contains(ValidateAlias(cc[1])) || semivowel.Contains(ValidateAlias(cc[1]))) {
+                                    glides(ccNoParse);
                                 }
                             }
                             if (dontParse) {
@@ -611,7 +803,10 @@ namespace OpenUtau.Plugin.Builtin {
 
                                 if (phonemes.Count == 0) {
                                     parsingVCC = $"{prevV}{cc[0]}-";
-                                    if (cc.Length - lastCPrevWord - 1 > 0 && !dontParse && !HasOto($"{cc[0]} {cc[1]}", syllable.vowelTone)) {
+                                    if (cc.Length - lastCPrevWord - 1 > 0 && 
+                                        !dontParse && 
+                                        !HasOto($"{cc[0]} {cc[1]}", syllable.vowelTone)
+                                        && lastCPrevWord == 0) {
                                         parsingVCC = $"{prevV}{cc[0]}";
                                     }
                                     if (!HasOto(parsingVCC, syllable.vowelTone)) {
@@ -658,7 +853,7 @@ namespace OpenUtau.Plugin.Builtin {
                                 }
                             }
 
-                            if (i == lastCPrevWord - 1) {
+                            if (i == lastCPrevWord - 1 || (leadingCBeforeCluster && i == 0)) {
                                 parsingCC = $"{cc[i]} {cc[i + 1]}";
                                 if (vcVowels.ContainsKey(prevV) &&  i > 0 && !phonemes.Contains($"{cc[i - 1]}{cc[i]}")) {
                                     parsingCC = $"{cc[i - 1]}{cc[i]}";
@@ -671,7 +866,12 @@ namespace OpenUtau.Plugin.Builtin {
                                 if (vcVowels.ContainsKey(prevV) && phonemes.Count < i + 1) {
                                     parsingCC = $"{vcVowels[prevV]}{cc[i]}";
                                 }
-                                if (HasOto($"{cc[i + 1]} {cc[i + 2]}", syllable.vowelTone)) {
+                                if (i + 2 < cc.Length) {
+                                    if (HasOto($"{cc[i + 1]} {cc[i + 2]}", syllable.vowelTone)) {
+                                        parsingCC = $"{cc[i]}{cc[i + 1]}-";
+                                    }
+                                }
+                                if (basePhoneme == $"{cc[i + 1]}{v}") {
                                     parsingCC = $"{cc[i]}{cc[i + 1]}-";
                                 }
                                 if (!HasOto(parsingCC, syllable.vowelTone)) {
@@ -689,6 +889,11 @@ namespace OpenUtau.Plugin.Builtin {
                                 parsingCC = $"{cc[i]}{cc[i + 1]}";
                                 if (HasOto($"{cc[i]} {cc[i + 1]}", syllable.vowelTone)) {
                                     parsingCC = $"{cc[i]} {cc[i + 1]}";
+                                }
+
+                                if (liquid.Contains(cc[i + 1]) || semivowel.Contains(cc[i + 1])
+                                    || liquid.Contains(ValidateAlias(cc[i + 1])) || semivowel.Contains(ValidateAlias(cc[i + 1]))) {
+                                    glides(parsingCC);
                                 }
                             }
 
@@ -743,16 +948,21 @@ namespace OpenUtau.Plugin.Builtin {
             } else {
                 var vc = $"{v}{cc[0]}";
                 var currentCc = "";
+                bool hasVcVowel = vcVowels.TryGetValue(v, out string vcVowelSubstitute);
+                bool hasEndingVcVowel = vcVowels.TryGetValue(ending.prevV, out string endingVcVowelSubstitute);
+
                 // --------------------------- ENDING VC ------------------------------- //
                 if (ending.IsEndingVCWithOneConsonant) {
 
                     vc = CheckVCExceptions(vc) + "-";
                     if (!HasOto(vc, ending.tone)) {
-                        if (vcVowels.ContainsKey(ending.prevV))
+                        if (hasEndingVcVowel)
                             vc = $"{v}-";
-                        currentCc = $"{vcVowels[v]}{cc[0]}-";
-                        if (currentCc == $"ngk-")
-                            currentCc = $"nk-";
+                        if (hasVcVowel) {
+                            currentCc = $"{vcVowelSubstitute}{cc[0]}-";
+                            if (currentCc == $"ngk-")
+                                currentCc = $"nk-";
+                        }
                     }
                     phonemes.Add(vc);
                     
@@ -809,7 +1019,7 @@ namespace OpenUtau.Plugin.Builtin {
                         vc = vcc;
                         startingC = 1;
                     }
-                    if (vcVowels.ContainsKey(v)) {
+                    if (hasVcVowel) {
                         vc = $"{v}-";
                         vcc = vc;
                         startingC = 0;
@@ -829,39 +1039,38 @@ namespace OpenUtau.Plugin.Builtin {
 
                     for (var i = startingC; i < cc.Length - 1; i++) {
                         currentCc = $"{cc[i]}{cc[i + 1]}-";
-                        if (vcVowels.ContainsKey(v) && phonemes.Count == 1) {
-                            var vcVowelscc = $"{vcVowels[v]}{cc[i]}-";
+                        if (hasVcVowel && phonemes.Count == 1) {
+                            var vcVowelscc = $"{vcVowelSubstitute}{cc[i]}-";
                             vcVowelscc = vcVowelscc.Replace("ngk", "nk");
                             phonemes.Add($"{vcVowelscc}");
                         }
                         if (!HasOto(currentCc, ending.tone)) {
                             currentCc = $"{cc[i]}{cc[i + 1]}";
-                            if (vcVowels.ContainsKey(v) && phonemes.Count == 1) {
-                                phonemes.Add($"{vcVowels[v]}{cc[i]}");
+                            if (hasVcVowel && phonemes.Count == 1) {
+                                phonemes.Add($"{vcVowelSubstitute}{cc[i]}");
                             }
                         }
                         
-
                         if (!HasOto(currentCc, ending.tone)) {
                             currentCc = $"{cc[i]} {cc[i + 1]}";
-                            if (vcVowels.ContainsKey(v) && phonemes.Count == 1) {
-                                phonemes.Add($"{vcVowels[v]} {cc[i]}");
+                            if (hasVcVowel && phonemes.Count == 1) {
+                                phonemes.Add($"{vcVowelSubstitute} {cc[i]}");
                             }
                         }
                         if (!HasOto(currentCc, ending.tone)) {
                             currentCc = $"{cc[i]}x";
-                            if (vcVowels.ContainsKey(v) && phonemes.Count == 1) {
-                                phonemes.Add($"{vcVowels[v]}x");
+                            if (hasVcVowel && phonemes.Count == 1) {
+                                phonemes.Add($"{vcVowelSubstitute}x");
                             }
                             if (i == cc.Length - 2) {
                                 phonemes.Add(currentCc);
                                 currentCc = $"{cc[i + 1]}x";
-                                if (vcVowels.ContainsKey(v) && phonemes.Count == 1) {
+                                if (hasVcVowel && phonemes.Count == 1) {
                                     phonemes.Add($"{cc[i]}x");
                                 }
                             }
                         }
-                        //ng to nk exception
+                        // ng to nk exception
                         currentCc = currentCc.Replace("ngk", "nk");
 
                         if (HasOto(currentCc, ending.tone)) {
@@ -885,20 +1094,76 @@ namespace OpenUtau.Plugin.Builtin {
             }
             return vc;
         }
-        protected override string ValidateAlias(string alias) {
+        protected override string ValidateAlias(string alias, int tone = 0) {
             //foreach (var consonant in new[] { "h" }) {
             //    alias = alias.Replace(consonant, "hh");
             //}
-            if (isYamlFallbacks) {
-                foreach (var syllable in yamlFallbacks.OrderByDescending(f => f.Key.Length)) {
-                    alias = alias.Replace(syllable.Key, syllable.Value);
+            string baseResolved = base.ValidateAlias(alias, tone);
+            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
+                if (HasOto(baseResolved, tone)) {
+                    return baseResolved;
                 }
+                alias = baseResolved;
             }
             foreach (var consonant in new[] { "6r" }) {
                 alias = alias.Replace(consonant, "3");
             }
 
             return alias;
+        }
+
+        protected override PhonemeAttributes GetDynamicPhonemeAttributes(string alias, int index, PhonemeAttributes currentAttr, Note[] notes) {
+            if (unotes.Count == 0 || !useConvel) return currentAttr;
+
+            // If this phoneme itself was manually edited via the envelope/property editor, use it directly
+            if (currentAttr.consonantStretchRatio.HasValue && Math.Abs(currentAttr.consonantStretchRatio.Value - 1.0) > 0.0001) {
+                return currentAttr;
+            }
+
+            string type = Classify(alias);
+
+            int targetPos = notes[0].position;
+            if (notes.Length > 1) {
+                bool isTransition = (type == "VC" || type == "V C" || type == "VC-" || type == "VCC" 
+                    || type == "VCC-" || type == "codaCC" || type == "C C" || type == "VC C" || type == "V-" || type == "CC-");
+
+                int noteIdx = Math.Clamp(index / 2, 0, notes.Length - 1);
+                if (isTransition && noteIdx > 0) {
+                    noteIdx--;
+                }
+                targetPos = notes[noteIdx].position;
+            }
+
+            var (targetUN, _) = UNoteAt(targetPos);
+            float vel = targetUN != null ? CalcConvel(targetUN) : 100f;
+
+            if (targetUN?.phonemeExpressions != null && targetUN.phonemeExpressions.Count > 0) {
+                var userExp = targetUN.phonemeExpressions.FirstOrDefault(e => 
+                    (e.abbr == "vel" || e.descriptor?.abbr == "vel") && e.index == currentAttr.index);
+                if (userExp != null) {
+                    vel = userExp.value;
+                }
+            }
+
+            // Assign stretch ratio only to this specific phoneme
+            currentAttr.consonantStretchRatio = Math.Pow(2.0, (100.0 - vel) / 100.0);
+            return currentAttr;
+        }
+
+        protected override double GetTransitionBasicLengthMs(string alias, int tone, PhonemeAttributes attr) {
+            double otoLength = GetTransitionBasicLengthMsByOto(alias, tone, attr);
+
+            var sortedOverrides = PhonemeOverrides.OrderByDescending(kv => kv.Key.Length);
+            foreach (var kvp in sortedOverrides) {
+                var symbol = kvp.Key;
+                var value = kvp.Value;
+
+                if (Regex.IsMatch(alias, $@"(?<![a-zA-Z]){Regex.Escape(symbol)}(?![a-zA-Z])")) {
+                    return GetTransitionBasicLengthMsByConstant() * value;
+                }
+            }
+
+            return otoLength;
         }
     }
 }

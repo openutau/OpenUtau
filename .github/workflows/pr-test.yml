@@ -1,6 +1,8 @@
 on:
   pull_request:
     branches: [ master ]
+  workflow_dispatch:
+    branches: [ master ]
 
 jobs:
   pr-test:
@@ -12,8 +14,6 @@ jobs:
         os: 
           - runs-on: windows-latest
             arch: win-x64
-          - runs-on: macos-15-intel
-            arch: osx-x64
           - runs-on: macos-latest
             arch: osx-arm64
           - runs-on: ubuntu-latest
@@ -27,6 +27,7 @@ jobs:
         dotnet-version: |
           6.0.x
           8.0.x
+          10.0.x
 
     - name: restore
       run: dotnet restore OpenUtau -r ${{ matrix.os.arch }}

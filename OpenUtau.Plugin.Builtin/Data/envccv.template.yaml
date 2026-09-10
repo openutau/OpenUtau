@@ -1,6 +1,8 @@
 %YAML 1.2
 ---
 version: 1.2
+useconvel: true
+
 symbols:
   #CZsampa standard vowels
   - {symbol: '@', type: vowel}

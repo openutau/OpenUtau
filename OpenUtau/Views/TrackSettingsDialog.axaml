@@ -30,7 +30,7 @@
         <Button Grid.Column="2" Content="{DynamicResource dialogs.tracksettings.setasdefault}"
                 HorizontalAlignment="Stretch" Command="{Binding SetDefaultWavtool}"/>
       </Grid>
-      <Button Grid.Column="2" Content="{DynamicResource dialogs.messagebox.ok}"
+      <Button Grid.Column="2" Content="{DynamicResource button.ok}"
               HorizontalAlignment="Stretch" Click="OnOkClicked"/>
     </StackPanel>
   </Border>
