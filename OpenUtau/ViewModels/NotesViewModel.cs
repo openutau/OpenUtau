@@ -129,9 +129,9 @@ namespace OpenUtau.App.ViewModels {
                 UpdateSnapDiv();
             });
 
-            SetKeyCommand = ReactiveCommand.Create<Note>(key => {
+            SetKeyCommand = ReactiveCommand.Create<Note>(tonic => {
                 DocManager.Inst.StartUndoGroup("command.project.key");
-                DocManager.Inst.ExecuteCmd(new KeyCommand(Project, key));
+                DocManager.Inst.ExecuteCmd(new KeyCommand(Project, tonic));
                 DocManager.Inst.EndUndoGroup();
                 UpdateScale();
             });
@@ -221,17 +221,17 @@ namespace OpenUtau.App.ViewModels {
                         }));
                     Tonics.Clear();
                     Tonics.AddRange(
-                        Enum.GetValues<Note>().Select((key, index) => new MenuItemViewModel {
-                            Header = $"1={NoteHelper.StringifyNote(key)}",
+                        Enum.GetValues<Note>().Select((tonic) => new MenuItemViewModel {
+                            Header = $"1={NoteHelper.StringifyNote(tonic)}",
                             Command = SetKeyCommand,
-                            CommandParameter = key,
+                            CommandParameter = tonic,
                         }));
                     Modes.Clear();
                     Modes.AddRange(
-                        Enum.GetValues<Mode>().Select((key, index) => new MenuItemViewModel {
-                            Header = key.ToString(),
+                        Enum.GetValues<Mode>().Select((mode) => new MenuItemViewModel {
+                            Header = mode.ToString(),
                             Command = SetModeCommand,
-                            CommandParameter = key,
+                            CommandParameter = mode,
                         }));
                 });
 

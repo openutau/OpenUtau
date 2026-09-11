@@ -92,22 +92,7 @@ namespace OpenUtau.App.Controls {
             }
             int track = (int)TrackOffset;
             double top = TrackHeight * (track - TrackOffset);
-            // TODO refactor notes display style should be last step
-            // TODO interval notations has to do with scales not absolute notes, both should coexist
-            string[] degreeNames; 
 
-            switch (Preferences.Default.DegreeStyle)
-            {
-                case 1:
-                    degreeNames = MusicMath.Solfeges;
-                    break;
-                // case 2:
-                    // degreeNames = MusicMath.NumberedNotations;
-                    // break;
-                default:
-                    degreeNames = Enumerable.Repeat("", 12).ToArray();
-                    break;
-            }
             while (top < Bounds.Height)
             {
                 bool isAltTrack = IsOutOfScale(track) ^ (ThemeManager.IsDarkMode && !IsKeyboard);
@@ -144,11 +129,15 @@ namespace OpenUtau.App.Controls {
                     {
                         toneTextLayout.Draw(context, new Point());
                     }
-                    //scale degree display
-                    // TODO refactor
 
-                    // TODO re-support solfege
-                    string degreeName = Scale.Interval(NoteHelper.CastNote(tone)).ToString() ?? "";
+                    // TODO interval notations has nothing to do with scales, both should coexist : if solfege notation then all the app should turn C into Do etc
+                    string degreeName = Preferences.Default.DegreeStyle switch
+                    {
+                        1 => Scale.SolfegeIntervalName(NoteHelper.CastNote(tone))?.ToString() ?? "",
+                        2 => Scale.Interval(NoteHelper.CastNote(tone)).ToString() ?? "",
+                        _ => ""
+                    };
+
                     var degreeTextLayout = TextLayoutCache.Get(degreeName, brush, 12);
                     var degreeTextPosition = new Point(
                         4,

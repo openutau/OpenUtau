@@ -32,6 +32,29 @@ public class Scale
         return index >= 0 ? index + 1 : null;
     }
 
+    public string? SolfegeIntervalName(Note note)
+    {
+        if (IsOutOfScale(note))
+            return null;
+
+        return note switch
+        {
+            Note.C => "do",
+            Note.Csharp => "do#",
+            Note.D => "re",
+            Note.Dsharp => "re#",
+            Note.E => "mi",
+            Note.F => "fa",
+            Note.Fsharp => "fa#",
+            Note.G => "sol",
+            Note.Gsharp => "sol#",
+            Note.A => "la",
+            Note.Asharp => "la#",
+            Note.B => "ti",
+            _ => null,
+        };
+    }
+
     public static Scale Build(Note tonic, Mode mode)
     {
         int tonicValue = (int)tonic;
@@ -47,7 +70,9 @@ public class Scale
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
         };
 
-        var notes = intervals.Select(interval => NoteHelper.CastNote(tonicValue + interval)).ToList();
+        var notes = intervals
+            .Select(interval => NoteHelper.CastNote(tonicValue + interval))
+            .ToList();
 
         return new Scale(notes, mode);
     }

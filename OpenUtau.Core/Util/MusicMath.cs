@@ -5,6 +5,7 @@ namespace OpenUtau.Core {
     public static class MusicMath {
         private static readonly double a = Math.Pow(2, 1.0 / 12);
 
+        // TODO move all the harmonics to MusicTheory namespace and refactor
         public enum KeyColor { White, Black }
 
         public static readonly Tuple<string, KeyColor>[] KeysInOctave = {
@@ -47,21 +48,6 @@ namespace OpenUtau.Core {
             "ti",
         };
 
-        public static readonly string[] NumberedNotations = {
-            "1",
-            "",
-            "2",
-            "",
-            "3",
-            "4",
-            "",
-            "5",
-            "",
-            "6",
-            "",
-            "7",
-        };
-
         public static string GetToneName(int noteNum) {
             return noteNum < 0 ? string.Empty : KeysInOctave[noteNum % 12].Item1 + (noteNum / 12 - 1).ToString();
         }
@@ -79,14 +65,6 @@ namespace OpenUtau.Core {
                 return -1;
             }
             return 12 * (octave + 1) + inOctave;
-        }
-
-        public static bool IsBlackKey(int noteNum) {
-            return KeysInOctave[noteNum % 12].Item2 == KeyColor.Black;
-        }
-
-        public static bool IsCenterKey(int noteNum) {
-            return noteNum % 12 == 0;
         }
 
         public static double[] zoomRatios = { 4.0, 2.0, 1.0, 1.0 / 2, 1.0 / 4, 1.0 / 8, 1.0 / 16, 1.0 / 32, 1.0 / 64 };
