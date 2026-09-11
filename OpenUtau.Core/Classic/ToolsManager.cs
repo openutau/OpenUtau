@@ -56,7 +56,7 @@ namespace OpenUtau.Classic {
                 return new ExeWavtool(filePath, basePath);
             } 
             if (!OS.IsWindows() && (ext == ".sh" || string.IsNullOrEmpty(ext))) {
-                return new ExeWavtool(filePath, basePath);
+                return new UnixWavtool(filePath, basePath);
             }
             return null;
         }

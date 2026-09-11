@@ -26,19 +26,18 @@ namespace OpenUtau.Classic {
             this.filePath = filePath;
             name = Path.GetRelativePath(basePath, filePath);
             osEncoding = OS.IsWindows() ? Encoding.GetEncoding(0) : Encoding.UTF8;
-            string ext = Path.GetExtension(filePath).ToLower();
             winePath = Preferences.Default.WinePath;
-            useWine = !OS.IsWindows() && !string.IsNullOrEmpty(winePath) && (ext == ".exe" || ext == ".bat");
+            useWine = !string.IsNullOrEmpty(winePath);
         }
 
         public float[] Concatenate(List<ResamplerItem> resamplerItems, string tempPath, CancellationTokenSource cancellation) {
             if (cancellation.IsCancellationRequested) {
                 return null;
             }
-            //The builtin worldline resampler can't be called from bat script,
-            //so we need to call it directly from C#
+            //The builtin worldline and Linux/MacOS resamplers can't be
+            //called from bat script, so we need to call it directly from C#
             foreach(var item in resamplerItems){
-                if(!(item.resampler is ExeResampler) && !cancellation.IsCancellationRequested && !File.Exists(item.outputFile)){
+                if(item.resampler.CallDirectly && !cancellation.IsCancellationRequested && !File.Exists(item.outputFile)){
                     lock (Renderers.GetCacheLock(item.outputFile)) {
                         item.resampler.DoResamplerReturnsFile(item, Log.Logger);
                     }
@@ -218,16 +217,7 @@ namespace OpenUtau.Classic {
             return windowsPath;
         }
 
-        [DllImport("libc", SetLastError = true)]
-        private static extern int chmod(string pathname, int mode);
-
-        public void CheckPermissions() {
-            if (OS.IsWindows() || !File.Exists(filePath)) {
-                return;
-            }
-            int mode = (7 << 6) | (5 << 3) | 5;
-            chmod(filePath, mode);
-        }
+        public void CheckPermissions() { }
 
         public override string ToString() => name;
     }
