@@ -2,8 +2,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:vm="using:OpenUtau.App.ViewModels"
-        xmlns:api="using:OpenUtau.Api"
         xmlns:c="clr-namespace:OpenUtau.App.Controls"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="650"
         x:Class="OpenUtau.App.Controls.PianoRoll" Focusable="True"
@@ -57,7 +55,7 @@
                          DataContext="{Binding NotesViewModel}"
                          TrackHeight="{Binding TrackHeight}"
                          TrackOffset="{Binding TrackOffset}"
-                         Key="{Binding Key}"
+                         Scale="{Binding Scale}"
                          PointerWheelChanged="KeyboardPointerWheelChanged"
                          PointerPressed="KeyboardPointerPressed"
                          PointerMoved="KeyboardPointerMoved"
@@ -117,11 +115,13 @@
               Fill="{DynamicResource NeutralAccentBrushSemi}"
               Data="M -6.5 0 L 6.5 0 L 6.5 3 L 0 9 L -6.5 3 Z"/>
       </Canvas>
+      <!-- TODO change according to scale -->
       <!-- Notes backgrounds -->
       <c:TrackBackground Grid.Row="3" Grid.Column="1" IsHitTestVisible="False"
                          Foreground="{DynamicResource TrackBackgroundAltBrush}"
                          DataContext="{Binding NotesViewModel}"
                          Bounds="{Binding Bounds, Mode=OneWayToSource}"
+                         Scale="{Binding Scale}"
                          TrackHeight="{Binding TrackHeight}"
                          TrackOffset="{Binding TrackOffset}" IsPianoRoll="True"/>
       <c:TickBackground Grid.Row="2" Grid.RowSpan="2" Grid.Column="1" IsHitTestVisible="False"
@@ -527,6 +527,7 @@
                              ItemsSource="{Binding NotesViewModel.SnapDivs}" KeyDown="OnSnapDivKeyDown"/>
               </Button.ContextMenu>
             </Button>
+            <!-- Tonic selection -->
             <Button Margin="0" Padding="0,1" Height="20" Width="40" Background="Transparent" Click="OnKeyMenuButton"
               ToolTip.Tip="{DynamicResource pianoroll.key}">
               <TextBlock Grid.Column="0" Text="{Binding NotesViewModel.KeyText}"
@@ -534,9 +535,21 @@
                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
               <Button.ContextMenu>
                 <ContextMenu Name="KeyMenu" Classes="WithCommand" Placement="BottomEdgeAlignedLeft"
-                             ItemsSource="{Binding NotesViewModel.Keys}" KeyDown="OnKeyKeyDown"/>
+                             ItemsSource="{Binding NotesViewModel.Keys}" KeyDown="OnScaleKeyDown"/>
               </Button.ContextMenu>
             </Button>
+            <!-- Mode selection -->
+            <Button Margin="0" Padding="0,1" Height="20" Width="70" Background="Transparent" Click="OnModeMenuButton"
+              ToolTip.Tip="{DynamicResource pianoroll.key}">
+              <TextBlock Grid.Column="0" Text="{Binding NotesViewModel.ModeText}"
+                          TextAlignment="Right" FontSize="10" FontFamily="monospace"
+                          Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+              <Button.ContextMenu>
+                <ContextMenu Name="ModeMenu" Classes="WithCommand" Placement="BottomEdgeAlignedLeft"
+                             ItemsSource="{Binding NotesViewModel.Modes}" KeyDown="OnScaleKeyDown"/>
+              </Button.ContextMenu>
+            </Button>
+
             <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.LivePitchNormal}"
                           IsVisible="{Binding NotesViewModel.IsDiffSinger}"
                           ToolTip.Tip="{DynamicResource pianoroll.toggle.livepitch.normal}">
