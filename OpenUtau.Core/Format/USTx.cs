@@ -128,7 +128,6 @@ namespace OpenUtau.Core.Format {
             }
         }
 
-        // TODO check save and load compatibility with former projects
         public static UProject Load(string filePath) {
             string text = File.ReadAllText(filePath, Encoding.UTF8);
             UProject project = Yaml.DefaultDeserializer.Deserialize<UProject>(text);

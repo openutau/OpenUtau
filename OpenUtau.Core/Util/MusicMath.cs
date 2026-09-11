@@ -33,21 +33,6 @@ namespace OpenUtau.Core {
             { "B", 11 },
         };
 
-        public static readonly string[] Solfeges = { 
-            "do",
-            "",
-            "re",
-            "",
-            "mi",
-            "fa",
-            "",
-            "sol",
-            "",
-            "la",
-            "",
-            "ti",
-        };
-
         public static string GetToneName(int noteNum) {
             return noteNum < 0 ? string.Empty : KeysInOctave[noteNum % 12].Item1 + (noteNum / 12 - 1).ToString();
         }
