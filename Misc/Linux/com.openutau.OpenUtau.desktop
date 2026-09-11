@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=OpenUtau
+Comment=Open singing synthesis platform
+Icon=openutau
+Exec=OpenUtau
+Categories=AudioVideo;Audio;Midi;

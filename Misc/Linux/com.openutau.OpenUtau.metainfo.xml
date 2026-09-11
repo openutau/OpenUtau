@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.openutau.OpenUtau</id>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <name>OpenUtau</name>
+  <summary>Open singing synthesis platform</summary>
+
+  <developer id="io.github.stakira">
+    <name>StAkira</name>
+  </developer>
+
+  <description>
+    <p>OpenUtau is a free, open-source editor made for the UTAU community, featuring a modern user experience and support for multiple vocal tracks.</p>
+  </description>
+
+  <launchable type="desktop-id">com.openutau.OpenUtau.desktop</launchable>
+
+  <content_rating type="oars-1.1" />
+
+  <url type="bugtracker">https://github.com/stakira/OpenUtau/issues</url>
+  <url type="homepage">https://www.openutau.com/</url>
+  <url type="vcs-browser">https://github.com/stakira/OpenUtau</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://static.wikia.nocookie.net/vocalsynth/images/2/20/OpenUtau_v0.0.364.0_screenshot.png</image>
+    </screenshot>
+  </screenshots>
+
+  <releases>
+    <release version="0.1.565" date="2025-09-14">
+      <url type="details">https://github.com/stakira/OpenUtau/wiki/Release-Notes#01565-09-14-2025</url>
+    </release>
+  </releases>
+</component>
