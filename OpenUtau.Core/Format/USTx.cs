@@ -48,12 +48,12 @@ namespace OpenUtau.Core.Format {
             project.RegisterExpression(new UExpressionDescriptor("volume", VOL, 0, 200, 100));
             project.RegisterExpression(new UExpressionDescriptor("attack", ATK, 0, 200, 100));
             project.RegisterExpression(new UExpressionDescriptor("decay", DEC, 0, 100, 0));
-            project.RegisterExpression(new UExpressionDescriptor("gender", GEN, -100, 100, 0, "g"));
+            project.RegisterExpression(new UExpressionDescriptor("gender", GEN, -100, 100, 0, "g", skipOutputIfDefault: true));
             project.RegisterExpression(new UExpressionDescriptor("gender (curve)", GENC, -100, 100, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("breath", BRE, 0, 100, 0, "B"));
             project.RegisterExpression(new UExpressionDescriptor("breathiness (curve)", BREC, -100, 100, 0) { type = UExpressionType.Curve });
-            project.RegisterExpression(new UExpressionDescriptor("lowpass", LPF, 0, 100, 0, "H"));
-            project.RegisterExpression(new UExpressionDescriptor("normalize", NORM, 0, 100, 86, "P"));
+            project.RegisterExpression(new UExpressionDescriptor("lowpass", LPF, 0, 100, 0, "H", skipOutputIfDefault: true));
+            project.RegisterExpression(new UExpressionDescriptor("normalize", NORM, 0, 100, 86, "P", skipOutputIfDefault: true));
             project.RegisterExpression(new UExpressionDescriptor("modulation", MOD, 0, 100, 0));
             project.RegisterExpression(new UExpressionDescriptor("modulation plus", MODP, 0, 100, 0));
             project.RegisterExpression(new UExpressionDescriptor("alternate", ALT, 0, 16, 0));

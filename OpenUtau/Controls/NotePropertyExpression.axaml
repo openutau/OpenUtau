@@ -15,5 +15,7 @@
               SelectedIndex="{Binding SelectedOption}" MinWidth="120" IsVisible="{Binding IsOptions}" VerticalAlignment="Center" IsEnabled="{Binding IsNoteSelected}"
               IsDropDownOpen="{Binding DropDownOpen, Mode=OneWayToSource}"
               Name="comboBox"/>
+    <TextBox Text="{Binding FlagValue, Mode=OneWay}" Grid.Column="1" Grid.ColumnSpan="4" IsVisible="{Binding IsFlagBox}" VerticalAlignment="Center" IsEnabled="{Binding IsNoteSelected}"
+               GotFocus="OnTextBoxGotFocus" LostFocus="OnFlagBoxLostFocus"/>
   </Grid>
 </UserControl>
