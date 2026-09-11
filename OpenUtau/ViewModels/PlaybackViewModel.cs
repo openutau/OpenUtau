@@ -12,7 +12,6 @@ namespace OpenUtau.App.ViewModels {
         public int BeatPerBar => Project.timeSignatures[0].beatPerBar;
         public int BeatUnit => Project.timeSignatures[0].beatUnit;
         public double Bpm => Project.tempos[0].bpm;
-        // TODO refactor the file
         public Note Key => Project.key;
         public string KeyName => MusicMath.KeysInOctave[(int) Key].Item1;
         public int Resolution => Project.resolution;

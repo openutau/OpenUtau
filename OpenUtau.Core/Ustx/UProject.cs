@@ -50,8 +50,8 @@ namespace OpenUtau.Core.Ustx {
         public string[] expSelectors = new string[] { Format.Ustx.DYN, Format.Ustx.PITD, Format.Ustx.CLR, Format.Ustx.ENG, Format.Ustx.VEL, Format.Ustx.VOL, Format.Ustx.ATK, Format.Ustx.DEC, Format.Ustx.GEN, Format.Ustx.BRE };
         public int expPrimary = 0;
         public int expSecondary = 1;
-        public Note key = Note.C;
-        public Mode mode = Mode.Ionian;
+        public Note key = Scale.Default().Tonic;
+        public Mode mode = Scale.Default().Mode;
         public List<UTimeSignature> timeSignatures;
         public List<UTempo> tempos;
         public List<UTrack> tracks;

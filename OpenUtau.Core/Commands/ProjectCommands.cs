@@ -141,7 +141,6 @@ namespace OpenUtau.Core {
         }
     }
 
-    // TODO mutualize with mode
     public class KeyCommand : ProjectCommand{
         public readonly Note oldKey;
         public readonly Note newKey;

@@ -71,7 +71,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowExpressions { get; set; }
         [Reactive] public partial bool IsSnapOn { get; set; }
         [Reactive] public partial string SnapDivText { get; set; }
-        [Reactive] public partial string KeyText { get; set; } = string.Empty;
+        [Reactive] public partial string TonicText { get; set; } = string.Empty;
         [Reactive] public partial string ModeText { get; set; } = string.Empty;
         [Reactive] public partial Rect ExpBounds { get; set; }
         [Reactive] public partial string PrimaryKey { get; set; }
@@ -96,9 +96,7 @@ namespace OpenUtau.App.ViewModels {
         public double VScrollBarMax => Math.Max(0, TrackCount - ViewportTracks);
         public UProject Project => DocManager.Inst.Project;
         [Reactive] public partial List<MenuItemViewModel> SnapDivs { get; set; }
-
-        // TODO Keys -> Tonics
-        [Reactive] public partial List<MenuItemViewModel> Keys { get; set; } = new List<MenuItemViewModel>();
+        [Reactive] public partial List<MenuItemViewModel> Tonics { get; set; } = new List<MenuItemViewModel>();
         [Reactive] public partial List<MenuItemViewModel> Modes { get; set; } = new List<MenuItemViewModel>();
 
         public ReactiveCommand<int, RxVoid> SetSnapUnitCommand { get; set; }
@@ -221,8 +219,8 @@ namespace OpenUtau.App.ViewModels {
                             Command = SetSnapUnitCommand,
                             CommandParameter = div,
                         }));
-                    Keys.Clear();
-                    Keys.AddRange(
+                    Tonics.Clear();
+                    Tonics.AddRange(
                         Enum.GetValues<Note>().Select((key, index) => new MenuItemViewModel {
                             Header = $"1={NoteHelper.StringifyNote(key)}",
                             Command = SetKeyCommand,
@@ -383,11 +381,9 @@ namespace OpenUtau.App.ViewModels {
             SnapDivText = $"(1/{div})";
         }
 
-        // TODO
         private void UpdateScale() {
-            // TODO rename key to scale
             Scale = Scale.Build(Project.key, Project.mode);
-            KeyText = "1=" + NoteHelper.StringifyNote(Scale.Tonic);
+            TonicText = "1=" + NoteHelper.StringifyNote(Scale.Tonic);
             ModeText = Scale.Mode.ToString();
         }
 
