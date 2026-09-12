@@ -32,6 +32,10 @@ namespace OpenUtau.Api {
         private readonly CancellationTokenSource shutdown = new CancellationTokenSource();
         private readonly BlockingCollection<PhonemizerRequest> requests = new BlockingCollection<PhonemizerRequest>();
         private readonly object busyLock = new object();
+        private readonly object pendingLock = new object();
+        private int pendingRequests;
+        private Exception pendingException;
+        private List<TaskCompletionSource<object>> idleWaiters = new List<TaskCompletionSource<object>>();
         private Thread thread;
 
         public PhonemizerRunner(TaskScheduler mainScheduler) {
@@ -44,7 +48,15 @@ namespace OpenUtau.Api {
         }
 
         public void Push(PhonemizerRequest request) {
-            requests.Add(request);
+            lock (pendingLock) {
+                pendingRequests++;
+            }
+            try {
+                requests.Add(request);
+            } catch {
+                CompleteRequest();
+                throw;
+            }
         }
 
         void PhonemizerLoop() {
@@ -60,7 +72,14 @@ namespace OpenUtau.Api {
                     }
                     for (int i = toRun.Count - 1; i >= 0; i--) {
                         if (parts.Remove(toRun[i].part)) {
-                            SendResponse(Phonemize(toRun[i]));
+                            try {
+                                SendResponse(Phonemize(toRun[i]));
+                            } catch (Exception e) {
+                                Log.Error(e, "phonemizer request failed.");
+                                CompleteRequest(e);
+                            }
+                        } else {
+                            CompleteRequest();
                         }
                     }
                     parts.Clear();
@@ -73,7 +92,7 @@ namespace OpenUtau.Api {
         }
 
         void SendResponse(PhonemizerResponse response) {
-            Task.Factory.StartNew(_ => {
+            var task = Task.Factory.StartNew(_ => {
                 if (DocManager.Inst.Project.parts.Contains(response.part)) {
                     response.part.SetPhonemizerResponse(response);
                 }
@@ -84,6 +103,9 @@ namespace OpenUtau.Api {
                 });
                 DocManager.Inst.ExecuteCmd(new PhonemizedNotification(response.part));
             }, null, CancellationToken.None, TaskCreationOptions.None, mainScheduler);
+            task.ContinueWith(t => {
+                CompleteRequest(t.IsFaulted ? t.Exception?.Flatten() : null);
+            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
         static PhonemizerResponse Phonemize(PhonemizerRequest request) {
@@ -205,11 +227,57 @@ namespace OpenUtau.Api {
         /// Should only be used in command line mode.
         /// </summary>
         public void WaitFinish() {
-            while (true) {
-                lock (busyLock) {
-                    if (requests.Count == 0) {
-                        return;
+            WaitForIdleAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Waits until all phonemizer requests queued before this call have
+        /// produced responses and those responses have been applied.
+        /// </summary>
+        public Task WaitForIdleAsync() {
+            lock (pendingLock) {
+                if (pendingRequests == 0) {
+                    if (pendingException != null) {
+                        var exception = pendingException;
+                        pendingException = null;
+                        return Task.FromException(exception);
                     }
+                    return Task.CompletedTask;
+                }
+                var waiter = new TaskCompletionSource<object>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                idleWaiters.Add(waiter);
+                return waiter.Task;
+            }
+        }
+
+        void CompleteRequest(Exception exception = null) {
+            List<TaskCompletionSource<object>> waiters = null;
+            Exception completedException = null;
+            lock (pendingLock) {
+                if (exception != null && pendingException == null) {
+                    pendingException = exception;
+                }
+                if (pendingRequests > 0) {
+                    pendingRequests--;
+                }
+                if (pendingRequests == 0 && idleWaiters.Count > 0) {
+                    completedException = pendingException;
+                    pendingException = null;
+                    waiters = idleWaiters;
+                    idleWaiters = new List<TaskCompletionSource<object>>();
+                }
+            }
+            if (waiters == null) {
+                return;
+            }
+            if (completedException != null) {
+                foreach (var waiter in waiters) {
+                    waiter.SetException(completedException);
+                }
+            } else {
+                foreach (var waiter in waiters) {
+                    waiter.SetResult(null);
                 }
             }
         }
