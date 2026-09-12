@@ -141,6 +141,8 @@
             <MenuItem Header="pYIN" Click="RegenFrq" Tag="pyin"/>
             <MenuItem Header="CREPE" Click="RegenFrq" Tag="crepe"/>
           </MenuItem>
+          <MenuItem Name="RendererAnalysisMenu"
+                    Header="{DynamicResource singers.editoto.rendereranalysis}"/>
         </ContextMenu>
       </DataGrid.ContextMenu>
       <DataGrid.Columns>

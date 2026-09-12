@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using OpenUtau.Core;
 using OpenUtau.Core.Util;
+using OpenUtau.Core.Render;
 using Serilog;
 
 namespace OpenUtau.Classic {
@@ -90,6 +91,7 @@ namespace OpenUtau.Classic {
             foreach (var resampler in resamplers) {
                 resamplersMap[resampler.ToString()] = resampler;
             }
+            ExternalRendererRegistry.Discover(basePath);
         }
 
         public void SearchWavtools() {

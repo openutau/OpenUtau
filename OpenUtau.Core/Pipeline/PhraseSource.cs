@@ -322,6 +322,7 @@ namespace OpenUtau.Core.Pipeline {
         public readonly IRenderer Renderer;
         public readonly string Resampler;
         public readonly string Wavtool;
+        public readonly IReadOnlyDictionary<string, string> RendererSettings;
         public readonly ClassicSinger ClassicSinger;
         public readonly bool ModpSupported;
 
@@ -348,6 +349,8 @@ namespace OpenUtau.Core.Pipeline {
             Renderer = track.RendererSettings.Renderer;
             Resampler = track.RendererSettings.resampler;
             Wavtool = track.RendererSettings.wavtool;
+            RendererSettings = new Dictionary<string, string>(
+                track.RendererSettings.rendererSettings ?? new Dictionary<string, string>());
             ClassicSinger = Singer as ClassicSinger;
             ModpSupported = track.TryGetExpDescriptor(project, Format.Ustx.MODP, out var modp)
                 && Renderer.SupportsExpression(modp);

@@ -80,7 +80,8 @@ namespace OpenUtau.Core.Ustx {
         }
 
         public void RegisterExpression(UExpressionDescriptor descriptor) {
-            if (!expressions.ContainsKey(descriptor.abbr)) {
+            if (!expressions.Keys.Any(abbr => string.Equals(
+                    abbr, descriptor.abbr, StringComparison.OrdinalIgnoreCase))) {
                 expressions.Add(descriptor.abbr, descriptor);
             }
         }
