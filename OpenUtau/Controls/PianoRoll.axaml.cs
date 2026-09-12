@@ -728,6 +728,10 @@ namespace OpenUtau.App.Controls {
                 Cursor = ViewConstants.cursorHand;
             }
             if (editState != null) {
+                editState.altShiftHeld = args.KeyModifiers == (KeyModifiers.Alt | KeyModifiers.Shift);
+                editState.shiftHeld = args.KeyModifiers == KeyModifiers.Shift;
+                editState.ctrlHeld = args.KeyModifiers == cmdKey;
+                editState.altHeld = args.KeyModifiers == KeyModifiers.Alt;
                 editState.Begin(point.Pointer, point.Position);
                 editState.Update(point.Pointer, point.Position);
             }
