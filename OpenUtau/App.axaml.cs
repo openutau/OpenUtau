@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using OpenUtau.App.Views;
 using OpenUtau.Colors;
+using OpenUtau.Core;
 using Serilog;
 
 namespace OpenUtau.App {
@@ -27,11 +30,45 @@ namespace OpenUtau.App {
 
         public override void OnFrameworkInitializationCompleted() {
             Log.Information("Framework initialization completed.");
+            RegisterUnhandledExceptionHandlers();
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
                 desktop.MainWindow = new SplashWindow();
             }
 
             base.OnFrameworkInitializationCompleted();
+        }
+
+        // Program.InitLogging() only hooks AppDomain.UnhandledException, which can log but can not
+        // keep the process alive. The two hooks below cover the cases a user actually hits: an
+        // exception escaping an async void UI handler, and a faulted Task nobody awaited.
+        // Both are logged and surfaced instead of taking the whole application down.
+        void RegisterUnhandledExceptionHandlers() {
+            TaskScheduler.UnobservedTaskException += (sender, args) => {
+                // Cancellation is normal control flow here: renders and phonemization are
+                // cancelled all the time, and those exceptions are not failures.
+                var cancelled = args.Exception.InnerExceptions.All(e => e is OperationCanceledException);
+                if (cancelled) {
+                    Log.Debug("Unobserved task exception (cancellation).");
+                } else {
+                    Log.Error(args.Exception, "Unobserved task exception");
+                    try {
+                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(args.Exception));
+                    } catch (Exception e) {
+                        Log.Error(e, "Failed to report an unobserved task exception");
+                    }
+                }
+                args.SetObserved();
+            };
+
+            Dispatcher.UIThread.UnhandledException += (sender, args) => {
+                Log.Error(args.Exception, "Unhandled UI exception");
+                args.Handled = true;
+                try {
+                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(args.Exception));
+                } catch (Exception e) {
+                    Log.Error(e, "Failed to report an unhandled UI exception");
+                }
+            };
         }
 
         public void InitializeCulture() {

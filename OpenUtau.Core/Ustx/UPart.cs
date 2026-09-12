@@ -275,6 +275,18 @@ namespace OpenUtau.Core.Ustx {
                         phoneme.releaseTimeDelta = o.releaseTimeDelta;
                     }
                 }
+                // A phonemizer is expected to return positions in order. Report it when that did
+                // not happen, instead of letting the safety treatment below repair it silently.
+                // rawPosition is the phonemizer output before user phoneme overrides are applied,
+                // so this only fires for the phonemizer itself, not for edited offsets.
+                for (int i = 0; i < phonemes.Count - 1; ++i) {
+                    if (phonemes[i].rawPosition > phonemes[i + 1].rawPosition) {
+                        Log.Warning("Out-of-order phonemes in part {Part}: {Phoneme} at {Position} comes after {Next} at {NextPosition}.",
+                            name, phonemes[i].rawPhoneme, phonemes[i].rawPosition,
+                            phonemes[i + 1].rawPhoneme, phonemes[i + 1].rawPosition);
+                        break;
+                    }
+                }
                 // Safety treatment after phonemizer output and phoneme overrides.
                 for (int i = phonemes.Count - 2; i >= 0; --i) {
                     phonemes[i].position = Math.Min(phonemes[i].position, phonemes[i + 1].position - 10);
