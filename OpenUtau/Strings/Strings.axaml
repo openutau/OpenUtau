@@ -145,8 +145,10 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="dialogs.installdependency.message">Installing </system:String>
   <system:String x:Key="dialogs.installdll.caption">Installing phonemizer</system:String>
   <system:String x:Key="dialogs.installdll.message">Installing </system:String>
-  <system:String x:Key="dialogs.merge.caption">Merging Parts</system:String>
-  <system:String x:Key="dialogs.merge.multitracks">Parts on different tracks cannot be merged.</system:String>
+  <system:String x:Key="dialogs.mergeparts.caption">Merging Parts</system:String>
+  <system:String x:Key="dialogs.mergeparts.multitracks">Parts on different tracks cannot be merged.</system:String>
+  <system:String x:Key="dialogs.mergeparts.overlap">Merged part will contain overlapping notes. Are you sure to continue?</system:String>
+  <system:String x:Key="dialogs.messagebox.cancel">Cancel</system:String>
   <system:String x:Key="dialogs.messagebox.copy">Copy error to clipboard</system:String>
   <system:String x:Key="dialogs.noresampler.caption">No resampler</system:String>
   <system:String x:Key="dialogs.noresampler.message">No resampler! Put your favourite resampler exe or dll in the Resamplers folder and choose it in Preferences!</system:String>
