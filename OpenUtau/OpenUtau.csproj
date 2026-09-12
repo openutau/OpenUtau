@@ -119,6 +119,9 @@
     <Compile Update="Views\TrackColorDialog.axaml.cs">
       <DependentUpon>TrackColorDialog.axaml</DependentUpon>
     </Compile>
+    <Compile Update="Views\ComboBoxDialog.axaml.cs">
+      <DependentUpon>ComboBoxDialog.axaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="Resources\Resources.resx">
