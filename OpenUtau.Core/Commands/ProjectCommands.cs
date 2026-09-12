@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util.MusicTheory;
 
 namespace OpenUtau.Core {
     public abstract class ProjectCommand : UCommand {
@@ -141,15 +142,27 @@ namespace OpenUtau.Core {
     }
 
     public class KeyCommand : ProjectCommand{
-        public readonly int oldKey;
-        public readonly int newKey;
-        public KeyCommand(UProject project, int key) : base(project) {
+        public readonly Note oldKey;
+        public readonly Note newKey;
+        public KeyCommand(UProject project, Note key) : base(project) {
             oldKey = project.key;
             newKey = key;
         }
         public override string ToString() => $"Change key from {oldKey} to {newKey}";
         public override void Execute() => project.key = newKey;
         public override void Unexecute() => project.key = oldKey;
+    }
+
+    public class ModeCommand : ProjectCommand{
+        public readonly Mode oldMode;
+        public readonly Mode newMode;
+        public ModeCommand(UProject project, Mode key) : base(project) {
+            oldMode = project.mode;
+            newMode = key;
+        }
+        public override string ToString() => $"Change mode from {oldMode} to {newMode}";
+        public override void Execute() => project.mode = newMode;
+        public override void Unexecute() => project.mode = oldMode;
     }
 
     public class ConfigureExpressionsCommand : ProjectCommand {
