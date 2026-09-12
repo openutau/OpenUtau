@@ -1,0 +1,14 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Class="OpenUtau.App.Views.ComboBoxDialog"
+        Icon="/Assets/open-utau.ico"
+        Title="ComboBoxDialog" Height="120" Width="320" WindowStartupLocation="CenterOwner">
+  <StackPanel VerticalAlignment="Center" Margin="{Binding $parent.WindowDecorationMargin}">
+    <TextBlock Margin="20" Name="Prompt" IsVisible="False" TextWrapping="Wrap" MaxWidth="560"/>
+    <ComboBox Name="ComboBox" Margin="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+    <Button Name="OkButton" Content="OK" Margin="4" HorizontalAlignment="Stretch"/>
+  </StackPanel>
+</Window>

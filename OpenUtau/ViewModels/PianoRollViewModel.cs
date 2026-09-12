@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Input;
@@ -61,6 +61,7 @@ namespace OpenUtau.App.ViewModels {
         public bool DegreeStyle0 { get => Preferences.Default.DegreeStyle == 0 ? true : false; }
         public bool DegreeStyle1 { get => Preferences.Default.DegreeStyle == 1 ? true : false; }
         public bool DegreeStyle2 { get => Preferences.Default.DegreeStyle == 2 ? true : false; }
+        public bool AutoMovePlayhead { get => Preferences.Default.AutoMovePlayhead; }
         public bool LockStartTime0 { get => Preferences.Default.LockStartTime == 0 ? true : false; }
         public bool LockStartTime1 { get => Preferences.Default.LockStartTime == 1 ? true : false; }
         public bool LockStartTime2 { get => Preferences.Default.LockStartTime == 2 ? true : false; }
