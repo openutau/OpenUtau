@@ -533,24 +533,20 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase, HashSet<int> selectedNotePositions) {
-            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false, forceLocalRetake: false);
+            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false);
         }
 
         /// <summary>Live pitch: partial retake for changed notes with fast sampling settings.</summary>
         internal RenderPitchResult LoadRenderedPitchLive(
             RenderPhrase phrase, HashSet<int> selectedNotePositions, double pitchSteps, bool fastRealtime) {
-            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps, fastRealtime, forceLocalRetake: true);
+            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps, fastRealtime);
         }
 
         RenderPitchResult LoadRenderedPitch(
             RenderPhrase phrase,
             HashSet<int> selectedNotePositions,
             double? pitchSteps,
-            bool fastRealtime,
-            bool forceLocalRetake) {
-            if (!forceLocalRetake && !Preferences.Default.DiffSingerLocalRetaking) {
-                return LoadRenderedPitch(phrase, pitchSteps, fastRealtime);
-            }
+            bool fastRealtime) {
             DiffSingerSinger singer = (DiffSingerSinger) phrase.singer;
             if (!singer.HasPitchPredictor) {
                 throw new Exception("This singer has no pitch predictor.");
