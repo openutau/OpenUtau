@@ -84,6 +84,10 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial Bitmap? Avatar { get; set; }
         [Reactive] public partial Bitmap? Portrait { get; set; }
         [Reactive] public partial IBrush? PortraitMask { get; set; }
+        [Reactive] public partial Rect PortraitCanvasBounds { get; set; }
+        [Reactive] public partial double PortraitHeight { get; set; }
+        [Reactive] public partial double PortraitVertPosition { get; set; }
+        [Reactive] public partial double PortraitHoriPosition { get; set; }
         [Reactive] public partial string WindowTitle { get; set; } = "Piano Roll";
         [Reactive] public partial SolidColorBrush TrackAccentColor { get; set; } = ThemeManager.GetTrackColor("Blue").AccentColor;
         public double ViewportTicks => viewportTicks.Value;
@@ -93,6 +97,7 @@ namespace OpenUtau.App.ViewModels {
         public double HScrollBarMax => Math.Max(0, TickCount - ViewportTicks);
         public double VScrollBarMax => Math.Max(0, TrackCount - ViewportTracks);
         public UProject Project => DocManager.Inst.Project;
+        public USinger? Singer => Part != null ? Project.tracks[Part.trackNo].Singer : null;
         [Reactive] public partial List<MenuItemViewModel> SnapDivs { get; set; }
         [Reactive] public partial List<MenuItemViewModel> Keys { get; set; }
 
@@ -146,6 +151,8 @@ namespace OpenUtau.App.ViewModels {
             smallChangeY = this.WhenAnyValue(x => x.ViewportTracks)
                 .Select(h => h / 8)
                 .ToProperty(this, x => x.SmallChangeY);
+            this.WhenAnyValue(x => x.PortraitCanvasBounds)
+                .Subscribe(UpdatePortraitHeight);
             this.WhenAnyValue(x => x.Bounds)
                 .Subscribe(_ => {
                     OnXZoomed(new Point(), 0);
@@ -329,6 +336,12 @@ namespace OpenUtau.App.ViewModels {
                         case "Portrait":
                             LoadPortrait(Part, Project);
                             break;
+                        case "PortraitHeight":
+                            UpdatePortraitHeight(PortraitCanvasBounds);
+                            break;
+                        case "PortraitOpacity":
+                            UpdatePortraitOpacity();
+                            break;
                         case "TrackColor":
                             LoadTrackColor(Part, Project);
                             break;
@@ -349,6 +362,25 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(e => {
                     DocManager.Inst.NotesClipboard?.Clear();
                 });
+        }
+
+        private void UpdatePortraitHeight(Rect bounds) {
+            if (Preferences.Default.ShowPortrait && Singer != null) {
+                int cap = Singer.PortraitHeightCap > 0 ? Singer.PortraitHeightCap : Preferences.Default.PortraitHeightCap;
+                double heightCap = bounds.Height * cap / 100;
+                int vpos = Singer.PortraitVertPosition > -1 ? Singer.PortraitVertPosition : Preferences.Default.PortraitVertPosition;
+                int hpos = Singer.PortraitHoriPosition > -1 ? Singer.PortraitHoriPosition : Preferences.Default.PortraitHoriPosition;
+                PortraitVertPosition = (bounds.Height - heightCap) * vpos / 100;
+                double? portraitWidth = heightCap * Portrait?.Size.AspectRatio;
+                PortraitHoriPosition = ((bounds.Width - portraitWidth) * hpos / 100) ?? 100;
+                PortraitHeight = heightCap;
+            }
+        }
+
+        private void UpdatePortraitOpacity() {
+            if (Singer?.PortraitOpacity <= 0) {
+                PortraitMask = new SolidColorBrush(Avalonia.Media.Colors.White, Preferences.Default.PortraitOpacity);
+            }
         }
 
         private void UpdateSnapDiv() {
@@ -551,7 +583,10 @@ namespace OpenUtau.App.ViewModels {
                     Portrait = null;
                     portraitSource = null;
                 }
-                PortraitMask = new SolidColorBrush(Avalonia.Media.Colors.White, singer.PortraitOpacity);
+                var opacity = singer.PortraitOpacity <= 0
+                    ? Preferences.Default.PortraitOpacity
+                    : singer.PortraitOpacity;
+                PortraitMask = new SolidColorBrush(Avalonia.Media.Colors.White, opacity);
                 Task.Run(() => {
                     lock (portraitLock) {
                         try {
@@ -565,6 +600,7 @@ namespace OpenUtau.App.ViewModels {
                                     portraitSource = singer.Portrait;
                                 }
                             }
+                            UpdatePortraitHeight(PortraitCanvasBounds);
                         } catch (Exception e) {
                             Portrait?.Dispose();
                             Portrait = null;

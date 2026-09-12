@@ -110,6 +110,10 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial int DegreeStyle { get; set; }
         [Reactive] public partial bool UseTrackColor { get; set; }
         [Reactive] public partial bool ShowPortrait { get; set; }
+        [Reactive] public partial int PortraitHeightCap { get; set; }
+        [Reactive] public partial int PortraitVertPosition { get; set; }
+        [Reactive] public partial int PortraitHoriPosition { get; set; }
+        [Reactive] public partial float PortraitOpacity { get; set; }
         [Reactive] public partial bool ShowIcon { get; set; }
         [Reactive] public partial bool ShowGhostNotes { get; set; }
         [Reactive] public partial bool NoteHoverGlow { get; set; }
@@ -247,6 +251,10 @@ namespace OpenUtau.App.ViewModels {
             RememberVsqx = Preferences.Default.RememberVsqx;
             DefaultSnapCurve = Preferences.Default.DefaultSnapCurve;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
+            PortraitHeightCap = Preferences.Default.PortraitHeightCap;
+            PortraitVertPosition = Preferences.Default.PortraitVertPosition;
+            PortraitHoriPosition = Preferences.Default.PortraitHoriPosition;
+            PortraitOpacity = Preferences.Default.PortraitOpacity;
             Wayland = Preferences.Default.UseWayland;
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
@@ -351,6 +359,30 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.ShowPortrait = showPortrait;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Portrait"));
+                });
+            this.WhenAnyValue(vm => vm.PortraitHeightCap)
+                .Subscribe(portraitHeightCap => {
+                    Preferences.Default.PortraitHeightCap = portraitHeightCap;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new PianorollRefreshEvent("PortraitHeight"));
+                });
+            this.WhenAnyValue(vm => vm.PortraitVertPosition)
+                .Subscribe(portraitPosition => {
+                    Preferences.Default.PortraitVertPosition = portraitPosition;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new PianorollRefreshEvent("PortraitHeight"));
+                });
+            this.WhenAnyValue(vm => vm.PortraitHoriPosition)
+                .Subscribe(portraitPosition => {
+                    Preferences.Default.PortraitHoriPosition = portraitPosition;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new PianorollRefreshEvent("PortraitHeight"));
+                });
+            this.WhenAnyValue(vm => vm.PortraitOpacity)
+                .Subscribe(portraitOpacity => {
+                    Preferences.Default.PortraitOpacity = portraitOpacity;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new PianorollRefreshEvent("PortraitOpacity"));
                 });
             this.WhenAnyValue(vm => vm.ShowIcon)
                 .Skip(1)
