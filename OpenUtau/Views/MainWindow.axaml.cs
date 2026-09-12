@@ -889,6 +889,24 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        void OnClickPreRoll(object sender, PointerPressedEventArgs arg) {
+            var point = arg.GetCurrentPoint(sender as Control);
+            if (point.Properties.IsRightButtonPressed) {
+                var dialog = new ComboBoxDialog();
+                dialog.Initialize(ThemeManager.GetString("dialogs.preroll.caption"),
+                    new[] { "1", "2", "3", "4" },
+                    Preferences.Default.PreRollMeasure - 1);
+                dialog.onFinish = index => {
+                    if (0 <= index && index < 4) {
+                        Preferences.Default.PreRollMeasure = index + 1;
+                        Preferences.Save();
+                    }
+                };
+                dialog.ShowDialog(this);
+            }
+            arg.Handled = true;
+        }
+
         void OnKeyDown(object sender, KeyEventArgs args) {
             if (PianoRollContainer.IsKeyboardFocusWithin) {
                 args.Handled = false;
