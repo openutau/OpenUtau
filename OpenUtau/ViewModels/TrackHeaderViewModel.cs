@@ -191,12 +191,8 @@ namespace OpenUtau.App.ViewModels {
             JudgeMuted();
         }
 
-        public void ToggleMute(bool mute) {
-            if (mute) {
-                Mute = true;
-            } else {
-                Mute = false;
-            }
+        public void ToggleMuteWithBool(bool mute) {
+            Mute = mute;
             this.RaisePropertyChanged(nameof(Mute));
             JudgeMuted();
         }

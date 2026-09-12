@@ -133,15 +133,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install NSIS via Chocolatey
-        run: |
-          for ($i = 1; $i -le 3; $i++) {
-            choco install nsis --version=3.11 --no-progress
-            if ($LASTEXITCODE -eq 0) { exit 0 }
-            Write-Warning "choco install nsis failed (attempt $i/3, exit code $LASTEXITCODE)"
-            Start-Sleep -Seconds 10
-          }
-          exit $LASTEXITCODE
+      - uses: repolevedavaj/install-nsis@v1
+        with:
+          nsis-version: '3.11'
         if: ${{ matrix.arch.os == 'win' }}
       - uses: justalemon/VersionPatcher@v0.7.1
         with:
