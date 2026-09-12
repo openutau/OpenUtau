@@ -15,7 +15,7 @@
     <PackageReference Include="csharp-pinyin" Version="1.0.0" />
     <PackageReference Include="Ignore" Version="0.1.50" />
     <PackageReference Include="K4os.Hash.xxHash" Version="1.0.8" />
-    <PackageReference Include="Melanchall.DryWetMidi" Version="7.2.0" />
+    <PackageReference Include="Melanchall.DryWetMidi.Nativeless" Version="7.2.0" />
     <PackageReference Include="NAudio.Core" Version="2.2.1" />
     <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
     <PackageReference Include="NeoLua" Version="1.3.19" />
@@ -46,7 +46,7 @@
     <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
   </ItemGroup>
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.24.4" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu.Linux" Version="1.24.4" />
   </ItemGroup>
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.4" />
