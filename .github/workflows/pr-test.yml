@@ -33,5 +33,5 @@ jobs:
       run: dotnet restore OpenUtau -r ${{ matrix.os.arch }}
 
     - name: test
-      run: dotnet test OpenUtau.Test
+      run: dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj
       timeout-minutes: 30
