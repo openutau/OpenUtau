@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Input;
@@ -121,6 +121,8 @@ namespace OpenUtau.App.ViewModels {
         public PianoRollViewModel() {
             NotesViewModel = new NotesViewModel();
             CurveViewModel = new CurveViewModel();
+            var midiIn = new MidiInViewModel(NotesViewModel);
+            midiIn.InitDevice();
 
             this.WhenAnyValue(vm => vm.ToolIndex)
                 .Subscribe(index => EditTool.BaseTool = index);
