@@ -10,6 +10,9 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
+using SharpGen.Runtime;
+using System.Security.Cryptography.X509Certificates;
+using System.Diagnostics;
 
 namespace OpenUtau.Core.DiffSinger
 {
@@ -137,25 +140,64 @@ namespace OpenUtau.Core.DiffSinger
             return new G2pFallbacks(g2ps.ToArray());
         }
 
-        //Check if the phoneme is supported. If unsupported, return an empty string.
-        //And apply language prefix to phoneme
-        string ValidatePhoneme(string phoneme){
-            if(g2p.IsValidSymbol(phoneme) && phonemeTokens.ContainsKey(phoneme)){
+        // Check if a phoneme is supported by trying the following in this order:
+        // 1. Phoneme as is (ex. [a])
+        // 2. Phoneme prefixed with language code (ex. [ja/a])
+        // 3. Phoneme substituted using YAML dictionary (for voicebanks that indirectly support other languages)
+        // Otherwise, return empty string
+        string ValidatePhoneme(string phoneme, Dictionary<string, string> repDict){
+            // Try to return phoneme as is
+            if (g2p.IsValidSymbol(phoneme) && phonemeTokens.ContainsKey(phoneme)) {
                 return phoneme;
             }
+
+            // Try to return phoneme prefixed with language code
             var langCode = GetLangCode();
-            if(langCode != String.Empty){
+            if (langCode != String.Empty) {
                 var phonemeWithLanguage = langCode + "/" + phoneme;
-                if(g2p.IsValidSymbol(phonemeWithLanguage)  && phonemeTokens.ContainsKey(phonemeWithLanguage)){
+                if (g2p.IsValidSymbol(phonemeWithLanguage) && phonemeTokens.ContainsKey(phonemeWithLanguage)) {
                     return phonemeWithLanguage;
                 }
             }
+
+            // Try to return phoneme substituted using YAML dictionary
+            try {
+                string subbedPhoneme = repDict[phoneme];
+                if (g2p.IsValidSymbol(subbedPhoneme) && phonemeTokens.ContainsKey(subbedPhoneme)) {
+                    return subbedPhoneme;
+                }
+            } catch {
+                Log.Error($"Could not find phoneme [{phoneme}] in replacement Dictionary.");
+            }
+
+            // Otherwise, return an empty string
             return String.Empty;
+        }
+        public class Replacement {
+            public string from { get; set; }
+            public string to { get; set; }
+        }
+
+        public class PartialDict {
+            public Replacement[] replacements { get; set; }
         }
 
         string[] ParsePhoneticHint(string phoneticHint) {
+            var repDict = new Dictionary<string, string>();
+            string dictionaryPath = Path.Combine(rootPath, GetDictionaryName());
+            try {
+                var repObj = Core.Yaml.DefaultDeserializer.Deserialize<PartialDict>(File.ReadAllText(dictionaryPath)).replacements;
+                if (repObj != null) {
+                    foreach (Replacement r in repObj) {
+                        repDict.Add(r.from, r.to);
+                    }
+                }
+            } catch {
+                Log.Error($"Could not find dictionary at {dictionaryPath}.");
+            }
+
             return phoneticHint.Split()
-                .Select(ValidatePhoneme)
+                .Select(x => ValidatePhoneme(x, repDict))
                 .Where(s => !String.IsNullOrEmpty(s)) // skip invalid symbols.
                 .ToArray();
         }
