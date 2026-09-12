@@ -327,6 +327,11 @@
                   </MenuItem.Icon>
                 </MenuItem>
               </MenuItem>
+              <MenuItem Header="{DynamicResource menu.view.moveplayhead}" Click="OnMenuAutoMovePlayhead">
+                <MenuItem.Icon>
+                  <CheckBox IsChecked="{Binding AutoMovePlayhead}" />
+                </MenuItem.Icon>
+              </MenuItem>
               <MenuItem Header="{DynamicResource prefs.playback.lockstarttime}">
                 <MenuItem Header="{DynamicResource prefs.playback.lockstarttime.off}" Click="OnMenuLockStartTime" Tag="0">
                   <MenuItem.Icon>

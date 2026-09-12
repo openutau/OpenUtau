@@ -315,6 +315,11 @@ namespace OpenUtau.App.Controls {
                 MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
             }
         }
+        void OnMenuAutoMovePlayhead(object sender, RoutedEventArgs args) {
+            Preferences.Default.AutoMovePlayhead = !Preferences.Default.AutoMovePlayhead;
+            Preferences.Save();
+            ViewModel.RaisePropertyChanged(nameof(ViewModel.AutoMovePlayhead));
+        }
         void OnMenuLockStartTime(object sender, RoutedEventArgs args) {
             if (sender is MenuItem menu && int.TryParse(menu.Tag?.ToString(), out int tag)) {
                 Preferences.Default.LockStartTime = tag;

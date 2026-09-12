@@ -150,6 +150,7 @@ OpenUtau aims to be an open source editing environment for UTAU community, with 
   <system:String x:Key="dialogs.messagebox.copy">Copy error to clipboard</system:String>
   <system:String x:Key="dialogs.noresampler.caption">No resampler</system:String>
   <system:String x:Key="dialogs.noresampler.message">No resampler! Put your favourite resampler exe or dll in the Resamplers folder and choose it in Preferences!</system:String>
+  <system:String x:Key="dialogs.preroll.caption">Pre-roll Measures</system:String>
   <system:String x:Key="dialogs.recovery">Previously, OpenUtau terminated abnormally. Click here to recover.</system:String>
   <system:String x:Key="dialogs.recovery.caption">Recovery project</system:String>
   <system:String x:Key="dialogs.remaptimeaxis.message">This tool will change the tempo of the project without changing the actual positions and durations (in seconds) of notes.
@@ -368,6 +369,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.tools.singers">Singers...</system:String>
   <system:String x:Key="menu.tools.wavtoolresampler.install">Install Wavtool/Resampler (.exe)...</system:String>
   <system:String x:Key="menu.view">View</system:String>
+  <system:String x:Key="menu.view.moveplayhead">Move the playhead when selecting notes</system:String>
 
   <system:String x:Key="mergevoicebank.back">Back</system:String>
   <system:String x:Key="mergevoicebank.error">Failed to merge singer.</system:String>
@@ -870,6 +872,7 @@ General
   <system:String x:Key="tip.notes.zoomx">◀ Scroll here to zoom horizontally ▶</system:String>
   <system:String x:Key="tip.notes.zoomy">Scroll here to zoom vertically ▶</system:String>
   <system:String x:Key="tip.playback.loop">Loop playback</system:String>
+  <system:String x:Key="tip.playback.preroll">Pre-roll</system:String>
 
   <system:String x:Key="tracks.duplicate">Duplicate Track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>

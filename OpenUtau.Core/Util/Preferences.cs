@@ -215,6 +215,10 @@ namespace OpenUtau.Core.Util {
             public int MetronomeVolume = 60;
             public int MetronomeHighFrequency = 2200;
             public int MetronomeLowFrequency = 1320;
+            public bool AutoMovePlayhead = false;
+            public bool PreRoll = false;
+            public int PreRollMeasure = 1;
+            /// <summary>On Pausing; 0 = Do nothing, 1 = Move cursor and scroll, 2 = Move cursor only</summary>
             public int LockStartTime = 0;
             public int PlaybackAutoScroll = 2;
             public bool ReverseLogOrder = true;
