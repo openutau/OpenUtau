@@ -5,6 +5,7 @@
              xmlns:vm="using:OpenUtau.App.ViewModels"
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="600" Width="400"
              x:Class="OpenUtau.App.Controls.NotePropertiesControl"
+             x:DataType="vm:NotePropertiesViewModel"
              KeyDown="OnKeyDown" Focusable="True">
   <UserControl.Styles>
     <Style Selector="Button,CheckBox">
@@ -38,7 +39,7 @@
                 <Button.ContextMenu>
                   <ContextMenu Name="PhonemizerMenu" ItemsSource="{Binding PhonemizerMenuItems}" Placement="Left">
                     <ContextMenu.Styles>
-                      <Style Selector="MenuItem">
+                      <Style Selector="MenuItem" x:DataType="vm:MenuItemViewModel">
                         <Setter Property="Header" Value="{Binding Header}"/>
                         <Setter Property="Command" Value="{Binding Command, FallbackValue={x:Null}}"/>
                         <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>

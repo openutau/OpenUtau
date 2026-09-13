@@ -3,6 +3,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        x:DataType="vm:UpdaterViewModel"
         x:Class="OpenUtau.App.Views.UpdaterDialog"
         Width="400" Height="300" CanResize="False" WindowStartupLocation="CenterScreen"
         Icon="/Assets/open-utau.ico"

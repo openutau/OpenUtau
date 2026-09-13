@@ -2,12 +2,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="using:OpenUtau.App.Views"
+        x:DataType="local:TimeSignatureDialog"
         mc:Ignorable="d"
         x:Class="OpenUtau.App.Views.TimeSignatureDialog"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource dialogs.timesig.caption}"
         Height="100" Width="320" WindowStartupLocation="CenterOwner">
-  <StackPanel VerticalAlignment="Center" Margin="{Binding $parent.WindowDecorationMargin}">
+  <StackPanel VerticalAlignment="Center" Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <Grid ColumnDefinitions="1*,1*" Margin="4,0">
       <ComboBox Grid.Column="0" Margin="4" HorizontalAlignment="Stretch"
                 ItemsSource="{Binding BeatPerBars}"

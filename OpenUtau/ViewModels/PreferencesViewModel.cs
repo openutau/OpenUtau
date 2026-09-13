@@ -157,7 +157,7 @@ namespace OpenUtau.App.ViewModels {
         // means every subscription below would call Preferences.Save() once during
         // construction with the value that was just loaded from disk - Skip(1) drops
         // that redundant initial emission and keeps only real changes.
-        void PersistOn<T>(IObservable<T> source, Action<T> assign) {
+        void PersistOn<T>(IObservable<T> source, Action<T> assign) where T : notnull {
             source.Skip(1).Subscribe(v => {
                 assign(v);
                 Preferences.Save();

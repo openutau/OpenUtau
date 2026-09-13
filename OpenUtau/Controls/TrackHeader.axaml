@@ -4,7 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:OpenUtau.App.ViewModels"
              mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="104"
-             x:Class="OpenUtau.App.Controls.TrackHeader" Width="300" Height="104" TrackNo="{Binding TrackNo}">
+             x:Class="OpenUtau.App.Controls.TrackHeader" Width="300" Height="104" TrackNo="{Binding TrackNo}"
+             x:DataType="vm:TrackHeaderViewModel">
   <Design.DataContext>
     <vm:TrackHeaderViewModel/>
   </Design.DataContext>
@@ -36,12 +37,12 @@
         <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}" />
       </Style>
     </Style>
-    <Style Selector="Slider.fader">
+    <Style Selector="Slider.fader" x:DataType="vm:TrackHeaderViewModel">
       <Setter Property="Foreground" Value="{Binding TrackColor.AccentColor}"/>
 
       <Style Selector="^:pointerover">
         <Style Selector="^ /template/ Thumb">
-          <Setter Property="Background" Value="{Binding DataContext.TrackColor.AccentColorLight, RelativeSource={RelativeSource AncestorType=Slider}}"/>
+          <Setter Property="Background" Value="{Binding TrackColor.AccentColorLight}"/>
         </Style>
         <Style Selector="^ /template/ RepeatButton#PART_DecreaseButton">
           <Setter Property="Background" Value="{Binding TrackColor.AccentColorLight}" />
@@ -49,7 +50,7 @@
       </Style>
       <Style Selector="^:pressed">
         <Style Selector="^ /template/ Thumb">
-          <Setter Property="Background" Value="{Binding DataContext.TrackColor.AccentColorDark, RelativeSource={RelativeSource AncestorType=Slider}}"/>
+          <Setter Property="Background" Value="{Binding TrackColor.AccentColorDark}"/>
         </Style>
         <Style Selector="^ /template/ RepeatButton#PART_DecreaseButton">
           <Setter Property="Background" Value="{Binding TrackColor.AccentColorDark}" />
@@ -65,7 +66,7 @@
     <ContextMenu x:Key="RenderersMenuRes" Classes="context" Name="RenderersMenu" Placement="BottomEdgeAlignedLeft" 
                  HorizontalOffset="-3" ItemsSource="{Binding RenderersMenuItems}">
       <ContextMenu.Styles>
-        <Style Selector="MenuItem">
+        <Style Selector="MenuItem" x:DataType="vm:SingerMenuItemViewModel">
           <Setter Property="Header" Value="{Binding Header}"/>
           <Setter Property="Command" Value="{Binding Command}"/>
           <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
@@ -76,7 +77,7 @@
     <ContextMenu x:Key="PhonemizersMenuRes" Classes="context" Name="PhonemizersMenu" Placement="BottomEdgeAlignedLeft" 
                  HorizontalOffset="-3" ItemsSource="{Binding PhonemizerMenuItems}">
       <ContextMenu.Styles>
-        <Style Selector="MenuItem">
+        <Style Selector="MenuItem" x:DataType="vm:SingerMenuItemViewModel">
           <Setter Property="Header" Value="{Binding Header}"/>
           <Setter Property="Command" Value="{Binding Command}"/>
           <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
@@ -87,7 +88,7 @@
     <ContextMenu x:Key="SingersMenuRes" Classes="context" Name="SingersMenu" Placement="BottomEdgeAlignedLeft" 
                  HorizontalOffset="-3" ItemsSource="{Binding SingerMenuItems}">
       <ContextMenu.Styles>
-        <Style Selector="MenuItem">
+        <Style Selector="MenuItem" x:DataType="vm:SingerMenuItemViewModel">
           <Setter Property="Header" Value="{Binding Header}"/>
           <Setter Property="Command" Value="{Binding Command}"/>
           <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>

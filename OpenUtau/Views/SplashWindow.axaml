@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
         mc:Ignorable="d" Width="400" Height="180"
         x:Class="OpenUtau.App.Views.SplashWindow"
         Title="SplashWindow"
@@ -11,7 +12,7 @@
         ExtendClientAreaToDecorationsHint="True"
         WindowDecorations="BorderOnly"
         WindowStartupLocation="CenterScreen">
-  <Grid>
+  <Grid x:DataType="vm:ThemeEditorViewModel">
     <Image Margin="20" Width="96" Height="96"
            VerticalAlignment="Top" HorizontalAlignment="Center"
            Source="/Assets/open-utau.ico"/>

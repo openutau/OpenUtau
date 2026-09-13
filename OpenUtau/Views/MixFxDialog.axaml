@@ -2,8 +2,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
         mc:Ignorable="d"
         x:Class="OpenUtau.App.Views.MixFxDialog"
+        x:DataType="vm:MixFxViewModel"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource mixfx.caption}"
         Width="640" Height="540"
@@ -35,7 +37,7 @@
       <Setter Property="CornerRadius" Value="3"/>
     </Style>
   </Window.Styles>
-  <Border Margin="{Binding $parent.WindowDecorationMargin}">
+  <Border Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <DockPanel Margin="14" LastChildFill="True">
 
       <!-- TOP: title + enable + recommended -->

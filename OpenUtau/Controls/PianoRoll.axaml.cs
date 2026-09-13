@@ -49,6 +49,12 @@ namespace OpenUtau.App.Controls {
         private ReactiveCommand<BatchEdit, RxVoid>? noteBatchEditCommand;
 
         private Window RootWindow => (Window)TopLevel.GetTopLevel(this)!;
+        
+        public static readonly StyledProperty<Thickness> OffScreenMarginProperty = AvaloniaProperty.Register<PianoRoll, Thickness>(nameof(OffScreenMargin));
+        public Thickness OffScreenMargin {
+            get => GetValue(OffScreenMarginProperty);
+            set => SetValue(OffScreenMarginProperty, value);
+        }
 
         public PianoRoll(PianoRollViewModel model) {
             InitializeComponent();

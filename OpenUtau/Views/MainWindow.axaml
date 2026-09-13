@@ -5,7 +5,9 @@
         xmlns:vm="using:OpenUtau.App.ViewModels"
         xmlns:c="clr-namespace:OpenUtau.App.Controls"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="650"
+        x:DataType="vm:MainWindowViewModel"
         x:Class="OpenUtau.App.Views.MainWindow"
+        x:CompileBindings="True"
         Icon="/Assets/open-utau.ico"
         Title="{Binding Title}" MinWidth="300" MinHeight="200" Width="{Binding Width}" Height="{Binding Height}"
         Focusable="True" KeyDown="OnKeyDown" PointerPressed="OnPointerPressed" Closing="WindowClosing"
@@ -16,7 +18,7 @@
     </Style>
   </Window.Styles>
   <Grid>
-    <Grid Name="MainGrid" Margin="{Binding $parent[1].WindowDecorationMargin}">
+    <Grid Name="MainGrid" Margin="{Binding $parent[Window].WindowDecorationMargin}">
       <Menu Grid.Row="0" Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Left" Height="24"
                 Opened="OnMainMenuOpened" Closed="OnMainMenuClosed" PointerExited="OnMainMenuPointerLeave"
                 ZIndex="1">
@@ -167,7 +169,7 @@
 
           <!-- Recent files -->
           <TextBlock Grid.Row="2" Grid.Column="0" Margin="0,24,0,8" Text="{DynamicResource welcome.recent}" FontSize="20"/>
-          <ListBox ItemsSource="{Binding RecentFiles}" Grid.Row="3" Grid.Column="0" Margin="0,0,15,0" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
+          <ListBox ItemsSource="{ReflectionBinding RecentFiles}" Grid.Row="3" Grid.Column="0" Margin="0,0,15,0" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
             <ListBox.Styles>
               <Style Selector="ListBoxItem">
                 <Setter Property="Height" Value="NaN" />
@@ -188,7 +190,7 @@
 
           <!-- Template files -->
           <TextBlock Grid.Row="2" Grid.Column="1" Margin="15,24,0,8" Text="{DynamicResource welcome.template}" FontSize="20"/>
-          <ListBox ItemsSource="{Binding TemplateFiles}" Grid.Row="3" Grid.Column="1" Margin="15,0,0,0" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
+          <ListBox ItemsSource="{ReflectionBinding TemplateFiles}" Grid.Row="3" Grid.Column="1" Margin="15,0,0,0" ScrollViewer.VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
             <ListBox.Styles>
               <Style Selector="ListBoxItem">
                 <Setter Property="Height" Value="NaN" />
@@ -245,29 +247,29 @@
             <Border Classes="playback" Width="127" HorizontalAlignment="Center">
               <StackPanel Orientation="Horizontal">
                 <Button Command="{Binding PlaybackViewModel.SeekStart}" Height="18">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Data="M 0 0 L 2 0 L 2 9 L 0 9 Z M 2 4.5 L 7 0 L 7 9 Z"/>
                 </Button>
                 <Button Click="OnPlayOrPause" Height="18">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Data="M 0 0.5 7 4.62 0 8.73 Z"/>
                 </Button>
                 <Button Command="{Binding PlaybackViewModel.Pause}" Height="18">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Data="M 0 0 L 2 0 L 2 9 L 0 9 Z M 4 0 L 6 0 L 6 9 L 4 9 Z"/>
                 </Button>
                 <Button Command="{Binding PlaybackViewModel.SeekEnd}" Height="18">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Data="M 0 0 L 5 4.5 L 0 9 Z M 5 0 L 7 0 L 7 9 L 5 9 Z"/>
                 </Button>
                 <ToggleButton IsChecked="{Binding PlaybackViewModel.LoopPlayback}"
                               ToolTip.Tip="{DynamicResource tip.playback.loop}" Height="18">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Data="M 0.86 1.21 H 6.58 v -2 l 2.45 3 -2.45 3 v -2 H 1.68 v 2 H 0.04 v -2 c 0 -1.1 0.33 -2 0.82 -2 z m 7.36 8 h -5.73 v 2 l -2.45 -3 2.45 -3 v 2 h 4.91 v -2 H 9.04 v 2 c 0 1.1 -0.33 2 -0.82 2 z"/>
                 </ToggleButton>
                 <ToggleButton IsChecked="{Binding PlaybackViewModel.Metronome}"
                               ToolTip.Tip="{DynamicResource prefs.playback.metronome}">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
                         Data="M 5 1 C 6 1 7 1 8 1 L 11 5 L 11 13 L 2 13 L 2 5 Z Z M 6.5 4 A 1.5 1.5 0 1 1 6.5 7 A 1.5 1.5 0 1 1 6.5 4 Z M 6.5 5 L 12.5 0 L 12.5 1 L 6.5 6 Z"/>
                 </ToggleButton>
               </StackPanel>
@@ -309,7 +311,7 @@
             <Canvas.ContextMenu>
               <ContextMenu Name="TimelineContextMenu" ItemsSource="{Binding TimelineContextMenuItems}">
                 <ContextMenu.Styles>
-                  <Style Selector="MenuItem">
+                  <Style Selector="MenuItem" x:DataType="vm:MenuItemViewModel">
                     <Setter Property="Header" Value="{Binding Header}"/>
                     <Setter Property="Command" Value="{Binding Command}"/>
                     <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
@@ -359,14 +361,14 @@
                       Canvas.Left="{Binding PlayPosHighlightX, Mode=OneWay}"
                       Canvas.Top="0"
                       Fill="{DynamicResource NeutralAccentBrushSemi2}"
-                      IsVisible="{Binding $parent[Window].DataContext.PlaybackViewModel.ShowPlayPosHighlight}"
+                      IsVisible="{Binding $parent[Window].((vm:PlaybackViewModel)DataContext).ShowPlayPosHighlight}"
                       IsHitTestVisible="False"/>
             <Rectangle Name="PlayPosLine"
                        Canvas.Left="{Binding PlayPosX}"
                        Canvas.Top="0" Width="1"
                        Height="{Binding $parent.Bounds.Height, Mode=OneWay}"
                        ZIndex="99" IsHitTestVisible="False"
-                       IsVisible="{Binding $parent[Window].DataContext.PlaybackViewModel.IsPlaying}"
+                       IsVisible="{Binding $parent[Window].((vm:PlaybackViewModel)DataContext).IsPlaying}"
                        Fill="{DynamicResource AccentBrush2}"/>
             <Rectangle Name="SelectionBox" StrokeThickness="2"
                       Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"
@@ -375,7 +377,8 @@
             <c:PartsCanvas.ContextMenu>
               <ContextMenu Name="PartsContextMenu"
                           Opening="PartsContextMenuOpening"
-                          Closing="PartsContextMenuClosing">
+                          Closing="PartsContextMenuClosing"
+                          x:DataType="vm:PartsContextMenuArgs">
                 <MenuItem Header="{DynamicResource context.part.delete}"
                           Command="{Binding PartDeleteCommand}"
                           CommandParameter="{Binding Part}"/>

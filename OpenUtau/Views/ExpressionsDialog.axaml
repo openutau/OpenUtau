@@ -6,6 +6,7 @@
         xmlns:c="using:OpenUtau.Controls"
         mc:Ignorable="d"
         x:Class="OpenUtau.App.Views.ExpressionsDialog"
+        x:DataType="vm:ExpressionsViewModel"
         Icon="/Assets/open-utau.ico"
         Title="{Binding WindowTitle}"
         WindowStartupLocation="CenterScreen"
@@ -17,7 +18,7 @@
     <StyleInclude Source="/Styles/PianoRollStyles.axaml"/>
   </Window.Styles>
 
-  <Grid Margin="{Binding $parent.WindowDecorationMargin}" RowDefinitions="Auto,*,Auto">
+  <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}" RowDefinitions="Auto,*,Auto">
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10" IsVisible="{Binding IsSwitchVisible}">
       <ToggleButton Content="{DynamicResource exps.project}" IsChecked="{Binding !IsTrackOverride}" CornerRadius="5,0,0,5" Classes="switch" Command="{Binding OnClickProject}"/>
       <ToggleButton Content="{DynamicResource exps.track}" IsChecked="{Binding IsTrackOverride}" CornerRadius="0,5,5,0" Classes="switch" Command="{Binding OnClickTrack}"/>
@@ -113,7 +114,7 @@
         <Button.ContextMenu>
           <ContextMenu Placement="Top" ItemsSource="{Binding AddMenuItems}">
             <ContextMenu.Styles>
-              <Style Selector="MenuItem">
+              <Style Selector="MenuItem" x:DataType="vm:SingerMenuItemViewModel">
                 <Setter Property="Header" Value="{Binding Header}"/>
                 <Setter Property="Command" Value="{Binding Command}"/>
                 <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>

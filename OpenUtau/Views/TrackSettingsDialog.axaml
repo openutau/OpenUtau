@@ -2,12 +2,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        x:DataType="vm:TrackSettingsViewModel"
         mc:Ignorable="d"
         x:Class="OpenUtau.App.Views.TrackSettingsDialog"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource dialogs.tracksettings.caption}"
         Height="184" Width="320" WindowStartupLocation="CenterOwner" CanResize="False">
-  <Border Margin="{Binding $parent.WindowDecorationMargin}">
+  <Border Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <StackPanel Margin="8">
       <TextBlock Text="{DynamicResource warning.renderer}" IsVisible="{Binding IsNotClassic}"/>
       <TextBlock Text="{DynamicResource prefs.rendering.resampler}" IsVisible="{Binding NeedsResampler}"/>

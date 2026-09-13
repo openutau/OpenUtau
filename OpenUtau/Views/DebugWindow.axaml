@@ -5,6 +5,8 @@
         xmlns:vm="using:OpenUtau.App.ViewModels"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OpenUtau.App.Views.DebugWindow"
+        x:DataType="vm:DebugViewModel"
+        x:CompileBindings="True"
         Icon="/Assets/open-utau.ico"
         Title="Debug" Closed="OnClosed">
   <Window.Resources>

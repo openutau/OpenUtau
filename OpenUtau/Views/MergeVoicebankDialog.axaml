@@ -4,13 +4,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:OpenUtau.App.ViewModels"
         mc:Ignorable="d" Width="600" Height="400" MinWidth="600" MinHeight="400"
+        x:DataType="vm:MergeVoicebankViewModel"
         x:Class="OpenUtau.App.Views.MergeVoicebankDialog"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource mergevoicebank.title}"
         WindowStartupLocation="CenterScreen"
         ExtendClientAreaToDecorationsHint="False">
 
-  <Carousel SelectedIndex="{Binding Step}" Margin="{Binding $parent.WindowDecorationMargin}">
+  <Carousel SelectedIndex="{Binding Step}" Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <!-- Select which voicebank to merge -->
     <Grid>
       <Grid.RowDefinitions>
