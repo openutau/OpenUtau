@@ -81,7 +81,11 @@ namespace OpenUtau.App {
                 .UsePlatformDetect()
                 .LogToTrace()
                 .UseReactiveUI(_ => { })
-                .With(fontOptions);
+                .With(fontOptions)
+                .With(new SkiaOptions
+                {
+                    MaxGpuResourceSizeBytes = 256 * 1024 * 1024 // 256 MB
+                });
             
             if (OS.IsLinux() && Core.Util.Preferences.Default.UseWayland) {
                 builder.UseWayland();

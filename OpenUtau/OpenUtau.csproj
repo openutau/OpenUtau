@@ -127,7 +127,7 @@
     </EmbeddedResource>
   </ItemGroup>
     <PropertyGroup>
-        <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     </PropertyGroup>
     <!-- This matches old behavior from .NET 8, should be removed when not needed -->
     <PropertyGroup>

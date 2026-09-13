@@ -5,6 +5,7 @@
         xmlns:vm="using:OpenUtau.App.ViewModels"
         mc:Ignorable="d"
         x:Class="OpenUtau.App.Views.EditSubbanksDialog"
+        x:DataType="vm:EditSubbanksViewModel"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource singers.subbanks.edit}"
         WindowStartupLocation="CenterScreen"

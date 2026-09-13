@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:OpenUtau.App.ViewModels"
         mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="600"
+        x:DataType="vm:SingerPublishViewModel"
         x:Class="OpenUtau.App.Views.SingerPublishDialog"
         Icon="/Assets/open-utau.ico"
         WindowStartupLocation="CenterScreen"

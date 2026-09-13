@@ -6,6 +6,7 @@
         xmlns:c="using:OpenUtau.Controls"
         mc:Ignorable="d"
         x:Class="OpenUtau.App.Views.ExpressionsDialog"
+        x:DataType="vm:ExpressionsViewModel"
         Icon="/Assets/open-utau.ico"
         Title="{Binding WindowTitle}"
         WindowStartupLocation="CenterScreen"
@@ -113,7 +114,7 @@
         <Button.ContextMenu>
           <ContextMenu Placement="Top" ItemsSource="{Binding AddMenuItems}">
             <ContextMenu.Styles>
-              <Style Selector="MenuItem">
+              <Style Selector="MenuItem" x:DataType="vm:SingerMenuItemViewModel">
                 <Setter Property="Header" Value="{Binding Header}"/>
                 <Setter Property="Command" Value="{Binding Command}"/>
                 <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>

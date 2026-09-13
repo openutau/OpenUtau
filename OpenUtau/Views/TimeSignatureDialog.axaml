@@ -2,6 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="using:OpenUtau.App.Views"
+        x:DataType="local:TimeSignatureDialog"
         mc:Ignorable="d"
         x:Class="OpenUtau.App.Views.TimeSignatureDialog"
         Icon="/Assets/open-utau.ico"

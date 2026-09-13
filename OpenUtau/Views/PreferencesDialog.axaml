@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:OpenUtau.App.ViewModels"
         mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="460"
+        x:DataType="vm:PreferencesViewModel"
         x:Class="OpenUtau.App.Views.PreferencesDialog"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource prefs.caption}"
@@ -40,8 +41,7 @@
 
   
   <Grid Margin="{Binding $parent.WindowDecorationMargin}" ColumnDefinitions="150,*">
-    <ListBox Classes="NoScroll" Name="DrawerList"
-              Focusable="{Binding ElementName=LeftDrawer, Path=LeftDrawerOpened}">
+    <ListBox Classes="NoScroll" Name="DrawerList">
       <ListBox.Styles>
         <Style Selector="ListBoxItem">
           <Setter Property="Height" Value="48" />

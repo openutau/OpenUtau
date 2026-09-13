@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:OpenUtau.App.ViewModels"
         xmlns:c="clr-namespace:OpenUtau.App.Controls"
+        x:DataType="vm:SingersViewModel"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="640"
         x:Class="OpenUtau.App.Views.SingersDialog"
         Icon="/Assets/open-utau.ico"

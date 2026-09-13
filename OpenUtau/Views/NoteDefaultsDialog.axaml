@@ -5,6 +5,7 @@
         xmlns:vm="using:OpenUtau.App.ViewModels"
         xmlns:c="using:OpenUtau.Controls"
         mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="560"
+        x:DataType="vm:NoteDefaultsViewModel"
         x:Class="OpenUtau.App.Views.NoteDefaultsDialog"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource pianoroll.menu.notedefaults}"

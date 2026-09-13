@@ -7,6 +7,7 @@
         xmlns:c="clr-namespace:OpenUtau.App.Controls"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="650"
         x:Class="OpenUtau.App.Controls.PianoRoll" Focusable="True"
+        x:DataType="vm:PianoRollViewModel"
         Background="Transparent" GotFocus="OnPianoRollFocus">
   <UserControl.Styles>
     <StyleInclude Source="/Styles/PianoRollStyles.axaml"/>
@@ -183,7 +184,7 @@
           <ContextMenu ItemsSource="{Binding NotesContextMenuItems}"
                        Opening="NotesContextMenuOpening">
             <ContextMenu.Styles>
-              <Style Selector="MenuItem">
+              <Style Selector="MenuItem" x:DataType="vm:MenuItemViewModel">
                 <Setter Property="Header" Value="{Binding Header}"/>
                 <Setter Property="Command" Value="{Binding Command, FallbackValue={x:Null}}"/>
                 <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>

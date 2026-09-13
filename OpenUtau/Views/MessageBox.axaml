@@ -8,7 +8,7 @@
         Title="MessageBox" MinWidth="300" MinHeight="150"
         WindowStartupLocation="CenterScreen">
   <ScrollViewer MaxHeight="700" VerticalScrollBarVisibility="Auto">
-    <Grid Margin="{Binding $parent.WindowDecorationMargin}">
+    <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}">
       <Grid.RowDefinitions>
         <RowDefinition Height="*"/>
         <RowDefinition Height="50"/>
