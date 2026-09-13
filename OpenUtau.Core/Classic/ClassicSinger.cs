@@ -176,6 +176,7 @@ namespace OpenUtau.Classic {
                 otos.Clear();
                 otoMap.Clear();
                 errors.Clear();
+                loaded = false;
             }
         }
 

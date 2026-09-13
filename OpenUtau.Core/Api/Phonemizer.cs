@@ -298,8 +298,8 @@ namespace OpenUtau.Api {
             if (project != null && track != null) {
                 if (track.TryGetExpDescriptor(project, Core.Format.Ustx.CLR, out var trackCLR)) {
                     int index = (int)trackCLR.CustomDefaultValue;
-                    if (index >= 0 && index < track.VoiceColorExp.options.Length) {
-                        return track.VoiceColorExp.options[index];
+                    if (index >= 0 && index < trackCLR.options.Length) {
+                        return trackCLR.options[index];
                     }
                 }
             }
