@@ -276,8 +276,12 @@ namespace OpenUtau.Api {
 
         public int GetParentToneShift() {
             if (project != null && track != null) {
-                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.SHFT, out var trackTS)) {
-                    return (int)trackTS.CustomDefaultValue;
+                try {
+                    if (track.TryGetExpDescriptor(project, Core.Format.Ustx.SHFT, out var trackTS) && trackTS != null) {
+                        return (int)trackTS.CustomDefaultValue;
+                    }
+                } catch {
+                    return 0;
                 }
             }
             return 0;
@@ -285,10 +289,14 @@ namespace OpenUtau.Api {
 
         public int? GetParentAlternate() {
             if (project != null && track != null) {
-                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.ALT, out var trackAlt)) {
-                    if (trackAlt.CustomDefaultValue != 0) {
-                        return (int)trackAlt.CustomDefaultValue;
+                try {
+                    if (track.TryGetExpDescriptor(project, Core.Format.Ustx.ALT, out var trackAlt) && trackAlt != null) {
+                        if (trackAlt.CustomDefaultValue != 0) {
+                            return (int)trackAlt.CustomDefaultValue;
+                        }
                     }
+                } catch {
+                    return null;
                 }
             }
             return null;
@@ -296,11 +304,17 @@ namespace OpenUtau.Api {
 
         public string GetParentVoiceColor() {
             if (project != null && track != null) {
-                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.CLR, out var trackCLR)) {
-                    int index = (int)trackCLR.CustomDefaultValue;
-                    if (index >= 0 && index < track.VoiceColorExp.options.Length) {
-                        return track.VoiceColorExp.options[index];
+                try {
+                    if (track.VoiceColorExp != null && track.VoiceColorExp.options != null) {
+                        if (track.TryGetExpDescriptor(project, Core.Format.Ustx.CLR, out var trackCLR) && trackCLR != null) {
+                            int index = (int)trackCLR.CustomDefaultValue;
+                            if (index >= 0 && index < track.VoiceColorExp.options.Length) {
+                                return track.VoiceColorExp.options[index] ?? string.Empty;
+                            }
+                        }
                     }
+                } catch {
+                    return string.Empty;
                 }
             }
             return string.Empty;

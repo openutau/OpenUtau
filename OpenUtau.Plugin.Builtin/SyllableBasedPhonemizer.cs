@@ -163,6 +163,9 @@ namespace OpenUtau.Plugin.Builtin {
 
         public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevNeighbours) {
             error = "";
+            if (singer == null || !singer.Loaded) {
+                return MakeSimpleResult("");
+            }
             var mainNote = notes[0];
             if (mainNote.lyric.StartsWith(FORCED_ALIAS_SYMBOL)) {
                 return MakeForcedAliasResult(mainNote);
@@ -422,6 +425,7 @@ namespace OpenUtau.Plugin.Builtin {
             if (this.singer != singer) {
                 this.singer = singer;
                 dictionaries.Clear();
+                YamlCache.Clear();
 
                 if (this.singer == null || !this.singer.Loaded) {
                     return;
@@ -1129,6 +1133,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// </summary>
         protected virtual string ValidateAlias(string alias, int tone = 0) {
             if (string.IsNullOrEmpty(alias)) return alias;
+            if (singer == null || !singer.Loaded) return alias;
             if (HasOto(alias, tone)) return alias;
 
             var singleRules = yamlFallbacks
@@ -1384,7 +1389,19 @@ namespace OpenUtau.Plugin.Builtin {
         /// <param name="tone"></param>
         /// <returns></returns>
         protected bool HasOto(string alias, int tone) {
-            return singer.TryGetMappedOto(alias, tone, out _);
+            if (singer == null || !singer.Loaded || string.IsNullOrEmpty(alias)) {
+                return false;
+            }
+            if (singer.TryGetMappedOto(alias, tone, out _)) {
+                return true;
+            }
+            if (singer.TryGetOto(alias, out _)) {
+                return true;
+            }
+            if (singer.TryGetMappedOto(alias, tone, "", out _)) {
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -1858,21 +1875,15 @@ namespace OpenUtau.Plugin.Builtin {
 
         protected void ReadDictionaryAndInit() {
             var dictionaryName = GetDictionaryName();
-            if (dictionaryName == null) {
+            if (dictionaryName == null && string.IsNullOrEmpty(YamlFileName)) {
                 return;
             }
-            dictionaries[GetType()] = null;
-            if (Testing) {
+            try {
                 ReadDictionary(dictionaryName);
                 Init();
-                return;
+            } catch (Exception ex) {
+                Log.Error(ex, $"Failed to read dictionary {dictionaryName}");
             }
-            OnAsyncInitStarted();
-            Task.Run(() => {
-                ReadDictionary(dictionaryName);
-                Init();
-                OnAsyncInitFinished();
-            });
         }
 
         private void ReadDictionary(string dictionaryName) {
