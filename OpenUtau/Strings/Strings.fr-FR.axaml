@@ -104,8 +104,7 @@
   <system:String x:Key="dialogs.about.caption">À propos de OpenUTAU
 </system:String>
   <system:String x:Key="dialogs.about.message">
-    OpenUtau est un logiciel libre de synthétiseur vocal pour la communauté UTAU, avec une interface moderne et un support phonétique intelligent. Plus d'informations sur notre GitHub.
-  </system:String>
+OpenUtau est un logiciel libre de synthétiseur vocal pour la communauté UTAU, avec une interface moderne et un support phonétique intelligent. Plus d'informations sur notre GitHub.</system:String>
   <system:String x:Key="dialogs.exitsave.caption">Quitter OpenUtau</system:String>
   <system:String x:Key="dialogs.exitsave.message">Le projet actuel contient des changements non enregistrés. Souhaitez-vous les enregistrer ?</system:String>
   <system:String x:Key="dialogs.export.caption">Exporter</system:String>
@@ -127,7 +126,7 @@
   <system:String x:Key="dialogs.messagebox.copy">Copier l'erreur dans le presse-papier</system:String>
   <system:String x:Key="dialogs.noresampler.caption">Aucun resampler</system:String>
   <system:String x:Key="dialogs.noresampler.message">Aucun resampler ! Ajoutez le fichier .exe ou .dll du resampler dans le dossier "Resamplers" de OpenUTAU, puis choisissez-le dans Préférences.</system:String>
-  <system:String x:Key="dialogs.recovery">La dernière session s'est arrêtée de manière anormale. Souhaitez-vous récupérer le dernier projet ?</system:String>
+  <!--<system:String x:Key="dialogs.recovery">Previously, OpenUtau terminated abnormally. Click here to recover.</system:String>-->
   <system:String x:Key="dialogs.recovery.caption">Projet récupéré</system:String>
   <system:String x:Key="dialogs.remaptimeaxis.message">Cet outil permet de changer le tempo du projet sans changer la position et la durée (en secondes) des notes.
 Nouveau tempo :</system:String>
@@ -168,7 +167,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.diffsinger.downloadvocoder1">Erreur lors du chargement du vocoder </system:String>
   <system:String x:Key="errors.diffsinger.downloadvocoder2">. Veuillez télécharger le vocoder sur </system:String>
   <!--<system:String x:Key="errors.editing.autopitch.unsupported">The current voicebank doesn't support generating pitch curve. Please use a Diffsinger or Enunu voicebank.</system:String>-->
-  <system:String x:Key="errors.encryptedarchive">Les fichiers compressés encryptés ne sont pas supportés. Veuillez extraire le fichier compressé manuellement.</system:String>
+  <!--<system:String x:Key="errors.encryptedarchive">Encrypted archive files are not supported. Please open the Singer folder from Tools > Preferences > Paths and extract the archive file manually to this location.</system:String>-->
   <system:String x:Key="errors.expression.abbrlong">Les abréviations doivent faire entre 1 et 4 caractères</system:String>
   <system:String x:Key="errors.expression.abbrset">Les abréviations ne peuvent pas être nulles</system:String>
   <system:String x:Key="errors.expression.abbrunique">Les abréviations doivent être uniques</system:String>
@@ -190,6 +189,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.failed.openfile">Échec de l'ouverture du fichier</system:String>
   <system:String x:Key="errors.failed.openlocation">Échec de l'ouverture de l'emplacement du fichier</system:String>
   <!--<system:String x:Key="errors.failed.opennewerproject">Project file is newer than software! Upgrade OpenUtau!</system:String>-->
+  <!--<system:String x:Key="errors.failed.prerender">Failed to render in the background.</system:String>-->
   <!--<system:String x:Key="errors.failed.render">Failed to render.</system:String>-->
   <system:String x:Key="errors.failed.runeditingmacro">Échec de l'application de la macro d'édition</system:String>
   <system:String x:Key="errors.failed.save">Échec de l'enregistrement</system:String>
@@ -203,6 +203,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.lyrics.regex">Caractère interdit en regex</system:String>
   <system:String x:Key="errors.lyrics.regexpreview">- Erreur liée à la regex -</system:String>
   <!--<system:String x:Key="errors.resampler.failed.message">Resampler failed to create output file(s). Resampler errors like this are often caused by oto.ini configuration issues. Consider generating a singer error report to check for such issues.</system:String>-->
+  <!--<system:String x:Key="errors.toast.details">(Click here for details)</system:String>-->
 
   <!--<system:String x:Key="exesetup.installing">Installing "{0}"...</system:String>-->
   <!--<system:String x:Key="exesetup.linux">To use exe resamplers or wavtools on Linux:
@@ -325,7 +326,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.tools">Outils</system:String>
   <system:String x:Key="menu.tools.clearcache">Effacer le Cache</system:String>
   <system:String x:Key="menu.tools.debugwindow">Fenêtre de débogage</system:String>
-  <system:String x:Key="menu.tools.dependency.install">Installer les dépendances (.oudep)...</system:String>
+  <!--<system:String x:Key="menu.tools.dependency.install">Install Dependency (.oudep)...</system:String>-->
   <system:String x:Key="menu.tools.fullscreen">Plein Écran</system:String>
   <system:String x:Key="menu.tools.layout">Disposition des fenêtres</system:String>
   <!--<system:String x:Key="menu.tools.layout.hsplit11">Horizontal 1:1</system:String>-->
@@ -453,6 +454,8 @@ Attention : cela va effacer les préréglages.</system:String>
   <!--<system:String x:Key="packages.unknownversion">unknown version</system:String>-->
   <!--<system:String x:Key="packages.update">Update</system:String>-->
 
+  <!--<system:String x:Key="phoneme.show.error">Alt + Click to view the full error</system:String>-->
+
   <system:String x:Key="phoneticassistant.caption">Assistant phonétique</system:String>
   <system:String x:Key="phoneticassistant.copy">Copier</system:String>
 
@@ -461,6 +464,7 @@ Attention : cela va effacer les préréglages.</system:String>
   <system:String x:Key="pianoroll.menu.batch.running">Lancement de l'édition par lots</system:String>
   <!--<system:String x:Key="pianoroll.menu.external">External</system:String>-->
   <system:String x:Key="pianoroll.menu.lyrics">Paroles</system:String>
+  <!--<system:String x:Key="pianoroll.menu.lyrics.addphonetichints">Add Phonetic Hint</system:String>-->
   <system:String x:Key="pianoroll.menu.lyrics.dashtoplus">Remplacer "-" par "+"</system:String>
   <!--<system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">Replace "-" with "+~"</system:String>-->
   <system:String x:Key="pianoroll.menu.lyrics.edit">Modifier les paroles</system:String>
@@ -499,7 +503,7 @@ Attention : cela va effacer les préréglages.</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.all">Réinitialiser les notes</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.allparameters">Réinitialiser tous les paramètres</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.exps">Réinitialiser toutes les expressions</system:String>
-  <system:String x:Key="pianoroll.menu.notes.reset.phonemetimings">Réinitialiser les timings des phonèmes</system:String>
+  <!--<system:String x:Key="pianoroll.menu.notes.reset.phonemetimings">Reset phoneme timings and envelopes</system:String>-->
   <system:String x:Key="pianoroll.menu.notes.reset.pitchbends">Réinitialiser les courbes de pitch</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.vibratos">Réinitialiser les vibratos</system:String>
   <system:String x:Key="pianoroll.menu.part">Partie</system:String>
@@ -520,6 +524,8 @@ Attention : cela va effacer les préréglages.</system:String>
   <!--<system:String x:Key="pianoroll.toggle.expressions">View Expressions (L)</system:String>-->
   <system:String x:Key="pianoroll.toggle.finalpitch">Voir le Pitch combiné (R)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">Voir les paramètres de note (\)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.overwritepitch">Toggle Overwrite Pitch Mode</system:String>-->
   <system:String x:Key="pianoroll.toggle.phoneme">Voir les Phonèmes (O)</system:String>
@@ -532,9 +538,12 @@ Attention : cela va effacer les préréglages.</system:String>
   <system:String x:Key="pianoroll.toggle.tone">Tonalité de la Note On/Off (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">Voir les Vibratos (U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">Voir la forme d'onde (W)</system:String>
-  <system:String x:Key="pianoroll.tool.drawpitch">Outil traçage du pitch (4)</system:String>
+  <!--<system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (Shift + 1)
+    Left click to draw
+    Right click to reset
+    Hold Ctrl to select</system:String>-->
   <system:String x:Key="pianoroll.tool.eraser">Gomme (3)</system:String>
-  <system:String x:Key="pianoroll.tool.knife">Couteau (5)</system:String>
+  <!--<system:String x:Key="pianoroll.tool.knife">Knife Tool (4)</system:String>-->
   <system:String x:Key="pianoroll.tool.penplus">Crayon Plus (Ctrl + 2)
     Clique gauche pour placer
     Clique droit pour supprimer
@@ -595,6 +604,9 @@ Attention : cela va effacer les préréglages.</system:String>
   <!--<system:String x:Key="prefs.appearance.detachpianoroll">Show piano roll in separate window</system:String>-->
   <!--<system:String x:Key="prefs.appearance.diffsingerlangcodehide">Hide language prefix from phoneme editor</system:String>-->
   <system:String x:Key="prefs.appearance.lang">Langue</system:String>
+  <!--<system:String x:Key="prefs.appearance.notehoverglow">Note hover glow</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.playbacknotebounce">Bounce notes on playback</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.playbacknotehighlight">Highlight notes on playback</system:String>-->
   <system:String x:Key="prefs.appearance.showghostnotes">Montrer les notes des autres pistes sur le piano roll</system:String>
   <system:String x:Key="prefs.appearance.showicon">Montrer l'icône sur le piano roll</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Montrer le portrait sur le piano roll</system:String>
@@ -607,6 +619,10 @@ Attention : cela va effacer les préréglages.</system:String>
   <system:String x:Key="prefs.cache.clearonquit">Effacer le cache à la fermeture du logiciel</system:String>
   <system:String x:Key="prefs.cache.diffsingertensorcache">Cache du Tensor de DiffSinger</system:String>
   <system:String x:Key="prefs.caption">Préférences</system:String>
+  <!--<system:String x:Key="prefs.channel">Release Channel</system:String>-->
+  <!--<system:String x:Key="prefs.channel.alpha">Alpha</system:String>-->
+  <!--<system:String x:Key="prefs.channel.beta">Beta</system:String>-->
+  <!--<system:String x:Key="prefs.channel.stable">Stable</system:String>-->
   <!--<system:String x:Key="prefs.diffsinger">DiffSinger</system:String>-->
   <system:String x:Key="prefs.editing">Édition</system:String>
   <!--<system:String x:Key="prefs.general">General</system:String>-->
@@ -629,6 +645,7 @@ Attention : cela va effacer les préréglages.</system:String>
   <system:String x:Key="prefs.playback.backend">Backend Audio</system:String>
   <system:String x:Key="prefs.playback.backend.auto">Automatique</system:String>
   <!--<system:String x:Key="prefs.playback.backend.mini">MiniAudio</system:String>-->
+  <!--<system:String x:Key="prefs.playback.backend.sdl3">SDL 3</system:String>-->
   <system:String x:Key="prefs.playback.cursorposition">Position du curseur</system:String>
   <system:String x:Key="prefs.playback.device">Sortie Audio</system:String>
   <system:String x:Key="prefs.playback.lockstarttime">En pause</system:String>
@@ -640,6 +657,7 @@ Attention : cela va effacer les préréglages.</system:String>
   <system:String x:Key="prefs.rendering">Rendu</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Système de rendu par défaut (pour les voix classiques)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">Render Depth du DiffSinger</system:String>
+  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <!--<system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Render Steps for Acoustic</system:String>-->
   <!--<system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger Render Steps for Pitch</system:String>-->
   <!--<system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger Render Steps for Variance</system:String>-->
@@ -650,19 +668,13 @@ Attention : cela va effacer les préréglages.</system:String>
   <system:String x:Key="prefs.rendering.phasecomp">Compensation de phase</system:String>
   <system:String x:Key="prefs.rendering.prerender">Pré-rendu</system:String>
   <!--<system:String x:Key="prefs.rendering.resampler">Resampler</system:String>-->
-  <system:String x:Key="prefs.rendering.resampler.morewarn">
-    Avertissement : moresampler n'est pas entièrement pris en charge. Il peut être lent et entraîner une utilisation élevée du processeur. Si vous insistez, veuillez :
-1. Définir "resampler-compatibility" sur "on" dans moreconfig.txt.
-2. Définir "auto-update-llsm-mrq" sur "off" dans moreconfig.txt.
-3. Attendez patiemment que moresampler génère les fichiers llsm manquants.
-  </system:String>
-  <system:String x:Key="prefs.rendering.resampler.note">
-    Note: pour utiliser des resamplers externes, ajoutez le fichier .exe ou .dll du resampler dans le dossier "Resamplers" de OpenUTAU, puis choisissez-le dans Préférences.
-  </system:String>
+  <!--<system:String x:Key="prefs.rendering.resampler.morewarn">Warning: moresampler is not fully supported. It may be slow and cause high CPU usage. If you insist, please:
+  1. Set "resampler-compatibility" to "on" in moreconfig.txt.
+  2. Set "auto-update-llsm-mrq" to "off" in moreconfig.txt.
+  3. Patiently wait for moresampler to generate missing llsm files.</system:String>-->
+  <system:String x:Key="prefs.rendering.resampler.note">Note: pour utiliser des resamplers externes, ajoutez le fichier .exe ou .dll du resampler dans le dossier "Resamplers" de OpenUTAU, puis choisissez-le dans Préférences.</system:String>
   <system:String x:Key="prefs.rendering.skipmuted">Sauter les pistes muettes</system:String>
-  <system:String x:Key="prefs.rendering.threads.cpuwarn">
-    Attention : l'utilisation de trop de threads pourrait ralentir OpenUTAU.
-  </system:String>
+  <system:String x:Key="prefs.rendering.threads.cpuwarn">Attention : l'utilisation de trop de threads pourrait ralentir OpenUTAU.</system:String>
   <system:String x:Key="prefs.rendering.threads.numthreads">Threads maximum pour le rendu</system:String>
   <!--<system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>-->
   <!--<system:String x:Key="prefs.utau">UTAU</system:String>-->
@@ -771,6 +783,8 @@ The voicebank may not work on another OS.</system:String>-->
   <system:String x:Key="singersetup.textfileencoding.prompt">Choisissez un encodage où le contenu des fichiers est lisible.</system:String>
   <!--<system:String x:Key="singersetup.title">Singer Setup</system:String>-->
 
+  <!--<system:String x:Key="themeeditor.cancel">Cancel</system:String>-->
+  <!--<system:String x:Key="themeeditor.save">Save</system:String>-->
   <!--<system:String x:Key="themeeditor.title">Theme Editor</system:String>-->
 
   <system:String x:Key="tip.aliasbox">Remplacer l'alias</system:String>

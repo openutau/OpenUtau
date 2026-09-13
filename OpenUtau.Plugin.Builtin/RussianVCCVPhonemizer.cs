@@ -111,6 +111,8 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         protected override string ValidateAlias(string alias, int tone = 0) {
+            if (HasOto(alias, tone)) return alias;
+
             string baseResolved = base.ValidateAlias(alias, tone);
             if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
                 if (HasOto(baseResolved, tone)) {

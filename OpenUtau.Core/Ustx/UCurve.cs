@@ -180,6 +180,76 @@ namespace OpenUtau.Core.Ustx {
             }
             return merged.Values.ToList();
         }
+
+        /// <summary>
+        /// Returns a copy of the points with every point in [clearMinX, clearMaxX] removed and the given points inserted.
+        /// An inserted point overwrites any point at the same tick. The input lists are not modified.
+        /// Anchor points are added <see cref="interval"/> ticks outside the range so that the curve
+        /// outside [clearMinX - interval, clearMaxX + interval] keeps its original values.
+        /// </summary>
+        public static (int[] xs, int[] ys) ReplaceRange(
+            IReadOnlyList<int> xs,
+            IReadOnlyList<int> ys,
+            int clearMinX,
+            int clearMaxX,
+            IEnumerable<(int x, int y)> points,
+            UExpressionDescriptor descriptor) {
+            var baseCurve = new UCurve(descriptor) { xs = xs.ToList(), ys = ys.ToList() };
+            var newXs = new List<int>(xs.Count);
+            var newYs = new List<int>(ys.Count);
+            int leftIdx = -1;
+            int rightIdx = xs.Count;
+            for (int i = 0; i < xs.Count; i++) {
+                if (clearMinX <= xs[i] && xs[i] <= clearMaxX) {
+                    continue;
+                }
+                if (xs[i] < clearMinX) {
+                    leftIdx = i;
+                } else if (rightIdx == xs.Count) {
+                    rightIdx = i;
+                }
+                newXs.Add(xs[i]);
+                newYs.Add(ys[i]);
+            }
+
+            // A side without points still gets an anchor, so the edited points always
+            // return to the default value there (as UCurve.Set does).
+            var anchors = new List<int>();
+            int leftAnchor = clearMinX - interval;
+            if (leftIdx < 0 || xs[leftIdx] < leftAnchor) {
+                if (leftIdx >= 0 && leftIdx == xs.Count - 1) {
+                    // The curve is at its default value after its last point. Keep it flat.
+                    anchors.Add(xs[leftIdx] + 1);
+                }
+                anchors.Add(leftAnchor);
+            }
+            int rightAnchor = clearMaxX + interval;
+            if (rightIdx == xs.Count || rightAnchor < xs[rightIdx]) {
+                anchors.Add(rightAnchor);
+                if (rightIdx == 0 && xs.Count > 0) {
+                    // The curve is at its default value before its first point. Keep it flat.
+                    anchors.Add(xs[rightIdx] - 1);
+                }
+            }
+
+            foreach (int x in anchors) {
+                InsertSorted(newXs, newYs, x, baseCurve.Sample(x));
+            }
+            foreach (var (x, y) in points) {
+                InsertSorted(newXs, newYs, x, (int)Math.Clamp(y, descriptor.min, descriptor.max));
+            }
+            return (newXs.ToArray(), newYs.ToArray());
+        }
+
+        private static void InsertSorted(List<int> xs, List<int> ys, int x, int y) {
+            int idx = xs.BinarySearch(x);
+            if (idx >= 0) {
+                ys[idx] = y;
+            } else {
+                xs.Insert(~idx, x);
+                ys.Insert(~idx, y);
+            }
+        }
     }
 
     public class CurveSelection {

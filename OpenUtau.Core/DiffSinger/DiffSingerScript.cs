@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 
@@ -206,7 +205,7 @@ namespace OpenUtau.Core.DiffSinger {
                 .Select(x => new DiffSingerScript(x, options).toRaw())
                 .ToArray();
             File.WriteAllText(filePath,
-                JsonConvert.SerializeObject(ScriptArray, Formatting.Indented),
+                Json.Serialize(ScriptArray),
                 new UTF8Encoding(false));
         }
     }

@@ -4,16 +4,6 @@ For collaborators who review PRs without owning the affected area. Your job
 is to catch what the author's tunnel vision hides: correctness, breakage,
 scope creep, and things that don't survive contact with a real build.
 
-Not all PRs are handled the same way:
-
-- **Small, low-risk changes** (think: a few files, a few dozen lines, within
-  an area like translations or docs) may be set up to auto-merge after a
-  couple of approvals — check the PR page for merge requirements. On PRs like
-  that, **your approval may be what merges the code**, so only give it when
-  you've actually done the checks below.
-- **Everything else** goes through the maintainers, who make the final call;
-  your review is input to theirs.
-
 ## 1. Scope and intent
 
 - [ ] The PR is in scope for the project — it fits what OpenUtau is and how

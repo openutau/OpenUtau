@@ -1,13 +1,8 @@
-﻿using Melanchall.DryWetMidi.Core;
-using Melanchall.DryWetMidi.Interaction;
-using Newtonsoft.Json;
-using OpenUtau.Core.Ustx;
+﻿using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Linq;
-using System.Reflection.Emit;
 using TextCopy;
 using Serilog;
 
@@ -62,11 +57,11 @@ namespace OpenUtau.Core.Format {
                 },
                 notes = uNotes.Select(DumpNote).ToList(),
             };
-            return JsonConvert.SerializeObject(data);
+            return Json.Serialize(data);
         }
 
         public static List<UNote> Loads(string text, UProject project) {
-            var data = JsonConvert.DeserializeObject<CommonnoteData>(text);
+            var data = Json.Deserialize<CommonnoteData>(text);
             if (data.identifier != "commonnote") {
                 Log.Error($"Clipboard is missing commonnote header");
                 return null;

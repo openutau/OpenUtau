@@ -187,6 +187,7 @@ Devam edip mevcut çalma kafasından sonra, notaların olmadığı en yakın kon
   <system:String x:Key="errors.failed.openfile">Açma başarısız</system:String>
   <system:String x:Key="errors.failed.openlocation">Konum açılamadı</system:String>
   <system:String x:Key="errors.failed.opennewerproject">Proje dosyası yazılımdan daha yeni! OpenUtau'yu güncelleyin!</system:String>
+  <!--<system:String x:Key="errors.failed.prerender">Failed to render in the background.</system:String>-->
   <system:String x:Key="errors.failed.render">Render başarısız.</system:String>
   <system:String x:Key="errors.failed.runeditingmacro">Düzenleme makrosu çalıştırılamadı</system:String>
   <system:String x:Key="errors.failed.save">Kaydetme başarısız</system:String>
@@ -200,6 +201,7 @@ Devam edip mevcut çalma kafasından sonra, notaların olmadığı en yakın kon
   <system:String x:Key="errors.lyrics.regex">Düzenli ifadede izin verilmeyen karakter</system:String>
   <system:String x:Key="errors.lyrics.regexpreview">- düzenli ifade hatası -</system:String>
   <!--<system:String x:Key="errors.resampler.failed.message">Resampler failed to create output file(s). Resampler errors like this are often caused by oto.ini configuration issues. Consider generating a singer error report to check for such issues.</system:String>-->
+  <!--<system:String x:Key="errors.toast.details">(Click here for details)</system:String>-->
 
   <system:String x:Key="exesetup.installing">"{0}" yükleniyor...</system:String>
   <system:String x:Key="exesetup.linux">Linux'ta exe resampler veya wavtool kullanmak için:
@@ -450,6 +452,8 @@ Uyarı: Bu seçenek özel önayarları kaldırır.</system:String>
   <system:String x:Key="packages.unknownversion">bilinmeyen sürüm</system:String>
   <system:String x:Key="packages.update">Güncelle</system:String>
 
+  <!--<system:String x:Key="phoneme.show.error">Alt + Click to view the full error</system:String>-->
+
   <system:String x:Key="phoneticassistant.caption">Fonetik Asistan</system:String>
   <system:String x:Key="phoneticassistant.copy">Kopyala</system:String>
 
@@ -458,6 +462,7 @@ Uyarı: Bu seçenek özel önayarları kaldırır.</system:String>
   <system:String x:Key="pianoroll.menu.batch.running">Toplu düzenleme çalışıyor</system:String>
   <system:String x:Key="pianoroll.menu.external">Dış</system:String>
   <system:String x:Key="pianoroll.menu.lyrics">Sözler</system:String>
+  <!--<system:String x:Key="pianoroll.menu.lyrics.addphonetichints">Add Phonetic Hint</system:String>-->
   <system:String x:Key="pianoroll.menu.lyrics.dashtoplus">"-" yerine "+" koy</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">"-" yerine "+~" koy</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.edit">Sözleri Düzenle</system:String>
@@ -517,6 +522,8 @@ Uyarı: Bu seçenek özel önayarları kaldırır.</system:String>
   <system:String x:Key="pianoroll.toggle.expressions">İfadeleri Gör (L)</system:String>
   <system:String x:Key="pianoroll.toggle.finalpitch">Render için Son Pitch'i Gör (R)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
+  <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">Nota Parametrelerini Gör (\)</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">Üzerine Yazma Pitch Modunu Değiştir</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">Fonemleri Gör (O)</system:String>
@@ -595,6 +602,9 @@ Uyarı: Bu seçenek özel önayarları kaldırır.</system:String>
   <!--<system:String x:Key="prefs.appearance.detachpianoroll">Show piano roll in separate window</system:String>-->
   <system:String x:Key="prefs.appearance.diffsingerlangcodehide">Fonem düzenleyicisinden dil önekini gizle</system:String>
   <system:String x:Key="prefs.appearance.lang">Dil</system:String>
+  <!--<system:String x:Key="prefs.appearance.notehoverglow">Note hover glow</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.playbacknotebounce">Bounce notes on playback</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.playbacknotehighlight">Highlight notes on playback</system:String>-->
   <system:String x:Key="prefs.appearance.showghostnotes">Piyano rulosunda diğer parçaların notalarını göster</system:String>
   <system:String x:Key="prefs.appearance.showicon">Piyano rulosunda ikon göster</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Piyano rulosunda portre göster</system:String>
@@ -607,6 +617,10 @@ Uyarı: Bu seçenek özel önayarları kaldırır.</system:String>
   <system:String x:Key="prefs.cache.clearonquit">Çıkışta önbelleği temizle</system:String>
   <system:String x:Key="prefs.cache.diffsingertensorcache">DiffSinger Tensor Önbelleği</system:String>
   <system:String x:Key="prefs.caption">Tercihler</system:String>
+  <!--<system:String x:Key="prefs.channel">Release Channel</system:String>-->
+  <!--<system:String x:Key="prefs.channel.alpha">Alpha</system:String>-->
+  <!--<system:String x:Key="prefs.channel.beta">Beta</system:String>-->
+  <!--<system:String x:Key="prefs.channel.stable">Stable</system:String>-->
   <!--<system:String x:Key="prefs.diffsinger">DiffSinger</system:String>-->
   <system:String x:Key="prefs.editing">Düzenleme</system:String>
   <system:String x:Key="prefs.general">Genel</system:String>
@@ -629,6 +643,7 @@ Uyarı: Bu seçenek özel önayarları kaldırır.</system:String>
   <system:String x:Key="prefs.playback.backend">Ses Arka Ucu</system:String>
   <system:String x:Key="prefs.playback.backend.auto">Otomatik</system:String>
   <!--<system:String x:Key="prefs.playback.backend.mini">MiniAudio</system:String>-->
+  <!--<system:String x:Key="prefs.playback.backend.sdl3">SDL 3</system:String>-->
   <system:String x:Key="prefs.playback.cursorposition">Otomatik Kaydırma Marjı</system:String>
   <system:String x:Key="prefs.playback.device">Çalma Cihazı</system:String>
   <system:String x:Key="prefs.playback.lockstarttime">Duraklatma sırasında</system:String>
@@ -640,6 +655,7 @@ Uyarı: Bu seçenek özel önayarları kaldırır.</system:String>
   <system:String x:Key="prefs.rendering">Render</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Varsayılan renderer (klasik ses bankaları için)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger Render Derinliği</system:String>
+  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Akustik için Render Adımları</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger Pitch için Render Adımları</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger Varyans için Render Adımları</system:String>
@@ -765,6 +781,8 @@ Ses bankası başka bir işletim sisteminde çalışmayabilir.</system:String>
   <system:String x:Key="singersetup.textfileencoding.prompt">Dosya içeriklerinin doğru görünmesi için bir kodlama seçin.</system:String>
   <system:String x:Key="singersetup.title">Ses Bankası Kurulumu</system:String>
 
+  <!--<system:String x:Key="themeeditor.cancel">Cancel</system:String>-->
+  <!--<system:String x:Key="themeeditor.save">Save</system:String>-->
   <system:String x:Key="themeeditor.title">Tema Düzenleyici</system:String>
 
   <system:String x:Key="tip.aliasbox">Alias'ı geçersiz kıl</system:String>

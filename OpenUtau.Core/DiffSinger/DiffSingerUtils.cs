@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.ML.OnnxRuntime.Tensors;
-using Newtonsoft.Json;
 using OpenUtau.Core.Render;
 
 namespace OpenUtau.Core.DiffSinger {
@@ -89,6 +88,30 @@ namespace OpenUtau.Core.DiffSinger {
             return DurationsMsToFrames(
                 PaddedSegments(phrase, frameMs, headFrames, tailFrames).Select(s => s.DurationMs),
                 frameMs);
+        }
+
+        /// <summary>
+        /// Per-frame voiced flag for the padded frame layout. Segments that are
+        /// not real phonemes (head "SP", inter-phoneme gap "SP", tail "SP") are
+        /// unvoiced: the pitch model has no ground truth there, and any value it
+        /// returns for those frames is an artifact rather than a curve to follow.
+        /// </summary>
+        public static bool[] PaddedVoicedMask(
+            IReadOnlyList<(string Phoneme, double DurationMs, int PhoneIndex)> segments,
+            IReadOnlyList<int> durations) {
+            int totalFrames = 0;
+            for (int i = 0; i < durations.Count; ++i) {
+                totalFrames += durations[i];
+            }
+            var mask = new bool[totalFrames];
+            int frame = 0;
+            for (int i = 0; i < segments.Count && i < durations.Count; ++i) {
+                bool voiced = segments[i].PhoneIndex >= 0;
+                for (int f = 0; f < durations[i] && frame < mask.Length; ++f) {
+                    mask[frame++] = voiced;
+                }
+            }
+            return mask;
         }
 
         public static long[] PaddedLanguageIds(
@@ -348,7 +371,7 @@ namespace OpenUtau.Core.DiffSinger {
 
         static Dictionary<string, int> LoadPhonemesFromJson(string filePath){
             var json = File.ReadAllText(filePath, Encoding.UTF8);
-            return JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+            return Json.Deserialize<Dictionary<string, int>>(json);
         }
 
         static Dictionary<string, int> LoadPhonemesFromTxt(string filePath){
@@ -362,7 +385,7 @@ namespace OpenUtau.Core.DiffSinger {
 
         public static Dictionary<string, int> LoadLanguageIds(string filePath){
             var json = File.ReadAllText(filePath, Encoding.UTF8);
-            return JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+            return Json.Deserialize<Dictionary<string, int>>(json);
         }
 
         public static string PhonemeLanguage(string phoneme){

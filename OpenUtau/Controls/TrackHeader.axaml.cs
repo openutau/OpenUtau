@@ -109,13 +109,13 @@ namespace OpenUtau.App.Controls {
 
         async void SingerButtonClicked(object sender, RoutedEventArgs args) {
             args.Handled = true;
-            if (SingerManager.Inst.Singers.Count > 0) {
+            try {
                 if (ViewModel != null) {
                     await ViewModel.RefreshSingersAsync();
                 }
                 SingersMenu.Open();
-            } else {
-                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("There is no singer."));
+            } catch (Exception e) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
             }
         }
 

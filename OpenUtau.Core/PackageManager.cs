@@ -5,9 +5,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Serilog;
 using SharpCompress.Archives;
 using SharpCompress.Readers;
@@ -76,10 +76,10 @@ namespace OpenUtau.Core {
 
             List<RegistrySoftware> list = new List<RegistrySoftware>();
             try {
-                var token = JToken.Parse(body);
-                var items = token["items"];
-                if (items != null && items.Type == JTokenType.Array) {
-                    list = items.ToObject<List<RegistrySoftware>>() ?? new List<RegistrySoftware>();
+                var token = JsonObject.Parse(body);
+                var items = token?["items"];
+                if (items?.GetValueKind() == JsonValueKind.Array) {
+                    list = Json.Deserialize<List<RegistrySoftware>>(items) ?? new List<RegistrySoftware>();
                 }
             } catch (Exception e) {
                 Log.Warning(e, "Failed to parse registry JSON");

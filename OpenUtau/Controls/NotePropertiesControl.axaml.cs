@@ -115,7 +115,7 @@ foreach (var box in this.GetLogicalDescendants().OfType<TextBox>()) {
         }
 
         void OnSavePortamentoPreset(object sender, RoutedEventArgs e) {
-            if (VisualRoot is Window window) {
+            if (TopLevel.GetTopLevel(this) is Window window) {
                 var dialog = new TypeInDialog() {
                     Title = ThemeManager.GetString("notedefaults.preset.namenew"),
                     onFinish = name => ViewModel.SavePortamentoPreset(name),
@@ -129,7 +129,7 @@ foreach (var box in this.GetLogicalDescendants().OfType<TextBox>()) {
         }
 
         void OnSaveVibratoPreset(object sender, RoutedEventArgs e) {
-            if (VisualRoot is Window window) {
+            if (TopLevel.GetTopLevel(this) is Window window) {
                 var dialog = new TypeInDialog() {
                     Title = ThemeManager.GetString("notedefaults.preset.namenew"),
                     onFinish = name => ViewModel.SaveVibratoPreset(name),

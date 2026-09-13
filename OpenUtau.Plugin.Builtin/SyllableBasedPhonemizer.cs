@@ -824,8 +824,14 @@ namespace OpenUtau.Plugin.Builtin {
         protected virtual string[] GetSymbols(Note note) {
             string[] getSymbolsRaw(string lyrics) {
                 if (string.IsNullOrEmpty(lyrics)) {
-                    return new string[0];
+                    return Array.Empty<string>();
                 }
+
+                // Fallback: standard space-delimited splitting
+                if (!EnablePhonemeTokenization) {
+                    return lyrics.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                }
+
                 if (lyrics.Contains(" ")) {
                     var parts = lyrics.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     var resultList = new List<string>();
@@ -1447,6 +1453,12 @@ namespace OpenUtau.Plugin.Builtin {
             return true;
         }
 
+        /// <summary>
+        /// When true, lyrics and phonetic hints are greedily tokenized using known vowels and consonants.
+        /// When false, lyrics are split strictly by spaces.
+        /// </summary>
+        protected virtual bool EnablePhonemeTokenization => false;
+
         protected virtual string YamlFileName => null;
         protected virtual byte[] YamlTemplate => null;
         protected virtual string YamlVersion => null;
@@ -1957,14 +1969,10 @@ namespace OpenUtau.Plugin.Builtin {
 
             // IsGlide
             int anchorI = 0;
-            if (!isEnding) {
-                for (int i = 1; i < phonemeSymbols.Count; i++) {
-                    var phonemeI = phonemeSymbols.Count - i - 1;
-                    if (phonemeSymbols[phonemeI] != null && IsGlide(phonemeSymbols[phonemeI])) {
-                        anchorI = i;
-                    } else {
-                        break;
-                    }
+            if (!isEnding && phonemeSymbols.Count > 1) {
+                var immediateConsonantI = phonemeSymbols.Count - 2;
+                if (phonemeSymbols[immediateConsonantI] != null && IsGlide(phonemeSymbols[immediateConsonantI])) {
+                    anchorI = 1; // Strictly anchor at most one glide (the one touching the vowel)
                 }
             }
 

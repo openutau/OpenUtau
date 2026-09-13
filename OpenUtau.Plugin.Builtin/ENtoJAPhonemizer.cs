@@ -14,7 +14,7 @@ namespace OpenUtau.Plugin.Builtin {
     public class ENtoJAPhonemizer : SyllableBasedPhonemizer {
         protected override string YamlFileName => "en2ja.yaml";
         protected override byte[] YamlTemplate => Data.Resources.en2ja_template;
-        protected override string YamlVersion => "1.2";
+        protected override string YamlVersion => "1.2.1";
 
         public ENtoJAPhonemizer() {
             this.vowels = new string[] {
@@ -26,6 +26,7 @@ namespace OpenUtau.Plugin.Builtin {
         protected override string[] GetVowels() => vowels;
         protected override string[] GetConsonants() => consonants;
         protected override string GetDictionaryName() => "";
+        protected override bool EnablePhonemeTokenization => true;
 
         public Dictionary<string, List<string>> WanaKanaDictionary = new Dictionary<string, List<string>>();
 

@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="https://github.com/avaloniaui"
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -26,6 +26,7 @@
   <system:String x:Key="command.import.track">Import track(s)</system:String>
   <system:String x:Key="command.note.add">Add note</system:String>
   <system:String x:Key="command.note.delete">Delete note(s)</system:String>
+  <system:String x:Key="command.note.duplicate">Duplicate note(s)</system:String>
   <system:String x:Key="command.note.edit">Edit note(s)</system:String>
   <system:String x:Key="command.note.lyric">Edit lyric(s)</system:String>
   <system:String x:Key="command.note.move">Move note(s)</system:String>
@@ -94,6 +95,32 @@
   <system:String x:Key="context.timeline.addtimesig">Add time signature change</system:String>
   <system:String x:Key="context.timeline.deltempo">Delete tempo change at {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Delete time signature change</system:String>
+
+  <system:String x:Key="dawintegration.caption">DAW Integration</system:String>
+  <system:String x:Key="dawintegration.col.apiversion">API</system:String>
+  <system:String x:Key="dawintegration.col.compatibility">Status</system:String>
+  <system:String x:Key="dawintegration.col.name">Plugin</system:String>
+  <system:String x:Key="dawintegration.col.port">Port</system:String>
+  <system:String x:Key="dawintegration.col.state">Connection</system:String>
+  <system:String x:Key="dawintegration.compatible">Compatible</system:String>
+  <system:String x:Key="dawintegration.connect">Connect</system:String>
+  <system:String x:Key="dawintegration.connected">Connected to {0}.</system:String>
+  <system:String x:Key="dawintegration.connecting">Connecting...</system:String>
+  <system:String x:Key="dawintegration.disconnect">Disconnect</system:String>
+  <system:String x:Key="dawintegration.disconnected">Not connected.</system:String>
+  <system:String x:Key="dawintegration.hint">Connect to a DAW plugin listening on this machine. Editing stays in OpenUtau; the plugin receives the project and the rendered audio.</system:String>
+  <system:String x:Key="dawintegration.incompatible">Unsupported API version</system:String>
+  <system:String x:Key="dawintegration.lost">Connection lost: {0}</system:String>
+  <system:String x:Key="dawintegration.none">No DAW plugin found. Start the OpenUtau plugin in your DAW, then refresh.</system:String>
+  <system:String x:Key="dawintegration.reconnecting">Reconnecting to {0}...</system:String>
+  <system:String x:Key="dawintegration.refresh">Refresh</system:String>
+  <system:String x:Key="dawintegration.unsavedproject">The project has not been saved yet. Save the project first, then connect the DAW plugin — an unsaved project cannot be sent to the DAW.</system:String>
+  <system:String x:Key="dawintegration.bpmmismatch">The DAW project's tempo does not match this project's tempo. The two timelines will only agree in seconds, not in bars — align the tempos to keep them in sync.</system:String>
+  <system:String x:Key="dawintegration.state.connected">Connected</system:String>
+  <system:String x:Key="dawintegration.state.connecting">Connecting</system:String>
+  <system:String x:Key="dawintegration.state.reconnecting">Reconnecting</system:String>
+  <system:String x:Key="dawintegration.state.free">Not connected</system:String>
+  <system:String x:Key="dawintegration.connected.count">Connected to {0} plugin(s).</system:String>
 
   <system:String x:Key="debug.clear">Clear</system:String>
   <system:String x:Key="debug.copylog">Copy Log</system:String>
@@ -322,6 +349,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.project.remaptimeaxis">Adjust Tempo (Preserve Timing)</system:String>
   <system:String x:Key="menu.tools">Tools</system:String>
   <system:String x:Key="menu.tools.clearcache">Clear Cache</system:String>
+  <system:String x:Key="menu.tools.dawintegration">DAW Integration...</system:String>
   <system:String x:Key="menu.tools.debugwindow">Debug Window</system:String>
   <system:String x:Key="menu.tools.dependency.install">Install Dependency (.oudep)...</system:String>
   <system:String x:Key="menu.tools.fullscreen">Full Screen</system:String>
@@ -352,6 +380,18 @@ Choose the voicebank that you want to merge into current voicebank</system:Strin
 Syntax: prefix,suffix</system:String>
   <system:String x:Key="mergevoicebank.setvoicecolor">Set new names for voice colors (shown in CLR expression).</system:String>
   <system:String x:Key="mergevoicebank.title">Merge voicebanks</system:String>
+
+  <system:String x:Key="mixfx.applyonexport">Apply when exporting mixdown</system:String>
+  <system:String x:Key="mixfx.caption">Track Polish</system:String>
+  <system:String x:Key="mixfx.enabled">Enable on this track</system:String>
+  <system:String x:Key="mixfx.library">Library</system:String>
+  <system:String x:Key="mixfx.library.default">Default</system:String>
+  <system:String x:Key="mixfx.library.delete">Delete</system:String>
+  <system:String x:Key="mixfx.library.placeholder">Select a saved preset...</system:String>
+  <system:String x:Key="mixfx.library.save">Save...</system:String>
+  <system:String x:Key="mixfx.preset">Preset</system:String>
+  <system:String x:Key="mixfx.recommended">Apply Default Settings</system:String>
+  <system:String x:Key="mixfx.recommended.tip">Vocal Air + Gentle compression + Small Room</system:String>
 
   <system:String x:Key="notedefaults.lyric">Lyric</system:String>
   <system:String x:Key="notedefaults.lyric.enter">When Enter</system:String>
@@ -439,6 +479,8 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="packages.unknownversion">unknown version</system:String>
   <system:String x:Key="packages.update">Update</system:String>
 
+  <system:String x:Key="phoneme.show.error">Alt + Click to view the full error</system:String>
+
   <system:String x:Key="phoneticassistant.caption">Phonetic Assistant</system:String>
   <system:String x:Key="phoneticassistant.copy">Copy</system:String>
 
@@ -447,6 +489,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.menu.batch.running">Running batch edit</system:String>
   <system:String x:Key="pianoroll.menu.external">External</system:String>
   <system:String x:Key="pianoroll.menu.lyrics">Lyrics</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.addphonetichints">Add Phonetic Hint</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.dashtoplus">Replace "-" with "+"</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">Replace "-" with "+~"</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.edit">Edit Lyrics</system:String>
@@ -456,7 +499,6 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.movesuffixtovoicecolor">Move Suffix to VoiceColor</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.removelettersuffix">Remove Letter Suffix</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.removephonetichint">Remove Phonetic Hint</system:String>
-  <system:String x:Key="pianoroll.menu.lyrics.addphonetichints">Add Phonetic Hint</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.removetonesuffix">Remove Tone Suffix</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.romajitohiragana">Romaji to Hiragana</system:String>
   <system:String x:Key="pianoroll.menu.notedefaults">Note Defaults</system:String>
@@ -507,6 +549,8 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.expressions">View Expressions (L)</system:String>
   <system:String x:Key="pianoroll.toggle.finalpitch">View Final Pitch to Render (R)</system:String>
   <system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>
+  <system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>
+  <system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>
   <system:String x:Key="pianoroll.toggle.noteparams">View Note Parameters (\)</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">Toggle Overwrite Pitch Mode</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">View Phonemes (O)</system:String>
@@ -519,8 +563,28 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.tone">Toggle Note Tone (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">View Vibrato (U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">View Waveform (W)</system:String>
-  <system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>
-  <system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>
+  <system:String x:Key="pianoroll.tool.curve.cursor">Cursor Tool
+    Left click to select</system:String>
+  <system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
+    Left click to draw
+    Right click to reset</system:String>
+  <system:String x:Key="pianoroll.tool.curve.line">Line Tool
+    Left click to draw (draw straight line)
+    Right click to reset</system:String>
+  <system:String x:Key="pianoroll.tool.curve.eraser">Eraser Tool
+    Click to reset</system:String>
+  <system:String x:Key="pianoroll.tool.curve.verticalstretch">Vertical Stretch Tool
+    Left click to stretch the curve vertically
+    Right click to reset</system:String>
+  <system:String x:Key="pianoroll.tool.curve.horizontalstretch">Horizontal Stretch Tool
+    Left click to stretch the curve horizontally
+    Right click to reset</system:String>
+  <system:String x:Key="pianoroll.tool.curve.verticalshift">Vertical Shift Tool
+    Left click to move the curve vertically
+    Right click to reset</system:String>
+  <system:String x:Key="pianoroll.tool.curve.horizontalshift">Horizontal Shift Tool
+    Left click to move the curve horizontally
+    Right click to reset</system:String>
   <system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (Shift + 1)
     Left click to draw
     Right click to reset
@@ -564,10 +628,7 @@ Warning: this option removes custom presets.</system:String>
 
   <system:String x:Key="prefs.advanced">Advanced</system:String>
   <system:String x:Key="prefs.advanced.beta">Beta</system:String>
-  <system:String x:Key="prefs.channel">Release Channel</system:String>
-  <system:String x:Key="prefs.channel.stable">Stable</system:String>
-  <system:String x:Key="prefs.channel.beta">Beta</system:String>
-  <system:String x:Key="prefs.channel.alpha">Alpha</system:String>
+  <system:String x:Key="prefs.advanced.defaultsnapcurve">Snap curves by default</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper">Lyrics Helper</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper.brackets">Lyrics Helper Adds Brackets</system:String>
   <system:String x:Key="prefs.advanced.rememberfiletypes">Remember these file types in "Open Recent"</system:String>
@@ -591,10 +652,10 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.detachpianoroll">Show piano roll in separate window</system:String>
   <system:String x:Key="prefs.appearance.diffsingerlangcodehide">Hide language prefix from phoneme editor</system:String>
   <system:String x:Key="prefs.appearance.lang">Language</system:String>
-  <system:String x:Key="prefs.appearance.showghostnotes">Show other tracks' notes on piano roll</system:String>
   <system:String x:Key="prefs.appearance.notehoverglow">Note hover glow</system:String>
-  <system:String x:Key="prefs.appearance.playbacknotehighlight">Highlight notes on playback</system:String>
   <system:String x:Key="prefs.appearance.playbacknotebounce">Bounce notes on playback</system:String>
+  <system:String x:Key="prefs.appearance.playbacknotehighlight">Highlight notes on playback</system:String>
+  <system:String x:Key="prefs.appearance.showghostnotes">Show other tracks' notes on piano roll</system:String>
   <system:String x:Key="prefs.appearance.showicon">Show icon on piano roll</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Show portrait on piano roll</system:String>
   <system:String x:Key="prefs.appearance.sortorder">Singer name display language</system:String>
@@ -606,6 +667,10 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.cache.clearonquit">Clear cache on quit</system:String>
   <system:String x:Key="prefs.cache.diffsingertensorcache">DiffSinger Tensor Cache</system:String>
   <system:String x:Key="prefs.caption">Preferences</system:String>
+  <system:String x:Key="prefs.channel">Release Channel</system:String>
+  <system:String x:Key="prefs.channel.alpha">Alpha</system:String>
+  <system:String x:Key="prefs.channel.beta">Beta</system:String>
+  <system:String x:Key="prefs.channel.stable">Stable</system:String>
   <system:String x:Key="prefs.diffsinger">DiffSinger</system:String>
   <system:String x:Key="prefs.editing">Editing</system:String>
   <system:String x:Key="prefs.general">General</system:String>
@@ -644,10 +709,10 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.rendering">Rendering</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Default renderer (for classic voicebanks)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger Render Depth</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>
   <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Render Steps for Acoustic</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger Render Steps for Pitch</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger Render Steps for Variance</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>
   <system:String x:Key="prefs.rendering.diffsingervariancelocalpitchpatch">DiffSinger Local Variance Update for Pitch Edits</system:String>
   <system:String x:Key="prefs.rendering.gamebackend">GAME Inference Backend</system:String>
   <system:String x:Key="prefs.rendering.onnxgpu">GPU</system:String>
@@ -770,6 +835,10 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singersetup.textfileencoding.prompt">Choose an encoding that make file contents look right.</system:String>
   <system:String x:Key="singersetup.title">Singer Setup</system:String>
 
+  <system:String x:Key="themeeditor.cancel">Cancel</system:String>
+  <system:String x:Key="themeeditor.save">Save</system:String>
+  <system:String x:Key="themeeditor.title">Theme Editor</system:String>
+
   <system:String x:Key="tip.aliasbox">Override Alias</system:String>
   <system:String x:Key="tip.exps">Numerical,Options Type
     Left Button Draw: Set expressions
@@ -806,6 +875,7 @@ General
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>
   <system:String x:Key="tracks.favorite">Favorites</system:String>
   <system:String x:Key="tracks.installsinger">Install singer</system:String>
+  <system:String x:Key="tracks.mixfx">Track Polish...</system:String>
   <system:String x:Key="tracks.more">More</system:String>
   <system:String x:Key="tracks.movedown">Move Down</system:String>
   <system:String x:Key="tracks.moveup">Move Up</system:String>
@@ -850,23 +920,4 @@ General
   <system:String x:Key="welcome.recent">Recent</system:String>
   <system:String x:Key="welcome.start">Start</system:String>
   <system:String x:Key="welcome.template">Template</system:String>
-
-  <system:String x:Key="themeeditor.title">Theme Editor</system:String>
-  <system:String x:Key="themeeditor.save">Save</system:String>
-  <system:String x:Key="themeeditor.cancel">Cancel</system:String>
-  <system:String x:Key="phoneme.show.error">Alt + Click to view the full error</system:String>
-
-  <!-- Mix Effects (post-processing) -->
-  <system:String x:Key="mixfx.caption">Track Polish</system:String>
-  <system:String x:Key="mixfx.enabled">Enable on this track</system:String>
-  <system:String x:Key="mixfx.preset">Preset</system:String>
-  <system:String x:Key="mixfx.recommended">Apply Default Settings</system:String>
-  <system:String x:Key="mixfx.recommended.tip">Vocal Air + Gentle compression + Small Room</system:String>
-  <system:String x:Key="mixfx.applyonexport">Apply when exporting mixdown</system:String>
-  <system:String x:Key="mixfx.library">Library</system:String>
-  <system:String x:Key="mixfx.library.placeholder">Select a saved preset...</system:String>
-  <system:String x:Key="mixfx.library.save">Save...</system:String>
-  <system:String x:Key="mixfx.library.delete">Delete</system:String>
-  <system:String x:Key="mixfx.library.default">Default</system:String>
-  <system:String x:Key="tracks.mixfx">Track Polish...</system:String>
 </ResourceDictionary>

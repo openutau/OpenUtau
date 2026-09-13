@@ -10,7 +10,6 @@ using NetSparkleUpdater.AppCastHandlers;
 using NetSparkleUpdater.Enums;
 using NetSparkleUpdater.Interfaces;
 using NetSparkleUpdater.SignatureVerifiers;
-using Newtonsoft.Json;
 using OpenUtau.Core;
 using OpenUtau.Core.Util;
 using ReactiveUI.SourceGenerators;
@@ -115,7 +114,7 @@ namespace OpenUtau.App.ViewModels {
             using var resposne = await client.GetAsync("https://api.github.com/repos/stakira/OpenUtau/releases?per_page=100");
             resposne.EnsureSuccessStatusCode();
             string respBody = await resposne.Content.ReadAsStringAsync();
-            List<GithubRelease>? releases = JsonConvert.DeserializeObject<List<GithubRelease>>(respBody);
+            var releases = Json.Deserialize<List<GithubRelease>>(respBody);
             if (releases == null) {
                 return null;
             }

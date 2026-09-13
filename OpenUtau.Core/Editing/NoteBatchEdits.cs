@@ -526,6 +526,12 @@ namespace OpenUtau.Core.Editing {
                         if (result.tones[i] < 0) {
                             continue;
                         }
+                        // Padding and inter-phoneme gap frames are silence: the
+                        // pitch model's output there is an artifact, and writing
+                        // it back produces a spike at the phrase/gap boundary.
+                        if (result.voiced != null && i < result.voiced.Length && !result.voiced[i]) {
+                            continue;
+                        }
                         int x = phrase.position - part.position + (int)result.ticks[i];
                         if (result.ticks[i] < 0) {
                             if (i + 1 < result.ticks.Length && result.ticks[i + 1] > 0) { } else

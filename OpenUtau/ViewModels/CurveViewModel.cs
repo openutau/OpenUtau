@@ -20,8 +20,12 @@ namespace OpenUtau.ViewModels {
     public enum CurveTools {
         CurveSelectTool,
         CurvePenTool,
-        //CurveLineTool,
-        CurveEraserTool
+        CurveLineTool,
+        CurveEraserTool,
+        CurveVerticalStretchTool,
+        CurveHorizontalStretchTool,
+        CurveVerticalShiftTool,
+        CurveHorizontalShiftTool
     }
 
     public partial class CurveViewModel : ViewModelBase, ICmdSubscriber {
@@ -47,13 +51,16 @@ namespace OpenUtau.ViewModels {
             (int x, int y) endPoint = (endTick, curve?.Sample(endTick) ?? (int)descriptor.CustomDefaultValue);
             var xs = new List<int>();
             var ys = new List<int>();
+            int minTick = Math.Min(startTick, endTick);
+            int maxTick = Math.Max(startTick, endTick);
+
             if (curve != null) {
                 for (int i = 0; i < curve.xs.Count; i++) {
                     var x = curve.xs[i];
-                    if (endTick < x) {
+                    if (maxTick <= x) {
                         break;
                     }
-                    if (startTick <= x) {
+                    if (minTick < x) {
                         xs.Add(x);
                         ys.Add(curve.ys[i]);
                     }
@@ -104,6 +111,16 @@ namespace OpenUtau.ViewModels {
             DocManager.Inst.StartUndoGroup("command.exp.paste");
             DocManager.Inst.ExecuteCmd(new PasteCurveCommand(DocManager.Inst.Project, part, paste.Abbr!, xs, ys));
             DocManager.Inst.EndUndoGroup();
+        }
+
+        public bool TryGetSelection(string abbr, out CurveSelection selection) {
+            if (this.selection.HasValue(abbr)) {
+                selection = this.selection.Clone();
+                return true;
+            }
+
+            selection = new CurveSelection();
+            return false;
         }
 
         public void OnNext(UCommand cmd, bool isUndo) {

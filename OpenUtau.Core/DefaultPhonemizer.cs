@@ -6,7 +6,7 @@ namespace OpenUtau.Core {
     /// <summary>
     /// The simplest Phonemizer possible. Simply pass the lyric as phoneme.
     /// </summary>
-    [Phonemizer("Default Phonemizer", "DEFAULT")]
+    [Phonemizer("Default Phonemizer", "Select Phonemizer")]
     public class DefaultPhonemizer : Phonemizer {
         private USinger singer;
         public override void SetSinger(USinger singer) => this.singer = singer;

@@ -49,6 +49,15 @@ namespace OpenUtau.Core.Render {
         /// Per-frame mask indicating retaken frames. Null means full retake.
         /// </summary>
         public bool[]? retakeMask;
+
+        /// <summary>
+        /// Per-frame flag: true when the frame belongs to a voiced segment.
+        /// Padding and inter-phoneme gap frames carry no meaningful pitch even
+        /// when the model returns a positive value for them, so callers must
+        /// not turn those frames into curve points. Null means every frame is
+        /// voiced (renderers that do not report rests).
+        /// </summary>
+        public bool[]? voiced;
     }
 
     public class RenderRealCurveResult {

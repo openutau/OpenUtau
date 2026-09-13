@@ -1098,6 +1098,8 @@ namespace OpenUtau.Plugin.Builtin {
             //foreach (var consonant in new[] { "h" }) {
             //    alias = alias.Replace(consonant, "hh");
             //}
+            if (HasOto(alias, tone)) return alias;
+
             string baseResolved = base.ValidateAlias(alias, tone);
             if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
                 if (HasOto(baseResolved, tone)) {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using OpenUtau.Classic;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -34,13 +34,13 @@ namespace OpenUtau.Core.Voicevox {
         public static VoicevoxConfig Load(USinger singer) {
             try {
                 var response = VoicevoxClient.Inst.SendRequest(new VoicevoxURL() { method = "GET", path = "/engine_manifest" });
-                var jObj = JObject.Parse(response.Item1);
-                if (jObj.ContainsKey("detail")) {
+                var jObj = JsonObject.Parse(response.Item1);
+                if (jObj?.AsObject().ContainsKey("detail") == true) {
                     var errorMessage = $"Response was incorrect. : {jObj}";
                     Log.Error(errorMessage);
                     throw new VoicevoxException(errorMessage);
                 }
-                var manifest = jObj.ToObject<Engine_manifest>();
+                var manifest = Json.Deserialize<Engine_manifest>(jObj);
                 manifest.SaveLicenses(singer.Location);
             } catch (Exception e) {
                 var errorMessage = $"Could not load Licenses.:{e}";
@@ -50,13 +50,13 @@ namespace OpenUtau.Core.Voicevox {
             try {
 
                 var response = VoicevoxClient.Inst.SendRequest(new VoicevoxURL() { method = "GET", path = "/singers" });
-                var jObj = JObject.Parse(response.Item1);
-                if (jObj.ContainsKey("detail")) {
+                var jObj = JsonObject.Parse(response.Item1);
+                if (jObj?.AsObject().ContainsKey("detail") == true) {
                     var errorMessage = $"Response was incorrect. : {jObj}";
                     Log.Error(errorMessage);
                     throw new VoicevoxException(errorMessage);
                 }
-                var configs = jObj["json"].ToObject<List<RawVoicevoxConfig>>();
+                var configs = Json.Deserialize<List<RawVoicevoxConfig>>(jObj?["json"]);
                 var parentDirectory = Directory.GetParent(singer.Location).ToString();
                 List<VoicevoxConfig> vvList = new List<VoicevoxConfig>();
                 foreach (RawVoicevoxConfig rowVoicevoxConfig in configs) {
@@ -94,11 +94,11 @@ namespace OpenUtau.Core.Voicevox {
             if (voicevoxConfig.style_infos == null) {
                 var queryurl = new VoicevoxURL() { method = "GET", path = "/singer_info", query = new Dictionary<string, string> { { "speaker_uuid", voicevoxConfig.speaker_uuid } } };
                 var response = VoicevoxClient.Inst.SendRequest(queryurl);
-                var jObj = JObject.Parse(response.Item1);
-                if (jObj.ContainsKey("detail")) {
+                var jObj = JsonObject.Parse(response.Item1);
+                if (jObj?.AsObject().ContainsKey("detail") == true) {
                     Log.Error($"Response was incorrect. : {jObj}");
                 } else {
-                    var rawSinger_Info = jObj.ToObject<RawSinger_info>();
+                    var rawSinger_Info = Json.Deserialize<RawSinger_info>(jObj);
                     if (rawSinger_Info != null) {
                         rawSinger_Info.SetInfo(voicevoxConfig, location);
                     }
@@ -143,7 +143,7 @@ namespace OpenUtau.Core.Voicevox {
         public string url;
         public string icon;
         public int default_sampling_rate;
-        public int frame_rate;
+        public double frame_rate;
         public string terms_of_service;
         public IList<Update_infos> update_infos;
         public IList<Dependency_licenses> dependency_licenses;

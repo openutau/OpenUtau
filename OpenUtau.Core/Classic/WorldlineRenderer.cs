@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,6 +22,8 @@ namespace OpenUtau.Classic {
         readonly int version;
         readonly double frameMs;
         byte[]? vocoderBytes;
+
+        static readonly ConcurrentDictionary<string, object> cacheFileLocks = new ConcurrentDictionary<string, object>();
 
         public WorldlineRenderer(int version) {
             if (version != 1 && version != 2) {
@@ -76,9 +79,12 @@ namespace OpenUtau.Classic {
                 phrase.AddCacheFile(wavPath);
                 string progressInfo = $"Track {trackNo + 1}: {this} {string.Join(" ", phrase.phones.Select(p => p.phoneme))}";
                 progress.Complete(0, progressInfo);
-                if (File.Exists(wavPath)) {
-                    using (var waveStream = Wave.OpenFile(wavPath)) {
-                        result.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
+                var cacheLock = cacheFileLocks.GetOrAdd(wavPath, _ => new object());
+                lock (cacheLock) {
+                    if (File.Exists(wavPath)) {
+                        using (var waveStream = Wave.OpenFile(wavPath)) {
+                            result.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
+                        }
                     }
                 }
                 if (result.samples == null) {
@@ -179,14 +185,14 @@ namespace OpenUtau.Classic {
                     }
                     AddDirects(phrase, resamplerItems, result);
                     if (result.samples != null) {
-                        var samplesCopy = (float[])result.samples.Clone();
-                        Task.Run(() => {
-                            try {
-                                Wave.WriteMono16Wav(wavPath, samplesCopy);
-                            } catch (Exception e) {
-                                Serilog.Log.Error(e, $"Failed to write cache file: {wavPath}");
+                        // Synchronous: a detached write races a subsequent cold re-render's read.
+                        try {
+                            lock (cacheLock) {
+                                Wave.WriteMono16Wav(wavPath, result.samples);
                             }
-                        });
+                        } catch (Exception e) {
+                            Serilog.Log.Error(e, $"Failed to write cache file: {wavPath}");
+                        }
                     }
                 }
                 progress.Complete(phrase.phones.Length, progressInfo);
