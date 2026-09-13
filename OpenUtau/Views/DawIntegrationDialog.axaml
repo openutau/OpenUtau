@@ -2,6 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        x:DataType="vm:DawIntegrationViewModel"
         mc:Ignorable="d" Width="680" Height="400" MinWidth="520" MinHeight="320"
         x:Class="OpenUtau.App.Views.DawIntegrationDialog"
         Icon="/Assets/open-utau.ico"
