@@ -37,7 +37,7 @@
       <Setter Property="CornerRadius" Value="3"/>
     </Style>
   </Window.Styles>
-  <Border Margin="{Binding $parent.WindowDecorationMargin}">
+  <Border Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <DockPanel Margin="14" LastChildFill="True">
 
       <!-- TOP: title + enable + recommended -->

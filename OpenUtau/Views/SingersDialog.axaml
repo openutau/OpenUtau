@@ -14,7 +14,7 @@
   <Design.DataContext>
     <vm:SingersViewModel/>
   </Design.DataContext>
-  <Grid Margin="{Binding $parent.WindowDecorationMargin}">
+  <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <Grid.RowDefinitions>
       <RowDefinition Height="140" MinHeight="140"/>
       <RowDefinition Height="10"/>

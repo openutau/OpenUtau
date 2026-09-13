@@ -9,7 +9,7 @@
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource dialogs.timesig.caption}"
         Height="100" Width="320" WindowStartupLocation="CenterOwner">
-  <StackPanel VerticalAlignment="Center" Margin="{Binding $parent.WindowDecorationMargin}">
+  <StackPanel VerticalAlignment="Center" Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <Grid ColumnDefinitions="1*,1*" Margin="4,0">
       <ComboBox Grid.Column="0" Margin="4" HorizontalAlignment="Stretch"
                 ItemsSource="{Binding BeatPerBars}"

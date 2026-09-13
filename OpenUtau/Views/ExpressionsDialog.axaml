@@ -18,7 +18,7 @@
     <StyleInclude Source="/Styles/PianoRollStyles.axaml"/>
   </Window.Styles>
 
-  <Grid Margin="{Binding $parent.WindowDecorationMargin}" RowDefinitions="Auto,*,Auto">
+  <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}" RowDefinitions="Auto,*,Auto">
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10" IsVisible="{Binding IsSwitchVisible}">
       <ToggleButton Content="{DynamicResource exps.project}" IsChecked="{Binding !IsTrackOverride}" CornerRadius="5,0,0,5" Classes="switch" Command="{Binding OnClickProject}"/>
       <ToggleButton Content="{DynamicResource exps.track}" IsChecked="{Binding IsTrackOverride}" CornerRadius="0,5,5,0" Classes="switch" Command="{Binding OnClickTrack}"/>

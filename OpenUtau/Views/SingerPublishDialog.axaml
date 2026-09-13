@@ -10,7 +10,7 @@
         WindowStartupLocation="CenterScreen"
         MinWidth="500" MinHeight="500" Width="500" Height="500"
         Title="{DynamicResource singers.publish}">
-  <Grid Margin="{Binding $parent.WindowDecorationMargin}">
+  <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible">
       <StackPanel Margin="5">
         <TextBlock Text="{DynamicResource singers.publish.description}"/>

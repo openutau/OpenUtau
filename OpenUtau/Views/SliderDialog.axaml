@@ -6,7 +6,7 @@
         x:Class="OpenUtau.App.Views.SliderDialog"
         Icon="/Assets/open-utau.ico"
         Title="SliderDialog" Height="120" Width="300" WindowStartupLocation="CenterOwner">
-  <StackPanel VerticalAlignment="Center" Margin="{Binding $parent.WindowDecorationMargin}">
+  <StackPanel VerticalAlignment="Center" Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <StackPanel Orientation="Horizontal" Spacing="10" Margin="10" HorizontalAlignment="Center">
       <Slider Name="Slider" Width="150"
               Classes="fader" TickPlacement="BottomRight" IsSnapToTickEnabled="true"

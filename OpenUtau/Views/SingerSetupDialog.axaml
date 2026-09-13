@@ -15,7 +15,7 @@
   <Design.DataContext>
     <vm:SingerSetupViewModel/>
   </Design.DataContext>
-  <Carousel SelectedIndex="{Binding Step}" Margin="{Binding $parent.WindowDecorationMargin}">
+  <Carousel SelectedIndex="{Binding Step}" Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <!--Archive File Encoding-->
     <Grid>
       <Grid.RowDefinitions>

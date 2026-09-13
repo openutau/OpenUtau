@@ -14,7 +14,7 @@
   <Window.Resources>
     <vm:CultureNameConverter x:Key="cultureNameConverter"/>
   </Window.Resources>
-  <Grid Margin="{Binding $parent.WindowDecorationMargin}">
+  <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible">
       <StackPanel Margin="5">
           <HeaderedContentControl Classes="groupbox" Header="{DynamicResource notedefaults.lyric}">

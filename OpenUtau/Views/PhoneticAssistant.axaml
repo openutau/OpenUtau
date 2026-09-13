@@ -10,7 +10,7 @@
         Title="{DynamicResource phoneticassistant.caption}"
         WindowStartupLocation="CenterScreen"
         Width="400" Height="136" CanResize="False">
-  <Grid Margin="{Binding $parent.WindowDecorationMargin}">
+  <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <StackPanel Margin="10">
       <ComboBox HorizontalAlignment="Stretch" Margin="0,0,0,4" ItemsSource="{Binding G2ps}" SelectedItem="{Binding G2p}"/>
       <TextBox HorizontalAlignment="Stretch" AcceptsReturn="False" AcceptsTab="False" Text="{Binding Grapheme}"/>

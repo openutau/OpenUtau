@@ -29,7 +29,7 @@
       <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
   </Window.Styles>
-  <Border Margin="{Binding $parent.WindowDecorationMargin}">
+  <Border Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <StackPanel Margin="12" Spacing="8">
 
       <!-- Algorithm selection -->

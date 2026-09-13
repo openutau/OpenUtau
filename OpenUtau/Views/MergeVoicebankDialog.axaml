@@ -11,7 +11,7 @@
         WindowStartupLocation="CenterScreen"
         ExtendClientAreaToDecorationsHint="False">
 
-  <Carousel SelectedIndex="{Binding Step}" Margin="{Binding $parent.WindowDecorationMargin}">
+  <Carousel SelectedIndex="{Binding Step}" Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <!-- Select which voicebank to merge -->
     <Grid>
       <Grid.RowDefinitions>

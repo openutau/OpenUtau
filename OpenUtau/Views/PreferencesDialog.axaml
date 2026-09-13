@@ -40,7 +40,7 @@
   </Window.Styles>
 
   
-  <Grid Margin="{Binding $parent.WindowDecorationMargin}" ColumnDefinitions="150,*">
+  <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}" ColumnDefinitions="150,*">
     <ListBox Classes="NoScroll" Name="DrawerList">
       <ListBox.Styles>
         <Style Selector="ListBoxItem">
