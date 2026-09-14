@@ -48,7 +48,7 @@ namespace OpenUtau.App.ViewModels {
                     string trackId = track.Phonemizer.GetType().FullName ?? string.Empty;
                     return $"Default ({GetPhonemizerDisplayName(trackId)})";
                 }
-                var factory = OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f => 
+                var factory = OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f =>
                     f.name == targetId || f.type.FullName == targetId || f.type.Name == targetId);
                 if (factory != null) {
                     string displayName = !string.IsNullOrEmpty(factory.tag) ? factory.tag : factory.language;
@@ -92,46 +92,46 @@ namespace OpenUtau.App.ViewModels {
 
             SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.ApplyPortamentoPreset)
                     .OfType<NotePresets.PortamentoPreset>(), portamentoPreset => {
-                    if (portamentoPreset != null) {
-                        PortamentoLength = portamentoPreset.PortamentoLength;
-                        PortamentoStart = portamentoPreset.PortamentoStart;
+                        if (portamentoPreset != null) {
+                            PortamentoLength = portamentoPreset.PortamentoLength;
+                            PortamentoStart = portamentoPreset.PortamentoStart;
 
-                        DocManager.Inst.StartUndoGroup("command.pitch.editpoint");
-                        PanelControlPressed = true;
-                        SetNoteParams("PortamentoLength", portamentoPreset.PortamentoLength);
-                        SetNoteParams("PortamentoStart", portamentoPreset.PortamentoStart);
-                        SetNoteParams("PortamentoPoints", portamentoPreset.PitchPoints);
-                        PanelControlPressed = false;
-                        DocManager.Inst.EndUndoGroup();
-                    }
-                });
+                            DocManager.Inst.StartUndoGroup("command.pitch.editpoint");
+                            PanelControlPressed = true;
+                            SetNoteParams("PortamentoLength", portamentoPreset.PortamentoLength);
+                            SetNoteParams("PortamentoStart", portamentoPreset.PortamentoStart);
+                            SetNoteParams("PortamentoPoints", portamentoPreset.PitchPoints);
+                            PanelControlPressed = false;
+                            DocManager.Inst.EndUndoGroup();
+                        }
+                    });
             SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.ApplyVibratoPreset)
                     .OfType<NotePresets.VibratoPreset>(), vibratoPreset => {
-                    if (vibratoPreset != null) {
-                        DocManager.Inst.StartUndoGroup("command.vibrato.edit");
-                        PanelControlPressed = true;
-                        SetNoteParams("VibratoLength", Math.Max(0, Math.Min(100, vibratoPreset.VibratoLength)));
-                        SetNoteParams("VibratoPeriod", Math.Max(5, Math.Min(500, vibratoPreset.VibratoPeriod)));
-                        SetNoteParams("VibratoDepth", Math.Max(5, Math.Min(200, vibratoPreset.VibratoDepth)));
-                        SetNoteParams("VibratoIn", Math.Max(0, Math.Min(100, vibratoPreset.VibratoIn)));
-                        SetNoteParams("VibratoOut", Math.Max(0, Math.Min(100, vibratoPreset.VibratoOut)));
-                        SetNoteParams("VibratoShift", Math.Max(0, Math.Min(100, vibratoPreset.VibratoShift)));
-                        SetNoteParams("VibratoDrift", Math.Max(-100, Math.Min(100, vibratoPreset.VibratoDrift)));
-                        SetNoteParams("VibratoVolLink", Math.Max(0, Math.Min(100, vibratoPreset.VibratoVolLink)));
-                        PanelControlPressed = false;
-                        DocManager.Inst.EndUndoGroup();
-                    }
-                });
+                        if (vibratoPreset != null) {
+                            DocManager.Inst.StartUndoGroup("command.vibrato.edit");
+                            PanelControlPressed = true;
+                            SetNoteParams("VibratoLength", Math.Max(0, Math.Min(100, vibratoPreset.VibratoLength)));
+                            SetNoteParams("VibratoPeriod", Math.Max(5, Math.Min(500, vibratoPreset.VibratoPeriod)));
+                            SetNoteParams("VibratoDepth", Math.Max(5, Math.Min(200, vibratoPreset.VibratoDepth)));
+                            SetNoteParams("VibratoIn", Math.Max(0, Math.Min(100, vibratoPreset.VibratoIn)));
+                            SetNoteParams("VibratoOut", Math.Max(0, Math.Min(100, vibratoPreset.VibratoOut)));
+                            SetNoteParams("VibratoShift", Math.Max(0, Math.Min(100, vibratoPreset.VibratoShift)));
+                            SetNoteParams("VibratoDrift", Math.Max(-100, Math.Min(100, vibratoPreset.VibratoDrift)));
+                            SetNoteParams("VibratoVolLink", Math.Max(0, Math.Min(100, vibratoPreset.VibratoVolLink)));
+                            PanelControlPressed = false;
+                            DocManager.Inst.EndUndoGroup();
+                        }
+                    });
             SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.PitchCurveShape)
                     .WhereNotNull(), shape => {
-                    if (shape >= 0) {
-                        DocManager.Inst.StartUndoGroup("command.pitch.editpoint");
-                        PanelControlPressed = true;
-                        SetNoteParams("PitchCurveShape", shape);
-                        PanelControlPressed = false;
-                        DocManager.Inst.EndUndoGroup();
-                    }
-                });
+                        if (shape >= 0) {
+                            DocManager.Inst.StartUndoGroup("command.pitch.editpoint");
+                            PanelControlPressed = true;
+                            SetNoteParams("PitchCurveShape", shape);
+                            PanelControlPressed = false;
+                            DocManager.Inst.EndUndoGroup();
+                        }
+                    });
             SelectPhonemizerCommand = ReactiveCommand.Create<string?>(name => {
                 DocManager.Inst.StartUndoGroup("command.property.edit");
                 PanelControlPressed = true;
@@ -141,19 +141,19 @@ namespace OpenUtau.App.ViewModels {
             });
 
             SubscribeExtensions.Subscribe(MessageBus.Current.Listen<NotesSelectionEvent>(), e => {
-                    if (PanelControlPressed) {
-                        PanelControlPressed = false;
-                        DocManager.Inst.EndUndoGroup();
-                    }
-                    NoteLoading = true;
+                if (PanelControlPressed) {
+                    PanelControlPressed = false;
+                    DocManager.Inst.EndUndoGroup();
+                }
+                NoteLoading = true;
 
-                    selectedNotes.Clear();
-                    selectedNotes.UnionWith(e.selectedNotes);
-                    selectedNotes.UnionWith(e.tempSelectedNotes);
-                    OnSelectNotes();
+                selectedNotes.Clear();
+                selectedNotes.UnionWith(e.selectedNotes);
+                selectedNotes.UnionWith(e.tempSelectedNotes);
+                OnSelectNotes();
 
-                    NoteLoading = false;
-                });
+                NoteLoading = false;
+            });
 
             DocManager.Inst.AddSubscriber(this);
         }
@@ -168,7 +168,7 @@ namespace OpenUtau.App.ViewModels {
             if (selectedNotes.Count > 0) {
                 IsNoteSelected = true;
                 var note = selectedNotes.First();
-                IsPhonemizerEnabled = !note.lyric.StartsWith("+"); 
+                IsPhonemizerEnabled = !note.lyric.StartsWith("+");
                 if (!IsPhonemizerEnabled) {
                     PhonemizerOverride = ThemeManager.GetString("noteproperty.parent.phonemizer");
                 } else {
@@ -246,7 +246,7 @@ namespace OpenUtau.App.ViewModels {
 
         private string GetPhonemizerDisplayName(string? targetId) {
             if (string.IsNullOrEmpty(targetId)) return "Default";
-            var factory = OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f => 
+            var factory = OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f =>
                 f.name == targetId || f.type.FullName == targetId || f.type.Name == targetId);
 
             if (factory == null) return targetId;
@@ -431,7 +431,7 @@ namespace OpenUtau.App.ViewModels {
             } else if (cmd is NotePresetChangedNotification) {
                 PortamentoPresets = new ObservableCollection<NotePresets.PortamentoPreset>(NotePresets.Default.PortamentoPresets);
                 VibratoPresets = new ObservableCollection<NotePresets.VibratoPreset>(NotePresets.Default.VibratoPresets);
-            }             
+            }
         }
         #endregion
 
@@ -784,19 +784,19 @@ namespace OpenUtau.App.ViewModels {
 
             if (IsOptions) {
                 SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.SelectedOption), value => {
-                        if (value >= 0 && DropDownOpen) {
-                            parentViewmodel.SetOptionalExpressionsChanges(abbr, value);
-                        }
-                    });
+                    if (value >= 0 && DropDownOpen) {
+                        parentViewmodel.SetOptionalExpressionsChanges(abbr, value);
+                    }
+                });
             }
 
             SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.HasValue), value => {
-                    if (value) {
-                        NameFontWeight = FontWeight.Bold;
-                    } else {
-                        NameFontWeight = FontWeight.Normal;
-                    }
-                });
+                if (value) {
+                    NameFontWeight = FontWeight.Bold;
+                } else {
+                    NameFontWeight = FontWeight.Normal;
+                }
+            });
         }
 
         public void SetNumericalExpressions(object? obj) {
