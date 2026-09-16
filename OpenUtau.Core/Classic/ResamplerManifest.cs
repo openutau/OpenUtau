@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,7 @@ namespace OpenUtau.Classic {
     public class ResamplerManifest {
         public Dictionary<string, UExpressionDescriptor> expressions = new Dictionary<string, UExpressionDescriptor> { };
         public bool expressionFilter = false;
+        public string[] files = Array.Empty<string>();
 
         public ResamplerManifest() { }
 
