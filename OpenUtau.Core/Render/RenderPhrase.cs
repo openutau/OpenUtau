@@ -54,6 +54,8 @@ namespace OpenUtau.Core.Render {
 
         public readonly string phoneme;
         public readonly int tone;
+        // Index of the parent note in the part's note list (same as PhonemeSource.NoteIndex),
+        // not an index into RenderPhrase.notes. Map with RenderPhrase.noteIndexes.
         public readonly int noteIndex;
         public readonly double tempo;
         public readonly UTempo[] tempos;
@@ -73,7 +75,7 @@ namespace OpenUtau.Core.Render {
         public readonly bool direct;
         public readonly Vector2[] envelope;
 
-        // voicevox & enunu args
+        // voicevox & enunu & neutrino args
         public readonly int toneShift;
 
         public UOto oto { get; private set; }
@@ -107,6 +109,7 @@ namespace OpenUtau.Core.Render {
 
             this.phoneme = phoneme.Phoneme;
             tone = phoneme.Tone;
+            noteIndex = phoneme.NoteIndex;
             tempos = phoneme.Tempos;
             tempo = phoneme.Tempo;
             adjustedTempo = phoneme.AdjustedTempo;
@@ -179,6 +182,11 @@ namespace OpenUtau.Core.Render {
         public readonly double leadingMs;
 
         public readonly RenderNote[] notes;
+        /// <summary>
+        /// Part-level note index of each entry in <see cref="notes"/>, the same
+        /// index space as <see cref="RenderPhone.noteIndex"/>.
+        /// </summary>
+        public readonly int[] noteIndexes;
         public RenderPhone[] phones { get; private set; }
 
         public readonly float[] pitches;
@@ -251,6 +259,7 @@ namespace OpenUtau.Core.Render {
             notes = uNotes
                 .Select(n => new RenderNote(notesOf[n], timeAxis, source.PartPosition, position))
                 .ToArray();
+            noteIndexes = uNotes.ToArray();
             phones = phrasePhonemes
                 .Select(p => new RenderPhone(source, p, position))
                 .ToArray();
