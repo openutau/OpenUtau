@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
+using System.Numerics; 
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
@@ -67,6 +67,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowWaveform { get; set; }
         [Reactive] public partial bool ShowPhoneme { get; set; }
         [Reactive] public partial bool ShowNoteParams { get; set; }
+        [Reactive] public partial bool ShowDictionaryEditor { get; set; }
         [Reactive] public partial bool ShowExpressions { get; set; }
         [Reactive] public partial bool IsSnapOn { get; set; }
         [Reactive] public partial string SnapDivText { get; set; }
@@ -298,6 +299,12 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(x => x.ShowNoteParams)
             .Subscribe(showNoteParams => {
                 Preferences.Default.ShowNoteParams = showNoteParams;
+                Preferences.Save();
+            });
+            ShowDictionaryEditor = Preferences.Default.ShowDictionaryEditor;
+            this.WhenAnyValue(x => x.ShowDictionaryEditor)
+            .Subscribe(ShowDictionaryEditor => {
+                Preferences.Default.ShowDictionaryEditor = ShowDictionaryEditor;
                 Preferences.Save();
             });
             ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;

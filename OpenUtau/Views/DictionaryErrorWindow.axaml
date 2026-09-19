@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        x:Class="OpenUtau.App.Views.DictionaryErrorWindow"
+        x:DataType="vm:DictionaryErrorWindowViewModel"
+        Title="{Binding ErrorTitle}"
+        Width="650" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        Icon="/Assets/open-utau.ico"
+        Loaded="Window_Loaded">
+
+    <Border Padding="20">
+        <Grid RowDefinitions="Auto, *, Auto">
+            
+            <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,10">
+                <TextBlock Text="{Binding ErrorTitle}" FontWeight="Bold" Foreground="{DynamicResource AccentColor2}" FontSize="18"/>
+                <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap"/>
+            </StackPanel>
+            
+            <Border Grid.Row="1" Background="{DynamicResource BackgroundColorPointerOver}" CornerRadius="5" Padding="5">
+                <ScrollViewer x:Name="CodeScrollViewer" 
+                            MaxHeight="400" 
+                            HorizontalScrollBarVisibility="Auto" 
+                            VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding ErrorContextLines}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Border IsVisible="{Binding IsErrorLine}" Background="{DynamicResource AccentColor3}" Opacity="0.3" />
+                                    <Grid ColumnDefinitions="40, *" Margin="5,0">
+                                        <TextBlock Grid.Column="0" 
+                                                Text="{Binding LineNumber}" 
+                                                Foreground="{DynamicResource ForegroundColor}" 
+                                                FontFamily="Consolas, Monospace" 
+                                                VerticalAlignment="Center"/>
+                                        <TextBox Grid.Column="1" 
+                                                Text="{Binding Text, Mode=TwoWay}" 
+                                                Foreground="{DynamicResource ForegroundColor}" 
+                                                FontFamily="Consolas, Monospace"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="2"
+                                                Margin="0"
+                                                AcceptsReturn="False"
+                                                VerticalAlignment="Center"
+                                                HorizontalAlignment="Stretch"/>
+                                    </Grid>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,15,0,0">
+                <Button Content="{DynamicResource dict.cancel}" Click="CloseButton_Click" Width="120" HorizontalContentAlignment="Center"/>
+                <Button Content="{DynamicResource dict.error.save.reload}" Click="SaveButton_Click" Width="120" HorizontalContentAlignment="Center"/>
+            </StackPanel>
+            
+        </Grid>
+    </Border>
+</Window>
