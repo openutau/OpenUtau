@@ -133,6 +133,8 @@ namespace OpenUtau.App.Controls {
                 new CommonnotePaste(),
                 new FixOverlap(),
                 new BakePitch(),
+                new BakePointsToPITD(),
+                new SimplifyPitchPoints(),
                 new RandomizeTiming(),
                 new RandomizePhonemeOffset()
             }.Select(edit => new MenuItemViewModel() {
