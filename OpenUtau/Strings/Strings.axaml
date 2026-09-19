@@ -659,6 +659,10 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.showicon">Show icon on piano roll</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Show portrait on piano roll</system:String>
   <system:String x:Key="prefs.appearance.sortorder">Singer name display language</system:String>
+  <system:String x:Key="prefs.appearance.defaultportraitheightcap">Default portrait height cap</system:String>
+  <system:String x:Key="prefs.appearance.defaultportraitvertposition">Default portrait vertical position</system:String>
+  <system:String x:Key="prefs.appearance.defaultportraithoriposition">Default portrait horizontal position</system:String>
+  <system:String x:Key="prefs.appearance.defaultportraitopacity">Default portrait opacity</system:String>
   <system:String x:Key="prefs.appearance.theme">Theme</system:String>
   <system:String x:Key="prefs.appearance.theme.dark">Dark</system:String>
   <system:String x:Key="prefs.appearance.theme.light">Light</system:String>
