@@ -88,6 +88,8 @@ namespace OpenUtau.App.Views {
         public readonly UPart part;
         public readonly bool isVoice;
         private double xOffset;
+        public bool SawPointerMove;
+        private bool dragConfirmed;
         protected override string? commandNameKey => "command.part.move";
 
         public PartMoveEditState(Control control, MainWindowViewModel vm, UPart part) : base(control, vm) {
@@ -106,8 +108,11 @@ namespace OpenUtau.App.Views {
         }
         public override void Update(IPointer pointer, Point point) {
             var delta = point - startPoint;
-            if (Math.Abs(delta.X) + Math.Abs(delta.Y) < 4) {
-                return;
+            if (!dragConfirmed) {
+                if (Math.Abs(delta.X) + Math.Abs(delta.Y) < 4) {
+                    return;
+                }
+                dragConfirmed = true;
             }
             var project = DocManager.Inst.Project;
             var tracksVm = vm.TracksViewModel;

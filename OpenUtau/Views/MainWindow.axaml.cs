@@ -1312,6 +1312,9 @@ namespace OpenUtau.App.Views {
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
             if (partEditState != null) {
+                if (partEditState is PartMoveEditState move) {
+                    move.SawPointerMove = true;
+                }
                 partEditState.Update(point.Pointer, point.Position);
                 return;
             }
@@ -1346,7 +1349,9 @@ namespace OpenUtau.App.Views {
             }
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
-            partEditState.Update(point.Pointer, point.Position);
+            if (!(partEditState is PartMoveEditState move && !move.SawPointerMove)) {
+                partEditState.Update(point.Pointer, point.Position);
+            }
             partEditState.End(point.Pointer, point.Position);
             partEditState = null;
             Cursor = null;
