@@ -83,6 +83,19 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial int PenToolIndex { get; set; } = Preferences.Default.EditTool.PenToolVariation;
         [Reactive] public partial bool PitchOverwrite { get; set; } = Preferences.Default.EditTool.OverwritePitch;
 
+        public string SelectionToolTip => GetOperationHint(["tools.selection", "tools.tips.leftdragselect", "tools.tips.rightdeselect"], "\n    ");
+        public string PenToolTip => GetOperationHint(["tools.pen", "tools.tips.leftdragcreate", "tools.tips.rightdeselect", "tools.tips.ctrlselect"], "\n    ");
+        public string PenPlusToolTip => GetOperationHint(["tools.penplus", "tools.tips.leftdragcreate", "tools.tips.rightdelete", "tools.tips.ctrlselect"], "\n    ");
+        public string EraserToolTip => GetOperationHint(["tools.eraser", "tools.tips.leftdelete", "tools.tips.rightdeselect", "tools.tips.ctrlselect"], "\n    ");
+        public string DrawPitchToolTip => GetOperationHint(["tools.drawpitch", "tools.tips.leftdragdraw", "tools.tips.rightdragreset", "tools.tips.altsmoothen", "tools.tips.ctrlselect"], "\n    ");
+        public string OverwritePitchToolTip => GetOperationHint(["tools.overwritepitch", "tools.tips.leftdragdrawoverwrite", "tools.tips.rightdragreset", "tools.tips.altsmoothen", "tools.tips.ctrlselect"], "\n    ");
+        public string DrawLinePitchToolTip => GetOperationHint(["tools.drawlinepitch", "tools.tips.leftdragdrawline", "tools.tips.rightdragreset", "tools.tips.altsmoothen", "tools.tips.ctrlselect"], "\n    ");
+        public string OverwriteLinePitchToolTip => GetOperationHint(["tools.overwritelinepitch", "tools.tips.leftdragdrawlineoverwrite", "tools.tips.rightdragreset", "tools.tips.altsmoothen", "tools.tips.ctrlselect"], "\n    ");
+        public string KnifeToolTip => GetOperationHint(["tools.knife", "tools.tips.leftsplit", "tools.tips.rightdeselect", "tools.tips.ctrlselect"], "\n    ");
+        public string CurveSelectionToolTip => GetOperationHint(["tools.selection", "tools.tips.leftdragselect", "tools.tips.rightdeselect"], "\n    ");
+        public string CurvePenToolTip => GetOperationHint(["tools.pen", "tools.tips.leftdragdraw", "tools.tips.rightdragreset", "tools.tips.shifthorizontal", "tools.tips.shiftctrlline"], "\n    ");
+        public string CurveEraserToolTip => GetOperationHint(["tools.eraser", "tools.tips.leftdragreset", "tools.tips.rightdeselect"], "\n    ");
+
         public ObservableCollectionExtended<MenuItemViewModel> LegacyPlugins { get; private set; }
             = new ObservableCollectionExtended<MenuItemViewModel>();
         public ObservableCollectionExtended<MenuItemViewModel> NoteBatchEdits { get; private set; }
@@ -98,6 +111,7 @@ namespace OpenUtau.App.ViewModels {
         public Dictionary<Key, MenuItemViewModel> LegacyPluginShortcuts { get; private set; }
             = new Dictionary<Key, MenuItemViewModel>();
 
+        [Reactive] public partial string StatusBarText { get; set; } = string.Empty;
         [Reactive] public partial double Progress { get; set; }
         [Reactive] public partial bool CanUndo { get; set; } = false;
         [Reactive] public partial bool CanRedo { get; set; } = false;
@@ -215,6 +229,96 @@ namespace OpenUtau.App.ViewModels {
             });
             LoadLegacyPlugins();
             DocManager.Inst.AddSubscriber(this);
+        }
+
+        public void SetStatusBarText(string pointer) {
+            string separator = ThemeManager.GetString("operation.separator");
+            switch (pointer) {
+                case "Keyboard":
+                    StatusBarText = GetOperationHint(["operation.clickplaysound"], separator);
+                    break;
+                case "Timeline":
+                    StatusBarText = GetOperationHint(["operation.clickplayhead", "operation.scroolzoom"], separator);
+                    break;
+                case "NotesCanvas":
+                    switch (EditTool.CurrentTool) {
+                        case EditTools.CursorTool:
+                            StatusBarText = GetOperationHint(["tools.tips.leftdragselect", "tools.tips.rightdeselect"], separator);
+                            break;
+                        case EditTools.PenTool:
+                            StatusBarText = GetOperationHint(["tools.tips.leftdragcreate", "tools.tips.rightdeselect", "tools.tips.ctrlselect"], separator);
+                            break;
+                        case EditTools.PenPlusTool:
+                            StatusBarText = GetOperationHint(["tools.tips.leftdragcreate", "tools.tips.rightdelete", "tools.tips.ctrlselect"], separator);
+                            break;
+                        case EditTools.EraserTool:
+                            StatusBarText = GetOperationHint(["tools.tips.leftdelete", "tools.tips.rightdeselect", "tools.tips.ctrlselect"], separator);
+                            break;
+                        case EditTools.DrawPitchTool:
+                            StatusBarText = GetOperationHint(["tools.tips.leftdragdraw", "tools.tips.rightdragreset", "tools.tips.altsmoothen", "tools.tips.ctrlselect"], separator);
+                            break;
+                        case EditTools.OverwritePitchTool:
+                            StatusBarText = GetOperationHint(["tools.tips.leftdragdrawoverwrite", "tools.tips.rightdragreset", "tools.tips.altsmoothen", "tools.tips.ctrlselect"], separator);
+                            break;
+                        case EditTools.DrawLinePitchTool:
+                            StatusBarText = GetOperationHint(["tools.tips.leftdragdrawline", "tools.tips.rightdragreset", "tools.tips.altsmoothen", "tools.tips.ctrlselect"], separator);
+                            break;
+                        case EditTools.OverwriteLinePitchTool:
+                            StatusBarText = GetOperationHint(["tools.tips.leftdragdrawlineoverwrite", "tools.tips.rightdragreset", "tools.tips.altsmoothen", "tools.tips.ctrlselect"], separator);
+                            break;
+                        case EditTools.KnifeTool:
+                            StatusBarText = GetOperationHint(["tools.tips.leftsplit", "tools.tips.rightdeselect", "tools.tips.ctrlselect"], separator);
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "PhonemeCanvas":
+                    StatusBarText = GetOperationHint(["operation.doubleeditphoneme", "operation.timingenvelope"], separator);
+                    break;
+                case "ExpCanvas":
+                    var vm = NotesViewModel;
+                    if (vm.Project == null
+                        || vm.Part == null
+                        || vm.Project.tracks.Count <= vm.Part.trackNo
+                        || !vm.Project.tracks[vm.Part.trackNo].TryGetExpDescriptor(vm.Project, vm.PrimaryKey, out var exp)) {
+                        StatusBarText = string.Empty;
+                        break;
+                    }
+                    if (exp.type == UExpressionType.Curve) {
+                        switch (CurveViewModel.CurveTool) {
+                            case CurveTools.CurveSelectTool:
+                                StatusBarText = GetOperationHint(["tools.tips.leftdragselect", "tools.tips.rightdeselect"], separator);
+                                break;
+                            case CurveTools.CurvePenTool:
+                                StatusBarText = GetOperationHint(["tools.tips.leftdragdraw", "tools.tips.rightdragreset", "tools.tips.shifthorizontal", "tools.tips.shiftctrlline"], separator);
+                                break;
+                            case CurveTools.CurveEraserTool:
+                                StatusBarText = GetOperationHint(["tools.tips.leftdragreset", "tools.tips.rightdeselect"], separator);
+                                break;
+                            default:
+                                break;
+                        }
+                    } else {
+                        StatusBarText = GetOperationHint(["tools.tips.leftexp", "tools.tips.rightreset", "tools.tips.shiftsameexp"], separator);
+                    }
+                    break;
+                case "Background":
+                default:
+                    StatusBarText = string.Empty;
+                    break;
+            }
+        }
+        private string GetOperationHint(string[] keys, string separator) {
+            var strings = new List<string>();
+            foreach (string key in keys) {
+                strings.Add(ThemeManager.GetString(key));
+            }
+            return string.Join(separator, strings);
+        }
+
+        public void HideTips() {
+            NotesViewModel.ShowTips = false;
         }
 
         private void SetUndoState() {

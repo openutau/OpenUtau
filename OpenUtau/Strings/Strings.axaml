@@ -427,6 +427,13 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="noteproperty.tone">Tone</system:String>
   <system:String x:Key="noteproperty.tuning">Tuning</system:String>
   <system:String x:Key="noteproperty.vibratoenable">Enable</system:String>
+  
+  <system:String x:Key="operation.clickplayhead">Click to move playhead</system:String>
+  <system:String x:Key="operation.clickplaysound">Click to play sound</system:String>
+  <system:String x:Key="operation.doubleeditphoneme">Double click a phoneme to edit</system:String>
+  <system:String x:Key="operation.scroolzoom">Scroll to zoom in/out horizontally</system:String>
+  <system:String x:Key="operation.separator">, </system:String>
+  <system:String x:Key="operation.timingenvelope">Drag to edit timing and envelope</system:String>
 
   <system:String x:Key="oto.alias">Alias</system:String>
   <system:String x:Key="oto.color">Color</system:String>
@@ -563,64 +570,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.tone">Toggle Note Tone (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">View Vibrato (U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">View Waveform (W)</system:String>
-  <system:String x:Key="pianoroll.tool.curve.cursor">Cursor Tool
-    Left click to select</system:String>
-  <system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
-    Left click to draw
-    Right click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.curve.line">Line Tool
-    Left click to draw (draw straight line)
-    Right click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.curve.eraser">Eraser Tool
-    Click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.curve.verticalstretch">Vertical Stretch Tool
-    Left click to stretch the curve vertically
-    Right click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.curve.horizontalstretch">Horizontal Stretch Tool
-    Left click to stretch the curve horizontally
-    Right click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.curve.verticalshift">Vertical Shift Tool
-    Left click to move the curve vertically
-    Right click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.curve.horizontalshift">Horizontal Shift Tool
-    Left click to move the curve horizontally
-    Right click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (Shift + 1)
-    Left click to draw
-    Right click to reset
-    Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.eraser">Eraser Tool (3)</system:String>
-  <system:String x:Key="pianoroll.tool.knife">Knife Tool (4)</system:String>
-  <system:String x:Key="pianoroll.tool.penplus">Pen Plus Tool (Ctrl + 2)
-    Left click to draw
-    Right click to delete
-    Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.penv2">Pen Tool (2)
-    Left click to draw
-    Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.pitchesinewave">Pitch Sine Wave Tool (Shift + 4)
-    Drag to draw sine wave, release to enter adjusting mode
-    Move mouse to adjust wavelength and amplitude, click to apply
-    Right click to reset
-    Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.pitchline">Pitch Line Tool (Shift + 2)
-    Left click to draw straight line
-    Right click to reset
-    Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.pitchpoint">Pitch Point Tool (5)
-    Left click to add point
-    Drag to move only the point
-    Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.pitchscurve">Pitch S-Curve Tool (Shift + 3)
-    Drag to draw S-curve, release to enter adjusting mode
-    Move mouse to tune S-curve strength, click to apply
-    Right click to reset
-    Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.pitchsmoothen">Pitch Smoothen Tool (Shift + 5)
-    Left click to smoothen pitch
-    Right click to reset
-    Hold Ctrl to select</system:String>
-  <system:String x:Key="pianoroll.tool.selectionv2">Selection Tool (1)</system:String>
+  <system:String x:Key="pianoroll.toggle.expressions">View Expressions (L)</system:String>
   <system:String x:Key="pianoroll.tooltip.attack">Attack time delta</system:String>
   <system:String x:Key="pianoroll.tooltip.overlap">Overlap</system:String>
   <system:String x:Key="pianoroll.tooltip.preutter">Preutter</system:String>
@@ -869,6 +819,35 @@ General
   <system:String x:Key="tip.notes.zoomx">◀ Scroll here to zoom horizontally ▶</system:String>
   <system:String x:Key="tip.notes.zoomy">Scroll here to zoom vertically ▶</system:String>
   <system:String x:Key="tip.playback.loop">Loop playback</system:String>
+
+  <system:String x:Key="tools.drawlinepitch">Draw Line Pitch Tool</system:String>
+  <system:String x:Key="tools.drawpitch">Draw Pitch Tool</system:String>
+  <system:String x:Key="tools.eraser">Eraser Tool</system:String>
+  <system:String x:Key="tools.knife">Knife Tool</system:String>
+  <system:String x:Key="tools.overwritelinepitch">Overwrite Line Pitch Tool</system:String>
+  <system:String x:Key="tools.overwritepitch">Overwrite Pitch Tool</system:String>
+  <system:String x:Key="tools.pen">Pen Tool</system:String>
+  <system:String x:Key="tools.penplus">Pen Plus Tool</system:String>
+  <system:String x:Key="tools.selection">Selection Tool</system:String>
+  <system:String x:Key="tools.tips.altsmoothen">Hold Alt to smoothen</system:String>
+  <system:String x:Key="tools.tips.ctrlselect">Hold Ctrl to select</system:String>
+  <system:String x:Key="tools.tips.leftdelete">Click to delete note</system:String>
+  <system:String x:Key="tools.tips.leftdragcreate">Drag to create note</system:String>
+  <system:String x:Key="tools.tips.leftdragdraw">Drag to draw</system:String>
+  <system:String x:Key="tools.tips.leftdragdrawline">Drag to draw straight line</system:String>
+  <system:String x:Key="tools.tips.leftdragdrawlineoverwrite">Drag to draw straight line (overwrites vibrato or mod+)</system:String>
+  <system:String x:Key="tools.tips.leftdragdrawoverwrite">Drag to draw (overwrites vibrato or mod+)</system:String>
+  <system:String x:Key="tools.tips.leftdragreset">Drag to reset</system:String>
+  <system:String x:Key="tools.tips.leftdragselect">Drag to select</system:String>
+  <system:String x:Key="tools.tips.leftexp">Click to set expression</system:String>
+  <system:String x:Key="tools.tips.leftsplit">Click to split note</system:String>
+  <system:String x:Key="tools.tips.rightdelete">Right click to delete note</system:String>
+  <system:String x:Key="tools.tips.rightdeselect">Right click to deselect</system:String>
+  <system:String x:Key="tools.tips.rightdragreset">Right drag to reset</system:String>
+  <system:String x:Key="tools.tips.rightreset">Right click to reset</system:String>
+  <system:String x:Key="tools.tips.shiftctrlline">Hold Shift + Ctrl to draw straight line</system:String>
+  <system:String x:Key="tools.tips.shifthorizontal">Hold Shift to draw horizontal line</system:String>
+  <system:String x:Key="tools.tips.shiftsameexp">Hold Shift to set same expressions</system:String>
 
   <system:String x:Key="tracks.duplicate">Duplicate Track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>
