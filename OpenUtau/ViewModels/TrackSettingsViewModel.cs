@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Globalization;
+using System.Collections.Generic;
 using DynamicData.Binding;
 using OpenUtau.Classic;
 using OpenUtau.Core;
@@ -20,6 +22,8 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial IWavtool? Wavtool { get; set; }
         [Reactive] public partial bool NeedsWavtool { get; set; }
         [Reactive] public partial bool IsNotClassic { get; set; }
+        public ObservableCollectionExtended<RendererSettingViewModel> RendererSettings { get; } = new();
+        [Reactive] public partial bool HasRendererSettings { get; set; }
 
         ObservableCollectionExtended<IResampler> resamplers =
             new ObservableCollectionExtended<IResampler>();
@@ -49,7 +53,18 @@ namespace OpenUtau.App.ViewModels {
                 Wavtool = ToolsManager.Inst.GetWavtool(wavtoolName);
                 NeedsResampler = Renderers.CLASSIC == renderer;
                 NeedsWavtool = Renderers.CLASSIC == renderer;
-                IsNotClassic = Renderers.CLASSIC != renderer;
+                var metadata = ExternalRendererRegistry.Renderers
+                    .FirstOrDefault(item => string.Equals(item.Id, renderer,
+                        StringComparison.OrdinalIgnoreCase))?.Metadata;
+                if (metadata != null) {
+                    foreach (var pair in metadata.Settings) {
+                        Track.RendererSettings.rendererSettings.TryGetValue(pair.Key, out var value);
+                        RendererSettings.Add(new RendererSettingViewModel(
+                            pair.Key, pair.Value, value ?? pair.Value.DefaultValue));
+                    }
+                }
+                HasRendererSettings = RendererSettings.Count > 0;
+                IsNotClassic = Renderers.CLASSIC != renderer && !HasRendererSettings;
             }
             this.WhenAnyValue(x => x.Resampler)
                 .OfType<IResampler>()
@@ -94,15 +109,59 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void Finish() {
-            if (Renderers.CLASSIC != Track.RendererSettings.renderer) {
-                return;
-            }
             DocManager.Inst.StartUndoGroup("command.track.setting");
             var settings = Track.RendererSettings.Clone();
-            settings.resampler = Resampler?.ToString() ?? string.Empty;
-            settings.wavtool = Wavtool?.ToString() ?? string.Empty;
+            if (Renderers.CLASSIC == Track.RendererSettings.renderer) {
+                settings.resampler = Resampler?.ToString() ?? string.Empty;
+                settings.wavtool = Wavtool?.ToString() ?? string.Empty;
+            }
+            settings.rendererSettings = RendererSettings.ToDictionary(row => row.Key, row => row.Value);
             DocManager.Inst.ExecuteCmd(new TrackChangeRenderSettingCommand(DocManager.Inst.Project, Track, settings));
             DocManager.Inst.EndUndoGroup();
+        }
+    }
+
+    public sealed class RendererSettingViewModel {
+        public string Key { get; }
+        public string Name { get; }
+        public string Description { get; }
+        public bool IsBoolean { get; }
+        public bool IsNumber { get; }
+        public bool IsInteger { get; }
+        public bool IsChoice { get; }
+        public bool IsText => !IsBoolean && !IsNumber && !IsChoice;
+        public decimal Minimum { get; }
+        public decimal Maximum { get; }
+        public IReadOnlyList<string> Choices { get; }
+        public bool BoolValue { get; set; }
+        public string NumberText { get; set; }
+        public string TextValue { get; set; }
+        public string ChoiceValue { get; set; }
+        public string Value => IsBoolean ? BoolValue.ToString().ToLowerInvariant() :
+            IsNumber ? NormalizeNumber() :
+            IsChoice ? ChoiceValue : TextValue;
+
+        public RendererSettingViewModel(string key, RendererSettingDescriptor descriptor, string value) {
+            Key = key; Name = descriptor.Name; Description = descriptor.Description;
+            IsBoolean = descriptor.Type == RendererSettingType.Boolean;
+            IsNumber = descriptor.Type is RendererSettingType.Integer or RendererSettingType.Number;
+            IsInteger = descriptor.Type == RendererSettingType.Integer;
+            IsChoice = descriptor.Type == RendererSettingType.Choice;
+            Minimum = (decimal)(descriptor.Min ?? -1000000);
+            Maximum = (decimal)(descriptor.Max ?? 1000000);
+            Choices = descriptor.Choices;
+            BoolValue = bool.TryParse(value, out var boolean) && boolean;
+            NumberText = value;
+            TextValue = value;
+            ChoiceValue = Choices.Contains(value) ? value : descriptor.DefaultValue;
+        }
+
+        string NormalizeNumber() {
+            if (!decimal.TryParse(NumberText, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)) {
+                number = 0;
+            }
+            if (IsInteger) number = decimal.Round(number, 0);
+            return Math.Clamp(number, Minimum, Maximum).ToString(CultureInfo.InvariantCulture);
         }
     }
 }

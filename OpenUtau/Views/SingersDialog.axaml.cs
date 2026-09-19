@@ -15,6 +15,7 @@ using OpenUtau.App.ViewModels;
 using OpenUtau.Classic;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Render;
 using Serilog;
 
 namespace OpenUtau.App.Views {
@@ -26,7 +27,21 @@ namespace OpenUtau.App.Views {
 
         public SingersDialog() {
             InitializeComponent();
+            PopulateRendererAnalysisMenu();
             DocManager.Inst.AddSubscriber(this);
+        }
+
+        void PopulateRendererAnalysisMenu() {
+            RendererAnalysisMenu.Items.Clear();
+            foreach (var option in ExternalRendererRegistry.GetAnalysisOptions()) {
+                var item = new MenuItem {
+                    Header = $"{option.RendererName}: {option.FormatName}",
+                    Tag = option,
+                };
+                item.Click += GenerateRendererAnalysis;
+                RendererAnalysisMenu.Items.Add(item);
+            }
+            RendererAnalysisMenu.IsVisible = RendererAnalysisMenu.Items.Count > 0;
         }
 
         protected override void OnClosed(EventArgs e) {
@@ -408,6 +423,35 @@ namespace OpenUtau.App.Views {
                 }, scheduler);
             }
         }
+        async void GenerateRendererAnalysis(object? sender, RoutedEventArgs args) {
+            if (OtoGrid == null || sender is not Control { Tag: RendererAnalysisOption option }) return;
+            var files = OtoGrid.SelectedItems.Cast<UOto>()
+                .Select(oto => oto.File).Distinct().ToArray();
+            if (files.Length == 0) return;
+            var text = ThemeManager.GetString("singers.editoto.rendereranalysis.generating");
+            try {
+                IReadOnlyList<RendererAnalysisResult> results = Array.Empty<RendererAnalysisResult>();
+                await MessageBox.ShowProcessing(this, text, text, (message, cancellation) => {
+                    var progress = new Progress<int>(count =>
+                        message.SetText($"{text}\n{count} / {files.Length}"));
+                    results = ExternalRendererRegistry.GenerateAnalysisAsync(
+                        option.RendererId, option.Format, files, true, progress, cancellation)
+                        .GetAwaiter().GetResult();
+                });
+                var failures = results.Where(result => result.Outcome == RendererAnalysisOutcome.Failed).ToArray();
+                if (failures.Length > 0) {
+                    await MessageBox.ShowError(this, new InvalidDataException(
+                        $"{failures.Length} of {results.Count} analysis files failed:\n" +
+                        string.Join("\n", failures.Select(result =>
+                            $"{Path.GetFileName(result.Request.SourceFile)}: {result.Message}"))));
+                }
+            } catch (OperationCanceledException) {
+                // Closing the progress dialog is an expected user cancellation.
+            } catch (Exception exception) {
+                await MessageBox.ShowError(this, exception);
+            }
+        }
+
         async void DrawOto(UOto? oto) {
             _otoLoadCts?.Cancel();
             _otoLoadCts = new CancellationTokenSource();

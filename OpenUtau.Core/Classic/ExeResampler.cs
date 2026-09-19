@@ -11,7 +11,7 @@ using OpenUtau.Core.Util;
 using Serilog;
 
 namespace OpenUtau.Classic {
-    internal class ExeResampler : IResampler {
+    public class ExeResampler : IResampler {
         public string Name { get; private set; }
         public string FilePath { get; private set; }
         public bool isLegalPlugin => _isLegalPlugin;
