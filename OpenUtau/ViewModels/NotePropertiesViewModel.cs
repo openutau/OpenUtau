@@ -11,6 +11,10 @@ using ReactiveUI;
 using ReactiveUI.SourceGenerators;
 using SharpCompress;
 using OpenUtau.Api;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using OpenUtau.App.Views;
+using Serilog;
 using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.ViewModels {
@@ -270,31 +274,47 @@ namespace OpenUtau.App.ViewModels {
                 CommandParameter = null
             });
 
-            items.Add(new MenuItemViewModel() { Header = "-", Height = 1 });
-            items.AddRange(Preferences.Default.RecentPhonemizers
-                .Select(name => PhonemizerFactory.Get(name))
-                .OfType<PhonemizerFactory>()
-                .OrderBy(factory => factory.tag)
-                .Select(factory => new MenuItemViewModel() {
-                    Header = factory.ToString(),
-                    Command = SelectPhonemizerCommand,
-                    CommandParameter = factory.name,
-                }));
-
-            items.Add(new MenuItemViewModel() {
-                Header = $"{ThemeManager.GetString("tracks.more")} ...",
-                Items = PhonemizerFactory.GetAll().GroupBy(factory => factory.language)
-                .OrderBy(group => group.Key)
-                .Select(group => new MenuItemViewModel() {
-                    Header = GetPhonemizerGroupHeader(group.Key),
-                    Items = group.Select(factory => new MenuItemViewModel() {
+            if (Preferences.Default.RecentPhonemizers.Count > 0) {
+                items.Add(new MenuItemViewModel() { Header = "-", Height = 1 });
+                
+                items.AddRange(Preferences.Default.RecentPhonemizers
+                    .Select(name => PhonemizerFactory.Get(name))
+                    .OfType<PhonemizerFactory>()
+                    .OrderBy(factory => factory.tag)
+                    .Select(factory => new MenuItemViewModel() {
                         Header = factory.ToString(),
                         Command = SelectPhonemizerCommand,
                         CommandParameter = factory.name,
-                    }).ToArray(),
-                }).ToArray()
-            });
+                    }));
+            }
 
+            // Visual separator before the full list
+            items.Add(new MenuItemViewModel() { Header = "-", Height = 1 });
+
+            // Get all phonemizers grouped by Engine, then by Language
+            var engineGroups = PhonemizerFactory.GetAll()
+                // Group by Engine (e.g., Utau, Vogen, etc.)
+                .GroupBy(factory => factory.engine ?? "Utau")
+                .OrderBy(typeGroup => typeGroup.Key)
+                .Select(typeGroup => new MenuItemViewModel() {
+                    Header = typeGroup.Key,
+                    
+                    // Group by Language within that Engine
+                    Items = typeGroup.GroupBy(factory => factory.language)
+                    .OrderBy(langGroup => langGroup.Key)
+                    .Select(langGroup => new MenuItemViewModel() {
+                        Header = GetPhonemizerGroupHeader(langGroup.Key),
+                        
+                        // The actual phonemizers
+                        Items = langGroup.Select(factory => new MenuItemViewModel() {
+                            Header = factory.ToString(),
+                            Command = SelectPhonemizerCommand,
+                            CommandParameter = factory.name,
+                        }).ToArray(),
+                    }).ToArray()
+                }).ToArray();
+
+            items.AddRange(engineGroups);
             PhonemizerMenuItems = items;
         }
 
