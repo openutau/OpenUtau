@@ -1,0 +1,9 @@
+name: ES VCCV Test
+portrait_opacity: 0.67
+default_phonemizer: OpenUtau.Plugin.Builtin.SpanishVCCVPhonemizer
+subbanks:
+- color: ""
+  prefix: ""
+  suffix: A2
+  tone_ranges:
+  - C1-C7
