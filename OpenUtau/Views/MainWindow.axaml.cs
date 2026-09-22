@@ -70,7 +70,6 @@ namespace OpenUtau.App.Views {
                 AskIfSaveAndContinue = AskIfSaveAndContinue
             };
 
-            viewModel.NewProject();
             viewModel.AddTempoChangeCmd = ReactiveCommand.Create<int>(tick => AddTempoChange(tick));
             viewModel.DelTempoChangeCmd = ReactiveCommand.Create<int>(tick => DelTempoChange(tick));
             viewModel.AddTimeSigChangeCmd = ReactiveCommand.Create<int>(bar => AddTimeSigChange(bar));
