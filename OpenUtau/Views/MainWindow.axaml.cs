@@ -894,20 +894,16 @@ namespace OpenUtau.App.Views {
                 return;
             }
 
-            var tracksVm = viewModel.TracksViewModel;
+            GlobalHotkey(args);
+            if (viewModel.Page == 1) {
+                EditorHotkey(args);
+            }
+        }
 
+        private void GlobalHotkey(KeyEventArgs args) {
             if (args.KeyModifiers == KeyModifiers.None) {
                 args.Handled = true;
                 switch (args.Key) {
-                    case Key.Delete: viewModel.TracksViewModel.DeleteSelectedParts(); break;
-                    case Key.Space: PlayOrPause(); break;
-                    case Key.Home: viewModel.PlaybackViewModel.MovePlayPos(0); break;
-                    case Key.End:
-                        if (viewModel.TracksViewModel.Parts.Count > 0) {
-                            int endTick = viewModel.TracksViewModel.Parts.Max(part => part.End);
-                            viewModel.PlaybackViewModel.MovePlayPos(endTick);
-                        }
-                        break;
                     case Key.F11:
                         OnMenuFullScreen(this, new RoutedEventArgs());
                         break;
@@ -928,15 +924,44 @@ namespace OpenUtau.App.Views {
             } else if (args.KeyModifiers == cmdKey) {
                 args.Handled = true;
                 switch (args.Key) {
+                    case Key.N: NewProject(); break;
+                    case Key.O: Open(); break;
+                    default:
+                        args.Handled = false;
+                        break;
+                }
+            }
+        }
+
+        private void EditorHotkey(KeyEventArgs args) {
+            if (args.KeyModifiers == KeyModifiers.None) {
+                args.Handled = true;
+                switch (args.Key) {
+                    case Key.Delete: viewModel.TracksViewModel.DeleteSelectedParts(); break;
+                    case Key.Space: PlayOrPause(); break;
+                    case Key.Home: viewModel.PlaybackViewModel.MovePlayPos(0); break;
+                    case Key.End:
+                        if (viewModel.TracksViewModel.Parts.Count > 0) {
+                            int endTick = viewModel.TracksViewModel.Parts.Max(part => part.End);
+                            viewModel.PlaybackViewModel.MovePlayPos(endTick);
+                        }
+                        break;
+                    default:
+                        args.Handled = false;
+                        break;
+                }
+            } else if (args.KeyModifiers == cmdKey) {
+                args.Handled = true;
+                switch (args.Key) {
                     case Key.A: viewModel.TracksViewModel.SelectAllParts(); break;
                     case Key.N: NewProject(); break;
                     case Key.O: Open(); break;
                     case Key.S: _ = Save(); break;
                     case Key.Z: viewModel.Undo(); break;
                     case Key.Y: viewModel.Redo(); break;
-                    case Key.C: tracksVm.CopyParts(); break;
-                    case Key.X: tracksVm.CutParts(); break;
-                    case Key.V: tracksVm.PasteParts(); break;
+                    case Key.C: viewModel.TracksViewModel.CopyParts(); break;
+                    case Key.X: viewModel.TracksViewModel.CutParts(); break;
+                    case Key.V: viewModel.TracksViewModel.PasteParts(); break;
                     default:
                         args.Handled = false;
                         break;
