@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using OpenUtau.Core;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Render;
-using OpenUtau.Core.Ustx;
 using Serilog;
 
 namespace OpenUtau.Classic {
@@ -46,14 +44,8 @@ namespace OpenUtau.Classic {
 
         public void CheckPermissions() { }
 
-        public ResamplerManifest Manifest { get; } = new ResamplerManifest() {
-            expressions = new Dictionary<string, UExpressionDescriptor> {
-                { "ten", new UExpressionDescriptor("tension","ten",-100,100,0,"Mt") },
-                { "brea", new UExpressionDescriptor("breathiness","brea",-100,100,0,"Mb") },
-                { "voi", new UExpressionDescriptor("voicing","voi",0,100,0,"Mv") }
-            },
-            expressionFilter = false
-        };
+        //TODO: A list of flags supported by worldline resampler
+        public ResamplerManifest Manifest { get; } = new ResamplerManifest();
 
         public bool SupportsFlag(string abbr) {
             return true;
