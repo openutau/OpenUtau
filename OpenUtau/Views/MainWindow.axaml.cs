@@ -63,12 +63,13 @@ namespace OpenUtau.App.Views {
 
         public MainWindow() {
             Log.Information("Creating main window.");
-            InitializeComponent();
-            Log.Information("Initialized main window component.");
+            // Set before InitializeComponent, so bindings to the window's view model resolve on first evaluation.
             DataContext = viewModel = new MainWindowViewModel {
                 // give the viewmodel a way to prompt/save using the view's existing method
                 AskIfSaveAndContinue = AskIfSaveAndContinue
             };
+            InitializeComponent();
+            Log.Information("Initialized main window component.");
 
             viewModel.AddTempoChangeCmd = ReactiveCommand.Create<int>(tick => AddTempoChange(tick));
             viewModel.DelTempoChangeCmd = ReactiveCommand.Create<int>(tick => DelTempoChange(tick));
