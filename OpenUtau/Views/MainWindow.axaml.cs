@@ -1370,7 +1370,6 @@ namespace OpenUtau.App.Views {
             }
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
-            partEditState.Update(point.Pointer, point.Position);
             partEditState.End(point.Pointer, point.Position);
             partEditState = null;
             Cursor = null;
