@@ -43,7 +43,15 @@
   </ItemGroup>
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
+    <!-- Pinned to 1.23.0 on purpose: the 1.24.x DirectML build can kill the
+         process natively while an InferenceSession is being created - no managed
+         exception, nothing written to the log, which is exactly what happens when
+         switching singer. 1.23.0 and the CPU execution provider are both stable.
+         DirectML is in sustained engineering, so 1.24.4 is the last release and
+         any fix made after it will never ship as a package upgrade. Note this
+         package never had a 1.23.1/1.23.2, so the former "1.23.2" silently
+         resolved upward to 1.24.x through NU1603. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.23.0" />
   </ItemGroup>
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">
     <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu.Linux" Version="1.24.4" />
