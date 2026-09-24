@@ -65,6 +65,7 @@
       <Setter Property="MaxWidth" Value="10000"/>
       <Setter Property="MaxHeight" Value="10000"/>
       <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
     </Style>
   </UserControl.Styles>
   <UserControl.Resources>
