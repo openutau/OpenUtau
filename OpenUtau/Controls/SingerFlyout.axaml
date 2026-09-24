@@ -9,85 +9,58 @@
   <UserControl.Resources>
     <!-- The themes have no yellow accent; Material amber reads as "favorite" on light and dark. -->
     <SolidColorBrush x:Key="FavoriteStarBrush" Color="#FFC107"/>
+    <!-- mdi-star-outline / mdi-star, pre-scaled to the badge's 14px interior and parsed once for all tiles.
+         The star's points lie on a circle centered at (12, 12.53), radius 10.53, in the 24x24 icon grid;
+         mapping that circle onto the interior centers the star and makes its points touch the border. -->
+    <StreamGeometry x:Key="StarOutlineGeometry">M7.00,8.91L4.50,10.42L5.16,7.57L2.95,5.65L5.86,5.41L7.00,2.72L8.14,5.41L11.05,5.65L8.84,7.57L9.50,10.42M13.65,4.82L8.87,4.40L7.00,0.00L5.13,4.40L0.35,4.82L3.97,7.96L2.89,12.64L7.00,10.16L11.11,12.64L10.02,7.96L13.65,4.82Z</StreamGeometry>
+    <StreamGeometry x:Key="StarFilledGeometry">M7.00,10.16L11.11,12.64L10.02,7.96L13.65,4.82L8.87,4.40L7.00,0.00L5.13,4.40L0.35,4.82L3.97,7.96L2.89,12.64L7.00,10.16Z</StreamGeometry>
   </UserControl.Resources>
   <UserControl.Styles>
-    <Style Selector="Button.singerTile">
+    <!-- Tiles are plain Borders (not Buttons) to keep each of the many tiles cheap to create and lay out. -->
+    <Style Selector="Border.singerTile">
       <Setter Property="Width" Value="180"/>
       <Setter Property="Height" Value="40"/>
-      <Setter Property="Margin" Value="0"/>
-      <Setter Property="Padding" Value="0"/>
-      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="2"/>
+      <Setter Property="BorderThickness" Value="2"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="CornerRadius" Value="3"/>
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-      <Setter Property="VerticalContentAlignment" Value="Stretch"/>
-      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Style Selector="^:pointerover">
         <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi2}"/>
       </Style>
-      <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi}"/>
-      </Style>
-      <Style Selector="^ Border.ring">
-        <Setter Property="CornerRadius" Value="3"/>
-        <Setter Property="BorderThickness" Value="2"/>
-        <Setter Property="BorderBrush" Value="Transparent"/>
-        <Setter Property="IsHitTestVisible" Value="False"/>
-      </Style>
-      <Style Selector="^.current Border.ring">
+      <Style Selector="^.current">
         <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush1}"/>
       </Style>
       <Style Selector="^.missing Panel.avatar, ^.missing TextBlock">
         <Setter Property="Opacity" Value="0.5"/>
       </Style>
-      <!-- Favorite star: visible on hover, always visible when checked. -->
-      <Style Selector="^ ToggleButton.favStar">
-        <Setter Property="Opacity" Value="0"/>
-      </Style>
-      <Style Selector="^:pointerover ToggleButton.favStar">
-        <Setter Property="Opacity" Value="1"/>
-      </Style>
-      <Style Selector="^ ToggleButton.favStar:checked">
-        <Setter Property="Opacity" Value="1"/>
-      </Style>
     </Style>
     <!-- Favorite badge: theme-background disc with an amber star. -->
-    <Style Selector="ToggleButton.favStar">
+    <Style Selector="Border.favStar">
       <Setter Property="Width" Value="16"/>
       <Setter Property="Height" Value="16"/>
       <Setter Property="Margin" Value="0,-4,-4,0"/>
       <Setter Property="HorizontalAlignment" Value="Right"/>
       <Setter Property="VerticalAlignment" Value="Top"/>
-      <Setter Property="Template">
-        <ControlTemplate>
-          <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                  BorderBrush="{DynamicResource NeutralAccentBrushSemi}" BorderThickness="1" CornerRadius="8">
-            <!-- The star's points lie on a circle centered at (12, 12.53), radius 10.53, in the 24x24 icon grid.
-                 Cropping the view to that circle's square centers the star in the badge and makes its points
-                 touch the border's inner edge. -->
-            <Viewbox Width="14" Height="14">
-              <Canvas Width="21.05" Height="21.05">
-                <Canvas Canvas.Left="-1.475" Canvas.Top="-2">
-                  <!-- mdi-star-outline -->
-                  <Path Name="StarOutline"
-                        Data="M12,15.39L8.24,17.66L9.23,13.38L5.91,10.5L10.29,10.13L12,6.09L13.71,10.13L18.09,10.5L14.77,13.38L15.76,17.66M22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27L18.18,21L16.54,13.97L22,9.24Z"/>
-                  <!-- mdi-star -->
-                  <Path Name="StarFilled" IsVisible="False"
-                        Data="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z"/>
-                </Canvas>
-              </Canvas>
-            </Viewbox>
-          </Border>
-        </ControlTemplate>
-      </Setter>
-      <Style Selector="^ /template/ Path">
+      <Setter Property="Opacity" Value="0"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource NeutralAccentBrushSemi}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Style Selector="^ > Path">
         <Setter Property="Fill" Value="{StaticResource FavoriteStarBrush}"/>
+        <Setter Property="Data" Value="{StaticResource StarOutlineGeometry}"/>
       </Style>
-      <Style Selector="^:checked /template/ Path#StarOutline">
-        <Setter Property="IsVisible" Value="False"/>
+      <Style Selector="^.on">
+        <Setter Property="Opacity" Value="1"/>
       </Style>
-      <Style Selector="^:checked /template/ Path#StarFilled">
-        <Setter Property="IsVisible" Value="True"/>
+      <Style Selector="^.on > Path">
+        <Setter Property="Data" Value="{StaticResource StarFilledGeometry}"/>
       </Style>
+    </Style>
+    <!-- After the badge's own style so it wins: the outline star shows while hovering its tile. -->
+    <Style Selector="Border.singerTile:pointerover Border.favStar">
+      <Setter Property="Opacity" Value="1"/>
     </Style>
     <!-- Edge grabbers lie over the grid. Shown only when there is more content on that side:
          a fade with a chevron marks the edge; hovering it scrolls that way. -->
@@ -207,23 +180,23 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:SingerTileViewModel">
-                <Button Classes="singerTile" Classes.current="{Binding IsCurrent}" Classes.missing="{Binding IsMissing}"
-                        ToolTip.Tip="{Binding Location}" Click="TileClicked">
-                  <Panel>
-                    <Grid ColumnDefinitions="32,*" Margin="4">
-                      <Panel Classes="avatar" Width="32" Height="32">
-                        <Border Background="{DynamicResource NeutralAccentBrushSemi2}" CornerRadius="2"/>
-                        <Image Source="{Binding Avatar}" Stretch="UniformToFill"
-                               RenderOptions.BitmapInterpolationMode="HighQuality"/>
-                        <ToggleButton Classes="favStar" IsChecked="{Binding IsFavourite}" IsVisible="{Binding !IsMissing}"
-                                      ToolTip.Tip="{DynamicResource tracks.favorite}"/>
-                      </Panel>
-                      <TextBlock Grid.Column="1" Margin="6,0,2,0" Text="{Binding Name}"
-                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" VerticalAlignment="Center"/>
-                    </Grid>
-                    <Border Classes="ring"/>
-                  </Panel>
-                </Button>
+                <Border Classes="singerTile" Classes.current="{Binding IsCurrent}" Classes.missing="{Binding IsMissing}"
+                        ToolTip.Tip="{Binding Location}"
+                        PointerPressed="TilePressed" PointerReleased="TileReleased">
+                  <DockPanel>
+                    <Panel Classes="avatar" DockPanel.Dock="Left" Width="32" Height="32"
+                           Background="{DynamicResource NeutralAccentBrushSemi2}">
+                      <Image Source="{Binding Avatar}" Stretch="UniformToFill"
+                             RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                      <Border Classes="favStar" Classes.on="{Binding IsFavourite}" IsVisible="{Binding !IsMissing}"
+                              ToolTip.Tip="{DynamicResource tracks.favorite}" PointerPressed="FavStarPressed">
+                        <Path/>
+                      </Border>
+                    </Panel>
+                    <TextBlock Margin="6,0,2,0" Text="{Binding Name}"
+                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" VerticalAlignment="Center"/>
+                  </DockPanel>
+                </Border>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>

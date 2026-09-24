@@ -30,6 +30,7 @@ namespace OpenUtau.App.Controls {
         private readonly Stopwatch hoverClock = new Stopwatch();
         private Control? hoveredGrabber;
         private double hoverSpeed;
+        private Control? pressedTile;
 
         public SingerFlyout() {
             InitializeComponent();
@@ -151,16 +152,36 @@ namespace OpenUtau.App.Controls {
             base.OnDetachedFromVisualTree(e);
         }
 
-        void TileClicked(object? sender, RoutedEventArgs e) {
-            // Click bubbles: the favorite star's click also arrives here and must not select the singer.
-            if (e.Source != sender) {
+        // Tiles are plain Borders, so they implement click themselves: press, then release over the same tile.
+        void TilePressed(object? sender, PointerPressedEventArgs e) {
+            if (sender is Control tile && e.GetCurrentPoint(tile).Properties.IsLeftButtonPressed) {
+                pressedTile = tile;
+                e.Pointer.Capture(tile);
+                e.Handled = true;
+            }
+        }
+
+        void TileReleased(object? sender, PointerReleasedEventArgs e) {
+            if (sender is not Control tile || tile != pressedTile || e.InitialPressMouseButton != MouseButton.Left) {
                 return;
             }
-            if (sender is Control { DataContext: SingerTileViewModel tile } &&
-                DataContext is SingerFlyoutViewModel viewModel) {
-                viewModel.Select(tile);
-            }
+            pressedTile = null;
+            e.Pointer.Capture(null);
             e.Handled = true;
+            if (new Rect(tile.Bounds.Size).Contains(e.GetPosition(tile)) &&
+                tile.DataContext is SingerTileViewModel tileViewModel &&
+                DataContext is SingerFlyoutViewModel viewModel) {
+                viewModel.Select(tileViewModel);
+            }
+        }
+
+        // Handled here so the press doesn't reach the tile and select the singer.
+        void FavStarPressed(object? sender, PointerPressedEventArgs e) {
+            if (sender is Control { DataContext: SingerTileViewModel tile } star &&
+                e.GetCurrentPoint(star).Properties.IsLeftButtonPressed) {
+                tile.IsFavourite = !tile.IsFavourite;
+                e.Handled = true;
+            }
         }
     }
 }
