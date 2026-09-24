@@ -5,7 +5,7 @@ using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Core.Voicevox {
-    [Phonemizer("Voicevox Japanese Phonemizer", "VOICEVOX JA", language: "JA")]
+    [Phonemizer("Voicevox Japanese Phonemizer", "VOICEVOX JA", language: "JA", engine: "Voicevox")]
     public class VoicevoxPhonemizer : Phonemizer {
 
         protected VoicevoxSinger singer;

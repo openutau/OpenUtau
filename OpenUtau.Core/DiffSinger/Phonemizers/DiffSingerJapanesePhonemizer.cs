@@ -3,7 +3,7 @@ using System.Linq;
 using OpenUtau.Api;
 
 namespace OpenUtau.Core.DiffSinger {
-    [Phonemizer("DiffSinger Japanese Phonemizer", "DIFFS JA", language: "JA")]
+    [Phonemizer("DiffSinger Japanese Phonemizer", "DIFFS JA", language: "JA", engine: "Diffsinger")]
     public class DiffSingerJapanesePhonemizer : DiffSingerBasePhonemizer {
         protected override string GetDictionaryName() => "dsdict-ja.yaml";
 
