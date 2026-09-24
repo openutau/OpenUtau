@@ -154,9 +154,10 @@ namespace OpenUtau.Core.Format
                                                 if(syllabicStatus == Syllabic.Single || syllabicStatus == Syllabic.End) {
                                                     incompletedLyricNote = null;
                                                 }
-                                            } else if (slurStatus == StartStopContinue.Continue || slurStatus == StartStopContinue.Stop) {
+                                            } else if (slurStatus == StartStopContinue.Continue || slurStatus == StartStopContinue.Stop
+                                            || incompletedLyricNote != null) {
                                                 // OpenUtau uses +~ for extending the current syllable,
-                                                // which is represented in sheet music as slur.
+                                                // which is represented in sheet music as slur or syllable span.
                                                 unote.lyric = "+~";
                                             }
                                             return unote;

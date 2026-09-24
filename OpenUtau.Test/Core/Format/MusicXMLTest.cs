@@ -191,9 +191,13 @@ namespace OpenUtau.Core.Format {
             Assert.Equal("+", notesList[1].lyric);
             Assert.Equal("+", notesList[2].lyric);
             Assert.Equal("Ja!", notesList[3].lyric);
+            Assert.Equal("a", notesList[4].lyric);
             Assert.Equal("Trara!", notesList[5].lyric);
+            Assert.Equal("+~", notesList[6].lyric);
             Assert.Equal("+", notesList[7].lyric);
+            Assert.Equal("a", notesList[8].lyric);
             Assert.Equal("Bah!", notesList[9].lyric);
+            Assert.Equal("a", notesList[10].lyric);
         }
     }
 }
