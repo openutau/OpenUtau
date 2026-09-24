@@ -579,6 +579,7 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public async void SelectTrackColor() {
+            ThemeManager.LoadSingerTrackColor(Singer);
             var dialog = new TrackColorDialog();
             dialog.DataContext = new TrackColorViewModel(track);
 
