@@ -37,7 +37,7 @@ namespace OpenUtau.Classic {
             //The builtin worldline and Linux/MacOS resamplers can't be
             //called from bat script, so we need to call it directly from C#
             foreach(var item in resamplerItems){
-                if(item.resampler.CallDirectly && !cancellation.IsCancellationRequested && !File.Exists(item.outputFile)){
+                if(item.resampler.NoWrapperScript && !cancellation.IsCancellationRequested && !File.Exists(item.outputFile)){
                     lock (Renderers.GetCacheLock(item.outputFile)) {
                         item.resampler.DoResamplerReturnsFile(item, Log.Logger);
                     }
