@@ -107,20 +107,43 @@ namespace OpenUtau.App.Controls {
             args.Handled = true;
         }
 
-        async void SingerButtonClicked(object sender, RoutedEventArgs args) {
+        void SingerButtonClicked(object sender, RoutedEventArgs args) {
             args.Handled = true;
-            try {
-                if (ViewModel != null) {
-                    await ViewModel.RefreshSingersAsync();
-                }
-                SingersMenu.Open();
-            } catch (Exception e) {
-                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
-            }
+            ShowSingerFlyout(sender);
         }
 
         void SingerButtonContextRequested(object sender, ContextRequestedEventArgs args) {
             args.Handled = true;
+            ShowSingerFlyout(sender);
+        }
+
+        void ShowSingerFlyout(object sender) {
+            if (ViewModel == null) {
+                return;
+            }
+            try {
+                Control anchor = SingerButton;
+                if (sender != SingerButton) {
+                    // Opened from the "⋯" flyout: close it and anchor to its button instead of stacking flyouts.
+                    MoreButton.Flyout?.Hide();
+                    anchor = MoreButton;
+                }
+                var viewModel = new SingerFlyoutViewModel(() => ViewModel.Singer, ViewModel.SelectSingerCommand);
+                var content = new SingerFlyout() { DataContext = viewModel };
+                var flyout = new Flyout() {
+                    Content = content,
+                    Placement = PlacementMode.BottomEdgeAlignedLeft,
+                    ShowMode = FlyoutShowMode.Standard,
+                };
+                flyout.FlyoutPresenterClasses.Add("singerFlyout");
+                viewModel.CloseRequested += flyout.Hide;
+                flyout.Opened += (_, _) => DocManager.Inst.AddSubscriber(viewModel);
+                flyout.Closed += (_, _) => DocManager.Inst.RemoveSubscriber(viewModel);
+                content.FitToScreen(anchor);
+                flyout.ShowAt(anchor);
+            } catch (Exception e) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+            }
         }
 
         void PhonemizerButtonClicked(object sender, RoutedEventArgs args) {

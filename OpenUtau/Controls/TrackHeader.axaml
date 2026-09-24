@@ -61,6 +61,11 @@
       <Setter Property="Padding" Value="5"/>
       <Setter Property="MinHeight" Value="0"/>
     </Style>
+    <Style Selector="FlyoutPresenter.singerFlyout">
+      <Setter Property="MaxWidth" Value="10000"/>
+      <Setter Property="MaxHeight" Value="10000"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+    </Style>
   </UserControl.Styles>
   <UserControl.Resources>
     <ContextMenu x:Key="RenderersMenuRes" Classes="context" Name="RenderersMenu" Placement="BottomEdgeAlignedLeft" 
@@ -82,21 +87,6 @@
           <Setter Property="Command" Value="{Binding Command}"/>
           <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
           <Setter Property="ItemsSource" Value="{Binding Items}"/>
-        </Style>
-      </ContextMenu.Styles>
-    </ContextMenu>
-    <ContextMenu x:Key="SingersMenuRes" Classes="context" Name="SingersMenu" Placement="BottomEdgeAlignedLeft" 
-                 HorizontalOffset="-3" ItemsSource="{Binding SingerMenuItems}">
-      <ContextMenu.Styles>
-        <Style Selector="MenuItem" x:DataType="vm:SingerMenuItemViewModel">
-          <Setter Property="Header" Value="{Binding Header}"/>
-          <Setter Property="Command" Value="{Binding Command}"/>
-          <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
-          <Setter Property="ItemsSource" Value="{Binding Items}"/>
-          <Setter Property="Icon" Value="{Binding Icon}"/>
-          <Setter Property="ToolTip.Tip" Value="{Binding Location}"/>
-          <Setter Property="Height" Value="{Binding Height}"/>
-          <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
         </Style>
       </ContextMenu.Styles>
     </ContextMenu>
@@ -122,10 +112,10 @@
           <Button Classes="clear" Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Margin="1" Padding="2,1,0,0" Height="17"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                   Content="{Binding TrackName}" Click="TrackNameButtonClicked"/>
-          <Button Classes="clear" Margin="1" Padding="2,1,0,0" Height="17" IsVisible="{Binding IsSingerVisible}"
+          <Button Name="SingerButton" Classes="clear" Margin="1" Padding="2,1,0,0" Height="17" IsVisible="{Binding IsSingerVisible}"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                   Content="{Binding Singer, TargetNullValue={StaticResource tracks.selectsinger}}" Click="SingerButtonClicked"
-                  ContextRequested="SingerButtonContextRequested" ToolTip.Tip="{Binding Singer}" ContextMenu="{StaticResource SingersMenuRes}"/>
+                  ContextRequested="SingerButtonContextRequested" ToolTip.Tip="{Binding Singer}"/>
           <Button Classes="clear" Margin="1" Padding="2,1,0,0" Height="17" IsVisible="{Binding IsPhonemizerVisible}"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                   Content="{Binding PhonemizerTag}" Click="PhonemizerButtonClicked" ContextRequested="PhonemizerButtonContextRequested"
@@ -174,15 +164,15 @@
                   BorderThickness="0" IsVisible="False" IsEnabled="False" TextAlignment="Center" FontSize="9"
                   FontFamily="monospace" KeyDown="VolumeOrPanTextBoxKeyDown" LostFocus="VolumeOrPanTextBoxLostFocus"/>
         </Grid>
-        <Button Grid.Column="1" Grid.Row="0" Classes="clear" Height="17" Width="17" Margin="1" Padding="0"
+        <Button Name="MoreButton" Grid.Column="1" Grid.Row="0" Classes="clear" Height="17" Width="17" Margin="1" Padding="0"
                 VerticalAlignment="Top" Content="⋯" IsVisible="{Binding !IsRendererVisible}">
           <Button.Flyout>
             <Flyout>
               <StackPanel Spacing="2">
                 <Button Classes="clear" Margin="1" Height="18" IsVisible="{Binding !IsSingerVisible}"
                         HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
-                        Content="{Binding Singer, TargetNullValue={StaticResource tracks.selectsinger}}" Click="SingerButtonClicked" 
-                        ContextRequested="SingerButtonContextRequested" ToolTip.Tip="{Binding Singer}" ContextMenu="{StaticResource SingersMenuRes}"/>
+                        Content="{Binding Singer, TargetNullValue={StaticResource tracks.selectsinger}}" Click="SingerButtonClicked"
+                        ContextRequested="SingerButtonContextRequested" ToolTip.Tip="{Binding Singer}"/>
                 <Button Classes="clear" Margin="1" Height="18" IsVisible="{Binding !IsPhonemizerVisible}"
                         HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                         Content="{Binding PhonemizerTag}" Click="PhonemizerButtonClicked" ContextRequested="PhonemizerButtonContextRequested"

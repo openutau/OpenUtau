@@ -1364,6 +1364,14 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        public void PartsCanvasPointerExited(object sender, PointerEventArgs args) {
+            // The hover cursor is set on the window; reset it when leaving the canvas from a part edge,
+            // otherwise it stays visible wherever nothing overrides it (e.g. around open popups).
+            if (partEditState == null) {
+                Cursor = null;
+            }
+        }
+
         public void PartsCanvasPointerReleased(object sender, PointerReleasedEventArgs args) {
             if (partEditState?.MouseButton != args.InitialPressMouseButton) {
                 return;
