@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:OpenUtau.App.ViewModels"
+             xmlns:c="using:OpenUtau.App.Controls"
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
              x:Class="OpenUtau.App.Controls.SingerFlyout"
              x:DataType="vm:SingerFlyoutViewModel">
@@ -165,41 +166,50 @@
         </Button>
       </StackPanel>
     </Border>
+    <TextBox Name="SearchBox" DockPanel.Dock="Top" Height="24" Padding="4,3" Margin="0,0,0,4"
+             Text="{Binding SearchText}" PlaceholderText="{DynamicResource tracks.searchsinger}"
+             KeyDown="SearchBoxKeyDown"/>
     <Panel>
       <TextBlock IsVisible="{Binding IsEmpty}" Margin="8" HorizontalAlignment="Center" VerticalAlignment="Center"
                  Text="{DynamicResource tracks.nosinger}"/>
+      <!-- Over the empty grid, which keeps its size so the flyout doesn't jump while typing. -->
+      <TextBlock IsVisible="{Binding NoMatch}" Margin="8" HorizontalAlignment="Center" VerticalAlignment="Center"
+                 Text="{DynamicResource tracks.nosingermatch}"/>
       <Panel IsVisible="{Binding !IsEmpty}">
         <ScrollViewer Name="TileScroller"
                       HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
                       ScrollChanged="TileScrollerScrollChanged">
-          <ItemsControl ItemsSource="{Binding Tiles}">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate>
-                <WrapPanel Orientation="Vertical"/>
-              </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:SingerTileViewModel">
-                <Border Classes="singerTile" Classes.current="{Binding IsCurrent}" Classes.missing="{Binding IsMissing}"
-                        ToolTip.Tip="{Binding Location}"
-                        PointerPressed="TilePressed" PointerReleased="TileReleased">
-                  <DockPanel>
-                    <Panel Classes="avatar" DockPanel.Dock="Left" Width="32" Height="32"
-                           Background="{DynamicResource NeutralAccentBrushSemi2}">
-                      <Image Source="{Binding Avatar}" Stretch="UniformToFill"
-                             RenderOptions.BitmapInterpolationMode="HighQuality"/>
-                      <Border Classes="favStar" Classes.on="{Binding IsFavourite}" IsVisible="{Binding !IsMissing}"
-                              ToolTip.Tip="{DynamicResource tracks.favorite}" PointerPressed="FavStarPressed">
-                        <Path/>
-                      </Border>
-                    </Panel>
-                    <TextBlock Margin="6,0,2,0" Text="{Binding Name}"
-                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" VerticalAlignment="Center"/>
-                  </DockPanel>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+          <Panel>
+            <ItemsControl ItemsSource="{Binding Tiles}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel Orientation="Vertical"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:SingerTileViewModel">
+                  <Border Classes="singerTile" Classes.current="{Binding IsCurrent}" Classes.missing="{Binding IsMissing}"
+                          ToolTip.Tip="{Binding Location}"
+                          PointerPressed="TilePressed" PointerReleased="TileReleased">
+                    <DockPanel>
+                      <Panel Classes="avatar" DockPanel.Dock="Left" Width="32" Height="32"
+                             Background="{DynamicResource NeutralAccentBrushSemi2}">
+                        <Image Source="{Binding Avatar}" Stretch="UniformToFill"
+                               RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                        <Border Classes="favStar" Classes.on="{Binding IsFavourite}" IsVisible="{Binding !IsMissing}"
+                                ToolTip.Tip="{DynamicResource tracks.favorite}" PointerPressed="FavStarPressed">
+                          <Path/>
+                        </Border>
+                      </Panel>
+                      <TextBlock Margin="6,0,2,0" Text="{Binding Name}"
+                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" VerticalAlignment="Center"/>
+                    </DockPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <c:SingerSectionDividers Name="SectionDividers" Stroke="{DynamicResource NeutralAccentBrush}"/>
+          </Panel>
         </ScrollViewer>
         <!-- mdi-chevron-left -->
         <Border Name="LeftGrabber" Classes="grabber left"

@@ -19,7 +19,7 @@ namespace OpenUtau.Test.App {
             public override USingerType SingerType => type;
         }
 
-        static List<string> Order(IEnumerable<string> recents, IEnumerable<string> favorites) {
+        static List<List<string>> Sections(IEnumerable<string> recents, IEnumerable<string> favorites) {
             var singers = new USinger[] {
                 new TestSinger("c-classic", USingerType.Classic),
                 new TestSinger("a-classic", USingerType.Classic),
@@ -32,8 +32,12 @@ namespace OpenUtau.Test.App {
                 .GroupBy(s => s.SingerType)
                 .ToDictionary(g => g.Key, g => g.OrderBy(s => s.Name).ToList());
             return SingerFlyoutViewModel.OrderSingers(byId, groups, recents, favorites)
-                .Select(s => s.Id)
+                .Select(section => section.Select(s => s.Id).ToList())
                 .ToList();
+        }
+
+        static List<string> Order(IEnumerable<string> recents, IEnumerable<string> favorites) {
+            return Sections(recents, favorites).SelectMany(section => section).ToList();
         }
 
         [Fact]
@@ -69,6 +73,36 @@ namespace OpenUtau.Test.App {
             var order = Order(new string[0], new string[0]);
             // Classic, DiffSinger, Enunu: by name, not by USingerType value.
             Assert.Equal(new[] { "a-classic", "b-classic", "c-classic", "y-diffsinger", "z-enunu" }, order);
+        }
+
+        [Fact]
+        public void SplitsFavoritesRecentsAndRest() {
+            var sections = Sections(new[] { "b-classic", "y-diffsinger" }, new[] { "y-diffsinger" });
+            Assert.Equal(3, sections.Count);
+            Assert.Equal(new[] { "y-diffsinger" }, sections[0]);
+            Assert.Equal(new[] { "b-classic" }, sections[1]);
+            Assert.Equal(new[] { "a-classic", "c-classic", "z-enunu" }, sections[2]);
+        }
+
+        [Fact]
+        public void EmptySectionsAreKept() {
+            var sections = Sections(new string[0], new string[0]);
+            Assert.Equal(3, sections.Count);
+            Assert.Empty(sections[0]);
+            Assert.Empty(sections[1]);
+            Assert.Equal(5, sections[2].Count);
+        }
+
+        [Theory]
+        [InlineData("Kasane Teto", "", true)]
+        [InlineData("Kasane Teto", "teto", true)]
+        [InlineData("Kasane Teto", "TETO", true)]
+        [InlineData("Kasane Teto", "miku", false)]
+        // Hiragana matches katakana, and half width matches full width.
+        [InlineData("重音テト", "てと", true)]
+        [InlineData("ＵＴＡＵ", "utau", true)]
+        public void SearchMatches(string term, string query, bool expected) {
+            Assert.Equal(expected, SingerTileViewModel.Matches(new[] { term }, query));
         }
     }
 }

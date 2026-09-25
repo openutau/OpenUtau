@@ -883,10 +883,12 @@ General
   <system:String x:Key="tracks.mute.only">Mute this only</system:String>
   <system:String x:Key="tracks.mute.unmuteall">Unmute all</system:String>
   <system:String x:Key="tracks.nosinger">There is no singer</system:String>
+  <system:String x:Key="tracks.nosingermatch">No matching singer</system:String>
   <system:String x:Key="tracks.openaddsingers">Open additional singers location</system:String>
   <system:String x:Key="tracks.opensingers">Open singers location</system:String>
   <system:String x:Key="tracks.remove">Remove</system:String>
   <system:String x:Key="tracks.rename">Rename track</system:String>
+  <system:String x:Key="tracks.searchsinger">Search singers</system:String>
   <system:String x:Key="tracks.selectrenderer">Select Renderer</system:String>
   <system:String x:Key="tracks.selectsinger">Select Singer</system:String>
   <system:String x:Key="tracks.singerdefault">(Singer default) </system:String>

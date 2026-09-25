@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,8 @@ using OpenUtau.App.ViewModels;
 using OpenUtau.App.Views;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 using Xunit;
 
 namespace OpenUtau.UiTest {
@@ -118,6 +121,92 @@ namespace OpenUtau.UiTest {
                 AssertHasSize(window.FindControl<Control>("partsCanvas"));
                 AssertRendered(window);
             });
+        }
+
+        class FakeSinger : USinger {
+            readonly string name;
+            public FakeSinger(string name) {
+                this.name = name;
+                found = true;
+            }
+            public override string Id => name;
+            public override string Name => name;
+            public override USingerType SingerType => USingerType.Classic;
+        }
+
+        // Adds singers that aren't loadable, so the test must not select them.
+        static void WithFakeSingers(int count, IEnumerable<int> favorites, IEnumerable<int> recents, Action<List<FakeSinger>> test) {
+            var singers = Enumerable.Range(0, count).Select(i => new FakeSinger($"Fake Singer {i:00}")).ToList();
+            var manager = SingerManager.Inst;
+            var prefs = Preferences.Default;
+            var (oldFavorites, oldRecents) = (prefs.FavoriteSingers, prefs.RecentSingers);
+            manager.SingerGroups.TryGetValue(USingerType.Classic, out var oldGroup);
+            try {
+                singers.ForEach(singer => manager.Singers[singer.Id] = singer);
+                manager.SingerGroups[USingerType.Classic] = (oldGroup ?? new List<USinger>()).Concat(singers).ToList();
+                prefs.FavoriteSingers = favorites.Select(i => singers[i].Id).ToList();
+                prefs.RecentSingers = recents.Select(i => singers[i].Id).ToList();
+                test(singers);
+            } finally {
+                singers.ForEach(singer => manager.Singers.Remove(singer.Id));
+                if (oldGroup == null) {
+                    manager.SingerGroups.Remove(USingerType.Classic);
+                } else {
+                    manager.SingerGroups[USingerType.Classic] = oldGroup;
+                }
+                (prefs.FavoriteSingers, prefs.RecentSingers) = (oldFavorites, oldRecents);
+            }
+        }
+
+        [Fact]
+        public void SingerFlyoutSearches() {
+            WithMainWindow(nameof(SingerFlyoutSearches), window => WithFakeSingers(11, new[] { 0, 1, 2 }, new[] { 5, 6, 7 }, singers => {
+                Click(window, FindButtonWithText(window, "welcome.new"));
+                var header = window.GetVisualDescendants().OfType<TrackHeader>().First();
+                Click(window, header.FindControl<Button>("SingerButton")!);
+
+                var flyout = window.GetVisualDescendants().OfType<SingerFlyout>().SingleOrDefault();
+                AssertHasSize(flyout);
+                var viewModel = Assert.IsType<SingerFlyoutViewModel>(flyout.DataContext);
+                var searchBox = flyout.FindControl<TextBox>("SearchBox");
+                var grid = flyout.FindControl<ScrollViewer>("TileScroller");
+                Assert.NotNull(searchBox);
+                AssertHasSize(grid);
+                // Favorites, recents, then the rest (with any real singers after the fake ones).
+                Assert.Equal(new[] { 3, 6 }, viewModel.SectionStarts);
+                // Typing searches right away.
+                Assert.Same(searchBox, window.FocusManager?.GetFocusedElement());
+                var gridSize = grid.Bounds.Size;
+
+                window.KeyTextInput("fake singer 1");
+                HeadlessUi.Flush();
+                Assert.Equal(new[] { singers[10] }, viewModel.Tiles.Select(tile => tile.Singer));
+                Assert.Empty(viewModel.SectionStarts);
+                // Sections without matches get no divider.
+                viewModel.SearchText = "FAKE SINGER 0";
+                HeadlessUi.Flush();
+                Assert.Equal(new[] { 0, 1, 2, 5, 6, 7, 3, 4, 8, 9 }.Select(i => singers[i]), viewModel.Tiles.Select(tile => tile.Singer));
+                Assert.Equal(new[] { 3, 6 }, viewModel.SectionStarts);
+                viewModel.SearchText = "fake singer 01";
+                HeadlessUi.Flush();
+                Assert.Equal(new[] { singers[1] }, viewModel.Tiles.Select(tile => tile.Singer));
+                Assert.Empty(viewModel.SectionStarts);
+                // The flyout keeps its size while searching.
+                Assert.Equal(gridSize, grid.Bounds.Size);
+
+                viewModel.SearchText = "no such singer";
+                HeadlessUi.Flush();
+                Assert.Empty(viewModel.Tiles);
+                Assert.True(viewModel.NoMatch);
+
+                // Escape clears the search before closing the flyout.
+                window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+                HeadlessUi.Flush();
+                Assert.Equal(string.Empty, viewModel.SearchText);
+                Assert.Equal(viewModel.AllTileCount, viewModel.Tiles.Count);
+                Assert.True(flyout.IsEffectivelyVisible);
+                AssertRendered(window);
+            }));
         }
     }
 }
