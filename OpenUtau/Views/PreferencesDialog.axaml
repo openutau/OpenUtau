@@ -303,6 +303,30 @@
             <TextBlock Text="{DynamicResource prefs.appearance.showportrait}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding ShowPortrait}"/>
           </Grid>
+          <Grid Margin="0,5,0,0" ColumnDefinitions="Auto,*,40,8,125">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.appearance.defaultportraitheightcap}" HorizontalAlignment="Left"/>
+            <TextBlock Grid.Column="2" Text="{Binding PortraitHeightCap, StringFormat='{}{0}%'}" HorizontalAlignment="Center" />
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding PortraitHeightCap}" Minimum="1" Maximum="100"
+                    IsEnabled="{Binding ShowPortrait}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0" ColumnDefinitions="Auto,*,40,8,125">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.appearance.defaultportraitvertposition}" HorizontalAlignment="Left"/>
+            <TextBlock Grid.Column="2" Text="{Binding PortraitVertPosition, StringFormat='{}{0}%'}" HorizontalAlignment="Center" />
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding PortraitVertPosition}" Minimum="0" Maximum="100"
+                    IsEnabled="{Binding ShowPortrait}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0" ColumnDefinitions="Auto,*,40,8,125">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.appearance.defaultportraithoriposition}" HorizontalAlignment="Left"/>
+            <TextBlock Grid.Column="2" Text="{Binding PortraitHoriPosition, StringFormat='{}{0}%'}" HorizontalAlignment="Center" />
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding PortraitHoriPosition}" Minimum="0" Maximum="100"
+                    IsEnabled="{Binding ShowPortrait}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0" ColumnDefinitions="Auto,*,40,8,125">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.appearance.defaultportraitopacity}" HorizontalAlignment="Left"/>
+            <TextBlock Grid.Column="2" Text="{Binding PortraitOpacity, StringFormat={}{0:0.00}}" HorizontalAlignment="Center" />
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding PortraitOpacity}" Minimum="0" Maximum="1"
+                    SmallChange="0.01" IsEnabled="{Binding ShowPortrait}"/>
+          </Grid>
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.showicon}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding ShowIcon}"/>
