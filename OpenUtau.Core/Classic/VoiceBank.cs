@@ -8,6 +8,7 @@ namespace OpenUtau.Classic {
         public string File;
         public string Name;
         public Dictionary<string, string> LocalizedNames = new Dictionary<string, string>();
+        public List<string> SearchTerms = new List<string>();
         public string Image;
         public string Portrait;
         public float PortraitOpacity;
@@ -29,6 +30,7 @@ namespace OpenUtau.Classic {
         public void Reload() {
             Name = null;
             LocalizedNames.Clear();
+            SearchTerms.Clear();
             Image = null;
             Portrait = null;
             PortraitOpacity = 0;

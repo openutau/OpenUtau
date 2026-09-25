@@ -78,6 +78,7 @@
             <MenuItem Header="{DynamicResource singers.visitwebsite}" Click="OnVisitWebsite" IsEnabled="{Binding HasWebsite}"/>
             <MenuItem Header="{DynamicResource singers.setimage}" Click="OnSetImage"/>
             <MenuItem Header="{DynamicResource singers.setportrait}" Click="OnSetPortrait"/>
+            <MenuItem Header="{DynamicResource tracks.searchterms.edit}" Click="OnEditSearchTerms"/>
             <MenuItem Header="{DynamicResource singers.setencoding}" ItemsSource="{Binding SetEncodingMenuItems}" Classes="MenuItemWithSubMenu"/>
             <MenuItem Header="{DynamicResource singers.setsingertype}" ItemsSource="{Binding SetSingerTypeMenuItems}" Classes="MenuItemWithSubMenu"/>
             <MenuItem Header="{DynamicResource singers.setdefaultphonemizer}" ItemsSource="{Binding SetDefaultPhonemizerMenuItems}" Classes="MenuItemWithSubMenu"/>

@@ -102,5 +102,19 @@ subbanks:
 
             Assert.Equal(yaml, yaml2);
         }
+
+        [Fact]
+        public void SearchTermsTest() {
+            var config = Yaml.DefaultDeserializer.Deserialize<VoicebankConfig>(@"
+name: 重音テト
+search_terms:
+- kasane
+- teto
+- ' '
+");
+            var bank = new Voicebank();
+            VoicebankLoader.ApplyConfig(bank, config);
+            Assert.Equal(new[] { "kasane", "teto" }, bank.SearchTerms);
+        }
     }
 }

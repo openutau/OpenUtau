@@ -22,8 +22,8 @@ namespace OpenUtau.App.ViewModels {
         public USinger Singer { get; }
         public string Name => Singer.LocalizedName;
         public string? Location => Singer.Location;
-        /// <summary>Strings the search box matches against.</summary>
         public IReadOnlyList<string> SearchTerms { get; }
+        public string? ToolTipText { get; }
         public bool IsCurrent { get; }
         public bool IsMissing => !Singer.Found;
         public bool IsFavourite {
@@ -40,8 +40,37 @@ namespace OpenUtau.App.ViewModels {
         public SingerTileViewModel(USinger singer, bool isCurrent) {
             Singer = singer;
             IsCurrent = isCurrent;
-            SearchTerms = new[] { Name };
+            SearchTerms = BuildSearchTerms(singer);
+            // Leave out what the tile and the path already show.
+            var extra = SearchTerms
+                .Where(term => term != Name &&
+                    (Location == null || !Location.Contains(term, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+            ToolTipText = extra.Count == 0
+                ? Location
+                : $"{Location}\n{ThemeManager.GetString("tracks.searchterms")}: {string.Join(", ", extra)}".Trim();
             Avatar = SingerAvatarCache.Get(singer, bitmap => Avatar = bitmap);
+        }
+
+        /// <summary>
+        /// The displayed and original names, all localized names, the id and folder name, which are often
+        /// romanized, then the extra terms in the voicebank config.
+        /// </summary>
+        public static IReadOnlyList<string> BuildSearchTerms(USinger singer) {
+            var terms = new List<string> { singer.LocalizedName, singer.Name };
+            if (singer.LocalizedNames != null) {
+                terms.AddRange(singer.LocalizedNames.Values);
+            }
+            terms.Add(singer.Id);
+            if (!string.IsNullOrEmpty(singer.Location)) {
+                terms.Add(Path.GetFileName(singer.Location));
+            }
+            terms.AddRange(singer.SearchTerms ?? Array.Empty<string>());
+            return terms
+                .Where(term => !string.IsNullOrWhiteSpace(term))
+                .Select(term => term.Trim())
+                .Distinct()
+                .ToArray();
         }
 
         const CompareOptions SearchOptions =
@@ -61,11 +90,8 @@ namespace OpenUtau.App.ViewModels {
     }
 
     public partial class SingerFlyoutViewModel : ViewModelBase, ICmdSubscriber {
-        /// <summary>The tiles matching the search, section after section.</summary>
         [Reactive] public partial IReadOnlyList<SingerTileViewModel> Tiles { get; set; } = Array.Empty<SingerTileViewModel>();
-        /// <summary>Indices into <see cref="Tiles"/> where each section after the first begins. Updated before Tiles.</summary>
         public IReadOnlyList<int> SectionStarts { get; private set; } = Array.Empty<int>();
-        /// <summary>Number of tiles without a search, which the flyout is sized for.</summary>
         [Reactive] public partial int AllTileCount { get; set; }
         [Reactive] public partial bool IsEmpty { get; set; }
         [Reactive] public partial bool NoMatch { get; set; }
@@ -183,6 +209,31 @@ namespace OpenUtau.App.ViewModels {
         public void Select(SingerTileViewModel tile) {
             CloseRequested?.Invoke();
             selectSingerCommand.Execute(tile.Singer);
+        }
+
+        public bool IsRecent(SingerTileViewModel tile) {
+            return Preferences.Default.RecentSingers.Contains(tile.Singer.Id);
+        }
+
+        public void RemoveFromRecent(SingerTileViewModel tile) {
+            Preferences.Default.RecentSingers.Remove(tile.Singer.Id);
+            Preferences.Save();
+            Rebuild();
+        }
+
+        public void OpenLocation(SingerTileViewModel tile) {
+            CloseRequested?.Invoke();
+            SingersViewModel.OpenLocation(tile.Singer);
+        }
+
+        public void EditSearchTerms(SingerTileViewModel tile) {
+            CloseRequested?.Invoke();
+            var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (mainWindow == null) {
+                return;
+            }
+            SingersDialog.ShowSearchTermsDialog(mainWindow, tile.Singer,
+                text => SingersViewModel.SetSearchTerms(tile.Singer, text));
         }
 
         public async void InstallSinger() {

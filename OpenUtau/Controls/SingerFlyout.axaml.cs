@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
@@ -207,6 +208,31 @@ namespace OpenUtau.App.Controls {
                 DataContext is SingerFlyoutViewModel viewModel) {
                 viewModel.Select(tileViewModel);
             }
+        }
+
+        void TileContextRequested(object? sender, ContextRequestedEventArgs e) {
+            e.Handled = true;
+            if (sender is not Control { DataContext: SingerTileViewModel tile } control ||
+                DataContext is not SingerFlyoutViewModel viewModel || tile.IsMissing) {
+                return;
+            }
+            // Built on demand, so the many tiles don't each carry a menu.
+            MenuItem Item(string header, Action onClick) {
+                var item = new MenuItem() { Header = this.FindResource(header) };
+                item.Classes.Add("context");
+                item.Click += (_, _) => onClick();
+                return item;
+            }
+            var items = new List<MenuItem> {
+                Item("tracks.openlocation", () => viewModel.OpenLocation(tile)),
+                Item("tracks.searchterms.edit", () => viewModel.EditSearchTerms(tile)),
+            };
+            if (viewModel.IsRecent(tile)) {
+                items.Add(Item("tracks.removefromrecent", () => viewModel.RemoveFromRecent(tile)));
+            }
+            var menu = new ContextMenu() { ItemsSource = items };
+            menu.Classes.Add("context");
+            menu.Open(control);
         }
 
         // Handled here so the press doesn't reach the tile and select the singer.

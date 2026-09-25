@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using OpenUtau.App.ViewModels;
+using OpenUtau.Classic;
 using OpenUtau.Core.Ustx;
 using Xunit;
 
@@ -103,6 +105,73 @@ namespace OpenUtau.Test.App {
         [InlineData("ＵＴＡＵ", "utau", true)]
         public void SearchMatches(string term, string query, bool expected) {
             Assert.Equal(expected, SingerTileViewModel.Matches(new[] { term }, query));
+        }
+
+        class NamedSinger : USinger {
+            public NamedSinger() {
+                found = true;
+            }
+            public override string Id => "Teto\\TetoCV";
+            public override string Name => "重音テト";
+            public override Dictionary<string, string> LocalizedNames => new Dictionary<string, string> {
+                { "en-US", "Kasane Teto" },
+                { "ja-JP", "重音テト" },
+            };
+            public override string Location => Path.Combine("Singers", "Teto", "TetoCV");
+            public override IList<string> SearchTerms => new[] { "kasane", " teto " };
+        }
+
+        [Fact]
+        public void SearchTermsIncludeNamesFolderAndAuthorTerms() {
+            var terms = SingerTileViewModel.BuildSearchTerms(new NamedSinger());
+            Assert.Contains("重音テト", terms);
+            Assert.Contains("Kasane Teto", terms);
+            Assert.Contains("Teto\\TetoCV", terms);
+            Assert.Contains("TetoCV", terms);
+            Assert.Contains("kasane", terms);
+            Assert.Contains("teto", terms);
+            Assert.Equal(terms.Distinct(), terms);
+            Assert.True(SingerTileViewModel.Matches(terms, "kasane te"));
+        }
+
+        [Fact]
+        public void SplitSearchTermsOnAnyComma() {
+            Assert.Equal(new[] { "kasane", "teto", "テト", "tet" },
+                SingersViewModel.SplitSearchTerms(" kasane, teto，テト、 ;tet;teto "));
+        }
+
+        class FolderSinger : USinger {
+            readonly string location;
+            public FolderSinger(string location) {
+                this.location = location;
+                found = true;
+            }
+            public override string Location => location;
+            public override IList<string> SearchTerms { get; } = new List<string>();
+        }
+
+        [Fact]
+        public void SetSearchTermsWritesCharacterYaml() {
+            var dir = Directory.CreateTempSubdirectory().FullName;
+            try {
+                var yamlFile = Path.Combine(dir, "character.yaml");
+                File.WriteAllText(yamlFile, "name: Teto\n");
+                var singer = new FolderSinger(dir);
+
+                SingersViewModel.SetSearchTerms(singer, "kasane, teto");
+                Assert.Equal(new[] { "kasane", "teto" }, singer.SearchTerms);
+                using (var stream = File.OpenRead(yamlFile)) {
+                    var config = VoicebankConfig.Load(stream);
+                    Assert.Equal("Teto", config.Name);
+                    Assert.Equal(new[] { "kasane", "teto" }, config.SearchTerms);
+                }
+
+                SingersViewModel.SetSearchTerms(singer, " ");
+                Assert.Empty(singer.SearchTerms);
+                Assert.DoesNotContain("search_terms", File.ReadAllText(yamlFile));
+            } finally {
+                Directory.Delete(dir, true);
+            }
         }
     }
 }

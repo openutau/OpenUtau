@@ -38,6 +38,7 @@ namespace OpenUtau.Classic {
     public class VoicebankConfig {
         public string Name;
         public Dictionary<string, string> LocalizedNames;
+        public string[] SearchTerms;
         public string SingerType;
         public string TextFileEncoding;
         public string Image;

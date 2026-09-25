@@ -189,8 +189,9 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:SingerTileViewModel">
                   <Border Classes="singerTile" Classes.current="{Binding IsCurrent}" Classes.missing="{Binding IsMissing}"
-                          ToolTip.Tip="{Binding Location}"
-                          PointerPressed="TilePressed" PointerReleased="TileReleased">
+                          ToolTip.Tip="{Binding ToolTipText}"
+                          PointerPressed="TilePressed" PointerReleased="TileReleased"
+                          ContextRequested="TileContextRequested">
                     <DockPanel>
                       <Panel Classes="avatar" DockPanel.Dock="Left" Width="32" Height="32"
                              Background="{DynamicResource NeutralAccentBrushSemi2}">

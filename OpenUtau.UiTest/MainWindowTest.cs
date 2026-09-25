@@ -132,6 +132,7 @@ namespace OpenUtau.UiTest {
             public override string Id => name;
             public override string Name => name;
             public override USingerType SingerType => USingerType.Classic;
+            public override IList<string> SearchTerms { get; } = new List<string>();
         }
 
         // Adds singers that aren't loadable, so the test must not select them.
@@ -161,6 +162,7 @@ namespace OpenUtau.UiTest {
         [Fact]
         public void SingerFlyoutSearches() {
             WithMainWindow(nameof(SingerFlyoutSearches), window => WithFakeSingers(11, new[] { 0, 1, 2 }, new[] { 5, 6, 7 }, singers => {
+                singers[4].SearchTerms.Add("kasane teto");
                 Click(window, FindButtonWithText(window, "welcome.new"));
                 var header = window.GetVisualDescendants().OfType<TrackHeader>().First();
                 Click(window, header.FindControl<Button>("SingerButton")!);
@@ -194,6 +196,13 @@ namespace OpenUtau.UiTest {
                 // The flyout keeps its size while searching.
                 Assert.Equal(gridSize, grid.Bounds.Size);
 
+                // Search terms from the voicebank config find the singer and show in its tip.
+                viewModel.SearchText = "kasane";
+                HeadlessUi.Flush();
+                var tile = Assert.Single(viewModel.Tiles);
+                Assert.Same(singers[4], tile.Singer);
+                Assert.Contains("kasane teto", tile.ToolTipText);
+
                 viewModel.SearchText = "no such singer";
                 HeadlessUi.Flush();
                 Assert.Empty(viewModel.Tiles);
@@ -206,6 +215,26 @@ namespace OpenUtau.UiTest {
                 Assert.Equal(viewModel.AllTileCount, viewModel.Tiles.Count);
                 Assert.True(flyout.IsEffectivelyVisible);
                 AssertRendered(window);
+
+                // Right-clicking a tile offers to open its location and edit its search terms,
+                // and to remove it from recent singers only when it is one.
+                List<object?> MenuHeaders(FakeSinger singer) {
+                    var tileControl = flyout.GetVisualDescendants().OfType<Border>()
+                        .First(b => b.Classes.Contains("singerTile") && (b.DataContext as SingerTileViewModel)?.Singer == singer);
+                    var point = tileControl.TranslatePoint(new Point(10, 10), window)!.Value;
+                    window.MouseDown(point, MouseButton.Right);
+                    window.MouseUp(point, MouseButton.Right);
+                    HeadlessUi.Flush();
+                    var headers = window.GetVisualDescendants().OfType<MenuItem>().Select(item => item.Header).ToList();
+                    window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+                    HeadlessUi.Flush();
+                    return headers;
+                }
+                var headers = MenuHeaders(singers[0]);
+                Assert.Contains(window.FindResource("tracks.openlocation"), headers);
+                Assert.Contains(window.FindResource("tracks.searchterms.edit"), headers);
+                Assert.DoesNotContain(window.FindResource("tracks.removefromrecent"), headers);
+                Assert.Contains(window.FindResource("tracks.removefromrecent"), MenuHeaders(singers[5]));
             }));
         }
     }

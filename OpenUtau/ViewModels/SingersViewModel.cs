@@ -223,7 +223,38 @@ namespace OpenUtau.App.ViewModels {
             }
         }
 
+        public static void SetSearchTerms(USinger singer, string text) {
+            var terms = SplitSearchTerms(text);
+            try {
+                // Null leaves the key out of the file.
+                WriteConfig(singer, config => config.SearchTerms = terms.Length > 0 ? terms : null!);
+                // Updated in place instead of reloading the singer, which not every singer type does from its config.
+                if (!singer.SearchTerms.IsReadOnly) {
+                    singer.SearchTerms.Clear();
+                    foreach (var term in terms) {
+                        singer.SearchTerms.Add(term);
+                    }
+                }
+            } catch (Exception e) {
+                var customEx = new MessageCustomizableException("Failed to save singer config", "<translate:errors.failed.savesingerconfig>", e);
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
+            }
+        }
+
+        /// <summary>Splits terms separated by commas, including CJK ones, or semicolons.</summary>
+        public static string[] SplitSearchTerms(string text) {
+            return text.Split(new[] { ',', '\uFF0C', '\u3001', ';', '\uFF1B' },
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct()
+                .ToArray();
+        }
+
         private void ModifyConfig(USinger singer, Action<VoicebankConfig> modify) {
+            WriteConfig(singer, modify);
+            RefreshSinger();
+        }
+
+        static void WriteConfig(USinger singer, Action<VoicebankConfig> modify) {
             var yamlFile = Path.Combine(singer.Location, "character.yaml");
             VoicebankConfig? config = null;
             if (File.Exists(yamlFile)) {
@@ -238,7 +269,6 @@ namespace OpenUtau.App.ViewModels {
             using (var stream = File.Open(yamlFile, FileMode.Create)) {
                 config.Save(stream);
             }
-            RefreshSinger();
         }
 
         public void ErrorReport() {
@@ -328,16 +358,20 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void OpenLocation() {
+            if (Singer != null) {
+                OpenLocation(Singer);
+            }
+        }
+
+        public static void OpenLocation(USinger singer) {
             try {
-                if (Singer != null) {
-                    var location = Singer.Location;
-                    if (File.Exists(location)) {
-                        //Vogen voicebank is a singlefile
-                        OS.GotoFile(location);
-                    } else {
-                        //classic or ENUNU voicebank is a folder
-                        OS.OpenFolder(location);
-                    }
+                var location = singer.Location;
+                if (File.Exists(location)) {
+                    //Vogen voicebank is a singlefile
+                    OS.GotoFile(location);
+                } else {
+                    //classic or ENUNU voicebank is a folder
+                    OS.OpenFolder(location);
                 }
             } catch (Exception e) {
                 DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));

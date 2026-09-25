@@ -132,6 +132,24 @@ namespace OpenUtau.App.Views {
             await dialog.ShowDialog(this);
         }
 
+        void OnEditSearchTerms(object sender, RoutedEventArgs args) {
+            var viewModel = (DataContext as SingersViewModel)!;
+            if (viewModel.Singer != null) {
+                var singer = viewModel.Singer;
+                ShowSearchTermsDialog(this, singer, text => SingersViewModel.SetSearchTerms(singer, text));
+            }
+        }
+
+        public static void ShowSearchTermsDialog(Window owner, USinger singer, Action<string> onFinish) {
+            var dialog = new TypeInDialog() {
+                Title = $"{ThemeManager.GetString("tracks.searchterms")}: {singer.LocalizedName}",
+            };
+            dialog.SetPrompt(ThemeManager.GetString("tracks.searchterms.prompt"));
+            dialog.SetText(string.Join(", ", singer.SearchTerms));
+            dialog.onFinish = onFinish;
+            dialog.ShowDialog(owner);
+        }
+
         void OnSetUseFilenameAsAlias(object sender, RoutedEventArgs args) {
             var viewModel = (DataContext as SingersViewModel)!;
             viewModel.SetUseFilenameAsAlias();
