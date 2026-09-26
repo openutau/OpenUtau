@@ -50,23 +50,11 @@ cc_library(
 )
 
 cc_library(
-    name = "phrase_synth",
-    srcs = ["phrase_synth.cpp"],
-    hdrs = ["phrase_synth.h"],
-    deps = [
-        ":synth_request",
-        "//worldline/classic:timing",
-        "//worldline/model",
-        "//worldline/model:effects",
-    ],
-)
-
-cc_library(
     name = "worldline_lib",
     srcs = ["worldline.cpp"],
     hdrs = ["worldline.h"],
     deps = [
-        ":phrase_synth",
+        ":synth_request",
         "//worldline/classic:resampler",
         "//worldline/f0",
         "//worldline/model:effects",

@@ -9,8 +9,6 @@
 #include "world/dio.h"
 #include "world/synthesis.h"
 #include "worldline/common/vec_utils.h"
-#include "worldline/platinum/platinum.h"
-#include "worldline/platinum/synthesisplatinum.h"
 
 namespace worldline {
 
@@ -47,14 +45,6 @@ void Model::BuildAp() {
       fft_size_, &d4c_option, ap_wrapper.data());
 }
 
-void Model::BuildResidual() {
-  std::vector<double*> sp_wrapper = vec2d_wrapper(sp_);
-  residual_ = vec2d(fft_size_, f0_.size(), 0);
-  std::vector<double*> residual_wrapper = vec2d_wrapper(residual_);
-  Platinum(samples_.data(), samples_.size(), fs_, ts_.data(), f0_.data(),
-           f0_.size(), sp_wrapper.data(), fft_size_, residual_wrapper.data());
-}
-
 void Model::SynthParams(std::vector<std::vector<double>>* tension,
                         std::vector<double>* breathiness,
                         std::vector<double>* voicing) {
@@ -74,18 +64,6 @@ void Model::Synth(std::vector<std::vector<double>>& tension,
   Synthesis(f0_.data(), f0_.size(), sp_wrapper.data(), ap_wrapper.data(),
             fft_size_, frame_ms_, fs_, tension_wrapper.data(),
             breathiness.data(), voicing.data(), y_len, y.data());
-  samples_ = std::move(y);
-}
-
-void Model::SynthPlatinum() {
-  int y_len = static_cast<int>(fs_ * (f0_.size() - 1) * frame_ms_ / 1000.0) + 1;
-  std::vector<double> y = std::vector<double>(y_len);
-  std::vector<double*> sp_wrapper = vec2d_wrapper(sp_);
-  std::vector<double*> residual_wrapper = vec2d_wrapper(residual_);
-  SynthesisPlatinum(f0_.data(), f0_.size(), sp_wrapper.data(),
-                    residual_wrapper.data(), fft_size_, frame_ms_, fs_, y_len,
-                    y.data());
-
   samples_ = std::move(y);
 }
 
@@ -114,20 +92,15 @@ void Model::Trim(int start, int length) {
     ap_.erase(ap_.begin(), ap_.begin() + start);
     ap_.erase(ap_.begin() + length, ap_.end());
   }
-  if (residual_.size() > 0) {
-    residual_.erase(residual_.begin(), residual_.begin() + start);
-    residual_.erase(residual_.begin() + length, residual_.end());
-  }
 }
 
 void Model::Remap(const std::vector<double>& mapping) {
   std::vector<double> new_f0;
   std::vector<std::vector<double>> new_sp;
-  std::vector<std::vector<double>> new_other;
+  std::vector<std::vector<double>> new_ap;
   new_f0.reserve(mapping.size());
   new_sp.reserve(mapping.size());
-  new_other.reserve(mapping.size());
-  const auto& other = ap_.size() > 0 ? ap_ : residual_;
+  new_ap.reserve(mapping.size());
   for (double p : mapping) {
     double pos = p / frame_ms_;
     int idx = static_cast<int>(pos);
@@ -136,15 +109,11 @@ void Model::Remap(const std::vector<double>& mapping) {
     int i1 = std::min(idx + 1, (int)f0_.size() - 1);
     new_f0.push_back(f0_[i0] * (1.0 - t) + f0_[i1] * t);
     new_sp.push_back(vec_lerp(sp_[i0], sp_[i1], t));
-    new_other.push_back(vec_lerp(other[i0], other[i1], t));
+    new_ap.push_back(vec_lerp(ap_[i0], ap_[i1], t));
   }
   f0_ = std::move(new_f0);
   sp_ = std::move(new_sp);
-  if (ap_.size() > 0) {
-    ap_ = std::move(new_other);
-  } else {
-    residual_ = std::move(new_other);
-  }
+  ap_ = std::move(new_ap);
 }
 
 double Model::GetVoicedRatio() {

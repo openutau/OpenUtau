@@ -16,8 +16,8 @@
 #endif
 
 extern "C" {
-DLL_API PhraseSynth* PhraseSynthNew();
-DLL_API void PhraseSynthDelete(PhraseSynth* phrase_synth);
+DLL_API int F0(float* samples, int length, int fs, double frame_period,
+               int method, double** f0);
 }
 
 TEST(WorldlineTest, TestF0) {
@@ -28,7 +28,8 @@ TEST(WorldlineTest, TestF0) {
   dlopen("libworldline", RTLD_LAZY);
 #endif
 
-  PhraseSynth* phrase_synth = PhraseSynthNew();
-  EXPECT_THAT(phrase_synth, testing::NotNull());
-  PhraseSynthDelete(phrase_synth);
+  double* f0 = nullptr;
+  EXPECT_EQ(F0(nullptr, 0, 44100, 10, 0, &f0), 0);
+  EXPECT_THAT(f0, testing::NotNull());
+  delete[] f0;
 }

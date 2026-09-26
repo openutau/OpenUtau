@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <memory>
 #include <vector>
 
 #include "world/cheaptrick.h"
@@ -92,33 +93,6 @@ void InitAnalysisConfig(AnalysisConfig* config, int fs, int hop_size,
   config->f0_floor = (float)GetF0FloorForCheapTrick(fs, fft_size);
   config->frame_ms = static_cast<double>(config->hop_size) * 1000.0 /
                      static_cast<double>(config->fs);
-}
-
-DLL_API void WorldAnalysis(const AnalysisConfig* config, float* samples,
-                           int num_samples, double** f0_out,
-                           double** sp_env_out, double** ap_out,
-                           int* num_frames) {
-  std::vector<double> samples_vec;
-  samples_vec.reserve(num_samples);
-  std::copy(samples, samples + num_samples, std::back_inserter(samples_vec));
-  auto f0_estimator = std::make_unique<worldline::PyinEstimator>();
-  worldline::Model model(std::move(samples_vec), config->fs, config->frame_ms,
-                         std::move(f0_estimator));
-  model.BuildF0();
-  model.BuildSp();
-  model.BuildAp();
-  *num_frames = model.f0().size();
-  *f0_out = new double[*num_frames];
-  int sp_size = config->fft_size / 2 + 1;
-  *sp_env_out = new double[*num_frames * sp_size];
-  *ap_out = new double[*num_frames * sp_size];
-  std::copy(model.f0().begin(), model.f0().end(), *f0_out);
-  for (int i = 0; i < *num_frames; ++i) {
-    std::copy(model.sp()[i].begin(), model.sp()[i].end(),
-              *sp_env_out + i * sp_size);
-    std::copy(model.ap()[i].begin(), model.ap()[i].end(),
-              *ap_out + i * sp_size);
-  }
 }
 
 DLL_API void WorldAnalysisF0In(const AnalysisConfig* config, float* samples,
@@ -251,35 +225,3 @@ DLL_API int Resample(const SynthRequest* request, float** y) {
   return out.size();
 }
 
-DLL_API PhraseSynth* PhraseSynthNew() { return new PhraseSynth(); }
-
-DLL_API void PhraseSynthDelete(PhraseSynth* phrase_synth) {
-  delete phrase_synth;
-}
-
-DLL_API void PhraseSynthAddRequest(PhraseSynth* phrase_synth,
-                                   const SynthRequest* request, double pos_ms,
-                                   double skip_ms, double length_ms,
-                                   double fade_in_ms, double fade_out_ms,
-                                   worldline::LogCallback logCallback) {
-  phrase_synth->AddRequest(*request, pos_ms, skip_ms, length_ms, fade_in_ms,
-                           fade_out_ms, logCallback);
-}
-
-DLL_API void PhraseSynthSetCurves(PhraseSynth* phrase_synth, double* f0,
-                                  double* gender, double* tension,
-                                  double* breathiness, double* voicing,
-                                  int length,
-                                  worldline::LogCallback logCallback) {
-  phrase_synth->SetCurves(f0, gender, tension, breathiness, voicing, length,
-                          logCallback);
-}
-
-DLL_API int PhraseSynthSynth(PhraseSynth* phrase_synth, float** y,
-                             worldline::LogCallback logCallback) {
-  std::vector<double> samples = phrase_synth->Synth(logCallback);
-  int yLength = samples.size();
-  *y = new float[samples.size()];
-  std::copy(samples.begin(), samples.end(), *y);
-  return yLength;
-}

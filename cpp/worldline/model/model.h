@@ -17,14 +17,12 @@ class Model {
   void BuildF0();
   void BuildSp();
   void BuildAp();
-  void BuildResidual();
 
   void SynthParams(std::vector<std::vector<double>>* tension,
                    std::vector<double>* breathiness,
                    std::vector<double>* voicing);
   void Synth(std::vector<std::vector<double>>& tension,
              std::vector<double>& breathiness, std::vector<double>& voicing);
-  void SynthPlatinum();
 
   void Trim(int start, int length);
   void Remap(const std::vector<double>& frame_positions);
@@ -44,7 +42,6 @@ class Model {
   int fft_size() { return fft_size_; }
   std::vector<std::vector<double>>& sp() { return sp_; }
   std::vector<std::vector<double>>& ap() { return ap_; }
-  std::vector<std::vector<double>>& residual() { return residual_; }
 
  private:
   std::vector<double> samples_;
@@ -59,7 +56,6 @@ class Model {
   int fft_size_;
   std::vector<std::vector<double>> sp_;
   std::vector<std::vector<double>> ap_;
-  std::vector<std::vector<double>> residual_;
 };
 
 }  // namespace worldline

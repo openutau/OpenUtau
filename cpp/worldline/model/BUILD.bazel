@@ -18,7 +18,6 @@ cc_library(
     deps = [
         "//worldline/common:vec_utils",
         "//worldline/f0",
-        "//worldline/platinum",
         "@world",
     ],
 )

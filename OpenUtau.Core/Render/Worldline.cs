@@ -103,38 +103,6 @@ namespace OpenUtau.Core.Render {
         }
 
         [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
-        static extern unsafe void WorldAnalysis(
-            ref AnalysisConfig config, float[] samples, int num_samples,
-            double** f0_out, double** sp_env_out, double** ap_out,
-            ref int num_frames);
-        public static unsafe void WorldAnalysis(ref AnalysisConfig config, float[] samples,
-            out NDArray f0Out, out NDArray spEnv, out NDArray ap, out int num_frames) {
-            double* f0Ptr = null;
-            double* spEnvPtr = null;
-            double* apPtr = null;
-            num_frames = 0;
-
-            WorldAnalysis(ref config, samples, samples.Length, &f0Ptr, &spEnvPtr, &apPtr, ref num_frames);
-
-            int spSize = config.fft_size / 2 + 1;
-
-            f0Out = np.ndarray(new Shape(num_frames), typeof(double));
-            spEnv = np.ndarray(new Shape(num_frames, spSize), typeof(double));
-            ap = np.ndarray(new Shape(num_frames, spSize), typeof(double));
-
-            Buffer.MemoryCopy(f0Ptr, f0Out.Data<double>().Address,
-                num_frames * sizeof(double), num_frames * sizeof(double));
-            Buffer.MemoryCopy(spEnvPtr, spEnv.Data<double>().Address,
-                num_frames * spSize * sizeof(double), num_frames * spSize * sizeof(double));
-            Buffer.MemoryCopy(apPtr, ap.Data<double>().Address,
-                num_frames * spSize * sizeof(double), num_frames * spSize * sizeof(double));
-
-            Marshal.FreeCoTaskMem(new IntPtr(f0Ptr));
-            Marshal.FreeCoTaskMem(new IntPtr(spEnvPtr));
-            Marshal.FreeCoTaskMem(new IntPtr(apPtr));
-        }
-
-        [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
         static extern unsafe void WorldAnalysisF0In(
             ref AnalysisConfig config, float[] samples, int num_samples,
             double[] f0_in, int num_frames, double* sp_env_out, double* ap_out);
@@ -370,94 +338,6 @@ namespace OpenUtau.Core.Render {
                 }
             } finally {
                 requestWrapper.Dispose();
-            }
-        }
-
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        delegate void LogCallback(string log);
-
-        [DllImport("worldline")]
-        static extern IntPtr PhraseSynthNew();
-
-        [DllImport("worldline")]
-        static extern void PhraseSynthDelete(IntPtr phrase_synth);
-
-        [DllImport("worldline")]
-        static extern void PhraseSynthAddRequest(
-            IntPtr phrase_synth, IntPtr request,
-            double posMs, double skipMs, double lengthMs,
-            double fadeInMs, double fadeOutMs, LogCallback logCallback);
-
-        [DllImport("worldline")]
-        static extern void PhraseSynthSetCurves(
-            IntPtr phraseSynth, double[] f0,
-            double[] gender, double[] tension,
-            double[] breathiness, double[] voicing,
-            int length, LogCallback logCallback);
-
-        [DllImport("worldline")]
-        static extern int PhraseSynthSynth(
-            IntPtr phrase_synth,
-            ref IntPtr y, LogCallback logCallback);
-
-        public class PhraseSynth : IDisposable {
-            private IntPtr ptr;
-            private bool disposedValue;
-
-            public PhraseSynth() {
-                ptr = PhraseSynthNew();
-            }
-
-            protected virtual void Dispose(bool disposing) {
-                if (!disposedValue) {
-                    PhraseSynthDelete(ptr);
-                    disposedValue = true;
-                }
-            }
-
-            ~PhraseSynth() {
-                Dispose(disposing: false);
-            }
-
-            public void Dispose() {
-                Dispose(disposing: true);
-                GC.SuppressFinalize(this);
-            }
-
-            public void AddRequest(
-                ResamplerItem item, double posMs, double skipMs,
-                double lengthMs, double fadeInMs, double fadeOutMs) {
-                var requestWrapper = new SynthRequestWrapper(item);
-                SynthRequest request = requestWrapper.request;
-                try {
-                    unsafe {
-                        PhraseSynthAddRequest(
-                            ptr, new IntPtr(&request),
-                            posMs, skipMs, lengthMs,
-                            fadeInMs, fadeOutMs, Log.Information);
-                    }
-                } finally {
-                    requestWrapper.Dispose();
-                }
-            }
-
-            public void SetCurves(
-                double[] f0, double[] gender,
-                double[] tension, double[] breathiness,
-                double[] voicing) {
-                PhraseSynthSetCurves(
-                    ptr, f0,
-                    gender, tension, breathiness, voicing,
-                    f0.Length, Log.Information);
-            }
-
-            public float[] Synth() {
-                IntPtr buffer = IntPtr.Zero;
-                int size = PhraseSynthSynth(ptr, ref buffer, Log.Information);
-                var data = new float[size];
-                Marshal.Copy(buffer, data, 0, size);
-                Marshal.FreeCoTaskMem(buffer);
-                return data;
             }
         }
 
