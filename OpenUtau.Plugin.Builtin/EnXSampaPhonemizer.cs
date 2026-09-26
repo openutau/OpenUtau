@@ -723,102 +723,52 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
-        protected override string ValidateAlias(string alias, int tone = 0) {
-            if (string.IsNullOrEmpty(alias)) {
-                return alias;
-            }
-
-            if (HasOto(alias, tone)) {
-                return alias;
-            }
-
-            string baseResolved = base.ValidateAlias(alias, tone);
-            if (!string.IsNullOrEmpty(baseResolved) && HasOto(baseResolved, tone)) {
-                return baseResolved;
-            }
-            if (!string.IsNullOrEmpty(baseResolved)) {
-                alias = baseResolved;
-            }
-
+        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
             string candidate = alias;
 
-            if (isVocaSampa) {
-                foreach (var syllable in vocaSampa) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
+            // Helper to apply dictionary substitutions while honoring YAML suppressed tokens and strict casing
+            void ApplyDictionary(IEnumerable<KeyValuePair<string, string>> dict) {
+                if (dict == null) return;
+                foreach (var kvp in dict.OrderByDescending(f => f.Key.Length)) {
+                    if (suppressedTokens != null && suppressedTokens.Contains(kvp.Key)) continue;
+                    candidate = candidate.Replace(kvp.Key, kvp.Value, StringComparison.Ordinal);
                 }
             }
 
-            if (isSimpleDelta) {
-                foreach (var syllable in simpleDelta) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
-                }
-            }
+            if (isVocaSampa) ApplyDictionary(vocaSampa);
+            if (isSimpleDelta) ApplyDictionary(simpleDelta);
+            if (isMiniDelta) ApplyDictionary(miniDelta);
+            if (isEnPlusJa) ApplyDictionary(enPlusJa);
+            if (isTrueXSampa) ApplyDictionary(trueXSampa);
+            if (isSalemList) ApplyDictionary(salemList);
+            if (isVelarNasalFallback) ApplyDictionary(velarNasalFallback);
+            if (isTetoException) ApplyDictionary(tetoException);
+            if (isMissingCanadianRaising) ApplyDictionary(CanadianRaising);
+            if (isDarkLVowel) ApplyDictionary(darkLVowel);
 
-            if (isMiniDelta) {
-                foreach (var syllable in miniDelta) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
-                }
-            }
-
-            if (isEnPlusJa) {
-                foreach (var syllable in enPlusJa) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
-                }
-            }
-
-            if (isTrueXSampa) {
-                foreach (var syllable in trueXSampa) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
-                }
-            }
-
-            if (isSalemList) {
-                foreach (var syllable in salemList) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
-                }
-            }
-
-            if (isVelarNasalFallback) {
-                foreach (var syllable in velarNasalFallback) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
-                }
-            }
-
-            if (isTetoException) {
-                foreach (var syllable in tetoException) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
-                }
-            }
-
-            if (isMissingCanadianRaising) {
-                foreach (var syllable in CanadianRaising) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
-                }
-            }
-
-            if (isDarkLVowel) {
-                foreach (var syllable in darkLVowel) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
-                }
-            }
-
-            // Split diphthongs adjuster
-            candidate = candidate.Replace("U^", "U")
-                                .Replace("I^", "I")
-                                .Replace("u^", "u")
-                                .Replace("i^", "i");
+            // Split diphthongs adjuster (casing preserved)
+            candidate = candidate.Replace("U^", "U", StringComparison.Ordinal)
+                                 .Replace("I^", "I", StringComparison.Ordinal)
+                                 .Replace("u^", "u", StringComparison.Ordinal)
+                                 .Replace("i^", "i", StringComparison.Ordinal);
 
             // Other validations
-            if (!candidate.Contains("@r") && !candidate.Contains("3r")) {
-                foreach (var consonant1 in new[] { "r ", "r\\ ", }) {
-                    foreach (var consonant2 in consonants) {
-                        candidate = candidate.Replace(consonant1 + consonant2, "3 " + consonant2);
+            if (!candidate.Contains("@r", StringComparison.Ordinal) && !candidate.Contains("3r", StringComparison.Ordinal)) {
+                if (consonants != null) {
+                    foreach (var consonant1 in new[] { "r ", "r\\ " }) {
+                        foreach (var consonant2 in consonants) {
+                            candidate = candidate.Replace(consonant1 + consonant2, "3 " + consonant2, StringComparison.Ordinal);
+                        }
                     }
                 }
             }
 
-            // Return the replacement if it exists in the OTO, otherwise keep original
-            return HasOto(candidate, tone) ? candidate : alias;
+            // Return candidate if changed and present in OTO; otherwise null to let the base pipeline proceed
+            if (!string.Equals(candidate, alias, StringComparison.Ordinal) && HasOto(candidate, tone)) {
+                return candidate;
+            }
+
+            return null;
         }
 
         // Endings has 50 ticks gap

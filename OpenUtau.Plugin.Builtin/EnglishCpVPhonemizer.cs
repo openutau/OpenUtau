@@ -633,35 +633,40 @@ namespace OpenUtau.Plugin.Builtin {
             return alias;
         }
 
-        protected override string ValidateAlias(string alias, int tone = 0) {
+        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+            string currentAlias = alias;
 
-            // VALIDATE ALIAS DEPENDING ON METHOD
-            if (HasOto(alias, tone)) return alias;
-
-            string baseResolved = base.ValidateAlias(alias, tone);
-            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
-                if (HasOto(baseResolved, tone)) {
-                    return baseResolved;
-                }
-                alias = baseResolved;
-            }
-            if (isTimitPhonemes) {
+            if (isTimitPhonemes && timitphonemes != null) {
                 foreach (var fb in timitphonemes.OrderByDescending(f => f.Key.Length)) {
-                    alias =  alias.Replace(fb.Key, fb.Value);
+                    if (suppressedTokens != null && suppressedTokens.Contains(fb.Key)) continue;
+                    currentAlias = currentAlias.Replace(fb.Key, fb.Value, StringComparison.Ordinal);
+                }
+                if (!string.Equals(currentAlias, alias, StringComparison.Ordinal) && HasOto(currentAlias, tone)) {
+                    return currentAlias;
                 }
             }
-            if (isMissingVPhonemes) {
-                foreach (var fb in missingVphonemes.OrderByDescending(f => f.Key.Length)) {
-                    alias = alias.Replace(fb.Key, fb.Value);
-                }
-            }
-            if (isMissingCPhonemes) {
-                foreach (var fb in missingCphonemes.OrderByDescending(f => f.Key.Length)) {
-                    alias = alias.Replace(fb.Key, fb.Value);
-                }
-            }
-            return alias;
 
+            if (isMissingVPhonemes && missingVphonemes != null) {
+                foreach (var fb in missingVphonemes.OrderByDescending(f => f.Key.Length)) {
+                    if (suppressedTokens != null && suppressedTokens.Contains(fb.Key)) continue;
+                    currentAlias = currentAlias.Replace(fb.Key, fb.Value, StringComparison.Ordinal);
+                }
+                if (!string.Equals(currentAlias, alias, StringComparison.Ordinal) && HasOto(currentAlias, tone)) {
+                    return currentAlias;
+                }
+            }
+
+            if (isMissingCPhonemes && missingCphonemes != null) {
+                foreach (var fb in missingCphonemes.OrderByDescending(f => f.Key.Length)) {
+                    if (suppressedTokens != null && suppressedTokens.Contains(fb.Key)) continue;
+                    currentAlias = currentAlias.Replace(fb.Key, fb.Value, StringComparison.Ordinal);
+                }
+                if (!string.Equals(currentAlias, alias, StringComparison.Ordinal) && HasOto(currentAlias, tone)) {
+                    return currentAlias;
+                }
+            }
+
+            return !string.Equals(currentAlias, alias, StringComparison.Ordinal) ? currentAlias : null;
         }
 
         bool PhonemeIsPresent(string alias, string phoneme) {
