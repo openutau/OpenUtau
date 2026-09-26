@@ -372,7 +372,7 @@ namespace OpenUtau.Core.Render {
 
                 var frq = new Frq();
                 bool hasFrq = frq.Load(item.inputFile);
-                var f0Src = F0(samples, fs, cfg.frame_ms, hasFrq ? -1 : 0);
+                var f0Src = F0(samples, fs, cfg.frame_ms, hasFrq ? -1 : 2);
                 if (hasFrq) {
                     for (int i = 0; i < f0Src.Length; ++i) {
                         double ratio = (double)config.hop_size / frq.hopSize;
