@@ -568,7 +568,7 @@ namespace OpenUtau.Core.Render {
                     double dstLengthMs = tDst.Length * cfg.frame_ms;
                     double dstConsonantMs = srcConsonantMs / consonantSpeed;
                     double dstVowelMs = dstLengthMs - dstConsonantMs;
-                    double vowelSpeed = dstVowelMs > 0 ? srcVowelMs / dstVowelMs : 1.0;
+                    double vowelSpeed = dstVowelMs > 0 ? Math.Clamp(srcVowelMs / dstVowelMs, 0.01, 1.0) : 1.0;
 
                     for (int i = 0; i < tDst.Length; ++i) {
                         double dstMs = i * cfg.frame_ms;
