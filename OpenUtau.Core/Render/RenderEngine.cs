@@ -120,6 +120,7 @@ namespace OpenUtau.Core.Render {
         public Tuple<WaveMix, List<Fader>> RenderMixdown(
                 TaskScheduler uiScheduler, ref CancellationTokenSource cancellation, bool wait, bool applyMixFx, MixPlanner planner) {
             var newCancellation = new CancellationTokenSource();
+            var renderToken = newCancellation.Token;
             var oldCancellation = Interlocked.Exchange(ref cancellation, newCancellation);
             if (oldCancellation != null) {
                 oldCancellation.Cancel();
@@ -194,22 +195,7 @@ namespace OpenUtau.Core.Render {
             });
             task.ContinueWith(task => {
                 if (task.IsFaulted && !wait) {
-                    Log.Error(task.Exception.Flatten(), "Failed to render.");
-                    PlaybackManager.Inst.StopPlayback();
-                    var flatEx = task.Exception.Flatten();
-                    var innerEx = flatEx.InnerExceptions.ToList();
-                    if (innerEx.Count == 1 && innerEx[0] is MessageCustomizableException mce) {
-                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(mce));
-                    } else if (innerEx.Any(e => e is DllNotFoundException)) {
-                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
-                            new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>: <translate:errors.install.cpp>", flatEx)));
-                    } else if (innerEx.Any(e => e is ResamplerFailedException)) {
-                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
-                            new MessageCustomizableException("Failed to render.", "<translate:errors.resampler.failed.message>", flatEx)));
-                    } else {
-                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
-                            new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>", flatEx)));
-                    }
+                    HandleRenderFailure(task.Exception, renderToken);
                 }
             }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, uiScheduler);
             if (wait) {
@@ -220,6 +206,32 @@ namespace OpenUtau.Core.Render {
             // disabled tracks zero-cost.
             var resultMix = new WaveMix(trackOutputs);
             return Tuple.Create(resultMix, faders);
+        }
+
+        internal static void HandleRenderFailure(AggregateException exception, CancellationToken renderToken) {
+            // A replacement pass cancels the old pass. Its queued UI callback must
+            // neither report cancellation as an error nor stop the new playback.
+            // Use the captured token: the old source may already be disposed.
+            var flatEx = exception.Flatten();
+            if (renderToken.IsCancellationRequested) {
+                Log.Debug(flatEx, "Ignoring failure from a cancelled render pass.");
+                return;
+            }
+            Log.Error(flatEx, "Failed to render.");
+            PlaybackManager.Inst.StopPlayback();
+            var innerEx = flatEx.InnerExceptions.ToList();
+            if (innerEx.Count == 1 && innerEx[0] is MessageCustomizableException mce) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(mce));
+            } else if (innerEx.Any(e => e is DllNotFoundException)) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
+                    new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>: <translate:errors.install.cpp>", flatEx)));
+            } else if (innerEx.Any(e => e is ResamplerFailedException)) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
+                    new MessageCustomizableException("Failed to render.", "<translate:errors.resampler.failed.message>", flatEx)));
+            } else {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(
+                    new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>", flatEx)));
+            }
         }
 
         // for export

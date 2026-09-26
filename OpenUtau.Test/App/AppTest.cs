@@ -2,6 +2,11 @@
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Styling;
+using Avalonia.Controls;
+using Avalonia.Threading;
+using System.Linq;
+using System.Threading;
+using OpenUtau.App.Views;
 using OpenUtau.App;
 
 [assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]
@@ -33,6 +38,32 @@ namespace OpenUtau.App {
             Assert.Contains("ja-JP", languages.Keys);
             foreach (var pair in languages) {
                 Assert.NotNull(pair.Value);
+            }
+            CheckLoadingWindowLifecycle();
+        }
+
+        static void CheckLoadingWindowLifecycle() {
+            var previousContext = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(new AvaloniaSynchronizationContext());
+            var owner = new Window();
+            try {
+                owner.Show();
+                LoadingWindow.BeginLoadingImmediate(owner);
+                var first = Assert.Single(owner.OwnedWindows.OfType<LoadingWindow>());
+                first.Close(); // Close outside EndLoading, as with owner/WM closure.
+                Assert.False(LoadingWindow.IsLoading());
+                LoadingWindow.BeginLoadingImmediate(owner);
+                var second = Assert.Single(owner.OwnedWindows.OfType<LoadingWindow>());
+                Assert.NotSame(first, second);
+                LoadingWindow.EndLoading();
+                Assert.Empty(owner.OwnedWindows);
+                LoadingWindow.BeginLoadingImmediate(owner);
+                Assert.NotSame(second, Assert.Single(owner.OwnedWindows.OfType<LoadingWindow>()));
+                LoadingWindow.EndLoading();
+            } finally {
+                LoadingWindow.EndLoading();
+                owner.Close();
+                SynchronizationContext.SetSynchronizationContext(previousContext);
             }
         }
     }

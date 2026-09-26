@@ -165,7 +165,7 @@ namespace OpenUtau.Classic {
                 otoWatcher.Paused = false;
             }
         }
-        
+
         public void Dispose() {
             otoWatcher?.Dispose();
             otoWatcher = null;

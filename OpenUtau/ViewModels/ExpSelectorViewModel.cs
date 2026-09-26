@@ -88,7 +88,8 @@ namespace OpenUtau.App.ViewModels {
         public void OnNext(UCommand cmd, bool isUndo) {
             if (cmd is LoadProjectNotification ||
                 cmd is LoadPartNotification ||
-                cmd is ConfigureExpressionsCommand) {
+                cmd is ConfigureExpressionsCommand ||
+                cmd is TrackChangeRenderSettingCommand) {
                 OnListChange();
             } else if (cmd is SelectExpressionNotification) {
                 OnSelectExp((SelectExpressionNotification)cmd);
