@@ -1,0 +1,563 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <system:String x:Key="context.note.copy">Нотаны көшіру</system:String>
+  <system:String x:Key="context.note.delete">Нотаны жою</system:String>
+  <system:String x:Key="context.note.pasteparameters">Параметрларды тандап, қою</system:String>
+  <system:String x:Key="context.part.delete">Бөлікті жою</system:String>
+  <system:String x:Key="context.part.gotofile">File орнын көру</system:String>
+  <system:String x:Key="context.part.rename">Бөлік атын өзгерту</system:String>
+  <system:String x:Key="context.part.replaceaudio">Аудиофайлды өзгерту</system:String>
+  <system:String x:Key="context.part.transcribe">Жазба бөлігін жасау үшін дыбысты транскрипциялау</system:String>
+  <system:String x:Key="context.part.transcribing">Транскрипциялау</system:String>
+  <system:String x:Key="context.pitch.easein">Кіруді жеңілдету</system:String>
+  <system:String x:Key="context.pitch.easeinout">Кіру/шығуды жеңілдету</system:String>
+  <system:String x:Key="context.pitch.easeout">Шығуды жеңілдету</system:String>
+  <system:String x:Key="context.pitch.linear">Түзу сызық</system:String>
+  <system:String x:Key="context.pitch.pointadd">Нүктені қосу</system:String>
+  <system:String x:Key="context.pitch.pointdel">Нүктені жою</system:String>
+  <system:String x:Key="context.pitch.pointsnapprev">Алдынғы нотамен байланыстыру</system:String>
+  <system:String x:Key="context.timeline.addtempo">{0} жылдамдығын өзгерту</system:String>
+  <system:String x:Key="context.timeline.addtimesig">Уақыт белгісінің өзгерісін қосу</system:String>
+  <system:String x:Key="context.timeline.deltempo">{0} темпінің өзгеруін жою</system:String>
+  <system:String x:Key="context.timeline.deltimesig">Уақыт белгісінің өзгерісін жою</system:String>
+
+  <system:String x:Key="debug.clear">Тазалау</system:String>
+  <system:String x:Key="debug.copylog">Журналды көшіру</system:String>
+  <system:String x:Key="debug.reverselogorder">Кері журнал тәртібі</system:String>
+
+  <system:String x:Key="dialogs.about.caption">OpenUTAU жайлы</system:String>
+  <system:String x:Key="dialogs.about.message">
+    OpenUtau'ның мақсаты заманауи пайдаланушы тәжірибесі және интелектуалды әндету синтезін қолдауы бар UTAU қауымдастығы үшін ашық бастапқы өндеу ортасы. Бізді Github'тан бақылаңыз.
+  </system:String>
+  <system:String x:Key="dialogs.exitsave.caption">OpenUtau'ды жабу</system:String>
+  <system:String x:Key="dialogs.exitsave.message">Сақталмаған өзгерістер бар. Сақтағыңыз келе ме?</system:String>
+  <system:String x:Key="dialogs.export.caption">Шығару</system:String>
+  <system:String x:Key="dialogs.export.savefirst">Жобаңызды сақтаңыз</system:String>
+  <system:String x:Key="dialogs.importtracks.caption">Жолды жүктеу</system:String>
+  <system:String x:Key="dialogs.importtracks.importtempo">Жүктелген жобада ілескен жылдамдық нүктелері бар. Оларды қолданғыңыз келе ме?</system:String>
+  <system:String x:Key="dialogs.installdependency.caption">Тәуелділіктерді орнату</system:String>
+  <system:String x:Key="dialogs.installdependency.message">Орнатылуда</system:String>
+  <system:String x:Key="dialogs.installdll.caption">Phonemizer'ді орнату</system:String>
+  <system:String x:Key="dialogs.installdll.message">Орнатылуда</system:String>
+  <system:String x:Key="dialogs.messagebox.cancel">Бас тарту</system:String>
+  <system:String x:Key="dialogs.messagebox.copy">Қатені пернетақтаға көшіру</system:String>
+  <system:String x:Key="dialogs.messagebox.no">Жоқ</system:String>
+  <system:String x:Key="dialogs.messagebox.ok">OK</system:String>
+  <system:String x:Key="dialogs.messagebox.yes">Иә</system:String>
+  <system:String x:Key="dialogs.noresampler.caption">Resampler жоқ</system:String>
+  <system:String x:Key="dialogs.noresampler.message">Resampler жоқ! Тандаулы Resampler'дін .exe немесе .dll file'ын Resamplers бумасына салып, параметрлардан resampler'ді таңдаңыз</system:String>
+  <system:String x:Key="dialogs.remaptimeaxis.message">Бұл құрал жобаның жылдамдығын ноталардың нағыз орналасуы мен ұзақтығын(секундтармен есептегенде) ауыстырмай өзгертеді
+  Жаңа BPM:</system:String>
+  <system:String x:Key="dialogs.timesig.caption">Соққы</system:String>
+  <system:String x:Key="dialogs.tracksettings.caption">Жол баптаулары</system:String>
+  <system:String x:Key="dialogs.tracksettings.location">Орналасуы</system:String>
+  <system:String x:Key="dialogs.tracksettings.renderer">Renderer</system:String>
+  <system:String x:Key="dialogs.tracksettings.setasdefault">Бастапқыдай орнату</system:String>
+  <system:String x:Key="dialogs.unsupportedfile.caption">Қолдануға жарамсыз пішім</system:String>
+  <system:String x:Key="dialogs.unsupportedfile.message">Қолдау көрсетілмейтін file пішімі: </system:String>
+  <system:String x:Key="dialogs.voicecolorremapping">Дауыстың түсін өзгерту</system:String>
+  <system:String x:Key="dialogs.voicecolorremapping.caption">Осы жолдағы барлық ноталарға қолданылады:</system:String>
+
+  <system:String x:Key="errors.caption">Қате</system:String>
+  <system:String x:Key="errors.details">Қате жайлы</system:String>
+  <system:String x:Key="errors.diffsinger.downloadvocoder1">Дауыс қодер </system:String>
+  <system:String x:Key="errors.diffsinger.downloadvocoder2">үктелмеді. Егер ол сізде орнатылмаған болса, оны төмендегі URL мекенжайынан жүктеп алыңыз: </system:String>
+  <system:String x:Key="errors.encryptedarchive">Шифрланған мұрағат файлына қолдау көрсетілмейді. Мұрағат файлын күштеп ашып көріңізші.</system:String>
+  <system:String x:Key="errors.expression.abbrlong">абревиатура ұзындығы 1 немесе 4 сипаттама болу керек</system:String>
+  <system:String x:Key="errors.expression.abbrset">Абревиатура қосылу керек</system:String>
+  <system:String x:Key="errors.expression.abbrunique">Абревиатура ерекше болуы керек</system:String>
+  <system:String x:Key="errors.expression.default">Жалпы шама минимум және максимум арасында болуы керек</system:String>
+  <system:String x:Key="errors.expression.flagunique">Тулар ерекше болу керек</system:String>
+  <system:String x:Key="errors.expression.marge">Келесі өрнектер қайталанатын жалаушаларға байланысты біріктірілді.</system:String>
+  <system:String x:Key="errors.expression.min">Минимум максимумнан кіші болуы керек</system:String>
+  <system:String x:Key="errors.expression.name">Атау қосылуы керек</system:String>
+  <system:String x:Key="errors.failed.export">Експортталмады</system:String>
+  <system:String x:Key="errors.failed.importaudio">Аудио импортталмады</system:String>
+  <system:String x:Key="errors.failed.importfiles">Файлдар импортталмады</system:String>
+  <system:String x:Key="errors.failed.importmidi">midі импортталмады</system:String>
+  <system:String x:Key="errors.failed.installsinger">Әнші орнатылмады</system:String>
+  <system:String x:Key="errors.failed.load">Жүктелмеді</system:String>
+  <system:String x:Key="errors.failed.loadprefs">Баптаулар жүктелмеді. Оларды орнатыңыз</system:String>
+  <system:String x:Key="errors.failed.openfile">Ашылмады</system:String>
+  <system:String x:Key="errors.failed.openlocation">Аумақ ашылмады</system:String>
+  <system:String x:Key="errors.failed.render">Рендерлеу өтпеді</system:String>
+  <system:String x:Key="errors.failed.runeditingmacro">Едиттейтін макро басталынбады</system:String>
+  <system:String x:Key="errors.failed.save">Сақталынбады</system:String>
+  <system:String x:Key="errors.failed.savesingerconfig">Әшінің пішіні жүктелмеді</system:String>
+  <system:String x:Key="errors.failed.searchsinger">Әнші табылмады</system:String>
+  <system:String x:Key="errors.install.cpp">Ең соңғы Visual C++ Redistributable нұсқасын орнатып көріңіз. https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170</system:String>
+  <system:String x:Key="errors.lyrics.regex">Кейіпкер қарапайым өрнекте қолданылмайды.</system:String>
+  <system:String x:Key="errors.lyrics.regexpreview">- қарапайым өрнек қатесі -</system:String>
+
+  <system:String x:Key="exps.abbr">Қысқарту сөзі</system:String>
+  <system:String x:Key="exps.apply">Қолдану</system:String>
+  <system:String x:Key="exps.caption">Айтылуы</system:String>
+  <system:String x:Key="exps.defaultvalue">Әдепкі</system:String>
+  <system:String x:Key="exps.flag">Resampler тулары</system:String>
+  <system:String x:Key="exps.getsuggestions">Render'ден шыққан бар әсерін қосу</system:String>
+  <system:String x:Key="exps.isflag">Resampler туы</system:String>
+  <system:String x:Key="exps.maxvalue">Ең көбі</system:String>
+  <system:String x:Key="exps.minvalue">Ең азы</system:String>
+  <system:String x:Key="exps.name">Атауы</system:String>
+  <system:String x:Key="exps.optionvalues">Параметр мәні</system:String>
+  <system:String x:Key="exps.sepbycomma">Мәндерді ',' арқылы бөлу</system:String>
+  <system:String x:Key="exps.type">Түрі</system:String>
+  <system:String x:Key="exps.type.curve">Қисық</system:String>
+  <system:String x:Key="exps.type.numerical">Сандық мән</system:String>
+  <system:String x:Key="exps.type.options">Параметрлар</system:String>
+
+  <system:String x:Key="languages.de">Немісше</system:String>
+  <system:String x:Key="languages.en">Ағылшынша</system:String>
+  <system:String x:Key="languages.es">Испанша</system:String>
+  <system:String x:Key="languages.fr">Французша</system:String>
+  <system:String x:Key="languages.invariant">Аударылмаған</system:String>
+  <system:String x:Key="languages.it">Италиянша</system:String>
+  <system:String x:Key="languages.ja">Жапонша</system:String>
+  <system:String x:Key="languages.ko">Кәрісше</system:String>
+  <system:String x:Key="languages.pl">Полякша</system:String>
+  <system:String x:Key="languages.pt">Португалша</system:String>
+  <system:String x:Key="languages.ru">Орысша</system:String>
+  <system:String x:Key="languages.vi">Вьетнамша</system:String>
+  <system:String x:Key="languages.zh">Қытайша</system:String>
+  <system:String x:Key="languages.zh-yue">Кантонша</system:String>
+  <system:String x:Key="languages.th">Тайша</system:String>
+
+  <system:String x:Key="lyrics.apply">Қолдану</system:String>
+  <system:String x:Key="lyrics.cancel">Бас тарту</system:String>
+  <system:String x:Key="lyrics.caption">Мәтінді өңдеу</system:String>
+  <system:String x:Key="lyrics.livepreview">Нақты уақыттағыны алдын ала қарау</system:String>
+  <system:String x:Key="lyrics.max">Ең көбі</system:String>
+  <system:String x:Key="lyrics.reset">Қайта қалыпқа келтіру</system:String>
+  <system:String x:Key="lyrics.selectnotes">Алдымен бір-неше нота таңданыз!</system:String>
+  <system:String x:Key="lyrics.separators">Бөлгіштер</system:String>
+
+  <system:String x:Key="lyricsreplace.after">Кейін :</system:String>
+  <system:String x:Key="lyricsreplace.before">Дейін :</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvalphabet">Әліппені өшіру</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvnonhiragana">Хираганадан басқасын өшіру</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvphonetichint">Дыбыс белгілерін өшіру</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvspace">Бос орынды және бұрынғысын өшіру</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvtone">Тонның Suffix'ін өшіру</system:String>
+  <system:String x:Key="lyricsreplace.presets">Орнатылғандары</system:String>
+  <system:String x:Key="lyricsreplace.preview">Алдын ала қарау</system:String>
+  <system:String x:Key="lyricsreplace.regex">Тұрақты әсерлер қолданыла алады</system:String>
+  <system:String x:Key="lyricsreplace.replace"> Жалпы мәтіндік алмастырулар</system:String>
+
+  <system:String x:Key="menu.edit">Өңдеу</system:String>
+  <system:String x:Key="menu.edit.copy">Көщіру</system:String>
+  <system:String x:Key="menu.edit.cut">Кесу</system:String>
+  <system:String x:Key="menu.edit.delete">Өшіру</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes">Таңдалмаған ноталар өңдеуін құлыптау</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.expressions">Өрнек</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.pitchpoints">Қадам нүктелері</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.vibrato">Діріл</system:String>
+  <system:String x:Key="menu.edit.paste">Қою</system:String>
+  <system:String x:Key="menu.edit.redo">Қайталау</system:String>
+  <system:String x:Key="menu.edit.selectall">Барлығын тандау</system:String>
+  <system:String x:Key="menu.edit.undo">Болдырмау</system:String>
+  <system:String x:Key="menu.file">File</system:String>
+  <system:String x:Key="menu.file.exit">Шығу</system:String>
+  <system:String x:Key="menu.file.exportaudio">Дыбысты Шығару</system:String>
+  <system:String x:Key="menu.file.exportds">DiffSinger Script'тарын Шығару</system:String>
+  <system:String x:Key="menu.file.exportds.v2">DiffSinger Script'тарын Шығару (v2)</system:String>
+  <system:String x:Key="menu.file.exportds.v2withoutpitch">DiffSinger Script'тарын Шығару (v2, қадам қисықсыз)</system:String>
+  <system:String x:Key="menu.file.exportmidi">Midi File'ын Шығару</system:String>
+  <system:String x:Key="menu.file.exportmixdown">Аралас Wav File'ын Шығару</system:String>
+  <system:String x:Key="menu.file.exportproject">Жоба File'ын Шығару</system:String>
+  <system:String x:Key="menu.file.exportust">Ust File'ын Шығару</system:String>
+  <system:String x:Key="menu.file.exportustto">Ust File'дарын Мұнда Шығару...</system:String>
+  <system:String x:Key="menu.file.exportwav">Wav File'дарын Шығару</system:String>
+  <system:String x:Key="menu.file.exportwavto">Wav File'дарын Мұнда Шығару...</system:String>
+  <system:String x:Key="menu.file.importaudio">Дыбысты Жүктеу...</system:String>
+  <system:String x:Key="menu.file.importmidi">Midi Жүктеу...</system:String>
+  <system:String x:Key="menu.file.importmidi.drywetmidi">DryWetMidi Жүктеуші</system:String>
+  <system:String x:Key="menu.file.importmidi.naudio">Naudio Жүктеуші</system:String>
+  <system:String x:Key="menu.file.importtracks">Жолдарды Жүктеу...</system:String>
+  <system:String x:Key="menu.file.new">Жасау</system:String>
+  <system:String x:Key="menu.file.newfromtemplate">Үлгі бойынша жасау</system:String>
+  <system:String x:Key="menu.file.open">Ашу...</system:String>
+  <system:String x:Key="menu.file.openas">Қалайша ашу</system:String>
+  <system:String x:Key="menu.file.openexportlocation">Шығу Аймағын Көору</system:String>
+  <system:String x:Key="menu.file.openprojectlocation">Жоба аймағын көру</system:String>
+  <system:String x:Key="menu.file.openrecent">Жақында Ашылғандар</system:String>
+  <system:String x:Key="menu.file.save">Сақтау</system:String>
+  <system:String x:Key="menu.file.saveas">Мұнда Сақтау...</system:String>
+  <system:String x:Key="menu.file.savetemplate">Үлгіні Сақтау...</system:String>
+  <system:String x:Key="menu.help">Көмек</system:String>
+  <system:String x:Key="menu.help.about">OpenUtau жайлы</system:String>
+  <system:String x:Key="menu.help.checkupdate">Жаңартуларды тексеру</system:String>
+  <system:String x:Key="menu.help.logslocation">Журнал орнын ашу</system:String>
+  <system:String x:Key="menu.help.reportissue">Мәселе туралы хабарлау</system:String>
+  <system:String x:Key="menu.help.wiki">OpenUtau Wiki</system:String>
+  <system:String x:Key="menu.project">Жоба</system:String>
+  <system:String x:Key="menu.project.expressions">Өрнектер...</system:String>
+  <system:String x:Key="menu.project.remaptimeaxis">Нота орынын сақтап, қарқымды баптау</system:String>
+  <system:String x:Key="menu.tools">Құралдар</system:String>
+  <system:String x:Key="menu.tools.clearcache">Жедел Жадыны Тазалау</system:String>
+  <system:String x:Key="menu.tools.debugwindow">Жөңдеу терезесі</system:String>
+  <system:String x:Key="menu.tools.dependency.install">Тәуелділікті орнату (.oudep)...</system:String>
+  <system:String x:Key="menu.tools.layout">Орналасу</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit11">Көлденең 1:1</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit12">Көлденең 1:2</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit13">Көлденең 1:3</system:String>
+  <system:String x:Key="menu.tools.layout.vsplit11">Тік 1:1</system:String>
+  <system:String x:Key="menu.tools.layout.vsplit12">Тік 1:2</system:String>
+  <system:String x:Key="menu.tools.layout.vsplit13">Тік 1:3</system:String>
+  <system:String x:Key="menu.tools.prefs">Параметрлар...</system:String>
+  <system:String x:Key="menu.tools.singer.install">Әншіні орнату...</system:String>
+  <system:String x:Key="menu.tools.singer.installadv">Әншіні орнату (Жоғары)...</system:String>
+  <system:String x:Key="menu.tools.singers">Әншілер...</system:String>
+  <system:String x:Key="menu.view">Көру</system:String>
+
+  <system:String x:Key="notedefaults.lyric">Ән мәтіні</system:String>
+  <system:String x:Key="notedefaults.lyric.defaultlyric">Әдепкі</system:String>
+  <system:String x:Key="notedefaults.portamento">Portamento</system:String>
+  <system:String x:Key="notedefaults.portamento.length">Ұзындығы</system:String>
+  <system:String x:Key="notedefaults.portamento.start">Бастау</system:String>
+  <system:String x:Key="notedefaults.preset">Алдын ала орнату</system:String>
+  <system:String x:Key="notedefaults.preset.namenew">Алдын ала орнатуды атыу</system:String>
+  <system:String x:Key="notedefaults.preset.remove">Жою</system:String>
+  <system:String x:Key="notedefaults.preset.remove.tooltip">Соңғы тағайындалған алдын ала орнатуды жояды.</system:String>
+  <system:String x:Key="notedefaults.preset.save">Сақтау</system:String>
+  <system:String x:Key="notedefaults.preset.save.tooltip">Ағымдағы параметрлерді жаңа алдын ала орнату ретінде сақтайды.</system:String>
+  <system:String x:Key="notedefaults.reset">Барлық параметрларды қалыпқа келтіру</system:String>
+  <system:String x:Key="notedefaults.reset.tooltip">Барлық параметрларды қалыпқа келтіреді.
+    Ескерту: Бұл опция алдын ала орнатуларды да жояды</system:String>
+  <system:String x:Key="notedefaults.vibrato">Діріл</system:String>
+  <system:String x:Key="notedefaults.vibrato.autominlength">Ең қысқа нота ұзындығы</system:String>
+  <system:String x:Key="notedefaults.vibrato.autotoggle">Ұзындық бойынша дірілді automat'ты түрде қосу</system:String>
+  <system:String x:Key="notedefaults.vibrato.depth">Теренді</system:String>
+  <system:String x:Key="notedefaults.vibrato.drift">Биіктігі</system:String>
+  <system:String x:Key="notedefaults.vibrato.in">Біртіндеп енгізуі</system:String>
+  <system:String x:Key="notedefaults.vibrato.length">Созылуы</system:String>
+  <system:String x:Key="notedefaults.vibrato.out">Біртіндеп шығаруы</system:String>
+  <system:String x:Key="notedefaults.vibrato.period">Кезең</system:String>
+  <system:String x:Key="notedefaults.vibrato.shift">Орнын ауыстыру</system:String>
+  <system:String x:Key="notedefaults.vibrato.vollink">Байланысты дыбыс көлемі</system:String>
+
+  <system:String x:Key="noteproperty">Нота сипаттары</system:String>
+  <system:String x:Key="noteproperty.apply">Қолдану</system:String>
+  <system:String x:Key="noteproperty.basic">Негізгі</system:String>
+  <system:String x:Key="noteproperty.cancel">Бас тарту</system:String>
+  <system:String x:Key="noteproperty.set">Орнату</system:String>
+  <system:String x:Key="noteproperty.setlongnote">Тек ұзан ноталарды орнату</system:String>
+  <system:String x:Key="noteproperty.tone">Қадам</system:String>
+  <system:String x:Key="noteproperty.vibratoenable">Қосу</system:String>
+
+  <system:String x:Key="oto.alias">Бүркеншік аты</system:String>
+  <system:String x:Key="oto.color">Түс</system:String>
+  <system:String x:Key="oto.consonant">Дауыссыз дыбыс</system:String>
+  <system:String x:Key="oto.cutoff">Аяғы</system:String>
+  <system:String x:Key="oto.edit.consonant">Дауыссыз дыбысты орнату</system:String>
+  <system:String x:Key="oto.edit.cutoff">Аяғын орнату</system:String>
+  <system:String x:Key="oto.edit.offset">Басын орнату</system:String>
+  <system:String x:Key="oto.edit.overlap">Қабатасуын орнату</system:String>
+  <system:String x:Key="oto.edit.preutter">Кіріспе орнату</system:String>
+  <system:String x:Key="oto.file">File</system:String>
+  <system:String x:Key="oto.offset">Басы</system:String>
+  <system:String x:Key="oto.overlap">Қабатасуы</system:String>
+  <system:String x:Key="oto.phonetic">Phonetic</system:String>
+  <system:String x:Key="oto.prefix">Prefix</system:String>
+  <system:String x:Key="oto.preutter">Кіріспе</system:String>
+  <system:String x:Key="oto.set">Орнату</system:String>
+  <system:String x:Key="oto.suffix">Suffix</system:String>
+
+  <system:String x:Key="phoneticassistant.caption">Phonetic Көмекшісі</system:String>
+  <system:String x:Key="phoneticassistant.copy">Көшіру</system:String>
+
+  <system:String x:Key="pianoroll.menu.batch">Жалпылай өңдеу</system:String>
+  <system:String x:Key="pianoroll.menu.batch.running">Жалпылай өңделістерді жүгірту</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics">Ән мәтіні</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.dashtoplus">"-" мен "+" алмастыру</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.edit">Мәтінді өңдеу</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.hiraganatoromaji">Hiragana'ны Romaji'ге аудару</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.insertslur">Slur еңгізу</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.javcvtocv">Жапондық VCV'ны CV'ға аудару</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.movesuffixtovoicecolor">Suffix'ті VoiceColor'ға жылжыту</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removelettersuffix">Әріп Suffix'ін жою</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removephonetichint">Phonetic'алық сипаттаманы жою</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removetonesuffix">Нотаның Suffix'ін жою</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.romajitohiragana">Romaji'ді Hiragana'ға аудару</system:String>
+  <system:String x:Key="pianoroll.menu.notedefaults">Әдепкі мәтінді орнату</system:String>
+  <system:String x:Key="pianoroll.menu.notes">Нота</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addbreath">Тыныс қосу</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addtaildash">Соңына "-" қосу</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addtailrest">Соңына "R" қосу</system:String>
+  <system:String x:Key="pianoroll.menu.notes.autolegato">Нота арасындағы бос орындарды толтыру</system:String>
+  <system:String x:Key="pianoroll.menu.notes.bakepitch">Нота қисығын PITD pitch нүктелеріне түрлендіру</system:String>
+  <system:String x:Key="pianoroll.menu.notes.clear.vibratos">Дірілді тазалау</system:String>
+  <system:String x:Key="pianoroll.menu.notes.fixoverlap">Қабаттасқан ноталарды дұрыстау</system:String>
+  <system:String x:Key="pianoroll.menu.notes.hanzitopinyin">Hanzi'ді Pinyin'ге аудару</system:String>
+  <system:String x:Key="pianoroll.menu.notes.lengthencrossfade">Crossfade'ты ұзарту</system:String>
+  <system:String x:Key="pianoroll.menu.notes.loadrenderedpitch">Render'лінген pitch'ті жүктеу</system:String>
+  <system:String x:Key="pianoroll.menu.notes.octavedown">Бір actave түсіру</system:String>
+  <system:String x:Key="pianoroll.menu.notes.octaveup">Бір actave көтеру</system:String>
+  <system:String x:Key="pianoroll.menu.notes.quantize15">1/128-ге quant'тау</system:String>
+  <system:String x:Key="pianoroll.menu.notes.quantize30">1/64-ке quant'тау</system:String>
+  <system:String x:Key="pianoroll.menu.notes.removetaildash">Соңынаң "-" алу</system:String>
+  <system:String x:Key="pianoroll.menu.notes.removetailrest">Соңынаң "R" алу</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.aliases">Өңделген phoneme'ның аaliases'ің қалпына келтіру</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.all">Барлығын қалпына келтіру</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.allparameters">Барлық параметрлерді қалпына келтіру</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.exps">Барлық мимиқаларды қалпына келтіру</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.phonemetimings">Phoneme кездерін қалпына келтіру</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.pitchbends">Қадамды иілуді қалпына келтіру</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.vibratos">Дірілді қалпына келтіру</system:String>
+  <system:String x:Key="pianoroll.menu.part">Бөлігі</system:String>
+  <system:String x:Key="pianoroll.menu.part.legacypluginexp">Бұрынғы плагин (сынақта)</system:String>
+  <system:String x:Key="pianoroll.menu.part.singer">Әнші мен Дыбыс параметрлері</system:String>
+  <system:String x:Key="pianoroll.menu.plugin.openfolder">Буманы ашу</system:String>
+  <system:String x:Key="pianoroll.menu.plugin.reload">Қайта жүктеу</system:String>
+  <system:String x:Key="pianoroll.menu.reset">Қалпына келтіру</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote">Ноталарды Іздеу</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.all">Барлығын Тандау</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.close">Жабу</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.next">Келесі</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.prev">Алдынғы</system:String>
+  <system:String x:Key="pianoroll.toggle.finalpitch">Соңғы pitch'ті көрсету (R)</system:String>
+  <system:String x:Key="pianoroll.toggle.noteparams">Нота параметрлерін көрсету (\)</system:String>
+  <system:String x:Key="pianoroll.toggle.phoneme">Phoneme'ларды кқрсету (O)</system:String>
+  <system:String x:Key="pianoroll.toggle.pitch">Pitch қисығын көрсету (I)</system:String>
+  <system:String x:Key="pianoroll.toggle.snap">Қосуды Қосу (P)</system:String>
+  <system:String x:Key="pianoroll.toggle.snap.auto">Auto</system:String>
+  <system:String x:Key="pianoroll.toggle.snap.autotriplet">Auto (үштік)</system:String>
+  <system:String x:Key="pianoroll.toggle.tips">Анықтаманы көрсету (T)</system:String>
+  <system:String x:Key="pianoroll.toggle.tone">Нота тоның ауыстыру (Y)</system:String>
+  <system:String x:Key="pianoroll.toggle.vibrato">Дірілді көрсету (U)</system:String>
+  <system:String x:Key="pianoroll.toggle.waveform">Толқынды көрсету (W)</system:String>
+  <system:String x:Key="pianoroll.tool.drawpitch">Pitch суретін салу құралы (4)
+    Сол жақ басу арқылы сурет салыңыз
+    Қалпына келтіру үшін оң жақты басыңыз
+    Таңдау үшін Ctrl ұзақ басыңыз
+    Жолдарды тегістеу үшін Alt басып тұрыңыз</system:String>
+  <system:String x:Key="pianoroll.tool.eraser">Өшіргіш құралы (3)</system:String>
+  <system:String x:Key="pianoroll.tool.knife">Пышақ құралдары (5)</system:String>
+  <system:String x:Key="pianoroll.tool.overwritepitch">Pitch'ті қайта анықтау құралы (Ctrl + 4)
+    Сол жақ басу арқылы сурет салыңыз (діріл және mod+ қайта жазу)
+    Қалпына келтіру үшін оң жақты басыңыз
+    Таңдау үшін Ctrl ұзақ басыңыз
+    Жолдарды тегістеу үшін Alt басып тұрыңыз
+  </system:String>
+  <system:String x:Key="pianoroll.tool.penplus">Қалам+ құралы (Ctrl + 2) 
+    Қалпына келтіру үшін оң жақты басыңыз
+    Таңдау үшін Ctrl ұзақ басыңыз
+    Жолдарды тегістеу үшін Alt басып тұрыңыз</system:String>
+  <system:String x:Key="pianoroll.tool.penv2">Қалам құралы (2)
+    Сол жақ басу арқылы сурет салыңыз
+    Таңдау үшін Ctrl ұзақ басыңыз</system:String>
+  <system:String x:Key="pianoroll.tool.selectionv2">Таңдау құралы (1)</system:String>
+
+  <system:String x:Key="prefs.advanced">Қосымша параметрлар</system:String>
+  <system:String x:Key="prefs.advanced.beta">Beta нұсқасы</system:String>
+  <system:String x:Key="prefs.advanced.importtempo">Жолдарды жүктеген кезде жүктелген жобаның қадамын сақтау</system:String>
+  <system:String x:Key="prefs.advanced.importtempo.always">Әрқашан</system:String>
+  <system:String x:Key="prefs.advanced.importtempo.ask">Сұрау</system:String>
+  <system:String x:Key="prefs.advanced.importtempo.never">Ешқашан</system:String>
+  <system:String x:Key="prefs.advanced.lyricshelper">Мәтіндік көмекші</system:String>
+  <system:String x:Key="prefs.advanced.lyricshelper.brackets">Мәтіндік көмекшіге жақшаларды қосу</system:String>
+  <system:String x:Key="prefs.advanced.rememberfiletypes">Келесі file түрлерін «Жақында Ашылғандар» ретінде есте сақтау</system:String>
+  <system:String x:Key="prefs.advanced.resamplerlogging">Resampler Журналының Шығысы</system:String>
+  <system:String x:Key="prefs.advanced.resamplerlogging.warn">Resampler шығысын журнал file'ына сақтайды. Бұл параметр пайдаланушы Interface'сін және Render'ін жұмысын баяулатады.</system:String>
+  <system:String x:Key="prefs.advanced.stable">Тұрақты нұсқа</system:String>
+  <system:String x:Key="prefs.advanced.vlabelerpath">vLabeler Орны</system:String>
+  <system:String x:Key="prefs.appearance">Келбет</system:String>
+  <system:String x:Key="prefs.appearance.degree">Таразылық дәрежесін қалайша көрсету</system:String>
+  <system:String x:Key="prefs.appearance.degree.numbered">Саны (1 2 3 4 5 6 7)</system:String>
+  <system:String x:Key="prefs.appearance.degree.off">Жоқ</system:String>
+  <system:String x:Key="prefs.appearance.degree.solfege">Solfège (до ре ми па сол ла си)</system:String>
+  <system:String x:Key="prefs.appearance.lang">Тіл</system:String>
+  <system:String x:Key="prefs.appearance.showghostnotes">Piano-roll терезесінде басқа жолдардын ноталарын көрсету</system:String>
+  <system:String x:Key="prefs.appearance.showicon">Piano-roll терезесінде кейіпкер белгісін көрсету</system:String>
+  <system:String x:Key="prefs.appearance.showportrait">Piano-roll терезесінде кейіпкер бейнесін көрсету</system:String>
+  <system:String x:Key="prefs.appearance.sortorder">Әншілерді қалайша сұрыптау</system:String>
+  <system:String x:Key="prefs.appearance.theme">Тақырып</system:String>
+  <system:String x:Key="prefs.appearance.theme.dark">Түн</system:String>
+  <system:String x:Key="prefs.appearance.theme.light">Күн</system:String>
+  <system:String x:Key="prefs.appearance.trackcolor"> UI ішінде жол түстерін пайдалану</system:String>
+  <system:String x:Key="prefs.cache">Желде Жады</system:String>
+  <system:String x:Key="prefs.cache.clearonquit">Шығу кезінде Желде Жаданы тазалау</system:String>
+  <system:String x:Key="prefs.cache.diffsingertensorcache">DiffSinger Tensor'лық Желде Жадысы</system:String>
+  <system:String x:Key="prefs.caption">Параметрлар</system:String>
+  <system:String x:Key="prefs.note.restart">Ескерту: Осы параметрді өзгерткеннен кейін OpenUTAU бағдарламасын қайта іске қосыңыз.</system:String>
+  <system:String x:Key="prefs.off">Өшірлулі</system:String>
+  <system:String x:Key="prefs.on">Қосулы</system:String>
+  <system:String x:Key="prefs.otoeditor">Oto Өңдеуші</system:String>
+  <system:String x:Key="prefs.otoeditor.select">Әдепкі Oto Өндеушісі</system:String>
+  <system:String x:Key="prefs.otoeditor.setparampath">setParam Орнату</system:String>
+  <system:String x:Key="prefs.paths">File Орны</system:String>
+  <system:String x:Key="prefs.paths.addlsinger">Әншілердін қосымша орналасу орны</system:String>
+  <system:String x:Key="prefs.paths.addlsinger.install">Әншілердін қосымша орналасу орнын орнату</system:String>
+  <system:String x:Key="prefs.paths.loaddeepfolders">Балық терең бумаларды жүктеу</system:String>
+  <system:String x:Key="prefs.paths.reset">Қалпына келтіру</system:String>
+  <system:String x:Key="prefs.paths.select">Тандау</system:String>
+  <system:String x:Key="prefs.penplus">Pen Plus Құралын Әдепкі ретінде Орнату</system:String>
+  <system:String x:Key="prefs.playback">Ойнату</system:String>
+  <system:String x:Key="prefs.playback.autoscroll">Auto-Айналдыру</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode">Auto-Айналдыру Әдісі</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode.pagescroll">Бетті Айналдыру</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode.stationarycursor">Бекітілген Cursor</system:String>
+  <system:String x:Key="prefs.playback.backend">Дыбыс Backend'і</system:String>
+  <system:String x:Key="prefs.playback.backend.auto">Auto'маттық</system:String>
+  <system:String x:Key="prefs.playback.backend.mini">MiniAudio</system:String>
+  <system:String x:Key="prefs.playback.cursorposition">Auto-Айналдырудан кейін</system:String>
+  <system:String x:Key="prefs.playback.device">Ойнату Құрылғысы</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime">Кідіртілген кезде cursor</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.off">Ештеңа істемеу</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.on">Cursor'ды және display орнының ойнату басталған жерге қайтару</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.onlycursor">Тек cursor'ды ойнату басталған жерге қайтару</system:String>
+  <system:String x:Key="prefs.playback.test">Тексеру</system:String>
+  <system:String x:Key="prefs.rendering">Render'лау</system:String>
+  <system:String x:Key="prefs.rendering.defaultrenderer">Classic'алық UTAU дауыс көзінің әдепкі render'і </system:String>
+  <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger Render'інің Тереңдігі</system:String>
+  <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Render'іеің Қадамдары</system:String>
+  <system:String x:Key="prefs.rendering.onnxgpu">GPU</system:String>
+  <system:String x:Key="prefs.rendering.onnxrunner">Machine'лық оқыту</system:String>
+  <system:String x:Key="prefs.rendering.phasecomp">Phase'лық түзету</system:String>
+  <system:String x:Key="prefs.rendering.prerender">Pre-render</system:String>
+  <system:String x:Key="prefs.rendering.resampler">Resampler</system:String>
+  <system:String x:Key="prefs.rendering.resampler.morewarn">
+    Ескерту: moresampler толық қолдау көрсетпейді. Ол баяу болуы және GPU пайдалануы жүкті болуы мүмкін. Егер сіз оны әлі де пайдаланғыңыз келсе:
+    1. moreconfig.txt файлындағы "resampler-compatibility" параметрін "on" күйіне орнатыңыз.
+    2. moreconfig.txt файлындағы "auto-update-llsm-mrq" параметрін "off" күйіне орнатыңыз.
+    3. Moresampler жетіспейтін llsm файлын жасау үшін шыдамдылықпен күтіңіз.
+  </system:String>
+  <system:String x:Key="prefs.rendering.resampler.note">
+    Ескерту: Resampler'ді пайдалану үшін тандаулы Resampler'дін .exe немесе .dll file'ын OpenUTAU бумасындағы Resamplers бумасына салып, параметрлардан resampler'ді таңдаңыз.
+  </system:String>
+  <system:String x:Key="prefs.rendering.skipmuted">Skip muted tracks</system:String>
+  <system:String x:Key="prefs.rendering.threads.cpuwarn">
+    Ескерту: Көп ағынды Render қадамдары OpenUTAU жұмысын байаудатуы мүмкін.
+  </system:String>
+  <system:String x:Key="prefs.rendering.threads.numthreads">Ең көп Render Ағындары</system:String>
+  <system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>
+
+  <system:String x:Key="progress.loadingsingers">Әнші Жүктелуде...</system:String>
+  <system:String x:Key="progress.saved">Жоба Сақьалды. {0}</system:String>
+  <system:String x:Key="progress.waitingrendering">Render'ленуде</system:String>
+
+  <system:String x:Key="singers.caption">Әнші</system:String>
+  <system:String x:Key="singers.editoto.editinsetparam">setParam көмегімен өңдеу</system:String>
+  <system:String x:Key="singers.editoto.editinvlabeler">vLabeler көмегімен өңдеу</system:String>
+  <system:String x:Key="singers.editoto.gotosource">Бастапқы Дыбыс Орнын Ашу</system:String>
+  <system:String x:Key="singers.editoto.regenfrq">FRQ қалпына келтіру</system:String>
+  <system:String x:Key="singers.editoto.regenfrq.regenerating">FRQ қалпына келтіруі</system:String>
+  <system:String x:Key="singers.editoto.reset">Бастапқы Дыбыс Параметрлерін Қалпына Келтіру</system:String>
+  <system:String x:Key="singers.editoto.save">Бастапқы Дыбыс Параметрлерін Сақтау</system:String>
+  <system:String x:Key="singers.editoto.searchalias">Alias Іздеу</system:String>
+  <system:String x:Key="singers.editoto.setsetparampath">setParam Орнату (v4.0b or немесе одан жоғары) Оны жүктеп алыңыз және қалауыңыз бойынша жолды орнатыңыз! http://nwp8861.blog92.fc2.com/</system:String>
+  <system:String x:Key="singers.editoto.setvlabelerpath">vLabeler Орнату (1.0.0-beta1 немесе одан жоғары) Оны жүктеп алыңыз және қалауыңыз бойынша жолды орнатыңыз! https://github.com/sdercolin/vlabeler</system:String>
+  <system:String x:Key="singers.errorreport">Әнші Error Report Fele'ың Шығару</system:String>
+  <system:String x:Key="singers.location">File Орны</system:String>
+  <system:String x:Key="singers.otoview.moveleft">Солға Жылжыту</system:String>
+  <system:String x:Key="singers.otoview.moveright">Оңға Жылжыту</system:String>
+  <system:String x:Key="singers.otoview.selectnext">Келесіні Таңдау</system:String>
+  <system:String x:Key="singers.otoview.selectprev">Артағыны Тандау</system:String>
+  <system:String x:Key="singers.otoview.showall">Барлығын Көрсету</system:String>
+  <system:String x:Key="singers.otoview.zoomin">Үлкейту</system:String>
+  <system:String x:Key="singers.otoview.zoomout">Кішірейту</system:String>
+  <system:String x:Key="singers.playsample">Үлгі дауысты ойнату</system:String>
+  <system:String x:Key="singers.publish">Әншіні Тарату Пәкетін Жасау</system:String>
+  <system:String x:Key="singers.publish.description">Жеке дыбыс дерегін тарату үшін zip file'ын жасау.</system:String>
+  <system:String x:Key="singers.publish.ignoretypes">Келесі file'дар тарату бумасына кірмейді (gitignore пішімінде жазылған):</system:String>
+  <system:String x:Key="singers.publish.publish">Жасау</system:String>
+  <system:String x:Key="singers.publish.useignore"> Көрсетілген түрдегі file'дарды тарату бумасына қосуға жол бермеу</system:String>
+  <system:String x:Key="singers.readme">readme.txt File'ың Ашу</system:String>
+  <system:String x:Key="singers.readme.notfound">readme.txt табылмады</system:String>
+  <system:String x:Key="singers.refresh">Қайта Жүктеу</system:String>
+  <system:String x:Key="singers.setdefaultphonemizer">Әдепкі Phonemizer'ды Орнау</system:String>
+  <system:String x:Key="singers.setencoding">Таңба Encode'ың Орнату</system:String>
+  <system:String x:Key="singers.setimage">Кейіпкер Белгісін Орнату</system:String>
+  <system:String x:Key="singers.setportrait">Кейіпкер Бейнесін Орнату</system:String>
+  <system:String x:Key="singers.setsingertype">Әнші Түрін Орнату</system:String>
+  <system:String x:Key="singers.subbanks.cancel">Бас тарту</system:String>
+  <system:String x:Key="singers.subbanks.clear">Тазалау</system:String>
+  <system:String x:Key="singers.subbanks.color">Түс</system:String>
+  <system:String x:Key="singers.subbanks.color.add">Түс Қосу</system:String>
+  <system:String x:Key="singers.subbanks.color.remove">Түсті Жою</system:String>
+  <system:String x:Key="singers.subbanks.color.rename">Атын Өзгерту</system:String>
+  <system:String x:Key="singers.subbanks.edit">Ішкі дауыс көзін өңдеу</system:String>
+  <system:String x:Key="singers.subbanks.export">prefix.map Шығару</system:String>
+  <system:String x:Key="singers.subbanks.import">prefix.map Жүктеу</system:String>
+  <system:String x:Key="singers.subbanks.reset">Қалпына келтіру</system:String>
+  <system:String x:Key="singers.subbanks.save">Сақтау</system:String>
+  <system:String x:Key="singers.subbanks.selectall">Барлығын Тандау</system:String>
+  <system:String x:Key="singers.subbanks.set">Орнату</system:String>
+  <system:String x:Key="singers.subbanks.tone">Тон</system:String>
+  <system:String x:Key="singers.subbanks.toneranges">Диапазон</system:String>
+  <system:String x:Key="singers.usefilename">File атауын alias ретінде пайдалану</system:String>
+  <system:String x:Key="singers.visitwebsite">Web-Сайтты Ашу</system:String>
+
+  <system:String x:Key="singersetup.archivefileencoding">Мұрағат File'дардын Encode'тау</system:String>
+  <system:String x:Key="singersetup.archivefileencoding.prompt">File атауында бүзылған таңбалар қтелесін тудындатпайдын code'тауды таңдаңыз.</system:String>
+  <system:String x:Key="singersetup.back">Қайтару</system:String>
+  <system:String x:Key="singersetup.install">Орнату</system:String>
+  <system:String x:Key="singersetup.missinginfo">Осы дауыстық дерегі үшін character.yaml файлына келесі параметрлерді қосыңыз.</system:String>
+  <system:String x:Key="singersetup.next">Келесі</system:String>
+  <system:String x:Key="singersetup.singertype">Әнші Түрі</system:String>
+  <system:String x:Key="singersetup.textfileencoding">Мәтіндік File'дарды Encode'тау</system:String>
+  <system:String x:Key="singersetup.textfileencoding.prompt">Бұзылған мәтін қатесін тудырмайтын encode'тауды таңдаңыз.</system:String>
+
+  <system:String x:Key="tip.aliasbox">Alias'ты алмастыру</system:String>
+  <system:String x:Key="tip.exps">Сол жақ түймені басу: Бет әлпетін орнату
+Оң жақ түймені басу: Бет әлпетін қалпына келтіру</system:String>
+  <system:String x:Key="tip.exps.notsupported">Бұл render бет әлпетін қолдамайды.</system:String>
+  <system:String x:Key="tip.lyricbox.next">Tab: Келесі нота</system:String>
+  <system:String x:Key="tip.lyricbox.prev">Shift+Tab: Артағы нота</system:String>
+  <system:String x:Key="tip.notes.basics">Таңдау құралы
+    Қорап Тандау: Ноталарды таңдау
+    Ctrl + Қорап Тандау: Бірнеше нота таңдау
+    ↑/↓: Таңдалған ноталарды ауыстыру
+    Ctrl + ↑/↓: Таңдалған ноталарды октава бойынша ауыстыру
+Қалам құралы
+    Сол жақ түймені басу: Ноталарды қосу
+    Оң жақ түймені басу: Нотаны жою
+    Оң жақ түймені басу + Сүйреу: Қайталанатын ноталарды жою
+Жалпы
+    T: Анықтаманы көрсету
+    Ноталарды сүйрету: Ноталарды жылдыту
+    Нотаның соңын сүйрету: Нотаның ұзындығын өзгерту
+    Alt + Нотаның соңын сүйрету: Көрші ноталар арасындағы шекараны өзгерту
+    Кеңістік: Ойнатуды бастау</system:String>
+  <system:String x:Key="tip.notes.zoomx">◀ Солға және оңға масштабтау үшін осыны айналдарыңыз ▶</system:String>
+  <system:String x:Key="tip.notes.zoomy"> Жоғары және төмен масштабтау үшін осыны айналдырыңыз ▶</system:String>
+
+  <system:String x:Key="tracks.duplicate">Жолды Duplicate'тау</system:String>
+  <system:String x:Key="tracks.duplicatesettings">Жолды Duplicate'тау параметрлары</system:String>
+  <system:String x:Key="tracks.installsinger">Әншіні Орнату</system:String>
+  <system:String x:Key="tracks.more">Көбірек көрсету</system:String>
+  <system:String x:Key="tracks.movedown">Астына</system:String>
+  <system:String x:Key="tracks.moveup">Үстіне</system:String>
+  <system:String x:Key="tracks.mute">Дыбыссыз</system:String>
+  <system:String x:Key="tracks.mute.allothers">Осы жолдан басқасының дыбысын алу</system:String>
+  <system:String x:Key="tracks.mute.only"> Тек осы жолдың дыбысын алу</system:String>
+  <system:String x:Key="tracks.mute.unmuteall">Барлық жолдардың дыбысын қосу</system:String>
+  <system:String x:Key="tracks.opensingers">Әншілер бумасын ашу</system:String>
+  <system:String x:Key="tracks.openaddsingers">Әншілер бумасын ашу (қосымша)</system:String>
+  <system:String x:Key="tracks.remove">Жою</system:String>
+  <system:String x:Key="tracks.rename">Жолдың атын өзгерту</system:String>
+  <system:String x:Key="tracks.selectrenderer">Render'ді Тандау</system:String>
+  <system:String x:Key="tracks.selectsinger">Әншіні Тандау</system:String>
+  <system:String x:Key="tracks.solo">Solo</system:String>
+  <system:String x:Key="tracks.solo.add">Қосымша Solo (басқа жолдардың solo'сынан бас тартпайды)</system:String>
+  <system:String x:Key="tracks.solo.only">Жалғыз Solo (басқа жолдардың solo'сынан бас тартады)</system:String>
+  <system:String x:Key="tracks.solo.unsoloall">Барлық жолдардан solo'ны алып тастау</system:String>
+  <system:String x:Key="tracks.trackcolor">Жолдың түсін өзгерту</system:String>
+  <system:String x:Key="tracks.tracksettings">Жол Баптаулары</system:String>
+
+  <FontFamily x:Key="ui.fontfamily">Segoe UI,San Francisco,Helvetica Neue</FontFamily>
+
+  <system:String x:Key="updater.caption">Жаңартуларды Тексеру</system:String>
+  <system:String x:Key="updater.description">Ашық әндету synthes platform'асы</system:String>
+  <system:String x:Key="updater.github">GitHub</system:String>
+  <system:String x:Key="updater.status.available">V{0} нұсқасы қолжетімді!</system:String>
+  <system:String x:Key="updater.status.checking">Жаңартуларды тексеру...</system:String>
+  <system:String x:Key="updater.status.notavailable">Соңғы нұсқаны пайдалануда</system:String>
+  <system:String x:Key="updater.status.unknown">Жаңартуларды тексеру мүмкін болмады</system:String>
+  <system:String x:Key="updater.update">Жаңарту</system:String>
+
+  <system:String x:Key="warning">Ескерту</system:String>
+  <system:String x:Key="warning.asciipath">OpenUtau'дың негізгі аймағы ("{0}") ASCII'ге тиесілі емес таңбаларды қолдануда. Сондықтан .exe Resampler'лер жұмыс істемеуі мүмкін.</system:String>
+  <system:String x:Key="warning.renderer">Бұл render'де ешқандай параметрлер жоқ</system:String>
+</ResourceDictionary>
