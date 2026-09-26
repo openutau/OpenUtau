@@ -5,10 +5,10 @@ using System.Text;
 using System.Collections;
 using System.IO;
 using System.Text.RegularExpressions;
-using OpenUtau.Plugin.Builtin.EnunuOnnx.nnmnkwii.python;
+using OpenUtau.Core.Util.nnmnkwii.python;
 //reference: https://github.com/r9y9/nnmnkwii/blob/master/nnmnkwii/io/hts.py
 
-namespace OpenUtau.Plugin.Builtin.EnunuOnnx.nnmnkwii.io.hts {
+namespace OpenUtau.Core.Util.nnmnkwii.io.hts {
     public class HTSLabel {
         public int start_time = 0;
         public int end_time = 0;
