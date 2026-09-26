@@ -69,7 +69,10 @@ namespace OpenUtau.Core.Render {
     }
 
     public sealed record RendererAnalysisRequest(
-        string Format, string SourceFile, string OutputFile, bool Overwrite);
+        string Format, string SourceFile, string OutputFile, bool Overwrite) {
+        public IReadOnlyDictionary<string, string> Settings { get; init; } =
+            new Dictionary<string, string>();
+    }
 
     public enum RendererAnalysisOutcome {
         Generated,
@@ -85,6 +88,9 @@ namespace OpenUtau.Core.Render {
     /// <summary>Owns engine-specific validation and generation of reusable source
     /// analysis. The host handles paths, fallback timestamp checks and orchestration.</summary>
     public interface IRendererAnalysisProvider {
+        /// <summary>Resolve settings-dependent cache paths before validation/generation.
+        /// The renderer owns the cache identity; the host does not interpret settings.</summary>
+        RendererAnalysisRequest ResolveRequest(RendererAnalysisRequest request) => request;
         Task<IReadOnlyList<RendererAnalysisResult>> GenerateAsync(
             IReadOnlyList<RendererAnalysisRequest> requests,
             IProgress<int> progress,

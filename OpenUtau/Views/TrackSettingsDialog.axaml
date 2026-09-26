@@ -11,6 +11,7 @@
         MinHeight="184" MaxHeight="640" Width="360" SizeToContent="Height"
         WindowStartupLocation="CenterOwner" CanResize="False">
   <Border Margin="{Binding $parent[Window].WindowDecorationMargin}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Margin="8">
       <TextBlock Text="{DynamicResource warning.renderer}" IsVisible="{Binding !HasRenderer}"/>
       <ItemsControl ItemsSource="{Binding RendererSettings}" IsVisible="{Binding HasRendererSettings}">
@@ -54,5 +55,6 @@
       <Button Grid.Column="2" Content="{DynamicResource button.ok}" Margin="0,8,0,0"
               HorizontalAlignment="Stretch" Click="OnOkClicked"/>
     </StackPanel>
+    </ScrollViewer>
   </Border>
 </Window>

@@ -43,7 +43,7 @@ namespace OpenUtau.Core.Render {
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void SupersededPassDoesNotReportOrStopPlayback(bool cancellationError) {
+        public void IgnoresSupersededFailures(bool cancellationError) {
             var source = new CancellationTokenSource();
             var token = source.Token;
             Exception error = cancellationError

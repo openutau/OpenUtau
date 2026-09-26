@@ -289,6 +289,7 @@ namespace OpenUtau.Core.Render {
                     var allRequests = sourceFiles.Distinct(StringComparer.OrdinalIgnoreCase)
                         .Select(source => new RendererAnalysisRequest(
                             format, Path.GetFullPath(source), context.Analysis.GetPath(format, source), overwrite))
+                        .Select(provider.ResolveRequest)
                         .ToArray();
                     var skipped = allRequests.Where(request => !overwrite && File.Exists(request.OutputFile))
                         .Select(request => new RendererAnalysisResult(
@@ -370,12 +371,13 @@ namespace OpenUtau.Core.Render {
             }
         }
 
-        static async Task PrepareRequiredAnalysisAsync(
+        internal static async Task PrepareRequiredAnalysisAsync(
             IRendererAnalysisProvider? provider,
             RendererPluginContext context,
             IReadOnlyList<string> sourceFiles,
             IProgress<int> progress,
-            CancellationToken cancellation) {
+            CancellationToken cancellation,
+            IReadOnlyDictionary<string, string>? settings = null) {
             var required = context.Analysis.Formats.Where(pair => pair.Value.required).ToArray();
             if (required.Length == 0) return;
             var requests = new List<RendererAnalysisRequest>();
@@ -383,7 +385,9 @@ namespace OpenUtau.Core.Render {
                 foreach (var pair in required) {
                     cancellation.ThrowIfCancellationRequested();
                     var request = new RendererAnalysisRequest(pair.Key, Path.GetFullPath(source),
-                        context.Analysis.GetPath(pair.Key, source), true);
+                        context.Analysis.GetPath(pair.Key, source), false);
+                    if (settings != null) request = request with { Settings = settings };
+                    if (provider != null) request = provider.ResolveRequest(request);
                     var state = provider == null
                         ? context.Analysis.GetBasicState(pair.Key, request.SourceFile)
                         : await provider.ValidateAsync(request, cancellation);
@@ -620,7 +624,7 @@ namespace OpenUtau.Core.Render {
                     await analysisLock.WaitAsync(cancellation.Token);
                     try {
                         await PrepareRequiredAnalysisAsync(analysisProvider, context, sources,
-                            new Progress<int>(), cancellation.Token);
+                            new Progress<int>(), cancellation.Token, phrase.rendererSettings);
                     } finally {
                         analysisLock.Release();
                     }

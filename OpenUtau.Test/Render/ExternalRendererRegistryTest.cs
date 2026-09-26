@@ -16,7 +16,7 @@ namespace OpenUtau.Test.Render;
 
 public class ExternalRendererRegistryTest {
     [Fact]
-    public void MissingSavedRendererFallsBackWithoutReplacingStableId() {
+    public void FallbackPreservesRendererId() {
         var track = new UTrack { Singer = new TestSinger() };
         var settings = new URenderSettings {
             renderer = "org.openutau.test.not-installed",
@@ -31,7 +31,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public void ExplicitMissingRendererSelectionDoesNotSilentlyFallback() {
+    public void MissingSelectionFails() {
         var track = new UTrack { Singer = new TestSinger() };
         var settings = new URenderSettings {
             renderer = "org.openutau.test.not-installed",
@@ -44,7 +44,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public void IgnoresUnrelatedDllWithoutLoadingIt() {
+    public void SkipsUnrelatedDlls() {
         var directory = CreateDirectory();
         try {
             File.WriteAllBytes(Path.Combine(directory, "native-or-unrelated.dll"),
@@ -60,7 +60,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public void RetainsManifestDiscoveryDiagnostics() {
+    public void RetainsManifestDiagnostics() {
         var directory = CreateDirectory();
         try {
             var path = Path.Combine(directory, "broken.yaml");
@@ -77,7 +77,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public void InvalidManifestDoesNotReserveRendererIdentity() {
+    public void InvalidManifestLeavesIdFree() {
         var directory = CreateDirectory();
         try {
             File.WriteAllText(Path.Combine(directory, "a-invalid.yaml"), """
@@ -115,7 +115,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public void DuplicateNameDoesNotReserveUnusedId() {
+    public void DuplicateNameLeavesIdFree() {
         var directory = CreateDirectory();
         try {
             static string Manifest(string id, string name) => $$"""
@@ -168,7 +168,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public async Task ReportsPerFileAnalysisFailuresAndContinuesBatch() {
+    public async Task BatchContinuesAfterFailure() {
         var directory = CreateDirectory();
         try {
             File.Copy(typeof(TestRendererPlugin).Assembly.Location,
@@ -195,7 +195,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public async Task GeneratesMissingRequiredAnalysisBeforeRendering() {
+    public async Task GeneratesRequiredAnalysis() {
         var directory = CreateDirectory();
         try {
             File.Copy(typeof(TestRendererPlugin).Assembly.Location,
@@ -240,7 +240,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public void DiscoversMetadataFromAttributedAssemblyWithoutManifest() {
+    public void DiscoversAttributeMetadata() {
         var directory = CreateDirectory();
         try {
             File.Copy(typeof(TestRendererPlugin).Assembly.Location,
@@ -262,7 +262,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public void RuntimeRendererOwnsACollectibleLoadContext() {
+    public void RendererContextIsCollectible() {
         var directory = CreateDirectory();
         try {
             File.Copy(typeof(TestRendererPlugin).Assembly.Location,
@@ -284,7 +284,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public void DiscoversManifestWithoutLoadingAssembly() {
+    public void ManifestDiscoverySkipsLoading() {
         var directory = CreateDirectory();
         try {
             File.WriteAllText(Path.Combine(directory, "renderer.yaml"), """
@@ -364,7 +364,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public void RejectsConflictingRuntimeExpressionDefinition() {
+    public void RejectsExpressionConflicts() {
         var directory = CreateDirectory();
         try {
             var assembly = typeof(TestRendererPlugin).Assembly.Location.Replace("\\", "/");
@@ -400,7 +400,7 @@ public class ExternalRendererRegistryTest {
     }
 
     [Fact]
-    public void ParsesCapabilitiesAndAnalysisMetadata() {
+    public void ParsesRendererMetadata() {
         var directory = CreateDirectory();
         try {
             File.WriteAllText(Path.Combine(directory, "renderer.yaml"), """
