@@ -1,6 +1,7 @@
 #include "worldline.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iterator>
 #include <memory>
 #include <vector>
@@ -10,7 +11,6 @@
 #include "world/d4c.h"
 #include "world/dio.h"
 #include "world/synthesis.h"
-#include "worldline/classic/resampler.h"
 #include "worldline/common/vec_utils.h"
 #include "worldline/f0/dio_estimator.h"
 #include "worldline/f0/dio_ss_estimator.h"
@@ -169,7 +169,8 @@ DLL_API int WorldSynthesis(double* const f0, int f0_length,
 
   if (gender != nullptr) {
     for (int i = 0; i < f0_length; ++i) {
-      worldline::ShiftGender(sp[i], sp_size, (gender[i] - 0.5) * 200);
+      worldline::ShiftGender(sp[i], sp_size,
+                             std::lround((gender[i] - 0.5) * 200));
     }
   }
 
@@ -178,7 +179,7 @@ DLL_API int WorldSynthesis(double* const f0, int f0_length,
   if (tension != nullptr) {
     for (int i = 0; i < f0_length; ++i) {
       ten[i] = worldline::GetTensionCoefficients(
-          f0[i], fs, (tension[i] - 0.5) * 200, sp_size);
+          f0[i], fs, std::lround((tension[i] - 0.5) * 200), sp_size);
     }
   }
 
@@ -219,11 +220,4 @@ DLL_API int WorldSynthesis(double* const f0, int f0_length,
   return y_length;
 }
 
-DLL_API int Resample(const SynthRequest* request, float** y) {
-  auto resampler = std::make_unique<worldline::Resampler>(*request);
-  std::vector<double> out = resampler->Resample();
-  *y = new float[out.size()];
-  std::copy(out.begin(), out.end(), *y);
-  return out.size();
-}
 

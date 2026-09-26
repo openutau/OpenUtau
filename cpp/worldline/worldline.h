@@ -4,7 +4,6 @@
 #include "world/common.h"
 #include "world/constantnumbers.h"
 #include "world/matlabfunctions.h"
-#include "worldline/synth_request.h"
 
 #if defined(_MSC_VER)
 #define DLL_API __declspec(dllexport)
@@ -48,8 +47,6 @@ DLL_API int WorldSynthesis(double* const f0, int f0_length,
                            double frame_period, int fs, double** y,
                            double* const gender, double* const tension,
                            double* const breathiness, double* const voicing);
-
-DLL_API int Resample(const SynthRequest* request, float** y);
 }
 
 #endif  // WORLDLINE_WORLDLINE_H_

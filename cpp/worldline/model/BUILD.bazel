@@ -11,17 +11,6 @@ cc_library(
     ],
 )
 
-cc_library(
-    name = "model",
-    srcs = ["model.cpp"],
-    hdrs = ["model.h"],
-    deps = [
-        "//worldline/common:vec_utils",
-        "//worldline/f0",
-        "@world",
-    ],
-)
-
 cc_test(
     name = "effects_test",
     srcs = ["effects_test.cpp"],

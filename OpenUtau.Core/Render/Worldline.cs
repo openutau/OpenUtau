@@ -178,167 +178,97 @@ namespace OpenUtau.Core.Render {
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        struct SynthRequest {
-            public int sample_fs;
-            public int sample_length;
-            public IntPtr sample;
-            public int frq_length;
-            public IntPtr frq;
-            public int tone;
-            public double con_vel;
-            public double offset;
-            public double required_length;
-            public double consonant;
-            public double cut_off;
-            public double volume;
-            public double modulation;
-            public double tempo;
-            public int pitch_bend_length;
-            public IntPtr pitch_bend;
-            public int flag_g;
-            public int flag_O;
-            public int flag_P;
-            public int flag_Mt;
-            public int flag_Mb;
-            public int flag_Mv;
-        };
+        const int ResamplerPadding = 2;
+        // world::kFloorF0StoneMask, the voiced threshold of the resampler auto gain.
+        const double ResamplerVoicedF0 = 40.0;
 
-        class SynthRequestWrapper : IDisposable {
-            public SynthRequest request;
-            private bool disposedValue;
-            private GCHandle[] handles;
+        /// <summary>
+        /// Worldline resampler: renders one note to exactly item.durRequired ms,
+        /// leaving envelopes and overlaps to the wavtool.
+        /// </summary>
+        public static float[] Resample(ResamplerItem item) {
+            var config = InitAnalysisConfig(44100, 441, 2048);
+            var segment = new SynthSegment(config, item);
+            int spSize = config.fft_size / 2 + 1;
+            double frameMs = config.frame_ms;
+            int fs = config.fs;
 
-            public SynthRequestWrapper(ResamplerItem item) {
-                int fs;
-                double[] sample;
-                using (var waveStream = Wave.OpenFile(item.inputFile)) {
-                    fs = waveStream.WaveFormat.SampleRate;
-                    sample = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0))
-                        .Select(f => (double)f).ToArray();
-                }
-                string frqFile = VoicebankFiles.GetFrqFile(item.inputFile);
-                GCHandle? pinnedFrq = null;
-                byte[] frq = null;
-                if (File.Exists(frqFile)) {
-                    using (var frqStream = File.OpenRead(frqFile)) {
-                        using (var memStream = new MemoryStream()) {
-                            frqStream.CopyTo(memStream);
-                            frq = memStream.ToArray();
-                            pinnedFrq = GCHandle.Alloc(frq, GCHandleType.Pinned);
-                        }
-                    }
-                }
-
-                var pinnedSample = GCHandle.Alloc(sample, GCHandleType.Pinned);
-                var pinnedPitchBend = GCHandle.Alloc(item.pitches, GCHandleType.Pinned);
-                handles = pinnedFrq == null
-                    ? new[] { pinnedSample, pinnedPitchBend }
-                    : new[] { pinnedSample, pinnedPitchBend, pinnedFrq.Value };
-                request = new SynthRequest {
-                    sample_fs = fs,
-                    sample_length = sample.Length,
-                    sample = pinnedSample.AddrOfPinnedObject(),
-                    frq_length = frq?.Length ?? 0,
-                    frq = pinnedFrq?.AddrOfPinnedObject() ?? IntPtr.Zero,
-                    tone = item.tone,
-                    con_vel = item.velocity,
-                    offset = item.offset,
-                    required_length = item.durRequired,
-                    consonant = item.consonant,
-                    cut_off = item.cutoff,
-                    volume = item.phone.direct ? 0 : item.volume,
-                    modulation = item.modulation,
-                    tempo = item.tempo,
-                    pitch_bend_length = item.pitches.Length,
-                    pitch_bend = pinnedPitchBend.AddrOfPinnedObject(),
-                    flag_g = 0,
-                    flag_O = 0,
-                    flag_P = 86,
-                    flag_Mt = 0,
-                    flag_Mb = 0,
-                    flag_Mv = 100,
-                };
-                var flag = item.flags.FirstOrDefault(f => f.Item1 == "g");
-                if (flag != null && flag.Item2.HasValue) {
-                    request.flag_g = flag.Item2.Value;
-                }
-                flag = item.flags.FirstOrDefault(f => f.Item1 == "O");
-                if (flag != null && flag.Item2.HasValue) {
-                    request.flag_O = flag.Item2.Value;
-                }
-                flag = item.flags.FirstOrDefault(f => f.Item1 == "P");
-                if (flag != null && flag.Item2.HasValue) {
-                    request.flag_P = flag.Item2.Value;
-                }
-                flag = item.flags.FirstOrDefault(f => f.Item1 == "Mt");
-                if (flag != null && flag.Item2.HasValue) {
-                    request.flag_Mt = flag.Item2.Value;
-                }
-                flag = item.flags.FirstOrDefault(f => f.Item1 == "Mb");
-                if (flag != null && flag.Item2.HasValue) {
-                    request.flag_Mb = flag.Item2.Value;
-                }
-                flag = item.flags.FirstOrDefault(f => f.Item1 == "Mv");
-                if (flag != null && flag.Item2.HasValue) {
-                    request.flag_Mv = flag.Item2.Value;
-                }
-                Validate(request);
-            }
-            static void Validate(SynthRequest request) {
-                int frame_ms = 10;
-                var total_ms = 1000.0 * request.sample_length / request.sample_fs; 
-                var in_start_ms = (double)request.offset;
-                var in_length_ms = request.cut_off < 0
-                    ? -request.cut_off
-                    : total_ms - request.offset - request.cut_off;
-                int in_start_frame = (int)(in_start_ms / frame_ms); 
-                int in_length_frame = (int)Math.Ceiling((in_start_ms + in_length_ms) / (double)frame_ms) - in_start_frame;
-                if (in_start_ms + in_length_ms > total_ms + 0.1) {
-                    throw new CutOffExceedDurationError();
-                }
-                int max_frames = (int)Math.Ceiling(total_ms / (double)frame_ms);
-                if (in_start_frame + in_length_frame > max_frames) {
-                    in_length_frame = max_frames - in_start_frame;
-                }
-                if (in_length_frame <= 0) {
-                    throw new CutOffBeforeOffsetError();
-                }
+            // Pad edge frames so synthesis settles before the audio that is kept.
+            int length = segment.f0.size;
+            int total = length + 2 * ResamplerPadding;
+            double[] segF0 = segment.f0.ToArray<double>();
+            double[] segSp = segment.spEnv.ToArray<double>();
+            double[] segAp = segment.ap.ToArray<double>();
+            var f0 = new double[total];
+            var sp = new double[total * spSize];
+            var ap = new double[total * spSize];
+            for (int i = 0; i < total; ++i) {
+                int src = Math.Clamp(i - ResamplerPadding, 0, length - 1);
+                f0[i] = segF0[src];
+                Array.Copy(segSp, src * spSize, sp, i * spSize, spSize);
+                Array.Copy(segAp, src * spSize, ap, i * spSize, spSize);
             }
 
-            protected virtual void Dispose(bool disposing) {
-                if (!disposedValue) {
-                    foreach (var handle in handles) {
-                        handle.Free();
-                    }
-                    disposedValue = true;
+            // Output starts after the padding plus the sub-frame part of the offset,
+            // as in the native resampler.
+            double startMs = ResamplerPadding * frameMs + segment.offsetFracMs;
+
+            // Pitch bend: one value in cents per 5 ticks, from the output start.
+            // Unvoiced frames keep their analyzed f0.
+            double stepMs = 60000.0 / item.tempo / 480.0 * 5;
+            for (int i = 0; i < total; ++i) {
+                if (f0[i] <= config.f0_floor) {
+                    continue;
                 }
+                double pitch = 0;
+                if (item.pitches.Length > 0) {
+                    double pos = Math.Clamp((i * frameMs - startMs) / stepMs, 0, item.pitches.Length - 1);
+                    int index = (int)Math.Floor(pos);
+                    double t = pos - index;
+                    pitch = index + 1 < item.pitches.Length
+                        ? item.pitches[index] * (1 - t) + item.pitches[index + 1] * t
+                        : item.pitches[index];
+                }
+                f0[i] = MusicMath.ToneToFreq(item.tone + pitch * 0.01);
             }
 
-            public void Dispose() {
-                Dispose(disposing: true);
-                GC.SuppressFinalize(this);
+            int flagG = GetFlag(item, "g", 0);
+            int flagMt = GetFlag(item, "Mt", 0);
+            int flagMb = GetFlag(item, "Mb", 0);
+            int flagMv = GetFlag(item, "Mv", 100);
+            double[] samples = WorldSynthesis(
+                f0, sp, false, spSize, ap, false, config.fft_size, frameMs, fs,
+                Enumerable.Repeat(0.5 + flagG / 200.0, total).ToArray(),
+                Enumerable.Repeat(0.5 + flagMt / 200.0, total).ToArray(),
+                Enumerable.Repeat(0.5 + flagMb * 0.005, total).ToArray(),
+                Enumerable.Repeat(flagMv * 0.01, total).ToArray());
+
+            int startSample = Math.Min(samples.Length, (int)(startMs * fs / 1000));
+            int lengthSamples = Math.Min(samples.Length - startSample, (int)(item.durRequired * fs / 1000));
+            var output = new float[lengthSamples];
+            for (int i = 0; i < lengthSamples; ++i) {
+                output[i] = (float)samples[startSample + i];
             }
+
+            // Auto gain between the synthesized output and the whole source file,
+            // weighted by voiced ratio to avoid overamplifying consonants.
+            double voicedRatio = f0.Count(f => f > ResamplerVoicedF0) / (double)f0.Length;
+            double weight = 1.0 / (1.0 + Math.Exp(5.0 - 10.0 * voicedRatio));
+            double outMax = output.Length > 0 ? output.Max(s => Math.Abs(s)) : 0;
+            double max = outMax * weight + segment.wavMax * (1.0 - weight);
+            double gain = (item.phone.direct ? 0 : item.volume) * 0.01;
+            double autoGain = max == 0 ? 1.0 : Math.Pow(0.5 / max, GetFlag(item, "P", 86) * 0.01);
+            if (autoGain * gain != 1) {
+                for (int i = 0; i < output.Length; ++i) {
+                    output[i] = (float)(output[i] * autoGain * gain);
+                }
+            }
+            return output;
         }
 
-        [DllImport("worldline")]
-        static extern int Resample(IntPtr request, ref IntPtr y);
-
-        public static float[] Resample(ResamplerItem item) {
-            var requestWrapper = new SynthRequestWrapper(item);
-            SynthRequest request = requestWrapper.request;
-            try {
-                unsafe {
-                    IntPtr buffer = IntPtr.Zero;
-                    int size = Resample(new IntPtr(&request), ref buffer);
-                    var data = new float[size];
-                    Marshal.Copy(buffer, data, 0, size);
-                    Marshal.FreeCoTaskMem(buffer);
-                    return data;
-                }
-            } finally {
-                requestWrapper.Dispose();
-            }
+        static int GetFlag(ResamplerItem item, string name, int defaultValue) {
+            var flag = item.flags.FirstOrDefault(f => f.Item1 == name);
+            return flag != null && flag.Item2.HasValue ? flag.Item2.Value : defaultValue;
         }
 
         class SynthSegment {
@@ -347,23 +277,42 @@ namespace OpenUtau.Core.Render {
             public NDArray spEnv;
             public NDArray ap;
 
+            public readonly float wavMax;
+            // Sub-frame part of the oto offset; frame 0 of f0/spEnv/ap is at the exact offset.
+            public readonly double offsetFracMs;
+
             public int skipFrames;
             public int p0;
             public int p1;
             public int p3;
             public int p4;
 
+            /// <summary>Segment of a phrase, with the input gain applied before analysis.</summary>
             public SynthSegment(AnalysisConfig cfg, ResamplerItem item,
                 double posMs, double skipMs, double lengthMs,
-                double fadeInMs, double fadeOutMs) {
+                double fadeInMs, double fadeOutMs) : this(cfg, item, forResampler: false) {
+                skipFrames = (int)Math.Round(skipMs / cfg.frame_ms);
+                p0 = (int)Math.Round(posMs / cfg.frame_ms);
+                p1 = (int)Math.Round((posMs + fadeInMs) / cfg.frame_ms);
+                p3 = (int)Math.Round((posMs + lengthMs - fadeOutMs) / cfg.frame_ms);
+                p4 = (int)Math.Round((posMs + lengthMs) / cfg.frame_ms);
+                p0 = Math.Max(0, p0);
+                p1 = Math.Max(p0 + 1, p1);
+                p3 = Math.Min(p4 - 1, p3);
+            }
+
+            /// <summary>
+            /// Segment for the resampler: no input gain, since the resampler gains its
+            /// output instead, and a cutoff past the end of the file is an error.
+            /// </summary>
+            public SynthSegment(AnalysisConfig cfg, ResamplerItem item) : this(cfg, item, forResampler: true) { }
+
+            SynthSegment(AnalysisConfig cfg, ResamplerItem item, bool forResampler) {
                 const int fs = 44100;
                 config = cfg;
                 float[] samples = new float[0];
                 using (var waveStream = Wave.OpenFile(item.inputFile)) {
-                    int wavFs = waveStream.WaveFormat.SampleRate;
-                    if (wavFs != fs) {
-                        throw new Exception($"Unsupported sample rate {wavFs} Hz in {item.inputFile}. Only {fs} Hz is supported.");
-                    }
+                    // GetSamples resamples to 44.1 kHz, the rate .frq files are timed in too.
                     samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0)).ToArray();
                 }
                 if (samples.Length == 0) {
@@ -398,16 +347,21 @@ namespace OpenUtau.Core.Render {
 
                 int srcStartFrame = (int)(item.offset / cfg.frame_ms);
                 srcStartFrame = Math.Max(0, srcStartFrame);
+                offsetFracMs = Math.Max(0, item.offset - srcStartFrame * cfg.frame_ms);
+                double wavMs = samples.Length / (double)fs * 1000.0;
                 double srcEndMs = item.cutoff < 0
                     ? -item.cutoff + item.offset
-                    : (samples.Length / (double)fs * 1000.0) - item.cutoff;
+                    : wavMs - item.cutoff;
+                if (forResampler && srcEndMs > wavMs + 0.1) {
+                    throw new CutOffExceedDurationError();
+                }
                 int srcEndFrame = (int)Math.Ceiling(srcEndMs / cfg.frame_ms);
                 srcEndFrame = Math.Min(f0Src.Length, srcEndFrame);
                 if (srcEndFrame <= srcStartFrame) {
                     throw new CutOffBeforeOffsetError();
                 }
 
-                float wavMax = samples.Max(s => Math.Abs(s));
+                wavMax = samples.Max(s => Math.Abs(s));
 
                 int trimStartFrame = Math.Max(0, srcStartFrame - 2);
                 int trimEndFrame = Math.Min(f0Src.Length, srcEndFrame + 2);
@@ -420,17 +374,11 @@ namespace OpenUtau.Core.Render {
                 samples = new float[(trimEndFrame - trimStartFrame) * cfg.hop_size];
                 Array.Copy(untrimmedSamples, trimStartSample, samples, 0, trimEndSample - trimStartSample);
 
-                // Gain control
-                float gain = item.volume * 0.01f;
-                int flag_P = 86;
-                var itemFlag = item.flags.FirstOrDefault(f => f.Item1 == "P");
-                if (itemFlag != null && itemFlag.Item2.HasValue) {
-                    flag_P = itemFlag.Item2.Value;
-                }
-                float autoGain = GetAutoGain(samples, f0Src, wavMax, flag_P);
-                gain *= autoGain;
-                for (int i = 0; i < samples.Length; ++i) {
-                    samples[i] = samples[i] * gain;
+                if (!forResampler) {
+                    float gain = item.volume * 0.01f * GetAutoGain(samples, f0Src, wavMax, GetFlag(item, "P", 86));
+                    for (int i = 0; i < samples.Length; ++i) {
+                        samples[i] = samples[i] * gain;
+                    }
                 }
 
                 WorldAnalysisF0In(ref cfg, samples, f0Src, out var spEnvSrc, out var apSrc);
@@ -441,7 +389,7 @@ namespace OpenUtau.Core.Render {
                 }
                 double[] tDst = new double[(int)Math.Ceiling(item.durRequired / cfg.frame_ms)];
                 {
-                    double srcLengthMs = tSrc.Length * cfg.frame_ms;
+                    double srcLengthMs = tSrc.Length * cfg.frame_ms - offsetFracMs;
                     double consonantSpeed = Math.Pow(0.5, 1.0 - item.velocity / 100.0);
                     double srcConsonantMs = item.consonant;
                     double srcVowelMs = srcLengthMs - srcConsonantMs;
@@ -454,11 +402,11 @@ namespace OpenUtau.Core.Render {
                         double dstMs = i * cfg.frame_ms;
                         if (dstMs < dstConsonantMs) {
                             double srcMs = dstMs * consonantSpeed;
-                            tDst[i] = srcMs / cfg.frame_ms + srcStartFrame;
+                            tDst[i] = (srcMs + offsetFracMs) / cfg.frame_ms + srcStartFrame;
                         } else {
                             double vowelMs = dstMs - dstConsonantMs;
                             double srcMs = srcConsonantMs + vowelMs * vowelSpeed;
-                            tDst[i] = srcMs / cfg.frame_ms + srcStartFrame;
+                            tDst[i] = (srcMs + offsetFracMs) / cfg.frame_ms + srcStartFrame;
                         }
                     }
                 }
@@ -484,15 +432,6 @@ namespace OpenUtau.Core.Render {
                 f0 = f0Dst;
                 spEnv = spEnvDst;
                 ap = apDst;
-
-                skipFrames = (int)Math.Round(skipMs / cfg.frame_ms);
-                p0 = (int)Math.Round(posMs / cfg.frame_ms);
-                p1 = (int)Math.Round((posMs + fadeInMs) / cfg.frame_ms);
-                p3 = (int)Math.Round((posMs + lengthMs - fadeOutMs) / cfg.frame_ms);
-                p4 = (int)Math.Round((posMs + lengthMs) / cfg.frame_ms);
-                p0 = Math.Max(0, p0);
-                p1 = Math.Max(p0 + 1, p1);
-                p3 = Math.Min(p4 - 1, p3);
             }
 
             float GetAutoGain(float[] samples, double[] f0, float wavMax, int peakComp) {
