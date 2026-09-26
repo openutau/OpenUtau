@@ -234,7 +234,8 @@
                       ToolTip.Tip="{DynamicResource tracks.mixfx}"
                       Classes.fxOn="{Binding MixFxEnabled}"
                       Command="{Binding OpenMixFxDialog}">
-          <TextBlock Text="fx" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+          <Path Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" Height="18" Width="18"
+                Data="M6.76 4.72c-.63 0-1.13.11-1.52.32-.39.22-.68.51-.87.89-.18.37-.28.78-.28 1.24v1.53 4.58h1.77V7.16c0-.36.09-.63.27-.8.19-.16.47-.25.84-.25.23 0 .45.02.66.06.2.04.4.1.59.17l.34-1.3c-.25-.08-.53-.15-.83-.22-.31-.07-.63-.1-.97-.1zm-2.67 3.98-.02-1.38-1.55.08v1.3zm1.81-1.38-.03 1.38h2.04V7.32zm3.41 0 1.93 2.86-2.06 3.1h1.85l.59-.99c.08-.17.18-.35.27-.52.1-.17.19-.34.28-.51h.05c.11.17.22.34.34.52.11.17.23.34.34.51l.68.99h1.9l-2.06-2.9 1.94-3.06h-1.85l-.53.96c-.07.16-.15.33-.24.51-.09.17-.18.35-.25.51h-.05c-.09-.16-.2-.33-.31-.51-.11-.17-.21-.34-.31-.51l-.61-.96z"/>
         </Button>
       </Grid>
       <Grid.ContextMenu>
