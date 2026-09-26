@@ -28,7 +28,7 @@ namespace OpenUtau.UiTest {
 
         // What SplashWindow.Start does before showing the main window, minus audio. The splash itself
         // can't run headless: it waits for screens, which the headless platform doesn't report.
-        static void InitCore() {
+        internal static void InitCore() {
             if (coreInitialized) {
                 return;
             }

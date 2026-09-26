@@ -785,6 +785,7 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singers.errorreport">Generate Singer Error Report</system:String>
   <system:String x:Key="singers.location">Location</system:String>
   <system:String x:Key="singers.merge">Merge with another voicebank</system:String>
+  <system:String x:Key="singers.oto">Oto</system:String>
   <system:String x:Key="singers.otoview.moveleft">Move Left</system:String>
   <system:String x:Key="singers.otoview.moveright">Move Right</system:String>
   <system:String x:Key="singers.otoview.selectnext">Select Next</system:String>
@@ -927,4 +928,26 @@ General
   <system:String x:Key="welcome.recent">Recent</system:String>
   <system:String x:Key="welcome.start">Start</system:String>
   <system:String x:Key="welcome.template">Template</system:String>
+  <system:String x:Key="yamleditor.default">Default: {0}</system:String>
+  <system:String x:Key="yamleditor.discarded">{0} has errors, so it can't be saved. Your changes to it were discarded.</system:String>
+  <system:String x:Key="yamleditor.errors">Errors: {0}, warnings: {1}. OpenUtau could not load this file; fix the errors to save.</system:String>
+  <system:String x:Key="yamleditor.noproblems">No problems found</system:String>
+  <system:String x:Key="yamleditor.revert">Revert</system:String>
+  <system:String x:Key="yamleditor.save">Save</system:String>
+  <system:String x:Key="yamleditor.syntax">Not valid YAML: {0}</system:String>
+  <system:String x:Key="yamleditor.type.bool">true or false</system:String>
+  <system:String x:Key="yamleditor.type.choice">one of {0}</system:String>
+  <system:String x:Key="yamleditor.type.integer">whole number</system:String>
+  <system:String x:Key="yamleditor.type.list">list of {0}</system:String>
+  <system:String x:Key="yamleditor.type.map">map of {0}</system:String>
+  <system:String x:Key="yamleditor.type.number">number</system:String>
+  <system:String x:Key="yamleditor.type.section">section of keys</system:String>
+  <system:String x:Key="yamleditor.type.text">text</system:String>
+  <system:String x:Key="yamleditor.unknownkey">Unknown key "{0}", which OpenUtau ignores. Check the spelling.</system:String>
+  <system:String x:Key="yamleditor.unsaved">Save changes to {0}?</system:String>
+  <system:String x:Key="yamleditor.unsaved.caption">Unsaved changes</system:String>
+  <system:String x:Key="yamleditor.unsaved.errors">{0} has errors, so it can't be saved. Discard your changes?</system:String>
+  <system:String x:Key="yamleditor.value">Value: {0}</system:String>
+  <system:String x:Key="yamleditor.warnings">Warnings: {0}. OpenUtau ignores these parts; you can still save.</system:String>
+  <system:String x:Key="yamleditor.wrongtype">Expected {0}.</system:String>
 </ResourceDictionary>
