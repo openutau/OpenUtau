@@ -17,19 +17,27 @@ namespace OpenUtau.Core.Render {
     public class CutOffBeforeOffsetError : SynthRequestError { }
 
     public static class Worldline {
+        // The exports below never allocate: the caller owns every buffer and
+        // sizes it with F0FrameCount / WorldSynthesisSampleCount, so nothing
+        // allocated in the native heap can outlive the call.
+
+        [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
+        static extern int F0FrameCount(int length, int fs, double framePeriod, int method);
+
         [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
         static extern int F0(
-            float[] samples, int length, int fs, double framePeriod, int method, ref IntPtr f0);
+            float[] samples, int length, int fs, double framePeriod, int method, double[] f0);
 
         public static double[] F0(float[] samples, int fs, double framePeriod, int method) {
             try {
-                unsafe {
-                    IntPtr buffer = IntPtr.Zero;
-                    int size = F0(samples, samples.Length, fs, framePeriod, method, ref buffer);
-                    var data = new double[size];
-                    Marshal.Copy(buffer, data, 0, size);
-                    return data;
+                double[] buffer = new double[F0FrameCount(samples.Length, fs, framePeriod, method)];
+                int size = F0(samples, samples.Length, fs, framePeriod, method, buffer);
+                if (size == buffer.Length) {
+                    return buffer;
                 }
+                var data = new double[size];
+                Array.Copy(buffer, data, size);
+                return data;
             } catch (Exception e) {
                 Log.Error(e, "Failed to calculate f0.");
                 return null;
@@ -37,23 +45,19 @@ namespace OpenUtau.Core.Render {
         }
 
         [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
-        static extern int DecodeMgc(
+        static extern void DecodeMgc(
             int f0Length, double[] mgc, int mgcSize,
-            int fftSize, int fs, ref IntPtr spectrogram);
+            int fftSize, int fs, double[] spectrogram);
 
         public static double[,] DecodeMgc(int f0Length, double[] mgc, int fftSize, int fs) {
             try {
                 int mgcSize = mgc.Length / f0Length;
-                unsafe {
-                    IntPtr buffer = IntPtr.Zero;
-                    int size = DecodeMgc(f0Length, mgc, mgcSize, fftSize, fs, ref buffer);
-                    var data = new double[f0Length * size];
-                    Marshal.Copy(buffer, data, 0, data.Length);
-                    Marshal.FreeCoTaskMem(buffer);
-                    var output = new double[f0Length, size];
-                    Buffer.BlockCopy(data, 0, output, 0, data.Length * sizeof(double));
-                    return output;
-                }
+                int spSize = fftSize / 2 + 1;
+                var data = new double[f0Length * spSize];
+                DecodeMgc(f0Length, mgc, mgcSize, fftSize, fs, data);
+                var output = new double[f0Length, spSize];
+                Buffer.BlockCopy(data, 0, output, 0, data.Length * sizeof(double));
+                return output;
             } catch (Exception e) {
                 Log.Error(e, "Failed to decode.");
                 return null;
@@ -61,22 +65,18 @@ namespace OpenUtau.Core.Render {
         }
 
         [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
-        static extern int DecodeBap(
+        static extern void DecodeBap(
             int f0Length, double[] bap,
-            int fftSize, int fs, ref IntPtr aperiodicity);
+            int fftSize, int fs, double[] aperiodicity);
 
         public static double[,] DecodeBap(int f0Length, double[] bap, int fftSize, int fs) {
             try {
-                unsafe {
-                    IntPtr buffer = IntPtr.Zero;
-                    int size = DecodeBap(f0Length, bap, fftSize, fs, ref buffer);
-                    var data = new double[f0Length * size];
-                    Marshal.Copy(buffer, data, 0, data.Length);
-                    Marshal.FreeCoTaskMem(buffer);
-                    var output = new double[f0Length, size];
-                    Buffer.BlockCopy(data, 0, output, 0, data.Length * sizeof(double));
-                    return output;
-                }
+                int apSize = fftSize / 2 + 1;
+                var data = new double[f0Length * apSize];
+                DecodeBap(f0Length, bap, fftSize, fs, data);
+                var output = new double[f0Length, apSize];
+                Buffer.BlockCopy(data, 0, output, 0, data.Length * sizeof(double));
+                return output;
             } catch (Exception e) {
                 Log.Error(e, "Failed to decode.");
                 return null;
@@ -117,11 +117,14 @@ namespace OpenUtau.Core.Render {
         }
 
         [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
+        static extern int WorldSynthesisSampleCount(int f0Length, double framePeriod, int fs);
+
+        [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
         static extern int WorldSynthesis(
             double[] f0, int f0Length,
             double[,] mgcOrSp, bool isMgc, int mgcSize,
             double[,] bapOrAp, bool isBap, int fftSize,
-            double framePeriod, int fs, ref IntPtr y,
+            double framePeriod, int fs, double[] y,
             double[] gender, double[] tension,
             double[] breathiness, double[] voicing);
 
@@ -132,19 +135,14 @@ namespace OpenUtau.Core.Render {
             double framePeriod, int fs,
             double[] gender, double[] tension,
             double[] breathiness, double[] voicing) {
-            unsafe {
-                IntPtr buffer = IntPtr.Zero;
-                int size = WorldSynthesis(
-                    f0, f0.Length,
-                    mgcOrSp, isMgc, mgcSize,
-                    bapOrAp, isBap, fftSize,
-                    framePeriod, fs, ref buffer,
-                    gender, tension, breathiness, voicing);
-                var data = new double[size];
-                Marshal.Copy(buffer, data, 0, size);
-                Marshal.FreeCoTaskMem(buffer);
-                return data;
-            }
+            var data = new double[WorldSynthesisSampleCount(f0.Length, framePeriod, fs)];
+            WorldSynthesis(
+                f0, f0.Length,
+                mgcOrSp, isMgc, mgcSize,
+                bapOrAp, isBap, fftSize,
+                framePeriod, fs, data,
+                gender, tension, breathiness, voicing);
+            return data;
         }
 
         [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
@@ -152,7 +150,7 @@ namespace OpenUtau.Core.Render {
             double[] f0, int f0Length,
             double[] mgcOrSp, bool isMgc, int mgcSize,
             double[] bapOrAp, bool isBap, int fftSize,
-            double framePeriod, int fs, ref IntPtr y,
+            double framePeriod, int fs, double[] y,
             double[] gender, double[] tension,
             double[] breathiness, double[] voicing);
 
@@ -163,19 +161,14 @@ namespace OpenUtau.Core.Render {
             double framePeriod, int fs,
             double[] gender, double[] tension,
             double[] breathiness, double[] voicing) {
-            unsafe {
-                IntPtr buffer = IntPtr.Zero;
-                int size = WorldSynthesis(
-                    f0, f0.Length,
-                    mgcOrSp, isMgc, mgcSize,
-                    bapOrAp, isBap, fftSize,
-                    framePeriod, fs, ref buffer,
-                    gender, tension, breathiness, voicing);
-                var data = new double[size];
-                Marshal.Copy(buffer, data, 0, size);
-                Marshal.FreeCoTaskMem(buffer);
-                return data;
-            }
+            var data = new double[WorldSynthesisSampleCount(f0.Length, framePeriod, fs)];
+            WorldSynthesis(
+                f0, f0.Length,
+                mgcOrSp, isMgc, mgcSize,
+                bapOrAp, isBap, fftSize,
+                framePeriod, fs, data,
+                gender, tension, breathiness, voicing);
+            return data;
         }
 
         const int ResamplerPadding = 2;

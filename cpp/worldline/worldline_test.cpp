@@ -1,5 +1,7 @@
 #include "worldline.h"
 
+#include <vector>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -15,11 +17,6 @@
 #define DLL_IMPORT __attribute__((visibility("default")))
 #endif
 
-extern "C" {
-DLL_API int F0(float* samples, int length, int fs, double frame_period,
-               int method, double** f0);
-}
-
 TEST(WorldlineTest, TestF0) {
 #if defined(_MSC_VER)
   HMODULE handle = LoadLibrary("worldline.dll");
@@ -28,8 +25,18 @@ TEST(WorldlineTest, TestF0) {
   dlopen("libworldline", RTLD_LAZY);
 #endif
 
-  double* f0 = nullptr;
-  EXPECT_EQ(F0(nullptr, 0, 44100, 10, 0, &f0), 0);
-  EXPECT_THAT(f0, testing::NotNull());
-  delete[] f0;
+  EXPECT_EQ(F0(nullptr, 0, 44100, 10, 0, nullptr), 0);
+  EXPECT_EQ(F0FrameCount(0, 44100, 10, 0), 0);
+
+  // The caller owns the buffer and sizes it with F0FrameCount.
+  std::vector<float> samples(44100, 0);
+  for (int method : {-1, 0, 2}) {
+    int count = F0FrameCount(samples.size(), 44100, 10, method);
+    EXPECT_GT(count, 0);
+    std::vector<double> f0(count, -1);
+    int written =
+        F0(samples.data(), samples.size(), 44100, 10, method, f0.data());
+    EXPECT_THAT(written, testing::AllOf(testing::Gt(0), testing::Le(count)));
+    EXPECT_THAT(f0.back(), testing::Not(testing::DoubleEq(-1)));
+  }
 }
