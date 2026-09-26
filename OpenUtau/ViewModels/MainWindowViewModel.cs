@@ -90,6 +90,7 @@ namespace OpenUtau.App.ViewModels {
         public ReactiveCommand<int, RxVoid>? DelTempoChangeCmd { get; set; }
         public ReactiveCommand<int, RxVoid>? AddTimeSigChangeCmd { get; set; }
         public ReactiveCommand<int, RxVoid>? DelTimeSigChangeCmd { get; set; }
+        [Reactive] public partial bool PreRoll { get; set; } = Preferences.Default.PreRoll;
         [Reactive] public partial bool CanUndo { get; set; } = false;
         [Reactive] public partial bool CanRedo { get; set; } = false;
         [Reactive] public partial string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
@@ -142,6 +143,11 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(x => {
                     PianoRollMaxHeight = x ? double.PositiveInfinity : 0.01;
                     PianoRollMinHeight = x ? ViewConstants.PianoRollMinHeight : 0.01;
+                });
+            this.WhenAnyValue(vm => vm.PreRoll)
+                .Subscribe(x => {
+                    Preferences.Default.PreRoll = x;
+                    Preferences.Save();
                 });
         }
 
