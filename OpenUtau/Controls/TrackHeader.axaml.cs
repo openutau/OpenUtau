@@ -84,6 +84,7 @@ namespace OpenUtau.App.Controls {
                 ViewModel.IsSingerVisible = trackHeight >= ViewConstants.TrackHeightDelta * 3;
                 ViewModel.IsPhonemizerVisible = trackHeight >= ViewConstants.TrackHeightDelta * 4;
                 ViewModel.IsRendererVisible = trackHeight >= ViewConstants.TrackHeightDelta * 5;
+                ViewModel.AvatarHeight = Math.Min(trackHeight - (ViewConstants.TrackHeightDefault - 100), 100);
             }
         }
 
