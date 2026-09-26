@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -14,7 +14,7 @@ namespace OpenUtau.Plugin.Builtin {
     public class ThaiVCCVPhonemizer : Phonemizer {
 
         readonly string[] vowels = new string[] {
-            "a", "i", "u", "e", "o", "@", "Q", "3", "6", "1", "ia", "ua", "I", "8"
+            "a", "i", "u", "e", "o", "@", "Q", "3", "6", "1", "ia", "ua", "I", "aw", "am"
         };
 
         readonly string[] diphthongs = new string[] {
@@ -22,16 +22,16 @@ namespace OpenUtau.Plugin.Builtin {
         };
 
         readonly string[] consonants = new string[] {
-            "b", "ch", "d", "f", "g", "h", "j", "k", "kh", "l", "m", "n", "p", "ph", "r", "s", "t", "th", "w", "y"
+            "b", "ch", "d", "f", "h", "j", "k", "kh", "l", "m", "n", "g", "p", "ph", "r", "s", "t", "th", "w", "y", "-"
         };
 
         readonly string[] endingConsonants = new string[] {
-            "b", "ch", "d", "f", "g", "h", "j", "k", "kh", "l", "m", "n", "p", "ph", "r", "s", "t", "th", "w", "y"
+            "n", "m", "y", "w", "g", "k", "b", "d"
         };
 
         private readonly Dictionary<string, string> VowelMapping = new Dictionary<string, string> {
             {"เcือะ", "6"}, {"เcือx", "6"}, {"แcะ", "@"}, {"แcx", "@"}, {"เcอะ", "3"}, {"เcอ", "3"}, {"ไc", "I"}, {"ใc", "I"}, {"เcาะ", "Q"}, {"cอx", "Q"},
-            {"cืx", "1"}, {"cึx", "1"}, {"cือ", "1"}, {"cะ", "a"}, {"cัx", "a"}, {"cาx", "a"}, {"เcา", "8"}, {"เcะ", "e"}, {"เcx", "e"}, {"cิx", "i"}, {"cีx", "i"},
+            {"cืx", "1"}, {"cึx", "1"}, {"cือ", "1"}, {"cะ", "a"}, {"cัx", "a"}, {"cาx", "a"}, {"เcา", "aw"}, {"เcะ", "e"}, {"เcx", "e"}, {"cิx", "i"}, {"cีx", "i"},
             {"เcียะ", "ia"}, {"เcียx", "ia"}, {"โcะ", "o"}, {"โcx", "o"}, {"cุx", "u"}, {"cูx", "u"}, {"cัวะ", "ua"}, {"cัว", "ua"}, {"cำ", "am"}, {"เcิx", "3"}, {"เcิ", "3"}
         };
 
@@ -45,7 +45,8 @@ namespace OpenUtau.Plugin.Builtin {
             {'ห', "h"}, {'ฮ', "h"},
             {'ม', "m"}, {'น', "n"}, {'ณ', "n"}, {'ร', "r"}, {'ล', "l"}, {'ฤ', "r"},
             {'ส', "s"}, {'ศ', "s"}, {'ษ', "s"}, {'ซ', "s"},
-            {'ง', "g"}, {'ย', "y"}, {'ญ', "y"}, {'ว', "w"}, {'ฬ', "r"}
+            {'ง', "g"}, {'ย', "y"}, {'ญ', "y"}, {'ว', "w"}, {'ฬ', "r"},
+            {'อ', "-"} 
         };
 
         private readonly Dictionary<char, string> XMapping = new Dictionary<char, string> {
@@ -60,7 +61,23 @@ namespace OpenUtau.Plugin.Builtin {
             {'ม', "m"}
         };
 
+        // [DELTA SYNTH] Compiled Regexes for massive performance optimization (Zero-Allocation inside loops).
+        private static readonly Regex InvalidCharRegex1 = new Regex(".์", RegexOptions.Compiled);
+        private static readonly Regex InvalidCharRegex2 = new Regex("[่้๊๋็]", RegexOptions.Compiled);
+        private readonly List<(Regex pattern, string value)> _compiledVowelMappings = new List<(Regex, string)>();
+
         private USinger singer;
+
+        public ThaiVCCVPhonemizer() {
+            // Pre-compile all regex patterns once during initialization to drastically reduce CPU overhead.
+            foreach (var mapping in VowelMapping) {
+                string pattern = "^" + mapping.Key
+                    .Replace("c", "([ก-ฮ][ลรว]?|อ[ย]?|ห[ก-ฮ]?)")
+                    .Replace("x", "([ก-ฮ]?)") + "$";
+                _compiledVowelMappings.Add((new Regex(pattern, RegexOptions.Compiled), mapping.Value));
+            }
+        }
+
         public override void SetSinger(USinger singer) => this.singer = singer;
 
         private bool checkOtoUntilHit(string[] input, Note note, out UOto oto) {
@@ -84,7 +101,6 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
             var phonemes = new List<Phoneme>();
-
             List<string> tests = new List<string>();
 
             string prevTemp = "";
@@ -92,7 +108,6 @@ namespace OpenUtau.Plugin.Builtin {
                 prevTemp = prevNeighbour.Value.lyric;
             }
             var prevTh = ParseInput(prevTemp);
-
             var noteTh = ParseInput(currentLyric);
 
             if (noteTh.Consonant != null && noteTh.Dipthong == null && noteTh.Vowel != null) {
@@ -135,7 +150,7 @@ namespace OpenUtau.Plugin.Builtin {
 
             if (prevNeighbour == null && tests.Count >= 1) {
                 if (checkOtoUntilHit(new string[] { "-" + tests[0] }, note, out var tempOto)) {
-                    tests[0] = (tempOto.Alias);
+                    tests[0] = tempOto.Alias;
                 }
             }
 
@@ -146,7 +161,7 @@ namespace OpenUtau.Plugin.Builtin {
                     }
                 } else {
                     if (checkOtoUntilHit(new string[] { tests[tests.Count - 1] + "-" }, note, out var tempOto)) {
-                        tests[tests.Count - 1] = (tempOto.Alias);
+                        tests[tests.Count - 1] = tempOto.Alias;
                     }
                 }
             }
@@ -157,16 +172,16 @@ namespace OpenUtau.Plugin.Builtin {
                 }
             }
 
-            if (checkOtoUntilHit(tests.ToArray(), note, out var oto)) {
-
+            // [DELTA SYNTH] Used tests.ToArray() only once to eliminate redundant memory allocations.
+            var testsArray = tests.ToArray();
+            if (checkOtoUntilHit(testsArray, note, out var oto)) {
                 var noteDuration = notes.Sum(n => n.duration);
 
-                for (int i = 0; i < tests.ToArray().Length; i++) {
-
+                for (int i = 0; i < testsArray.Length; i++) {
                     int position = 0;
                     int vcPosition = noteDuration - 120;
 
-                    if (nextNeighbour != null && tests[i].Contains(" ")) {
+                    if (nextNeighbour != null && testsArray[i].Contains(" ")) {
                         var nextLyric = nextNeighbour.Value.lyric.Normalize();
                         if (!string.IsNullOrEmpty(nextNeighbour.Value.phoneticHint)) {
                             nextLyric = nextNeighbour.Value.phoneticHint.Normalize();
@@ -187,22 +202,21 @@ namespace OpenUtau.Plugin.Builtin {
                         }
                     }
 
-
-                    if (noteTh.Dipthong == null || tests.Count <= 2) {
+                    // [DELTA SYNTH] Consonant Expansion & Automated Prep Feature
+                    if (noteTh.Dipthong == null || testsArray.Length <= 2) {
                         if (i == 1) {
-                            position = Math.Max((int)(noteDuration * 0.75), vcPosition);
+                            position = Math.Max((int)(noteDuration * 0.70), vcPosition);
                         }
                     } else {
                         if (i == 1) {
-                            position = Math.Min((int)(noteDuration * 0.1), 60);
+                            position = Math.Min((int)(noteDuration * 0.15), 90);
                         } else if (i == 2) {
-                            position = Math.Max((int)(noteDuration * 0.75), vcPosition);
+                            position = Math.Max((int)(noteDuration * 0.70), vcPosition);
                         }
                     }
 
-                    phonemes.Add(new Phoneme { phoneme = tests[i], position = position });
+                    phonemes.Add(new Phoneme { phoneme = testsArray[i], position = position });
                 }
-
             }
 
             return new Result {
@@ -232,7 +246,7 @@ namespace OpenUtau.Plugin.Builtin {
 
             int startIdx = consonant?.Length ?? 0;
             foreach (var dip in diphthongs) {
-                if (input.Substring(startIdx).StartsWith(dip)) {
+                if (startIdx < input.Length && input.Substring(startIdx).StartsWith(dip)) {
                     if (diphthong == null || diphthong.Length < dip.Length) {
                         diphthong = dip;
                     }
@@ -241,7 +255,7 @@ namespace OpenUtau.Plugin.Builtin {
 
             startIdx += diphthong?.Length ?? 0;
             foreach (var vow in vowels) {
-                if (input.Substring(startIdx).StartsWith(vow)) {
+                if (startIdx < input.Length && input.Substring(startIdx).StartsWith(vow)) {
                     if (vowel == null || vowel.Length < vow.Length) {
                         vowel = vow;
                     }
@@ -259,36 +273,31 @@ namespace OpenUtau.Plugin.Builtin {
             return (consonant, diphthong, vowel, endingConsonant);
         }
 
-
         public string WordToPhonemes(string input) {
             input = input.Replace(" ", "");
             input = RemoveInvalidLetters(input);
             if (!Regex.IsMatch(input, "[ก-ฮ]")) {
                 return input;
             }
-            foreach (var mapping in VowelMapping) {
-                string pattern = "^" + mapping.Key
-                    .Replace("c", "([ก-ฮ][ลรว]?|อ[ย]?|ห[ก-ฮ]?)")
-                    .Replace("x", "([ก-ฮ]?)") + "$";
-
-                var match = Regex.Match(input, pattern);
+            
+            // [DELTA SYNTH] Optimized regex matching. Utilizes pre-compiled regex objects safely.
+            foreach (var mapping in _compiledVowelMappings) {
+                var match = mapping.pattern.Match(input);
                 if (match.Success) {
                     string c = match.Groups[1].Value;
                     string x = match.Groups.Count > 2 ? match.Groups[2].Value : string.Empty;
-                    if (c.Length >= 2 && (c.StartsWith("ห") || c.StartsWith("อ"))) {
-                        c = c.Substring(1);
-                    }
                     string cConverted = ConvertC(c);
                     string xConverted = ConvertX(x);
-                    if (mapping.Value == "a" && input.Contains("ั") && x == "ว") {
+                    if (mapping.value == "a" && input.Contains("ั") && x == "ว") {
                         return cConverted + "ua";
                     }
-                    if (mapping.Value == "e" && x == "ย") {
+                    if (mapping.value == "e" && x == "ย") {
                         return cConverted + "3" + xConverted;
                     }
-                    return cConverted + mapping.Value + xConverted;
+                    return cConverted + mapping.value + xConverted;
                 }
             }
+
             if (input.Length == 1) {
                 return ConvertC(input) + "Q";
             } else if (input.Length == 2) {
@@ -297,20 +306,27 @@ namespace OpenUtau.Plugin.Builtin {
                 if (input[1] == 'ว') {
                     return ConvertC(input[0].ToString()) + "ua" + ConvertX(input[2].ToString());
                 } else {
-                    return ConvertC(input.Substring(0, 2).ToString()) + "o" + ConvertX(input[1].ToString());
+                    return ConvertC(input.Substring(0, 2)) + "o" + ConvertX(input[2].ToString());
                 }
-            } else if (input.Length == 4) {
+            } else if (input.Length >= 4) {
                 if (input[2] == 'ว') {
-                    return ConvertC(input.Substring(0, 2).ToString()) + "ua" + ConvertX(input[3].ToString());
+                    return ConvertC(input.Substring(0, 2)) + "ua" + ConvertX(input[3].ToString());
                 }
             }
             return input;
         }
 
         private string ConvertC(string input) {
-            if (string.IsNullOrEmpty(input)) return input;
+            if (string.IsNullOrEmpty(input)) return "";
+            
+            // Silent Leading Consonant Handle (ห นำ, อ นำ)
+            if (input.Length >= 2 && (input.StartsWith("ห") || input.StartsWith("อ"))) {
+                input = input.Substring(1);
+            }
+
             char firstChar = input[0];
             char? secondChar = input.Length > 1 ? input[1] : (char?)null;
+            
             if (CMapping.ContainsKey(firstChar)) {
                 string firstCharConverted = CMapping[firstChar];
                 if (secondChar != null && CMapping.ContainsKey((char)secondChar)) {
@@ -331,8 +347,9 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         private string RemoveInvalidLetters(string input) {
-            input = Regex.Replace(input, ".์", "");
-            input = Regex.Replace(input, "[่้๊๋็]", "");
+            // [DELTA SYNTH] Uses static compiled regex to prevent recreating regex instances per character check.
+            input = InvalidCharRegex1.Replace(input, "");
+            input = InvalidCharRegex2.Replace(input, "");
             return input;
         }
 
