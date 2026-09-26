@@ -223,7 +223,7 @@ namespace OpenUtau.App.ViewModels {
 
         public void OpenLocation(SingerTileViewModel tile) {
             CloseRequested?.Invoke();
-            SingersViewModel.OpenLocation(tile.Singer);
+            SingersViewModel.OpenSingerLocation(tile.Singer);
         }
 
         public void EditSearchTerms(SingerTileViewModel tile) {

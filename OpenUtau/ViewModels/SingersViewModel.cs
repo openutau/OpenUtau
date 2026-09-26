@@ -359,11 +359,13 @@ namespace OpenUtau.App.ViewModels {
 
         public void OpenLocation() {
             if (Singer != null) {
-                OpenLocation(Singer);
+                OpenSingerLocation(Singer);
             }
         }
 
-        public static void OpenLocation(USinger singer) {
+        // Not an OpenLocation overload: the Location button binds OpenLocation by name, and a
+        // same-named overload makes Avalonia compile an invalid command for it.
+        public static void OpenSingerLocation(USinger singer) {
             try {
                 var location = singer.Location;
                 if (File.Exists(location)) {
