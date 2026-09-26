@@ -185,7 +185,9 @@ DLL_API int WorldSynthesis(double* const f0, int f0_length,
   std::vector<double> bre(f0_length, 1);
   if (breathiness != nullptr) {
     for (int i = 0; i < f0_length; ++i) {
-      bre[i] = breathiness[i] > 0.5 ? breathiness[i] * 4 : breathiness[i] * 2;
+      // Linear gain on the aperiodic part, continuous at 0.5 (= 1, unmodified):
+      // [0, 0.5] -> [0, 1], (0.5, 1] -> (1, 3].
+      bre[i] = breathiness[i] > 0.5 ? breathiness[i] * 4 - 1 : breathiness[i] * 2;
     }
   }
 
