@@ -39,6 +39,9 @@
     <PackageReference Include="UTF.Unknown" Version="2.5.1" />
     <PackageReference Include="WanaKana-net" Version="1.0.0" />
     <PackageReference Include="YamlDotNet" Version="15.1.2" />
+    <!-- Pinned: 8.0.0 is the last MIT release; later versions use a different license.
+         Compile assets stay private: its root "Json" namespace would hide OpenUtau.Core.Json in referencing projects. -->
+    <PackageReference Include="JsonSchema.Net" Version="8.0.0" PrivateAssets="compile;contentfiles;analyzers;build" />
     <PackageReference Include="NetMQ" Version="4.0.1.13" />
   </ItemGroup>
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">

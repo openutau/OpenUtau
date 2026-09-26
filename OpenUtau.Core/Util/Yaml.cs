@@ -52,6 +52,12 @@ namespace OpenUtau.Core {
                 return deserializer.Deserialize<T>(input);
             }
         }
+
+        public object? Deserialize(string input, System.Type type) {
+            lock (deserializerLock) {
+                return deserializer.Deserialize(input, type);
+            }
+        }
     }
 
     public class FlowEmitter : ChainedEventEmitter {
