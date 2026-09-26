@@ -49,6 +49,10 @@ namespace OpenUtau.Core.Ustx {
         public string[] expSelectors = new string[] { Format.Ustx.DYN, Format.Ustx.PITD, Format.Ustx.CLR, Format.Ustx.ENG, Format.Ustx.VEL, Format.Ustx.VOL, Format.Ustx.ATK, Format.Ustx.DEC, Format.Ustx.GEN, Format.Ustx.BRE };
         public int expPrimary = 0;
         public int expSecondary = 1;
+        /// <summary>The expression graph library; null when the project has none.</summary>
+        public List<ExpressionGraph.UExpressionGraph>? expressionGraphs;
+        /// <summary>The default graph id for each renderer; tracks can override it.</summary>
+        public Dictionary<string, string>? defaultExpressionGraphs;
         public int key = 0;//Music key of the project, 0 = C, 1 = C#, 2 = D, ..., 11 = B
         public List<UTimeSignature> timeSignatures;
         public List<UTempo> tempos;
@@ -191,6 +195,7 @@ namespace OpenUtau.Core.Ustx {
             foreach (var part in parts) {
                 part.AfterLoad(this, tracks[part.trackNo]);
             }
+            ExpressionGraph.ExpressionGraphProgram.LogProblems(this);
         }
 
         public void Validate(ValidateOptions options) {

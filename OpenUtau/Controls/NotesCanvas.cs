@@ -185,6 +185,10 @@ namespace OpenUtau.App.Controls {
 
             MessageBus.Current.Listen<NotesRefreshEvent>()
                 .Subscribe(_ => InvalidateVisual());
+            // Phrase rebuilds land after the refresh events, so also repaint when
+            // fresh render projections are delivered (the final pitch polyline
+            // follows phrase grouping).
+            OpenUtau.Core.Render.RenderView.Inst.Observe(_ => InvalidateVisual());
             MessageBus.Current.Listen<NotesSelectionEvent>()
                 .Subscribe(e => {
                     selectedNotes.Clear();

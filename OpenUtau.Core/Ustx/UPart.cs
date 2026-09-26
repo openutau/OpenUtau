@@ -48,6 +48,8 @@ namespace OpenUtau.Core.Ustx {
         public SortedSet<UNote> notes = new SortedSet<UNote>();
         [YamlMember(Order = 101)]
         public List<UCurve> curves = new List<UCurve>();
+        [YamlMember(Order = 102)]
+        public List<UMaskedCurve> maskedCurves = new List<UMaskedCurve>();
 
         [YamlIgnore] public List<UPhoneme> phonemes = new List<UPhoneme>();
         [YamlIgnore] public int phonemesRevision = 0;
@@ -394,6 +396,7 @@ namespace OpenUtau.Core.Ustx {
                 position = position,
                 notes = new SortedSet<UNote>(notes.Select(note => note.Clone())),
                 curves = curves.Select(c => c.Clone()).ToList(),
+                maskedCurves = maskedCurves.Select(c => c.Clone()).ToList(),
                 Duration = Duration,
             };
         }

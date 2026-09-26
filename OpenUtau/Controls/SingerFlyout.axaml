@@ -1,0 +1,232 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:OpenUtau.App.ViewModels"
+             xmlns:c="using:OpenUtau.App.Controls"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             x:Class="OpenUtau.App.Controls.SingerFlyout"
+             x:DataType="vm:SingerFlyoutViewModel">
+  <UserControl.Resources>
+    <!-- The themes have no yellow accent; Material amber reads as "favorite" on light and dark. -->
+    <SolidColorBrush x:Key="FavoriteStarBrush" Color="#FFC107"/>
+    <!-- mdi-star-outline / mdi-star, pre-scaled to the badge's 14px interior and parsed once for all tiles.
+         The star's points lie on a circle centered at (12, 12.53), radius 10.53, in the 24x24 icon grid;
+         mapping that circle onto the interior centers the star and makes its points touch the border. -->
+    <StreamGeometry x:Key="StarOutlineGeometry">M7.00,8.91L4.50,10.42L5.16,7.57L2.95,5.65L5.86,5.41L7.00,2.72L8.14,5.41L11.05,5.65L8.84,7.57L9.50,10.42M13.65,4.82L8.87,4.40L7.00,0.00L5.13,4.40L0.35,4.82L3.97,7.96L2.89,12.64L7.00,10.16L11.11,12.64L10.02,7.96L13.65,4.82Z</StreamGeometry>
+    <StreamGeometry x:Key="StarFilledGeometry">M7.00,10.16L11.11,12.64L10.02,7.96L13.65,4.82L8.87,4.40L7.00,0.00L5.13,4.40L0.35,4.82L3.97,7.96L2.89,12.64L7.00,10.16Z</StreamGeometry>
+  </UserControl.Resources>
+  <UserControl.Styles>
+    <!-- Tiles are plain Borders (not Buttons) to keep each of the many tiles cheap to create and lay out. -->
+    <Style Selector="Border.singerTile">
+      <Setter Property="Width" Value="180"/>
+      <Setter Property="Height" Value="40"/>
+      <Setter Property="Padding" Value="2"/>
+      <Setter Property="BorderThickness" Value="2"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="CornerRadius" Value="3"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi2}"/>
+      </Style>
+      <Style Selector="^.current">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush1}"/>
+      </Style>
+      <Style Selector="^.missing Panel.avatar, ^.missing TextBlock">
+        <Setter Property="Opacity" Value="0.5"/>
+      </Style>
+    </Style>
+    <!-- Favorite badge: theme-background disc with an amber star. -->
+    <Style Selector="Border.favStar">
+      <Setter Property="Width" Value="16"/>
+      <Setter Property="Height" Value="16"/>
+      <Setter Property="Margin" Value="0,-4,-4,0"/>
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Opacity" Value="0"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource NeutralAccentBrushSemi}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Style Selector="^ > Path">
+        <Setter Property="Fill" Value="{StaticResource FavoriteStarBrush}"/>
+        <Setter Property="Data" Value="{StaticResource StarOutlineGeometry}"/>
+      </Style>
+      <Style Selector="^.on">
+        <Setter Property="Opacity" Value="1"/>
+      </Style>
+      <Style Selector="^.on > Path">
+        <Setter Property="Data" Value="{StaticResource StarFilledGeometry}"/>
+      </Style>
+    </Style>
+    <!-- After the badge's own style so it wins: the outline star shows while hovering its tile. -->
+    <Style Selector="Border.singerTile:pointerover Border.favStar">
+      <Setter Property="Opacity" Value="1"/>
+    </Style>
+    <!-- Edge grabbers lie over the grid. Shown only when there is more content on that side:
+         a fade with a chevron marks the edge; hovering it scrolls that way. -->
+    <Style Selector="Border.grabber">
+      <Setter Property="Width" Value="20"/>
+      <Setter Property="Opacity" Value="0.7"/>
+      <Style Selector="^ Viewbox">
+        <Setter Property="Width" Value="16"/>
+        <Setter Property="Height" Value="16"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+      </Style>
+      <Style Selector="^ Canvas">
+        <Setter Property="Width" Value="24"/>
+        <Setter Property="Height" Value="24"/>
+      </Style>
+      <Style Selector="^ Path">
+        <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+      </Style>
+      <Style Selector="^:pointerover">
+        <Setter Property="Opacity" Value="1"/>
+      </Style>
+    </Style>
+    <Style Selector="Border.grabber.left">
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="CornerRadius" Value="3,0,0,3"/>
+      <Setter Property="Background">
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+          <GradientStop Color="{DynamicResource NeutralAccentColor}" Offset="0"/>
+          <GradientStop Color="Transparent" Offset="1"/>
+        </LinearGradientBrush>
+      </Setter>
+    </Style>
+    <Style Selector="Border.grabber.right">
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="CornerRadius" Value="0,3,3,0"/>
+      <Setter Property="Background">
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+          <GradientStop Color="Transparent" Offset="0"/>
+          <GradientStop Color="{DynamicResource NeutralAccentColor}" Offset="1"/>
+        </LinearGradientBrush>
+      </Setter>
+    </Style>
+    <!-- Same metrics and colors as the piano roll toolbar buttons. -->
+    <Style Selector="Button.footer">
+      <Setter Property="Width" Value="20"/>
+      <Setter Property="Height" Value="20"/>
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="Padding" Value="1"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}"/>
+      </Style>
+      <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
+      </Style>
+      <Style Selector="^ Viewbox">
+        <Setter Property="Width" Value="18"/>
+        <Setter Property="Height" Value="18"/>
+      </Style>
+      <!-- Material Design Icons are drawn on a 24x24 grid; the canvas keeps their built-in padding. -->
+      <Style Selector="^ Canvas">
+        <Setter Property="Width" Value="24"/>
+        <Setter Property="Height" Value="24"/>
+      </Style>
+      <Style Selector="^ Path">
+        <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+      </Style>
+    </Style>
+  </UserControl.Styles>
+  <DockPanel>
+    <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" Margin="0,4,0,0" Padding="0,4,0,0"
+            BorderBrush="{DynamicResource NeutralAccentBrushSemi}">
+      <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+        <!-- mdi-plus -->
+        <Button Classes="footer" ToolTip.Tip="{DynamicResource tracks.installsinger}" Command="{Binding InstallSinger}">
+          <Viewbox><Canvas>
+            <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+          </Canvas></Viewbox>
+        </Button>
+        <!-- mdi-folder-outline -->
+        <Button Classes="footer" ToolTip.Tip="{DynamicResource tracks.opensingers}" Command="{Binding OpenSingersFolder}">
+          <Viewbox><Canvas>
+            <Path Data="M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z"/>
+          </Canvas></Viewbox>
+        </Button>
+        <!-- mdi-folder-plus-outline -->
+        <Button Classes="footer" ToolTip.Tip="{DynamicResource tracks.openaddsingers}" Command="{Binding OpenAdditionalSingersFolder}"
+                IsVisible="{Binding HasAdditionalSingersFolder}">
+          <Viewbox><Canvas>
+            <Path Data="M12,12H14V10H16V12H18V14H16V16H14V14H12V12M22,8V18C22,19.11 21.11,20 20,20H4C2.89,20 2,19.11 2,18V6C2,4.89 2.89,4 4,4H10L12,6H20C21.11,6 22,6.89 22,8M20,8H4V18H20V8Z"/>
+          </Canvas></Viewbox>
+        </Button>
+        <!-- mdi-refresh -->
+        <Button Classes="footer" ToolTip.Tip="{DynamicResource singers.refresh}" Command="{Binding RefreshSingers}">
+          <Viewbox><Canvas>
+            <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
+          </Canvas></Viewbox>
+        </Button>
+      </StackPanel>
+    </Border>
+    <TextBox Name="SearchBox" DockPanel.Dock="Top" Height="24" Padding="4,3" Margin="0,0,0,4"
+             Text="{Binding SearchText}" PlaceholderText="{DynamicResource tracks.searchsinger}"
+             KeyDown="SearchBoxKeyDown"/>
+    <Panel>
+      <TextBlock IsVisible="{Binding IsEmpty}" Margin="8" HorizontalAlignment="Center" VerticalAlignment="Center"
+                 Text="{DynamicResource tracks.nosinger}"/>
+      <!-- Over the empty grid, which keeps its size so the flyout doesn't jump while typing. -->
+      <TextBlock IsVisible="{Binding NoMatch}" Margin="8" HorizontalAlignment="Center" VerticalAlignment="Center"
+                 Text="{DynamicResource tracks.nosingermatch}"/>
+      <Panel IsVisible="{Binding !IsEmpty}">
+        <ScrollViewer Name="TileScroller"
+                      HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                      ScrollChanged="TileScrollerScrollChanged">
+          <Panel>
+            <ItemsControl ItemsSource="{Binding Tiles}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel Orientation="Vertical"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:SingerTileViewModel">
+                  <Border Classes="singerTile" Classes.current="{Binding IsCurrent}" Classes.missing="{Binding IsMissing}"
+                          ToolTip.Tip="{Binding ToolTipText}"
+                          PointerPressed="TilePressed" PointerReleased="TileReleased"
+                          ContextRequested="TileContextRequested">
+                    <DockPanel>
+                      <Panel Classes="avatar" DockPanel.Dock="Left" Width="32" Height="32"
+                             Background="{DynamicResource NeutralAccentBrushSemi2}">
+                        <Image Source="{Binding Avatar}" Stretch="UniformToFill"
+                               RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                        <Border Classes="favStar" Classes.on="{Binding IsFavourite}" IsVisible="{Binding !IsMissing}"
+                                ToolTip.Tip="{DynamicResource tracks.favorite}" PointerPressed="FavStarPressed">
+                          <Path/>
+                        </Border>
+                      </Panel>
+                      <TextBlock Margin="6,0,2,0" Text="{Binding Name}"
+                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" VerticalAlignment="Center"/>
+                    </DockPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <c:SingerSectionDividers Name="SectionDividers" Stroke="{DynamicResource NeutralAccentBrush}"/>
+          </Panel>
+        </ScrollViewer>
+        <!-- mdi-chevron-left -->
+        <Border Name="LeftGrabber" Classes="grabber left"
+                PointerEntered="GrabberPointerMoved" PointerMoved="GrabberPointerMoved" PointerExited="GrabberPointerExited">
+          <Viewbox><Canvas>
+            <Path Data="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"/>
+          </Canvas></Viewbox>
+        </Border>
+        <!-- mdi-chevron-right -->
+        <Border Name="RightGrabber" Classes="grabber right"
+                PointerEntered="GrabberPointerMoved" PointerMoved="GrabberPointerMoved" PointerExited="GrabberPointerExited">
+          <Viewbox><Canvas>
+            <Path Data="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/>
+          </Canvas></Viewbox>
+        </Border>
+      </Panel>
+    </Panel>
+  </DockPanel>
+</UserControl>

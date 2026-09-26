@@ -573,13 +573,7 @@ namespace OpenUtau.App.Controls {
             if (notesVM.Part == null) {
                 return;
             }
-            var dialog = new ExpressionsDialog() {
-                DataContext = new ExpressionsViewModel(notesVM.Project.tracks[notesVM.Part.trackNo]),
-            };
-            dialog.ShowDialog(RootWindow);
-            if (dialog.Position.Y < 0) {
-                dialog.Position = dialog.Position.WithY(0);
-            }
+            ExpressionsDialog.Open(RootWindow, notesVM.Project.tracks[notesVM.Part.trackNo]);
         }
 
         public void KeyboardPointerWheelChanged(object sender, PointerWheelEventArgs args) {

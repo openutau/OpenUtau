@@ -45,29 +45,11 @@ cc_test(
 )
 
 cc_library(
-    name = "synth_request",
-    hdrs = ["synth_request.h"],
-)
-
-cc_library(
-    name = "phrase_synth",
-    srcs = ["phrase_synth.cpp"],
-    hdrs = ["phrase_synth.h"],
-    deps = [
-        ":synth_request",
-        "//worldline/classic:timing",
-        "//worldline/model",
-        "//worldline/model:effects",
-    ],
-)
-
-cc_library(
     name = "worldline_lib",
     srcs = ["worldline.cpp"],
     hdrs = ["worldline.h"],
     deps = [
-        ":phrase_synth",
-        "//worldline/classic:resampler",
+        "//worldline/common:vec_utils",
         "//worldline/f0",
         "//worldline/model:effects",
         "@world",
@@ -94,18 +76,5 @@ cc_test(
     deps = [
         ":worldline_lib",
         "@gtest//:gtest_main",
-    ],
-)
-
-cc_binary(
-    name = "main",
-    srcs = [
-        "worldline_main.cpp",
-    ],
-    deps = [
-        ":worldline_lib",
-        "@absl//absl/debugging:failure_signal_handler",
-        "@absl//absl/debugging:symbolize",
-        "@world//:audioio",
     ],
 )

@@ -72,6 +72,8 @@ namespace OpenUtau.Core.Render {
         public readonly float modulation;
         public readonly bool direct;
         public readonly Vector2[] envelope;
+        /// <summary>The per-phoneme values the expression graph drove, for display. Not part of the hash.</summary>
+        public readonly IReadOnlyDictionary<string, float>? drivenExpressions;
 
         // voicevox & enunu args
         public readonly int toneShift;
@@ -125,6 +127,7 @@ namespace OpenUtau.Core.Render {
             envelope = phoneme.Envelope;
             direct = phoneme.Direct;
             toneShift = phoneme.ToneShift;
+            drivenExpressions = phoneme.Driven;
 
             oto = phoneme.Oto;
             oto2 = phoneme.Oto2;
@@ -191,6 +194,11 @@ namespace OpenUtau.Core.Render {
         public readonly float[] voicing;
         public readonly float[] xsy;
         public readonly Tuple<string, float[]>[] curves;//custom curves defined by renderer
+        /// <summary>
+        /// The curves the expression graph drove, in the curves' own units on the pitch grid, for display.
+        /// Not part of the hash.
+        /// </summary>
+        public readonly IReadOnlyDictionary<string, float[]>? drivenCurves;
         public readonly ulong preEffectHash;
         public ulong hash { get; private set; }
 
@@ -211,8 +219,8 @@ namespace OpenUtau.Core.Render {
         /// The heavy phrase build over an immutable snapshot; pure over the
         /// snapshot, safe off the UI thread.
         /// </summary>
-        internal RenderPhrase(Pipeline.PhraseSource source, int phraseStart, int phraseEnd) {
-            var phrasePhonemes = source.Phonemes
+        internal RenderPhrase(Pipeline.PhraseSource source, Pipeline.PhonemeSource[] phonemes, int phraseStart, int phraseEnd) {
+            var phrasePhonemes = phonemes
                 .Skip(phraseStart)
                 .Take(phraseEnd - phraseStart)
                 .ToList();
@@ -281,6 +289,9 @@ namespace OpenUtau.Core.Render {
                 pitches[index] = pitches[index - 1];
                 index++;
             }
+            // The note pitch as steps, before vibrato and bends: for expression graphs to tell vibrato from pitch
+            // bends, and where rendered pitch falls back to.
+            float[]? pitchesBeforeVibrato = source.ExpressionGraph != null ? pitches.ToArray() : null;
             // Vibrato
             foreach (int noteIdx in uNotes) {
                 var note = notesOf[noteIdx];
@@ -297,6 +308,7 @@ namespace OpenUtau.Core.Render {
                     pitches[i] = point.Y * 100;
                 }
             }
+            float[]? vibratoPitches = source.ExpressionGraph != null ? pitches.ToArray() : null;
             // Pitch points
             foreach (int noteIdx in uNotes) {
                 var note = notesOf[noteIdx];
@@ -358,6 +370,8 @@ namespace OpenUtau.Core.Render {
                     }
                 }
             }
+            // Notes, pitch bends and vibrato, for expression graphs.
+            float[]? parametricPitches = source.ExpressionGraph != null ? pitches.ToArray() : null;
             // Mod plus
             if (source.ModpSupported && source.ClassicSinger != null) {
                 var cSinger = source.ClassicSinger;
@@ -442,6 +456,30 @@ namespace OpenUtau.Core.Render {
                 }
             }
 
+            // The track's expression graph, on the same tick grid as the drawn curves: first the pitch, then the curves.
+            Dictionary<string, float[]>? graphCurves = null;
+            Dictionary<string, float[]>? drivenCurveValues = null;
+            if (source.ExpressionGraph != null) {
+                var ticks = new int[pitches.Length];
+                var modPlus = new float[pitches.Length];
+                var vibrato = new float[pitches.Length];
+                var pitchBend = new float[pitches.Length];
+                for (int i = 0; i < ticks.Length; ++i) {
+                    ticks[i] = pitchStart + i * pitchInterval;
+                    modPlus[i] = pitchesBeforeDeviation[i] - parametricPitches![i];
+                    vibrato[i] = vibratoPitches![i] - pitchesBeforeVibrato![i];
+                    pitchBend[i] = parametricPitches[i] - vibrato[i];
+                }
+                var phrasePitch = new ExpressionGraph.PhrasePitch(pitchStart, pitchInterval,
+                    pitchBend, vibrato, modPlus, pitchesBeforeVibrato);
+                var context = new ExpressionGraph.GraphContext(source, phrasePitch);
+                var drivenPitch = source.ExpressionGraph.EvaluatePitch(context, ticks);
+                if (drivenPitch != null) {
+                    Array.Copy(drivenPitch, pitches, pitches.Length);
+                }
+                graphCurves = source.ExpressionGraph.Evaluate(context, ticks);
+            }
+
             var curves = new List<Tuple<string, float[]>>();
 
             foreach (var descriptor in source.CurveDescriptors) {
@@ -451,7 +489,21 @@ namespace OpenUtau.Core.Render {
                 if (curve.Abbr == Format.Ustx.DYN) {
                     convert = ((x, c) => x == c.Min ? 0 : (float)MusicMath.DecibelToLinear(x * 0.1));
                 }
-                var curveSampled = SampleCurve(curve, pitchStart, pitches.Length, convert);
+                float[] curveSampled;
+                if (graphCurves != null && curve.Abbr != Format.Ustx.PITD
+                        && graphCurves.TryGetValue(curve.Abbr, out var driven)) {
+                    // Kept within the range the curve could be drawn in.
+                    curveSampled = new float[driven.Length];
+                    var shown = new float[driven.Length];
+                    for (int i = 0; i < driven.Length; ++i) {
+                        shown[i] = Math.Clamp(driven[i], descriptor.min, descriptor.max);
+                        curveSampled[i] = convert(shown[i], curve);
+                    }
+                    drivenCurveValues ??= new Dictionary<string, float[]>();
+                    drivenCurveValues[curve.Abbr] = shown;
+                } else {
+                    curveSampled = SampleCurve(curve, pitchStart, pitches.Length, convert);
+                }
                 switch (curve.Abbr) {
                     case Format.Ustx.PITD: break;
                     case Format.Ustx.DYN : dynamics = curveSampled; break;
@@ -495,6 +547,7 @@ namespace OpenUtau.Core.Render {
                 }
             }
             this.curves = curves.ToArray();
+            drivenCurves = drivenCurveValues;
             preEffectHash = Hash(false);
             hash = Hash(true);
 

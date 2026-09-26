@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="LICENSE.txt" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="OpenUtau.Core/OpenUtau.Core.csproj" />
+  <Project Path="OpenUtau.Plugin.Builtin/OpenUtau.Plugin.Builtin.csproj" />
+  <Project Path="OpenUtau.Test/OpenUtau.Test.csproj">
+    <BuildDependency Project="OpenUtau/OpenUtau.csproj" />
+  </Project>
+  <Project Path="OpenUtau.UiTest/OpenUtau.UiTest.csproj" />
+  <Project Path="OpenUtau/OpenUtau.csproj">
+    <BuildDependency Project="OpenUtau.Plugin.Builtin/OpenUtau.Plugin.Builtin.csproj" />
+  </Project>
+</Solution>

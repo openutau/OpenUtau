@@ -35,3 +35,17 @@ jobs:
     - name: test
       run: dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj
       timeout-minutes: 30
+
+    # Headless UI tests of the whole app. A separate process: launching the app changes
+    # process-wide state that the tests above rely on.
+    - name: ui test
+      run: dotnet run --project OpenUtau.UiTest/OpenUtau.UiTest.csproj
+      timeout-minutes: 15
+
+    - name: upload ui screenshots
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ui-screenshots-${{ matrix.os.arch }}
+        path: OpenUtau.UiTest/bin/**/ui-screenshots/
+        if-no-files-found: ignore

@@ -96,8 +96,9 @@ namespace OpenUtau.Core.Render {
     /// </summary>
     public interface IRenderer {
         USingerType SingerType { get; }
-        bool SupportsRenderPitch { get; }
-        bool SupportsRealCurve { get { return false; } }
+        bool SupportsRenderPitch => false;
+        bool SupportsRealCurve => false;
+        bool SupportsPhonemeEnvelope => true;
         bool SupportsExpression(UExpressionDescriptor descriptor);
         RenderResult Layout(RenderPhrase phrase);
 
@@ -111,13 +112,21 @@ namespace OpenUtau.Core.Render {
         /// Whether two adjacent phoneme groups (prev then next, separated by a
         /// gap) should stay in one phrase because their padded audio overlaps.
         /// </summary>
-        bool ShouldMergePhrases(UProject project, UTrack track, UPhoneme prev, UPhoneme next) {
+        bool ShouldMergePhrases(UProject project, UTrack track, UPhoneme prev, UPhoneme next)
+            => GapOverlapsPadding(this, track, prev, next);
+
+        /// <summary>
+        /// Shared test behind <see cref="ShouldMergePhrases"/>: true when the gap
+        /// between two phoneme groups is smaller than the renderer's tail + head
+        /// padding, so their padded audio would overlap.
+        /// </summary>
+        static bool GapOverlapsPadding(IRenderer renderer, UTrack track, UPhoneme prev, UPhoneme next) {
             if (prev == null || next == null) {
                 return false;
             }
             double gapMs = next.PositionMs - prev.EndMs;
-            var (_, tailMs) = PhrasePadding(track.Singer, new[] { prev });
-            var (headMs, _) = PhrasePadding(track.Singer, new[] { next });
+            var (_, tailMs) = renderer.PhrasePadding(track.Singer, new[] { prev });
+            var (headMs, _) = renderer.PhrasePadding(track.Singer, new[] { next });
             return gapMs < headMs + tailMs;
         }
 

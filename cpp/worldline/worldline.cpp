@@ -1,7 +1,9 @@
 #include "worldline.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iterator>
+#include <memory>
 #include <vector>
 
 #include "world/cheaptrick.h"
@@ -9,7 +11,6 @@
 #include "world/d4c.h"
 #include "world/dio.h"
 #include "world/synthesis.h"
-#include "worldline/classic/resampler.h"
 #include "worldline/common/vec_utils.h"
 #include "worldline/f0/dio_estimator.h"
 #include "worldline/f0/dio_ss_estimator.h"
@@ -26,20 +27,38 @@ static double** to2d(double* const arr, int length, int width) {
   return arr2d;
 }
 
-DLL_API int F0(float* samples, int length, int fs, double frame_period,
-               int method, double** f0) {
-  // Check if there's an issue with the WAV file
+DLL_API int F0FrameCount(int length, int fs, double frame_period, int method) {
   if (length <= 0) {
-    *f0 = new double[0];
     return 0;
+  }
+  // DIO, Harvest and the -1 placeholder all use the WORLD frame grid.
+  int count = GetSamplesForDIO(fs, length, frame_period);
+  if (method == 2) {
+    // pyin steps by round(fs * frame_period / 1000) samples, which the rounding
+    // can make slightly shorter than frame_period.
+    int nhop =
+        std::max(1, static_cast<int>(std::lround(fs * frame_period / 1000.0)));
+    count = std::max(count, length / nhop);
+  }
+  return count;
+}
+
+DLL_API int F0(const float* samples, int length, int fs, double frame_period,
+               int method, double* f0_out) {
+  // Check if there's an issue with the WAV file
+  if (length <= 0 || samples == nullptr || f0_out == nullptr) {
+    return 0;
+  }
+  // Clamp to the count the caller sized its buffer with, so that a disagreement
+  // between the two exports cannot write past the end of it.
+  int capacity = F0FrameCount(length, fs, frame_period, method);
+  // -1 asks for the frame count only: the caller fills the silent contour in.
+  if (method == -1) {
+    std::fill(f0_out, f0_out + capacity, 0);
+    return capacity;
   }
   std::unique_ptr<worldline::F0Estimator> estimator;
   switch (method) {
-    case -1: {
-      int f0_length = GetSamplesForDIO(fs, length, frame_period);
-      *f0 = new double[f0_length];
-      return f0_length;
-    }
     case 1:
       estimator = std::make_unique<worldline::HarvestEstimator>();
       break;
@@ -55,33 +74,29 @@ DLL_API int F0(float* samples, int length, int fs, double frame_period,
   std::vector<double> f0_vec;
   std::vector<double> ts_vec;
   estimator->Estimate(samples_vec, fs, frame_period, &f0_vec, &ts_vec);
-  int f0_length = f0_vec.size();
-  *f0 = new double[f0_length];
-  std::copy(f0_vec.begin(), f0_vec.end(), *f0);
+  int f0_length = std::min(capacity, static_cast<int>(f0_vec.size()));
+  std::copy(f0_vec.begin(), f0_vec.begin() + f0_length, f0_out);
+  std::fill(f0_out + f0_length, f0_out + capacity, 0);
   return f0_length;
 }
 
-DLL_API int DecodeMgc(int f0_length, double* mgc, int mgc_size, int fft_size,
-                      int fs, double** spectrogram) {
+DLL_API void DecodeMgc(int f0_length, double* mgc, int mgc_size, int fft_size,
+                       int fs, double* spectrogram) {
   int sp_size = fft_size / 2 + 1;
   double** mgc2d = to2d(mgc, f0_length, mgc_size);
-  *spectrogram = new double[f0_length * sp_size];
-  double** sp2d = to2d(*spectrogram, f0_length, sp_size);
+  double** sp2d = to2d(spectrogram, f0_length, sp_size);
   DecodeSpectralEnvelope(mgc2d, f0_length, fs, fft_size, mgc_size, sp2d);
   delete[] sp2d;
-  return sp_size;
 }
 
-DLL_API int DecodeBap(int f0_length, double* bap, int fft_size, int fs,
-                      double** aperiodicity) {
+DLL_API void DecodeBap(int f0_length, double* bap, int fft_size, int fs,
+                       double* aperiodicity) {
   int bap_size = GetNumberOfAperiodicities(fs);
   int ap_size = fft_size / 2 + 1;
   double** bap2d = to2d(bap, f0_length, bap_size);
-  *aperiodicity = new double[f0_length * ap_size];
-  double** ap2d = to2d(*aperiodicity, f0_length, ap_size);
+  double** ap2d = to2d(aperiodicity, f0_length, ap_size);
   DecodeAperiodicity(bap2d, f0_length, fs, fft_size, ap2d);
   delete[] ap2d;
-  return ap_size;
 }
 
 void InitAnalysisConfig(AnalysisConfig* config, int fs, int hop_size,
@@ -92,33 +107,6 @@ void InitAnalysisConfig(AnalysisConfig* config, int fs, int hop_size,
   config->f0_floor = (float)GetF0FloorForCheapTrick(fs, fft_size);
   config->frame_ms = static_cast<double>(config->hop_size) * 1000.0 /
                      static_cast<double>(config->fs);
-}
-
-DLL_API void WorldAnalysis(const AnalysisConfig* config, float* samples,
-                           int num_samples, double** f0_out,
-                           double** sp_env_out, double** ap_out,
-                           int* num_frames) {
-  std::vector<double> samples_vec;
-  samples_vec.reserve(num_samples);
-  std::copy(samples, samples + num_samples, std::back_inserter(samples_vec));
-  auto f0_estimator = std::make_unique<worldline::PyinEstimator>();
-  worldline::Model model(std::move(samples_vec), config->fs, config->frame_ms,
-                         std::move(f0_estimator));
-  model.BuildF0();
-  model.BuildSp();
-  model.BuildAp();
-  *num_frames = model.f0().size();
-  *f0_out = new double[*num_frames];
-  int sp_size = config->fft_size / 2 + 1;
-  *sp_env_out = new double[*num_frames * sp_size];
-  *ap_out = new double[*num_frames * sp_size];
-  std::copy(model.f0().begin(), model.f0().end(), *f0_out);
-  for (int i = 0; i < *num_frames; ++i) {
-    std::copy(model.sp()[i].begin(), model.sp()[i].end(),
-              *sp_env_out + i * sp_size);
-    std::copy(model.ap()[i].begin(), model.ap()[i].end(),
-              *ap_out + i * sp_size);
-  }
 }
 
 DLL_API void WorldAnalysisF0In(const AnalysisConfig* config, float* samples,
@@ -154,10 +142,18 @@ DLL_API void WorldAnalysisF0In(const AnalysisConfig* config, float* samples,
   delete[] ap_2d;
 }
 
+DLL_API int WorldSynthesisSampleCount(int f0_length, double frame_period,
+                                      int fs) {
+  if (f0_length <= 0) {
+    return 0;
+  }
+  return 1 + static_cast<int>((f0_length - 1) * frame_period / 1000.0 * fs);
+}
+
 DLL_API int WorldSynthesis(double* const f0, int f0_length,
                            double* const mgc_or_sp, bool is_mgc, int mgc_size,
                            double* const bap_or_ap, bool is_bap, int fft_size,
-                           double frame_period, int fs, double** y,
+                           double frame_period, int fs, double* y,
                            double* const gender, double* const tension,
                            double* const breathiness, double* const voicing) {
   int bap_size = GetNumberOfAperiodicities(fs);
@@ -189,13 +185,12 @@ DLL_API int WorldSynthesis(double* const f0, int f0_length,
     ap = to2d(bap_or_ap, f0_length, sp_size);
   }
 
-  int y_length =
-      1 + static_cast<int>((f0_length - 1) * frame_period / 1000.0 * fs);
-  *y = new double[y_length];
+  int y_length = WorldSynthesisSampleCount(f0_length, frame_period, fs);
 
   if (gender != nullptr) {
     for (int i = 0; i < f0_length; ++i) {
-      worldline::ShiftGender(sp[i], sp_size, (gender[i] - 0.5) * 200);
+      worldline::ShiftGender(sp[i], sp_size,
+                             std::lround((gender[i] - 0.5) * 200));
     }
   }
 
@@ -204,14 +199,17 @@ DLL_API int WorldSynthesis(double* const f0, int f0_length,
   if (tension != nullptr) {
     for (int i = 0; i < f0_length; ++i) {
       ten[i] = worldline::GetTensionCoefficients(
-          f0[i], fs, (tension[i] - 0.5) * 200, sp_size);
+          f0[i], fs, std::lround((tension[i] - 0.5) * 200), sp_size);
     }
   }
 
   std::vector<double> bre(f0_length, 1);
   if (breathiness != nullptr) {
     for (int i = 0; i < f0_length; ++i) {
-      bre[i] = breathiness[i] > 0.5 ? breathiness[i] * 4 : breathiness[i] * 2;
+      // Linear gain on the aperiodic part, continuous at 0.5 (= 1, unmodified):
+      // [0, 0.5] -> [0, 1], (0.5, 1] -> (1, 3].
+      bre[i] =
+          breathiness[i] > 0.5 ? breathiness[i] * 4 - 1 : breathiness[i] * 2;
     }
   }
 
@@ -224,7 +222,7 @@ DLL_API int WorldSynthesis(double* const f0, int f0_length,
 
   auto ten_wrapper = worldline::vec2d_wrapper(ten);
   Synthesis(f0, f0_length, sp, ap, fft_size, frame_period, fs,
-            ten_wrapper.data(), bre.data(), voi.data(), y_length, *y);
+            ten_wrapper.data(), bre.data(), voi.data(), y_length, y);
 
   if (is_mgc) {
     for (int i = 0; i < f0_length; ++i) {
@@ -241,45 +239,4 @@ DLL_API int WorldSynthesis(double* const f0, int f0_length,
   delete[] ap;
 
   return y_length;
-}
-
-DLL_API int Resample(const SynthRequest* request, float** y) {
-  auto resampler = std::make_unique<worldline::Resampler>(*request);
-  std::vector<double> out = resampler->Resample();
-  *y = new float[out.size()];
-  std::copy(out.begin(), out.end(), *y);
-  return out.size();
-}
-
-DLL_API PhraseSynth* PhraseSynthNew() { return new PhraseSynth(); }
-
-DLL_API void PhraseSynthDelete(PhraseSynth* phrase_synth) {
-  delete phrase_synth;
-}
-
-DLL_API void PhraseSynthAddRequest(PhraseSynth* phrase_synth,
-                                   const SynthRequest* request, double pos_ms,
-                                   double skip_ms, double length_ms,
-                                   double fade_in_ms, double fade_out_ms,
-                                   worldline::LogCallback logCallback) {
-  phrase_synth->AddRequest(*request, pos_ms, skip_ms, length_ms, fade_in_ms,
-                           fade_out_ms, logCallback);
-}
-
-DLL_API void PhraseSynthSetCurves(PhraseSynth* phrase_synth, double* f0,
-                                  double* gender, double* tension,
-                                  double* breathiness, double* voicing,
-                                  int length,
-                                  worldline::LogCallback logCallback) {
-  phrase_synth->SetCurves(f0, gender, tension, breathiness, voicing, length,
-                          logCallback);
-}
-
-DLL_API int PhraseSynthSynth(PhraseSynth* phrase_synth, float** y,
-                             worldline::LogCallback logCallback) {
-  std::vector<double> samples = phrase_synth->Synth(logCallback);
-  int yLength = samples.size();
-  *y = new float[samples.size()];
-  std::copy(samples.begin(), samples.end(), *y);
-  return yLength;
 }

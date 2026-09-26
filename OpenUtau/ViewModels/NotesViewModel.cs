@@ -62,6 +62,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowFinalPitch { get; set; }
         [Reactive] public partial bool LivePitchNormal { get; set; }
         [Reactive] public partial bool LivePitchFast { get; set; }
+        [Reactive] public partial bool MergeNearbyPhrases { get; set; }
         [Reactive] public partial bool IsDiffSinger { get; set; }
         bool livePitchSyncing;
         [Reactive] public partial bool ShowWaveform { get; set; }
@@ -254,6 +255,22 @@ namespace OpenUtau.App.ViewModels {
                         SetLivePitchMode(LivePitchMode.Off);
                     }
                 });
+            MergeNearbyPhrases = Preferences.Default.DiffSingerMergeNearbyPhrases;
+            this.WhenAnyValue(x => x.MergeNearbyPhrases)
+                .Subscribe(merge => {
+                    // The reactive idiom echoes the initial value on subscribe;
+                    // skip it so startup does not re-validate the project.
+                    if (Preferences.Default.DiffSingerMergeNearbyPhrases == merge) {
+                        return;
+                    }
+                    Preferences.Default.DiffSingerMergeNearbyPhrases = merge;
+                    Preferences.Save();
+                    // Phrase grouping is baked in at validate time, so re-validate
+                    // to re-group every DiffSinger part, then let the background
+                    // (pre-)render pick up the new phrase hashes.
+                    DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
+                    DocManager.Inst.ExecuteCmd(new PreRenderNotification());
+                });
             ShowVibrato = Preferences.Default.ShowVibrato;
             this.WhenAnyValue(x => x.ShowVibrato)
             .Subscribe(showVibrato => {
@@ -316,7 +333,7 @@ namespace OpenUtau.App.ViewModels {
             HitTest = new NotesViewModelHitTest(this);
             DocManager.Inst.AddSubscriber(this);
 
-            this.WhenAnyValue(x => x.Part)
+            ObservableMixins.WhereNotNull(this.WhenAnyValue(x => x.Part))
                 .Subscribe(p => {
                     MessageBus.Current.SendMessage(new PianoRollOpenPartChangedEvent(p));
                     PublishPianoRollViewport();
@@ -1153,7 +1170,9 @@ namespace OpenUtau.App.ViewModels {
                 return true;
             }
             if (track.TryGetExpDescriptor(Project, expKey, out var descriptor)) {
-                return track.RendererSettings.Renderer.SupportsExpression(descriptor);
+                // Masked curves are for expression graphs, which read them whatever the renderer.
+                return descriptor.type == UExpressionType.MaskedCurve
+                    || track.RendererSettings.Renderer.SupportsExpression(descriptor);
             }
             if (expKey == track.VoiceColorExp.abbr) {
                 return track.RendererSettings.Renderer.SupportsExpression(track.VoiceColorExp);

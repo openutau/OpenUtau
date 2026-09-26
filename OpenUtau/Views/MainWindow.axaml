@@ -265,12 +265,12 @@
                 <ToggleButton IsChecked="{Binding PlaybackViewModel.LoopPlayback}"
                               ToolTip.Tip="{DynamicResource tip.playback.loop}" Height="18">
                   <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 0.86 1.21 H 6.58 v -2 l 2.45 3 -2.45 3 v -2 H 1.68 v 2 H 0.04 v -2 c 0 -1.1 0.33 -2 0.82 -2 z m 7.36 8 h -5.73 v 2 l -2.45 -3 2.45 -3 v 2 h 4.91 v -2 H 9.04 v 2 c 0 1.1 -0.33 2 -0.82 2 z"/>
+                        Data="m.86 1.58h5.72v-2l2.45 3-2.45 3v-2h-4.9v2H.04v-2c0-1.1.33-2 .82-2zm7.36 8H2.49v2l-2.45-3 2.45-3v2H7.4v-2h1.64v2c0 1.1-.33 2-.82 2z"/>
                 </ToggleButton>
-                <ToggleButton IsChecked="{Binding PlaybackViewModel.Metronome}"
+                <ToggleButton IsChecked="{Binding PlaybackViewModel.Metronome}" Height="18"
                               ToolTip.Tip="{DynamicResource prefs.playback.metronome}">
                   <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 5 1 C 6 1 7 1 8 1 L 11 5 L 11 13 L 2 13 L 2 5 Z Z M 6.5 4 A 1.5 1.5 0 1 1 6.5 7 A 1.5 1.5 0 1 1 6.5 4 Z M 6.5 5 L 12.5 0 L 12.5 1 L 6.5 6 Z"/>
+                        Data="M4.81-.15a.41.35 0 0 0-.39.26L1.35 9a.41.35 0 0 0 .39.46h8.17a.41.35 0 0 0 .39-.46L9.03 5.32 7.21 6.71c-.09.58-.67 1.04-1.36 1.04-.75 0-1.38-.55-1.38-1.2 0-.65.63-1.2 1.38-1.2.01 0 .02 0 .03 0L8.39 3.45 7.24.11a.41.35 0 0 0-.39-.26zM11.27 1.71a.77.67 0 0 0-.46.17L5.96 5.59a1.12.97 0 0 0-1.12.97 1.12.97 0 0 0 1.12.97 1.12.97 0 0 0 1.11-.92l4.86-3.73a.77.67 0 0 0 .07-.94.77.67 0 0 0-.63-.22z"/>
                 </ToggleButton>
               </StackPanel>
             </Border>
@@ -355,6 +355,7 @@
                         Items="{Binding Parts}"
                         PointerPressed="PartsCanvasPointerPressed"
                         PointerMoved="PartsCanvasPointerMoved"
+                        PointerExited="PartsCanvasPointerExited"
                         PointerReleased="PartsCanvasPointerReleased"
                         DoubleTapped="PartsCanvasDoubleTapped"
                         PointerWheelChanged="MainPagePointerWheelChanged">

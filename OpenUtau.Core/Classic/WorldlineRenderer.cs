@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,8 +21,6 @@ namespace OpenUtau.Classic {
         readonly int version;
         readonly double frameMs;
         byte[]? vocoderBytes;
-
-        static readonly ConcurrentDictionary<string, object> cacheFileLocks = new ConcurrentDictionary<string, object>();
 
         public WorldlineRenderer(int version) {
             if (version != 1 && version != 2) {
@@ -79,7 +76,7 @@ namespace OpenUtau.Classic {
                 phrase.AddCacheFile(wavPath);
                 string progressInfo = $"Track {trackNo + 1}: {this} {string.Join(" ", phrase.phones.Select(p => p.phoneme))}";
                 progress.Complete(0, progressInfo);
-                var cacheLock = cacheFileLocks.GetOrAdd(wavPath, _ => new object());
+                var cacheLock = Renderers.GetCacheLock(wavPath);
                 lock (cacheLock) {
                     if (File.Exists(wavPath)) {
                         using (var waveStream = Wave.OpenFile(wavPath)) {

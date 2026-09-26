@@ -502,6 +502,12 @@ namespace OpenUtau.Core.Editing {
             int finished = 0;
             setProgressCallback(0, phrases.Length);
             var commands = new List<SetCurveCommand>();
+            // The model's own pitch goes into the rendered pitch masked curve too, for expression graphs to read.
+            var cleared = new List<(int from, int to)>();
+            var rendered = new List<(int x, float y)>();
+            // A track whose graph prefers the pitch override keeps PITD as the user's own.
+            bool prefersOverride = ExpressionGraph.ExpressionGraphProgram
+                .PrefersPitchOverride(project, project.tracks[part.trackNo]);
             for (int ph_i = phrases.Count() - 1; ph_i >= 0; ph_i--) {
                 var phrase = phrases[ph_i];
                 Render.RenderPitchResult result;
@@ -514,8 +520,14 @@ namespace OpenUtau.Core.Editing {
                 if (result == null) {
                     continue;
                 }
+                CollectRenderedPitch(result, phrase.position - part.position, phrase.duration, cleared, rendered);
                 // TODO: Optimize interpolation and command.
                 if (cancellationToken.IsCancellationRequested) break;
+                if (prefersOverride) {
+                    finished += 1;
+                    setProgressCallback(finished, phrases.Length);
+                    continue;
+                }
                 // Take the first negative tick before start and the first tick after end for each segment;
                 // Reverse traversal, so that when the score slices are too close, priority is given to covering the consonant pitch of the next segment, reducing the impact on vowels.
                 foreach (var (start, end) in DiffSingerRetake.GetRetakeFrameRanges(
@@ -557,7 +569,7 @@ namespace OpenUtau.Core.Editing {
                 setProgressCallback(finished, phrases.Length);
             }
 
-            if (commands.Count == 0) {
+            if (commands.Count == 0 && cleared.Count == 0) {
                 return;
             }
             var validateOptions = new ValidateOptions {
@@ -567,14 +579,67 @@ namespace OpenUtau.Core.Editing {
                 SkipPhoneme = true,
             };
             DocManager.Inst.PostOnUIThread(() => {
+                var all = new List<UCommand>(commands);
+                if (cleared.Count > 0 && project.expressions.ContainsKey(Format.Ustx.RPIT)) {
+                    var curve = part.maskedCurves.FirstOrDefault(c => c.abbr == Format.Ustx.RPIT)?.Clone()
+                        ?? new UMaskedCurve(Format.Ustx.RPIT);
+                    // Every retaken range first, so neighbouring phrases don't clear each other's values.
+                    foreach (var (from, to) in cleared) {
+                        curve.Clear(from, to);
+                    }
+                    curve.SetValues(rendered);
+                    all.Add(new ReplaceMaskedCurveCommand(part, Format.Ustx.RPIT, curve));
+                }
                 if (recordUndo) {
                     docManager.StartUndoGroup("command.batch.note", true);
-                    commands.ForEach(docManager.ExecuteCmd);
+                    all.ForEach(docManager.ExecuteCmd);
                     docManager.EndUndoGroup();
                 } else {
-                    docManager.ApplyTransient(commands, validateOptions, preRender: !fastRealtime);
+                    docManager.ApplyTransient(all, validateOptions, preRender: !fastRealtime);
                 }
             });
+        }
+
+        /// <summary>
+        /// A result's pitch resampled onto the masked curve grid, in absolute cents: the part-relative tick ranges it
+        /// retakes, and values on the grid between voiced frames, linear from frame to frame. Padding, unvoiced
+        /// frames and rests leave gaps.
+        /// </summary>
+        /// <param name="offset">The part-relative tick of the result's tick 0, i.e. of the phrase.</param>
+        /// <param name="limit">The last tick of the phrase, relative to it; frames after it are padding.</param>
+        internal static void CollectRenderedPitch(Render.RenderPitchResult result, int offset, int limit,
+                List<(int from, int to)> cleared, List<(int x, float y)> values) {
+            bool Voiced(int i) => result.tones[i] >= 0 && result.ticks[i] <= limit
+                && (result.voiced == null || i >= result.voiced.Length || result.voiced[i]);
+            foreach (var (start, end) in DiffSingerRetake.GetRetakeFrameRanges(result.retakeMask, result.tones.Length)) {
+                cleared.Add((offset + (int)Math.Floor(result.ticks[start]), offset + (int)Math.Ceiling(result.ticks[end - 1])));
+                int i = start;
+                while (i < end) {
+                    if (!Voiced(i)) {
+                        i++;
+                        continue;
+                    }
+                    int last = i;
+                    while (last + 1 < end && Voiced(last + 1)) {
+                        last++;
+                    }
+                    // Grid ticks from the first voiced frame to the last, linear between the frames around each.
+                    int k = i;
+                    int first = (int)Math.Ceiling((offset + result.ticks[i]) / UMaskedCurve.interval) * UMaskedCurve.interval;
+                    for (int x = first; x <= offset + result.ticks[last]; x += UMaskedCurve.interval) {
+                        double tick = x - offset;
+                        while (k < last && result.ticks[k + 1] <= tick) {
+                            k++;
+                        }
+                        float y = k == last || result.ticks[k + 1] == result.ticks[k]
+                            ? result.tones[k]
+                            : (float)(result.tones[k] + (tick - result.ticks[k]) / (result.ticks[k + 1] - result.ticks[k])
+                                * (result.tones[k + 1] - result.tones[k]));
+                        values.Add((x, y * 100));
+                    }
+                    i = last + 1;
+                }
+            }
         }
     }
 

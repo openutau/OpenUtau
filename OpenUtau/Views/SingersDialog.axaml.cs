@@ -11,11 +11,14 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using NAudio.Wave;
 using NWaves.Audio;
+using OpenUtau.App.Controls;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Classic;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Render;
+using ReactiveUI;
+using ReactiveUI.Primitives;
 using Serilog;
 
 namespace OpenUtau.App.Views {
@@ -29,6 +32,69 @@ namespace OpenUtau.App.Views {
             InitializeComponent();
             PopulateRendererAnalysisMenu();
             DocManager.Inst.AddSubscriber(this);
+            foreach (var (editor, tab) in YamlTabs) {
+                editor.DirtyChanged += (s, e) => tab.Header = editor.IsDirty ? editor.FileName + " *" : editor.FileName;
+            }
+            DataContextChanged += (s, e) => {
+                if (DataContext is SingersViewModel viewModel) {
+                    ObservableMixins.WhereNotNull(viewModel.WhenAnyValue(vm => vm.Singer)).Subscribe(singer => LoadYaml(viewModel, singer));
+                }
+            };
+        }
+
+        (YamlEditor editor, TabItem tab)[] YamlTabs => new[] {
+            (CharacterYamlEditor, CharacterYamlTab),
+            (DsConfigEditor, DsConfigTab),
+        };
+
+        USinger? yamlSinger;
+        bool closeConfirmed;
+
+        // The YAML tabs follow the selected singer, after asking about unsaved changes to the last one's files.
+        async void LoadYaml(SingersViewModel viewModel, USinger? singer) {
+            if (singer == yamlSinger) {
+                return;
+            }
+            yamlSinger = singer;
+            foreach (var (editor, _) in YamlTabs) {
+                await editor.ConfirmClose(this, canStay: false);
+            }
+            // Another singer was picked while asking; that change loads its files.
+            if (yamlSinger != singer || singer == null) {
+                return;
+            }
+            Action onSaved = () => {
+                if (viewModel.Singer == singer) {
+                    viewModel.RefreshSinger();
+                } else {
+                    singer.Reload();
+                }
+            };
+            if (viewModel.HasCharacterYaml) {
+                CharacterYamlEditor.Load(Path.Combine(singer.Location, "character.yaml"), typeof(VoicebankConfig), onSaved);
+            }
+            if (viewModel.HasDsConfig) {
+                DsConfigEditor.Load(Path.Combine(singer.Location, "dsconfig.yaml"), typeof(Core.DiffSinger.DsConfig), onSaved);
+            }
+            if (Tabs.SelectedItem is TabItem { IsVisible: false }) {
+                Tabs.SelectedItem = OtoTab;
+            }
+        }
+
+        protected override async void OnClosing(WindowClosingEventArgs e) {
+            base.OnClosing(e);
+            if (closeConfirmed || !YamlTabs.Any(t => t.editor.IsDirty)) {
+                return;
+            }
+            e.Cancel = true;
+            foreach (var (editor, tab) in YamlTabs.Where(t => t.editor.IsDirty)) {
+                Tabs.SelectedItem = tab;
+                if (!await editor.ConfirmClose(this, canStay: true)) {
+                    return;
+                }
+            }
+            closeConfirmed = true;
+            Close();
         }
 
         void PopulateRendererAnalysisMenu() {
@@ -145,6 +211,24 @@ namespace OpenUtau.App.Views {
             var dialog = new MergeVoicebankDialog();
             dialog.DataContext = new MergeVoicebankViewModel(classicSinger);
             await dialog.ShowDialog(this);
+        }
+
+        void OnEditSearchTerms(object sender, RoutedEventArgs args) {
+            var viewModel = (DataContext as SingersViewModel)!;
+            if (viewModel.Singer != null) {
+                var singer = viewModel.Singer;
+                ShowSearchTermsDialog(this, singer, text => SingersViewModel.SetSearchTerms(singer, text));
+            }
+        }
+
+        public static void ShowSearchTermsDialog(Window owner, USinger singer, Action<string> onFinish) {
+            var dialog = new TypeInDialog() {
+                Title = $"{ThemeManager.GetString("tracks.searchterms")}: {singer.LocalizedName}",
+            };
+            dialog.SetPrompt(ThemeManager.GetString("tracks.searchterms.prompt"));
+            dialog.SetText(string.Join(", ", singer.SearchTerms));
+            dialog.onFinish = onFinish;
+            dialog.ShowDialog(owner);
         }
 
         void OnSetUseFilenameAsAlias(object sender, RoutedEventArgs args) {
@@ -523,7 +607,8 @@ namespace OpenUtau.App.Views {
         }
 
         void OnKeyDown(object sender, KeyEventArgs args) {
-            if (args.Handled || editingCell || (FocusManager?.GetFocusedElement() is TextBox)) {
+            // The single-key shortcuts are for the oto view; elsewhere, such as in a YAML tab, keys are typing.
+            if (args.Handled || editingCell || (FocusManager?.GetFocusedElement() is TextBox) || Tabs.SelectedItem != OtoTab) {
                 return;
             }
             var viewModel = DataContext as SingersViewModel;

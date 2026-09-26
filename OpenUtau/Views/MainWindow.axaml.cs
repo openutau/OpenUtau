@@ -63,14 +63,14 @@ namespace OpenUtau.App.Views {
 
         public MainWindow() {
             Log.Information("Creating main window.");
-            InitializeComponent();
-            Log.Information("Initialized main window component.");
+            // Set before InitializeComponent, so bindings to the window's view model resolve on first evaluation.
             DataContext = viewModel = new MainWindowViewModel {
                 // give the viewmodel a way to prompt/save using the view's existing method
                 AskIfSaveAndContinue = AskIfSaveAndContinue
             };
+            InitializeComponent();
+            Log.Information("Initialized main window component.");
 
-            viewModel.NewProject();
             viewModel.AddTempoChangeCmd = ReactiveCommand.Create<int>(tick => AddTempoChange(tick));
             viewModel.DelTempoChangeCmd = ReactiveCommand.Create<int>(tick => DelTempoChange(tick));
             viewModel.AddTimeSigChangeCmd = ReactiveCommand.Create<int>(bar => AddTimeSigChange(bar));
@@ -586,13 +586,7 @@ namespace OpenUtau.App.Views {
         void OnMenuRedo(object sender, RoutedEventArgs args) => viewModel.Redo();
 
         void OnMenuExpressionss(object sender, RoutedEventArgs args) {
-            var dialog = new ExpressionsDialog() {
-                DataContext = new ExpressionsViewModel(),
-            };
-            dialog.ShowDialog(this);
-            if (dialog.Position.Y < 0) {
-                dialog.Position = dialog.Position.WithY(0);
-            }
+            ExpressionsDialog.Open(this);
         }
 
         async void OnMenuSingers(object sender, RoutedEventArgs args) {
@@ -895,20 +889,16 @@ namespace OpenUtau.App.Views {
                 return;
             }
 
-            var tracksVm = viewModel.TracksViewModel;
+            GlobalHotkey(args);
+            if (viewModel.Page == 1) {
+                EditorHotkey(args);
+            }
+        }
 
+        private void GlobalHotkey(KeyEventArgs args) {
             if (args.KeyModifiers == KeyModifiers.None) {
                 args.Handled = true;
                 switch (args.Key) {
-                    case Key.Delete: viewModel.TracksViewModel.DeleteSelectedParts(); break;
-                    case Key.Space: PlayOrPause(); break;
-                    case Key.Home: viewModel.PlaybackViewModel.MovePlayPos(0); break;
-                    case Key.End:
-                        if (viewModel.TracksViewModel.Parts.Count > 0) {
-                            int endTick = viewModel.TracksViewModel.Parts.Max(part => part.End);
-                            viewModel.PlaybackViewModel.MovePlayPos(endTick);
-                        }
-                        break;
                     case Key.F11:
                         OnMenuFullScreen(this, new RoutedEventArgs());
                         break;
@@ -929,15 +919,44 @@ namespace OpenUtau.App.Views {
             } else if (args.KeyModifiers == cmdKey) {
                 args.Handled = true;
                 switch (args.Key) {
+                    case Key.N: NewProject(); break;
+                    case Key.O: Open(); break;
+                    default:
+                        args.Handled = false;
+                        break;
+                }
+            }
+        }
+
+        private void EditorHotkey(KeyEventArgs args) {
+            if (args.KeyModifiers == KeyModifiers.None) {
+                args.Handled = true;
+                switch (args.Key) {
+                    case Key.Delete: viewModel.TracksViewModel.DeleteSelectedParts(); break;
+                    case Key.Space: PlayOrPause(); break;
+                    case Key.Home: viewModel.PlaybackViewModel.MovePlayPos(0); break;
+                    case Key.End:
+                        if (viewModel.TracksViewModel.Parts.Count > 0) {
+                            int endTick = viewModel.TracksViewModel.Parts.Max(part => part.End);
+                            viewModel.PlaybackViewModel.MovePlayPos(endTick);
+                        }
+                        break;
+                    default:
+                        args.Handled = false;
+                        break;
+                }
+            } else if (args.KeyModifiers == cmdKey) {
+                args.Handled = true;
+                switch (args.Key) {
                     case Key.A: viewModel.TracksViewModel.SelectAllParts(); break;
                     case Key.N: NewProject(); break;
                     case Key.O: Open(); break;
                     case Key.S: _ = Save(); break;
                     case Key.Z: viewModel.Undo(); break;
                     case Key.Y: viewModel.Redo(); break;
-                    case Key.C: tracksVm.CopyParts(); break;
-                    case Key.X: tracksVm.CutParts(); break;
-                    case Key.V: tracksVm.PasteParts(); break;
+                    case Key.C: viewModel.TracksViewModel.CopyParts(); break;
+                    case Key.X: viewModel.TracksViewModel.CutParts(); break;
+                    case Key.V: viewModel.TracksViewModel.PasteParts(); break;
                     default:
                         args.Handled = false;
                         break;
@@ -1340,13 +1359,20 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        public void PartsCanvasPointerExited(object sender, PointerEventArgs args) {
+            // The hover cursor is set on the window; reset it when leaving the canvas from a part edge,
+            // otherwise it stays visible wherever nothing overrides it (e.g. around open popups).
+            if (partEditState == null) {
+                Cursor = null;
+            }
+        }
+
         public void PartsCanvasPointerReleased(object sender, PointerReleasedEventArgs args) {
             if (partEditState?.MouseButton != args.InitialPressMouseButton) {
                 return;
             }
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
-            partEditState.Update(point.Pointer, point.Position);
             partEditState.End(point.Pointer, point.Position);
             partEditState = null;
             Cursor = null;

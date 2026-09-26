@@ -44,7 +44,6 @@ namespace OpenUtau.App.ViewModels {
             set {
                 if (CommandParameter is USinger singer) {
                     singer.IsFavourite = value;
-                    TrackHeaderViewModel.InvalidateSingerMenuCache();
                 }
             }
         }

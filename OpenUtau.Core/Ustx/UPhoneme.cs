@@ -254,15 +254,29 @@ namespace OpenUtau.Core.Ustx {
         }
 
         public Tuple<string, int?, string>[] GetResamplerFlags(UProject project, UTrack track) {
-            var flags = new List<Tuple<string, int?, string>>();
+            return BuildResamplerFlags(GetExpressionDescriptors(project, track),
+                abbr => GetExpression(project, track, abbr).Item1);
+        }
+
+        /// <summary>
+        /// The track's expressions in flag order: the project's, with the track's own replacing theirs.
+        /// </summary>
+        public static List<UExpressionDescriptor> GetExpressionDescriptors(UProject project, UTrack track) {
             var expressions = new List<UExpressionDescriptor>();
             expressions.AddRange(project.expressions.Values);
             expressions.RemoveAll(exp => track.TrackExpressions.Any(te => te.abbr == exp.abbr));
             expressions.AddRange(track.TrackExpressions);
+            return expressions;
+        }
+
+        /// <summary>The resampler flags of the given expressions, from each expression's value.</summary>
+        public static Tuple<string, int?, string>[] BuildResamplerFlags(
+                IEnumerable<UExpressionDescriptor> expressions, Func<string, float> getValue) {
+            var flags = new List<Tuple<string, int?, string>>();
             foreach (var descriptor in expressions) {
                 if (descriptor.type == UExpressionType.Numerical) {
                     if (!string.IsNullOrEmpty(descriptor.flag)) {
-                        int value = (int)GetExpression(project, track, descriptor.abbr).Item1;
+                        int value = (int)getValue(descriptor.abbr);
                         if (descriptor.skipOutputIfDefault && value == (int)descriptor.defaultValue) {
                             continue;
                         }
@@ -270,7 +284,7 @@ namespace OpenUtau.Core.Ustx {
                     }
                 } else if (descriptor.type == UExpressionType.Options) {
                     if (descriptor.isFlag) {
-                        int value = (int)GetExpression(project, track, descriptor.abbr).Item1;
+                        int value = (int)getValue(descriptor.abbr);
                         flags.Add(Tuple.Create<string, int?, string>(descriptor.options[value], null, descriptor.abbr));
                     }
                 }

@@ -139,6 +139,8 @@ namespace OpenUtau.Core.Ustx {
         public double Pan { set; get; }
 
         public List<UExpressionDescriptor> TrackExpressions { get; set; } = new List<UExpressionDescriptor>();
+        /// <summary>The id of an expression graph overriding the project's default for this track's renderer.</summary>
+        public string? ExpressionGraph { get; set; }
         [YamlIgnore] public UExpressionDescriptor VoiceColorExp { set; get; }
         [YamlIgnore] public UExpressionDescriptor VoiceColor2Exp { set; get; }
         public string[] VoiceColorNames { get; set; } = new string[] { "" };

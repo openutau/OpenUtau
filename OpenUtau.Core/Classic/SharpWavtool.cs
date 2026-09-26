@@ -54,12 +54,17 @@ namespace OpenUtau.Classic {
                         int length = cutoff >= 0 ? (samples.Length - offset - cutoff) : -cutoff;
                         segment.samples = samples.Skip(offset).Take(length).ToArray();
                     }
-                } else { 
-                    if (!File.Exists(item.outputFile)) {
-                        continue;
-                    }
-                    using (var waveStream = Wave.OpenFile(item.outputFile)) {
-                        segment.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
+                } else {
+                    //Serialize the read with the resampler writes (ClassicRenderer), which
+                    //use the same per-path lock, to avoid "file is being used by another
+                    //process" when two phrases sharing a resample cache render concurrently.
+                    lock (Renderers.GetCacheLock(item.outputFile)) {
+                        if (!File.Exists(item.outputFile)) {
+                            continue;
+                        }
+                        using (var waveStream = Wave.OpenFile(item.outputFile)) {
+                            segment.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
+                        }
                     }
                 }
                 segments.Add(segment);

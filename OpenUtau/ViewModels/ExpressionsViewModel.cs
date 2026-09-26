@@ -83,6 +83,9 @@ namespace OpenUtau.App.ViewModels {
             if (string.IsNullOrWhiteSpace(Abbr)) {
                 return new string[] { "Abbreviation must be set.", "<translate:errors.expression.abbrset>" };
             }
+            if (ExpressionType == (int)UExpressionType.MaskedCurve && Min >= Max) {
+                return new string[] { "Min must be smaller than max.", $"<translate:errors.expression.min>: {Name}" };
+            }
             if (ExpressionType == 0) { // Numerical
                 if (Abbr.Trim().Length < 1 || Abbr.Trim().Length > 4) {
                     return new string[] { "Abbreviation must be between 1 and 4 characters long.", $"<translate:errors.expression.abbrlong>: {Name}" };
@@ -109,6 +112,11 @@ namespace OpenUtau.App.ViewModels {
                 case UExpressionType.Curve:
                     return new UExpressionDescriptor(Name.Trim(), Abbr.Trim().ToLower(), Min, Max, DefaultValue) {
                         type = UExpressionType.Curve,
+                    };
+                case UExpressionType.MaskedCurve:
+                    // No default: a masked curve has no value where none is set. Min and max scale its lane.
+                    return new UExpressionDescriptor(Name.Trim(), Abbr.Trim().ToLower(), Min, Max, Min) {
+                        type = UExpressionType.MaskedCurve,
                     };
             }
             throw new Exception("Unexpected expression type");

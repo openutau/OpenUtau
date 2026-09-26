@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:c="using:OpenUtau.App.Controls"
+        mc:Ignorable="d"
+        x:Class="OpenUtau.App.Controls.ExpressionGraphEditor"
+        KeyDown="OnKeyDown">
+  <Grid ColumnDefinitions="230,*" RowDefinitions="*,Auto">
+    <DockPanel Grid.Column="0" Grid.RowSpan="2" Margin="10">
+      <StackPanel DockPanel.Dock="Bottom" Spacing="6" Name="GraphSettings">
+        <TextBlock Text="{DynamicResource expressiongraph.name}"/>
+        <TextBox Name="NameBox" LostFocus="OnNameCommitted" KeyDown="OnNameKeyDown"/>
+        <TextBlock Name="RendererText"/>
+        <TextBlock Text="{DynamicResource expressiongraph.pitchcurve}"/>
+        <ComboBox Name="PitchCurveBox" HorizontalAlignment="Stretch" SelectionChanged="OnPitchCurveChanged">
+          <ComboBoxItem Content="{DynamicResource expressiongraph.pitchcurve.pitd}"/>
+          <ComboBoxItem Content="{DynamicResource expressiongraph.pitchcurve.pito}"/>
+        </ComboBox>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <CheckBox Name="DefaultBox" IsCheckedChanged="OnDefaultChanged"/>
+          <TextBlock Text="{DynamicResource expressiongraph.default}" VerticalAlignment="Center"/>
+        </StackPanel>
+      </StackPanel>
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="4" Margin="0,6">
+        <Button Content="{DynamicResource expressiongraph.new}" Click="OnNew" Name="NewButton"/>
+        <Button Content="{DynamicResource expressiongraph.duplicate}" Click="OnDuplicate" Name="DuplicateButton"/>
+        <Button Content="{DynamicResource expressiongraph.delete}" Click="OnDelete" Name="DeleteButton"/>
+      </StackPanel>
+      <ListBox Name="GraphList" SelectionChanged="OnGraphSelected"/>
+    </DockPanel>
+    <Border Grid.Column="1" Margin="0,10,10,0" BorderThickness="1" CornerRadius="4"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <Panel>
+        <c:ExpressionGraphCanvas Name="Canvas"/>
+        <TextBlock Name="Hint" Text="{DynamicResource expressiongraph.hint}" Margin="10" Opacity="0.6"
+                   HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False"/>
+      </Panel>
+    </Border>
+    <TextBlock Grid.Column="1" Grid.Row="1" Name="Status" Margin="0,4,10,8" TextWrapping="Wrap"/>
+  </Grid>
+</UserControl>
