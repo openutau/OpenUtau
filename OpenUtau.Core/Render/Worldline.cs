@@ -566,10 +566,18 @@ namespace OpenUtau.Core.Render {
                     }
                 }
 
+                // Repeat the last frame; the wavtool fades the phrase out.
+                if (totalFrames >= 2) {
+                    f0Out[totalFrames - 1] = f0Out[totalFrames - 2];
+                    spEnvOut[totalFrames - 1] = spEnvOut[totalFrames - 2];
+                    apOut[totalFrames - 1] = apOut[totalFrames - 2];
+                }
+
                 if (f0Curve != null) {
+                    var f0Fit = FitCurve(f0Curve, totalFrames, 0);
                     for (int i = 0; i < totalFrames; ++i) {
                         if (f0Out.GetAtIndex<double>(i) > config.f0_floor) {
-                            f0Out[i] = f0Curve[i];
+                            f0Out[i] = f0Fit[i];
                         }
                     }
                 }
@@ -591,11 +599,24 @@ namespace OpenUtau.Core.Render {
                     spEnvArray, false, spSize,
                     apArray, false, config.fft_size,
                     config.frame_ms, config.fs,
-                    genderCurve ?? Enumerable.Repeat(0.5, totalFrames).ToArray(),
-                    tensionCurve ?? Enumerable.Repeat(0.5, totalFrames).ToArray(),
-                    breathinessCurve ?? Enumerable.Repeat(0.5, totalFrames).ToArray(),
-                    voicingCurve ?? Enumerable.Repeat(1.0, totalFrames).ToArray());
+                    FitCurve(genderCurve, totalFrames, 0.5),
+                    FitCurve(tensionCurve, totalFrames, 0.5),
+                    FitCurve(breathinessCurve, totalFrames, 0.5),
+                    FitCurve(voicingCurve, totalFrames, 1.0));
                 return samples.Select(s => (float)s).ToArray();
+            }
+
+            /// <summary>Resizes a curve to length frames, padding with its last value.</summary>
+            static double[] FitCurve(double[]? curve, int length, double defaultValue) {
+                var result = new double[length];
+                if (curve == null || curve.Length == 0) {
+                    Array.Fill(result, defaultValue);
+                    return result;
+                }
+                int copy = Math.Min(length, curve.Length);
+                Array.Copy(curve, result, copy);
+                Array.Fill(result, curve[^1], copy, length - copy);
+                return result;
             }
         }
     }
