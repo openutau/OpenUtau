@@ -253,6 +253,8 @@
           </StackPanel>
           <TextBlock Text="{DynamicResource prefs.rendering.gamebackend}" Margin="0,10,0,0"/>
           <ComboBox ItemsSource="{Binding GameBackendOptions}" SelectedItem="{Binding GameBackend}"/>
+          <TextBlock Text="{DynamicResource prefs.rendering.mergephrases}" Margin="0,10,0,0"/>
+          <ComboBox ItemsSource="{Binding MergePhrasesSecs}" SelectedIndex="{Binding MergePhrasesSecIndex}"/>
         </StackPanel>
 
         <!-- Appearance -->

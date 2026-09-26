@@ -5,6 +5,7 @@ using System.Numerics;
 using OpenUtau.Classic;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 
 namespace OpenUtau.Core.Pipeline {
     /// <summary>
@@ -398,14 +399,20 @@ namespace OpenUtau.Core.Pipeline {
                 return null;
             }
             var renderer = track.RendererSettings.Renderer;
+            float maxMergeMs = Preferences.Default.MergePhrasesSec * 1000;
             var groups = new List<(int, int)>();
             int start = 0;
             for (int i = 1; i < phonemes.Count; ++i) {
-                // A gap normally starts a new phrase, but the renderer may ask
-                // to keep adjacent phrases together when their padded audio
-                // would overlap (e.g. DiffSinger input padding).
-                if (phonemes[i - 1].End != phonemes[i].position
-                    && !renderer.ShouldMergePhrases(project, track, phonemes[i - 1], phonemes[i])) {
+                if (phonemes[i - 1].End == phonemes[i].position) {
+                    continue;   // No gap: same phrase
+                }
+                // A gap normally starts a new phrase, but the renderer may ask to keep
+                // adjacent phrases together when their padded audio would overlap
+                // (e.g. DiffSinger input padding). The merged phrase is capped so a run
+                // of short gaps cannot chain into one huge render unit.
+                bool merge = renderer.ShouldMergePhrases(project, track, phonemes[i - 1], phonemes[i])
+                    && (maxMergeMs <= 0 || phonemes[i].EndMs - phonemes[start].PositionMs <= maxMergeMs);
+                if (!merge) {
                     groups.Add((start, i));
                     start = i;
                 }

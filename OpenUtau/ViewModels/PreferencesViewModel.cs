@@ -3,18 +3,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using OpenUtau.Audio;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.SourceGenerators;
 using ReactiveUI.Primitives;
-using ReactiveUI.Avalonia;
-using OpenUtau.Core.Render;
 using ReactiveUI.Primitives.Concurrency;
+using ReactiveUI.SourceGenerators;
 using Serilog;
 
 namespace OpenUtau.App.ViewModels {
@@ -100,6 +98,9 @@ namespace OpenUtau.App.ViewModels {
         public List<GpuInfo> OnnxGpuOptions { get; set; }
         [Reactive] public partial GpuInfo OnnxGpu { get; set; }
         public bool ShowOnnxGpu => showOnnxGpu.Value;
+
+        public List<string> MergePhrasesSecs { get; } = new List<string> { "Auto", "2.5", "5", "7.5", "10" };
+        [Reactive] public partial int MergePhrasesSecIndex { get; set; }
 
         // GAME backend (onnx / ggml)
         public List<string> GameBackendOptions { get; } = new() { "ONNX", "GGML" };
@@ -208,6 +209,10 @@ namespace OpenUtau.App.ViewModels {
             OnnxGpu = OnnxGpuOptions.Count > 0
                 ? OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0])
                 : new GpuInfo();
+            MergePhrasesSecIndex = Math.Max(0, MergePhrasesSecs.IndexOf(
+                Preferences.Default.MergePhrasesSec == 0
+                    ? "Auto"
+                    : Preferences.Default.MergePhrasesSec.ToString()));
             // GAME backend: ONNX is the default, GGML is available when installed.
             // The options list always includes both so the ComboBox UX is stable.
             GameBackend = Preferences.Default.GameBackend switch {
@@ -419,6 +424,18 @@ namespace OpenUtau.App.ViewModels {
                 index => Preferences.Default.OnnxRunner = index);
             PersistOn(this.WhenAnyValue(vm => vm.OnnxGpu),
                 gpu => Preferences.Default.OnnxGpu = gpu.deviceId);
+            this.WhenAnyValue(vm => vm.MergePhrasesSecIndex)
+                .Skip(1)
+                .Subscribe(index => {
+                    if (index < 0 || index >= MergePhrasesSecs.Count) {
+                        return;
+                    }
+                    string item = MergePhrasesSecs[index];
+                    Preferences.Default.MergePhrasesSec = item == "Auto" ? 0 : float.Parse(item);
+                    Preferences.Save();
+                    DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
+                    DocManager.Inst.ExecuteCmd(new PreRenderNotification());
+                });
             PersistOn(this.WhenAnyValue(vm => vm.GameBackend),
                 backend => Preferences.Default.GameBackend = backend == "GGML" ? "ggml" : "onnx");
             PersistOn(this.WhenAnyValue(vm => vm.RememberMid),
