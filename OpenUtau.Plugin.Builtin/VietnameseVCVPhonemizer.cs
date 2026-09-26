@@ -1,1166 +1,1077 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Plugin.Builtin {
-    [Phonemizer("Vietnamese VCV Phonemizer", "VIE VCV", "Jani Tran", language:"VI")]
+    [Phonemizer("Vietnamese VCV Phonemizer", "VIE VCV", "Jani Tran", language: "VI")]
     public class VietnameseVCVPhonemizer : Phonemizer {
-        /// <summary>
-        /// The lookup table to convert a hiragana to its tail vowel.
-        /// </summary>
-        static readonly string[] vowels = new string[] {
-            "a=a,à,á,ả,ã,ạ,ă,ằ,ắ,ẳ,ẵ,ặ,A,À,Á,Ả,Ã,Ạ,Ă,Ằ,Ắ,Ẳ,Ẵ,Ặ",
-            "A=â,ầ,ấ,ẩ,ẫ,ậ,Â,Ầ,Ấ,Ẩ,Ẫ,Ậ",
-            "@=ơ,ờ,ớ,ở,ỡ,ợ,Ơ,Ờ,Ớ,Ở,Ỡ,Ợ,@",
-            "i=i,y,ì,í,ỉ,ĩ,ị,ỳ,ý,ỷ,ỹ,ỵ,I,Y,Ì,Í,Ỉ,Ĩ,Ị,Ỳ,Ý,Ỷ,Ỹ,Ỵ",
-            "e=e,è,é,ẻ,ẽ,ẹ,E,È,É,Ẻ,Ẽ,Ẹ",
-            "E=ê,ề,ế,ể,ễ,ệ,Ê,Ề,Ế,Ể,Ễ,Ệ",
-            "o=o,ò,ó,ỏ,õ,ọ,O,Ò,Ó,Ỏ,Õ,Ọ",
-            "O=ô,ồ,ố,ổ,ỗ,ộ,Ô,Ồ,Ố,Ổ,Ỗ,Ộ",
-            "u=u,ù,ú,ủ,ũ,ụ,U,Ù,Ú,Ủ,Ũ,Ụ",
-            "U=ư,ừ,ứ,ử,ữ,ự,Ư,Ừ,Ứ,Ử,Ữ,Ự",
-            "m=m,M",
-            "n=n,N",
-            "ng=g,G",
-            "nh=h,H",
-            "-=c,C,t,T,-,p,P,R,1,2,3,4,5",
+        static readonly Dictionary<char, string> Vowels = new() {
+            ['a'] = "a", ['ă'] = "a", ['â'] = "A",
+            ['e'] = "e", ['ê'] = "E",
+            ['i'] = "i", ['y'] = "i",
+            ['o'] = "o", ['ô'] = "O",
+            ['ơ'] = "@",
+            ['u'] = "u", ['ư'] = "U",
+        };
+
+        static readonly Dictionary<char, string> Consonants = new() {
+            ['C'] = "ch",
+            ['K'] = "kh",
+            ['N'] = "ng",
+            ['J'] = "nh",
+            ['Z'] = "tr",
+            ['T'] = "th",
+        };
+
+        static readonly HashSet<char> Initials = new() {
+            'b', 'C', 'd', 'f', 'g', 'h', 'k', 'K', 'l',
+            'm', 'n', 'N', 'J', 'r', 's', 't', 'T', 'Z',
+            'v', 'w', 'z', 'p', 'y'
+        };
+
+        static readonly HashSet<char> Finals = new() {
+            'k', 't', 'C', 'p', 'n', 'm', 'N', 'J'
+        };
+
+        static readonly string[] VvcEndings = {
+            "iên", "iêN", "iêm", "iêt", "iêk", "iêp", "iêu",
+            "yên", "yêN", "yêm", "yêt", "yêk", "yêp", "yêu",
+            "uôn", "uôN", "uôm", "uôt", "uôk", "uôi",
+            "ươn", "ươN", "ươm", "ươt", "ươk", "ươp", "ươi"
+        };
+
+        static readonly string[] ShortEndings = {
+            "ai", "ơi", "oi", "ôi", "ui", "ưi",
+            "ao", "eo", "êu", "iu", "uao", "ueo",
+            "an", "ơn", "in", "en", "ên", "on", "ôn", "un", "ưn",
+            "am", "ơm", "im", "em", "êm", "om", "ôm", "um", "ưm",
+            "aN", "ơN", "iN", "eN", "êN", "ưN",
+            "at", "ơt", "it", "et", "êt", "ot", "ôt", "ut", "ưt",
+            "ak", "ơk", "ik", "ek", "êk", "ok", "ôk", "uk", "ưk",
+            "ap", "ơp", "ip", "ep", "êp", "op", "ôp", "up", "ưp",
+            "ia", "ua", "ưa", "uôN",
+            "yt", "yn", "ym", "yC", "yp", "yk", "yN",
+            "aJ", "iJ", "êJ", "yJ"
+        };
+
+        static readonly string[] LongEndings = {
+            "ay", "ây", "uy", "au", "âu", "oa", "oe", "uê"
+        };
+
+        static readonly string[] MediumEndings = {
+            "ăt", "ât", "ăk", "âk", "ăp", "âp",
+            "ăn", "ân", "ăN", "âN", "ăm", "âm",
+            "ôN", "uN", "oN",
+            "aC", "iC", "êC", "yC"
         };
 
         static readonly Dictionary<string, string> vowelLookup;
 
+        USinger singer;
+
+        public override bool LegacyMapping => true;
+
         static VietnameseVCVPhonemizer() {
-            vowelLookup = vowels.ToList()
-                .SelectMany(line => {
-                    var parts = line.Split('=');
-                    return parts[1].Split(',').Select(cv => (cv, parts[0]));
-                })
-                .ToDictionary(t => t.Item1, t => t.Item2);
+            vowelLookup = new Dictionary<string, string>();
+
+            foreach (var c in "aàáảãạăằắẳẵặAÀÁẢÃẠĂẰẮẲẴẶ")
+                vowelLookup[c.ToString()] = "a";
+
+            foreach (var c in "âầấẩẫậÂẦẤẨẪẬ")
+                vowelLookup[c.ToString()] = "A";
+
+            foreach (var c in "ơờớởỡợƠỜỚỞỠỢ")
+                vowelLookup[c.ToString()] = "@";
+
+            foreach (var c in "iìíỉĩịyỳýỷỹỵIÌÍỈĨỊYỲÝỶỸỴ")
+                vowelLookup[c.ToString()] = "i";
+
+            foreach (var c in "eèéẻẽẹEÈÉẺẽẸ")
+                vowelLookup[c.ToString()] = "e";
+
+            foreach (var c in "êềếểễệÊỀẾỂỄỆ")
+                vowelLookup[c.ToString()] = "E";
+
+            foreach (var c in "oòóỏõọOÒÓỎÕỌ")
+                vowelLookup[c.ToString()] = "o";
+
+            foreach (var c in "ôồốổỗộÔỒỐỔỖỘ")
+                vowelLookup[c.ToString()] = "O";
+
+            foreach (var c in "uùúủũụUÙÚỦŨỤ")
+                vowelLookup[c.ToString()] = "u";
+
+            foreach (var c in "ưừứửữựƯỪỨỬỮỰ")
+                vowelLookup[c.ToString()] = "U";
+
+            vowelLookup["m"] = "m";
+            vowelLookup["M"] = "m";
+            vowelLookup["n"] = "n";
+            vowelLookup["N"] = "ng";
+            vowelLookup["g"] = "ng";
+            vowelLookup["G"] = "ng";
+            vowelLookup["h"] = "nh";
+            vowelLookup["H"] = "nh";
+
+            foreach (var c in "cCtTpPR12345")
+                vowelLookup[c.ToString()] = "-";
         }
 
-        private USinger singer;
-
         public override void SetSinger(USinger singer) => this.singer = singer;
-        
-        // Legacy mapping. Might adjust later to new mapping style.
-		public override bool LegacyMapping => true;
 
-        public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevNeighbours) {
+        public override Result Process(
+            Note[] notes,
+            Note? prev,
+            Note? next,
+            Note? prevNeighbour,
+            Note? nextNeighbour,
+            Note[] prevNeighbours) {
+
             var note = notes[0];
+
             if (!string.IsNullOrEmpty(note.phoneticHint)) {
                 return new Result {
-                    phonemes = new Phoneme[] {
-                        new Phoneme {
-                            phoneme = note.phoneticHint,
-                        }
-                    },
+                    phonemes = new[] {
+                        new Phoneme { phoneme = note.phoneticHint }
+                    }
                 };
             }
-            int totalDuration = notes.Sum(n => n.duration);
-            int Short = 0;
-            int Long = 0;
-            int Medium = 0;
-            int End = 0;
-            int ViTri = 0;
-            if (totalDuration < 350) {
-                Short = totalDuration * 4 / 8;
-                Long = totalDuration / 6;
-                Medium = totalDuration / 3;
-                End = totalDuration * 4 / 5;
-                ViTri = Short;
-            } else {
-                Short = totalDuration - 170;
-                Long = 90;
-                Medium = 180;
-                End = totalDuration - 50;
-                ViTri = Short;
-            }
-            bool a;
-            bool NoNext = nextNeighbour == null && note.lyric != "R";
-            var loi = note.lyric;
-            if (note.lyric.StartsWith("?")) {
-            } else {
-                if (note.lyric != "R") {
-                    loi = note.lyric.ToLower();
-                    note.lyric = note.lyric.ToLower();
-                }
-            }
-            note.lyric = note.lyric.Replace('à', 'a').Replace('á', 'a').Replace('ả', 'a').Replace('ã', 'a').Replace('ạ', 'a');
-            note.lyric = note.lyric.Replace('ằ', 'ă').Replace('ắ', 'ă').Replace('ẳ', 'ă').Replace('ẵ', 'ă').Replace('ặ', 'ă');
-            note.lyric = note.lyric.Replace('ầ', 'â').Replace('ấ', 'â').Replace('ẩ', 'â').Replace('ẫ', 'â').Replace('ậ', 'â');
-            note.lyric = note.lyric.Replace('ờ', 'ơ').Replace('ớ', 'ơ').Replace('ở', 'ơ').Replace('ỡ', 'ơ').Replace('ợ', 'ơ');
-            note.lyric = note.lyric.Replace('ì', 'i').Replace('í', 'i').Replace('ỉ', 'i').Replace('ĩ', 'i').Replace('ị', 'i');
-            note.lyric = note.lyric.Replace('ỳ', 'y').Replace('ý', 'y').Replace('ỷ', 'y').Replace('ỹ', 'y').Replace('ỵ', 'y');
-            note.lyric = note.lyric.Replace('è', 'e').Replace('é', 'e').Replace('ẻ', 'e').Replace('ẽ', 'e').Replace('ẹ', 'e');
-            note.lyric = note.lyric.Replace('ề', 'ê').Replace('ế', 'ê').Replace('ể', 'ê').Replace('ễ', 'ê').Replace('ệ', 'ê');
-            note.lyric = note.lyric.Replace('ò', 'o').Replace('ó', 'o').Replace('ỏ', 'o').Replace('õ', 'o').Replace('ọ', 'o');
-            note.lyric = note.lyric.Replace('ồ', 'ô').Replace('ố', 'ô').Replace('ổ', 'ô').Replace('ỗ', 'ô').Replace('ộ', 'ô');
-            note.lyric = note.lyric.Replace('ù', 'u').Replace('ú', 'u').Replace('ủ', 'u').Replace('ũ', 'u').Replace('ụ', 'u');
-            note.lyric = note.lyric.Replace('ừ', 'ư').Replace('ứ', 'ư').Replace('ử', 'ư').Replace('ữ', 'ư').Replace('ự', 'ư');
-            if (note.lyric == "quôc") {
-                note.lyric = "quâc";
-            }
-            if (note.lyric != "gi" && note.lyric != "gin" && note.lyric != "gim" && note.lyric != "ginh" && note.lyric != "ging" && note.lyric != "git" && note.lyric != "gip" && note.lyric != "gic" && note.lyric != "gich") {
-                loi = note.lyric.Replace('à', 'a').Replace('á', 'a').Replace('ả', 'a').Replace('ã', 'a').Replace('ạ', 'a');
-                loi = note.lyric.Replace('ằ', 'ă').Replace('ắ', 'ă').Replace('ẳ', 'ă').Replace('ẵ', 'ă').Replace('ặ', 'ă');
-                loi = note.lyric.Replace('ầ', 'â').Replace('ấ', 'â').Replace('ẩ', 'â').Replace('ẫ', 'â').Replace('ậ', 'â');
-                loi = note.lyric.Replace('ờ', 'ơ').Replace('ớ', 'ơ').Replace('ở', 'ơ').Replace('ỡ', 'ơ').Replace('ợ', 'ơ');
-                loi = note.lyric.Replace('ì', 'i').Replace('í', 'i').Replace('ỉ', 'i').Replace('ĩ', 'i').Replace('ị', 'i');
-                loi = note.lyric.Replace('ỳ', 'y').Replace('ý', 'y').Replace('ỷ', 'y').Replace('ỹ', 'y').Replace('ỵ', 'y');
-                loi = note.lyric.Replace('è', 'e').Replace('é', 'e').Replace('ẻ', 'e').Replace('ẽ', 'e').Replace('ẹ', 'e');
-                loi = note.lyric.Replace('ề', 'ê').Replace('ế', 'ê').Replace('ể', 'ê').Replace('ễ', 'ê').Replace('ệ', 'ê');
-                loi = note.lyric.Replace('ò', 'o').Replace('ó', 'o').Replace('ỏ', 'o').Replace('õ', 'o').Replace('ọ', 'o');
-                loi = note.lyric.Replace('ồ', 'ô').Replace('ố', 'ô').Replace('ổ', 'ô').Replace('ỗ', 'ô').Replace('ộ', 'ô');
-                loi = note.lyric.Replace('ù', 'u').Replace('ú', 'u').Replace('ủ', 'u').Replace('ũ', 'u').Replace('ụ', 'u');
-                loi = note.lyric.Replace('ừ', 'ư').Replace('ứ', 'ư').Replace('ử', 'ư').Replace('ữ', 'ư').Replace('ự', 'ư');
-                loi = note.lyric.Replace("ch", "C").Replace("d", "z").Replace("đ", "d").Replace("ph", "f").Replace("ch", "C")
-                    .Replace("gi", "z").Replace("gh", "g").Replace("c", "k").Replace("kh", "K").Replace("ng", "N")
-                    .Replace("ngh", "N").Replace("nh", "J").Replace("x", "s").Replace("tr", "Z").Replace("th", "T")
-                    .Replace("q", "k").Replace("r", "z");
-            } else {
-                loi = note.lyric.Replace('ì', 'i').Replace('í', 'i').Replace('ỉ', 'i').Replace('ĩ', 'i').Replace('ị', 'i');
-                loi = loi.Replace("gi", "zi").Replace("ng", "N").Replace("nh", "J").Replace("ch", "C").Replace("c", "k");
-            }
-            bool tontaiVVC = (loi.EndsWith("iên") || loi.EndsWith("iêN") || loi.EndsWith("iêm") || loi.EndsWith("iêt") || loi.EndsWith("iêk") || loi.EndsWith("iêp") || loi.EndsWith("iêu")
-                           || loi.EndsWith("yên") || loi.EndsWith("yêN") || loi.EndsWith("yêm") || loi.EndsWith("yêt") || loi.EndsWith("yêk") || loi.EndsWith("yêp") || loi.EndsWith("yêu")
-                           || loi.EndsWith("uôn") || loi.EndsWith("uôN") || loi.EndsWith("uôm") || loi.EndsWith("uôt") || loi.EndsWith("uôk") || loi.EndsWith("uôi")
-                           || loi.EndsWith("ươn") || loi.EndsWith("ươN") || loi.EndsWith("ươm") || loi.EndsWith("ươt") || loi.EndsWith("ươk") || loi.EndsWith("ươp") || loi.EndsWith("ươi"));
-            bool koVVCchia;
-            if (tontaiVVC == true) {
-                koVVCchia = false;
-            } else
-                koVVCchia = true;
-            bool tontaiCcuoi = (loi.EndsWith("k") || loi.EndsWith("t") || loi.EndsWith("C") || loi.EndsWith("p"));
-            bool kocoCcuoi;
-            if (tontaiCcuoi == true) {
-                kocoCcuoi = false;
-            } else
-                kocoCcuoi = true;
-            bool tontaiC = (loi.StartsWith("b") || loi.StartsWith("C") || loi.StartsWith("d") || loi.StartsWith("f")
-                         || loi.StartsWith("g") || loi.StartsWith("h") || loi.StartsWith("k") || loi.StartsWith("K")
-                         || loi.StartsWith("l") || loi.StartsWith("m") || loi.StartsWith("n") || loi.StartsWith("N")
-                         || loi.StartsWith("J") || loi.StartsWith("r") || loi.StartsWith("s") || loi.StartsWith("t")
-                         || loi.StartsWith("T") || loi.StartsWith("Z") || loi.StartsWith("v") || loi.StartsWith("w")
-                         || loi.StartsWith("z") || loi.StartsWith("p"));
-            bool kocoC;
-            if (tontaiC == true) {
-                kocoC = false;
-            } else
-                kocoC = true;
-            bool BR = note.lyric.StartsWith("breath");
-            bool tontaiVV = (loi.EndsWith("ai") || loi.EndsWith("ơi") || loi.EndsWith("oi") || loi.EndsWith("ôi") || loi.EndsWith("ui") || loi.EndsWith("ưi")
-                          || loi.EndsWith("ao") || loi.EndsWith("eo") || loi.EndsWith("êu") || loi.EndsWith("iu")
-                          || loi.EndsWith("an") || loi.EndsWith("ơn") || loi.EndsWith("in") || loi.EndsWith("en") || loi.EndsWith("ên") || loi.EndsWith("on") || loi.EndsWith("ôn") || loi.EndsWith("un") || loi.EndsWith("ưn")
-                          || loi.EndsWith("am") || loi.EndsWith("ơm") || loi.EndsWith("im") || loi.EndsWith("em") || loi.EndsWith("êm") || loi.EndsWith("om") || loi.EndsWith("ôm") || loi.EndsWith("um") || loi.EndsWith("ưm")
-                          || loi.EndsWith("aN") || loi.EndsWith("ơN") || loi.EndsWith("iN") || loi.EndsWith("eN") || loi.EndsWith("êN") || loi.EndsWith("ưN")
-                          || loi.EndsWith("aJ") || loi.EndsWith("iJ") || loi.EndsWith("êJ")
-                          || loi.EndsWith("at") || loi.EndsWith("ơt") || loi.EndsWith("it") || loi.EndsWith("et") || loi.EndsWith("êt") || loi.EndsWith("ot") || loi.EndsWith("ôt") || loi.EndsWith("ut") || loi.EndsWith("ưt")
-                          || loi.EndsWith("aC") || loi.EndsWith("iC") || loi.EndsWith("êC")
-                          || loi.EndsWith("ak") || loi.EndsWith("ơk") || loi.EndsWith("ik") || loi.EndsWith("ek") || loi.EndsWith("êk") || loi.EndsWith("ok") || loi.EndsWith("ôk") || loi.EndsWith("uk") || loi.EndsWith("ưk")
-                          || loi.EndsWith("ap") || loi.EndsWith("ơp") || loi.EndsWith("ip") || loi.EndsWith("ep") || loi.EndsWith("êp") || loi.EndsWith("op") || loi.EndsWith("ôp") || loi.EndsWith("up") || loi.EndsWith("ưp")
-                          || loi.EndsWith("ia") || loi.EndsWith("ua") || loi.EndsWith("ưa")
-                          || loi.EndsWith("ay") || loi.EndsWith("ây") || loi.EndsWith("uy")
-                          || loi.EndsWith("au") || loi.EndsWith("âu")
-                          || loi.EndsWith("oa") || loi.EndsWith("oe") || loi.EndsWith("uê"));
-            bool ViTriNgan = (loi.EndsWith("ai") || loi.EndsWith("ơi") || loi.EndsWith("oi") || loi.EndsWith("ôi") || loi.EndsWith("ui") || loi.EndsWith("ưi")
-                  || loi.EndsWith("ao") || loi.EndsWith("eo") || loi.EndsWith("êu") || loi.EndsWith("iu")
-                  || loi.EndsWith("an") || loi.EndsWith("ơn") || loi.EndsWith("in") || loi.EndsWith("en") || loi.EndsWith("ên") || loi.EndsWith("on") || loi.EndsWith("ôn") || loi.EndsWith("un") || loi.EndsWith("ưn")
-                  || loi.EndsWith("am") || loi.EndsWith("ơm") || loi.EndsWith("im") || loi.EndsWith("em") || loi.EndsWith("êm") || loi.EndsWith("om") || loi.EndsWith("ôm") || loi.EndsWith("um") || loi.EndsWith("ưm")
-                  || loi.EndsWith("aN") || loi.EndsWith("ơN") || loi.EndsWith("iN") || loi.EndsWith("eN") || loi.EndsWith("êN") || loi.EndsWith("ưN")
-                  || loi.EndsWith("at") || loi.EndsWith("ơt") || loi.EndsWith("it") || loi.EndsWith("et") || loi.EndsWith("êt") || loi.EndsWith("ot") || loi.EndsWith("ôt") || loi.EndsWith("ut") || loi.EndsWith("ưt")
-                  || loi.EndsWith("ak") || loi.EndsWith("ơk") || loi.EndsWith("ik") || loi.EndsWith("ek") || loi.EndsWith("êk") || loi.EndsWith("ok") || loi.EndsWith("ôk") || loi.EndsWith("uk") || loi.EndsWith("ưk")
-                  || loi.EndsWith("ap") || loi.EndsWith("ơp") || loi.EndsWith("ip") || loi.EndsWith("ep") || loi.EndsWith("êp") || loi.EndsWith("op") || loi.EndsWith("ôp") || loi.EndsWith("up") || loi.EndsWith("ưp")
-                  || loi.EndsWith("ia") || loi.EndsWith("ua") || loi.EndsWith("ưa") || loi.EndsWith("uôN")
-                  || loi.EndsWith("yt") || loi.EndsWith("yn") || loi.EndsWith("ym") || loi.EndsWith("yC") || loi.EndsWith("yp") || loi.EndsWith("yk") || loi.EndsWith("yN")
-                  || loi.EndsWith("uya") && (note.lyric != "qua"));
-            bool ViTriDai = (loi.EndsWith("ay") || loi.EndsWith("ây") || loi.EndsWith("uy")
-                  || loi.EndsWith("au") || loi.EndsWith("âu")
-                  || loi.EndsWith("oa") || loi.EndsWith("oe") || loi.EndsWith("uê") || note.lyric.EndsWith("qua"));
-            bool ViTriTB = loi.EndsWith("ăt") || loi.EndsWith("ât")
-                  || loi.EndsWith("ăk") || loi.EndsWith("âk")
-                  || loi.EndsWith("ăp") || loi.EndsWith("âp")
-                  || loi.EndsWith("ăn") || loi.EndsWith("ân")
-                  || loi.EndsWith("ăN") || loi.EndsWith("âN")
-                  || loi.EndsWith("ăm") || loi.EndsWith("âm")
-                  || loi.EndsWith("aJ") || loi.EndsWith("iJ") || loi.EndsWith("êJ") || loi.EndsWith("yJ")
-                  || loi.EndsWith("ôN") || loi.EndsWith("uN") || loi.EndsWith("oN")
-                  || loi.EndsWith("aC") || loi.EndsWith("iC") || loi.EndsWith("êC") || loi.EndsWith("yC");
-            bool XO = false;
-            if (ViTriTB) {
-                ViTri = Medium;
-            }
-            if (ViTriNgan) {
-                ViTri = Short;
-            }
-            if (ViTriDai) {
-                ViTri = Long;
-            }
-            if (loi.EndsWith("uôN")) {
-                ViTri = Short;
-            }
-            var dem = loi.Length;
-            var phoneme = "";
-            var phonemes = new List<Phoneme>();
-            if (note.lyric.StartsWith("?")) {
-                phoneme = note.lyric.Substring(1);
-            } else {
-                // 1 kí tự 
-                if (dem == 1) {
-                    string N = loi;
-                    N = N.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                             .Replace("ư", "U").Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh")
-                             .Replace("Z", "tr").Replace("T", "th");
-                    if (NoNext) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {N}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                        }
-                    } else
-                        if (prevNeighbour == null) {
-                        phonemes.Add(
-                        new Phoneme { phoneme = $"- {N}" });
-                    }
-                }
-                // 2 kí tự CV, ví dụ: "ba"
-                if ((dem == 2) && tontaiC) {
-                    string N = loi;
-                    string N2 = loi.Substring(1, 1);
-                    N = N.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                             .Replace("ư", "U").Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh")
-                             .Replace("Z", "tr").Replace("T", "th");
-                    N2 = N2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                             .Replace("ư", "U");
-                    if (NoNext) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {N}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{N2} -", position = End });
-                        }
-                    } else if (prevNeighbour == null) {
-                        phonemes.Add(
-                        new Phoneme { phoneme = $"- {N}" });
-                    }
-                }
-                // 2 kí tự VV/VC, ví dụ: "oa" "an"
-                if ((dem == 2) && kocoC && kocoCcuoi) {
-                    string V1 = loi.Substring(0, 1);
-                    string V2 = loi.Substring(1, 1);
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                         .Replace("ư", "U");
-                    V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                 .Replace("ư", "U").Replace("N", "ng").Replace("J", "nh");
-                    a = (loi.EndsWith("ia") || loi.EndsWith("ua") || loi.EndsWith("ưa"));
-                    if (a) {
-                        V2 = "A";
-                    }
-                    if (loi.EndsWith("oa") || loi.EndsWith("oe")) {
-                        V1 = "u";
-                    }
-                    if (note.lyric == "ao" || note.lyric == "eo") {
-                        V2 = "u";
-                    }
-                    string N = V2;
-                    if (loi == "ôN" || loi == "uN" || loi == "oN") {
-                        N = "m";
-                    }
-                    if (NoNext) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = ViTri });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                        }
-                    } else {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = ViTri });
-                        }
-                    }
-                }
-                // 2 kí tự VC, ví dụ "át"
-                if ((dem == 2) && tontaiCcuoi) {
-                    string V1 = loi.Substring(0, 1);
-                    string C = loi.Substring(1, 1);
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                         .Replace("ư", "U");
-                    C = C.Replace("C", "ch");
-                    if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{V1}{C}", position = ViTri });
-                    }
-                }
-                // 3 kí tự VVC chia 3 nốt, ví dụ: "oát"
-                if ((dem == 3) && tontaiCcuoi && koVVCchia && kocoC) {
-                    string V1 = loi.Substring(0, 1);
-                    string V2 = loi.Substring(1, 1);
-                    string VC = loi.Substring(1);
-                    if (loi.StartsWith("oa") || loi.StartsWith("oe")) {
-                        V1 = "u";
-                    }
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                           .Replace("ư", "U");
-                    V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                           .Replace("ư", "U");
-                    VC = VC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                           .Replace("ư", "U").Replace("C", "ch");
-                    if (ViTriDai) {
-                        ViTri = Medium;
-                    }
-                    if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{VC}", position = ViTri });
-                    }
-                }
-                // 3 kí tự VVV chia 3 nốt, ví dụ: "oan" "oai"
-                if ((dem == 3) && koVVCchia && kocoC) {
-                    string V1 = loi.Substring(0, 1);
-                    string V2 = loi.Substring(1, 1);
-                    string V3 = loi.Substring(2);
-                    if (loi.EndsWith("uya")) {
-                        V3 = "A";
-                    }
-                    if (loi.StartsWith("oa") || loi.StartsWith("oe")) {
-                        V1 = "u";
-                    }
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                           .Replace("ư", "U");
-                    V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                           .Replace("ư", "U");
-                    V3 = V3.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                           .Replace("ư", "U").Replace("N", "ng").Replace("J", "nh");
-                    if (ViTriNgan) {
-                        ViTri = Short;
-                    } else {
-                        ViTri = Medium;
-                    }
-                    if (NoNext) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V2} {V3}", position = ViTri });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V3} -", position = End });
-                        }
-                    } else if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{V2} {V3}", position = ViTri });
-                    }
-                }
-                // 3 kí tự VVV/VVC chia 2 nốt, ví dụ: "yên" "ướt"
-                if ((dem == 3) && tontaiVVC && kocoC) {
-                    string V1 = loi.Substring(0, 1);
-                    string VVC = loi.Substring(0);
-                    string N = loi.Substring(2);
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                           .Replace("ư", "U");
-                    VVC = VVC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                           .Replace("ư", "U").Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                    N = N.Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                    if (NoNext && tontaiCcuoi) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                        }
-                    } else if (NoNext) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                                new Phoneme { phoneme = $"- {V1}" });
-                            phonemes.Add(
-                                new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            phonemes.Add(
-                                new Phoneme { phoneme = $"{N} -", position = End });
-                        }
-                    } else if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                    }
-                }
-                // 3 kí tự CVC, ví dụ: "hát"
-                if (dem == 3 && tontaiC && tontaiCcuoi) {
-                    string C = loi.Substring(0, 1);
-                    string V1 = loi.Substring(1, 1);
-                    string V2 = loi.Substring(2);
-                    C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    V2 = V2.Replace("C", "ch");
-                    if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{V1}{V2}", position = ViTri });
-                    }
-                }
-                // 3 kí tự CVV/CVC, ví dụ: "hoa" "han"
-                if (dem == 3 && tontaiC && kocoCcuoi) {
-                    string C = loi.Substring(0, 1);
-                    string V1 = loi.Substring(1, 1);
-                    string V2 = loi.Substring(2);
-                    if (loi.EndsWith("oa") || loi.EndsWith("oe")) {
-                        V1 = "u";
-                    }
-                    C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U")
-                        .Replace("N", "ng").Replace("J", "nh");
-                    a = (loi.EndsWith("ia") || loi.EndsWith("ua") || loi.EndsWith("ưa"));
-                    if (a && (note.lyric != "qua")) {
-                        V2 = "A";
-                    }
-                    if (note.lyric.EndsWith("ao") || note.lyric.EndsWith("eo")) {
-                        V2 = "u";
-                    }
-                    string N = V2;
-                    if (loi.EndsWith("ôN") || loi.EndsWith("uN") || loi.EndsWith("oN")) {
-                        N = "m";
-                    }
-                    if (NoNext) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = ViTri });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                        }
-                    } else {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = ViTri });
-                        }
-                    }
-                }
-                // 4 kí tự VVVC có VVC liền, chia 3 nốt, ví dụ "uyết" "uyên"
-                if (dem == 4 && kocoC && tontaiVVC) {
-                    string V1 = loi.Substring(0, 1);
-                    string V2 = loi.Substring(1, 1);
-                    string VVC = loi.Substring(1);
-                    string N = loi.Substring(3);
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    VVC = VVC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                 .Replace("ư", "U").Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                    N = N.Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                    if (ViTriNgan) {
-                        ViTri = Short;
-                    } else {
-                        ViTri = Medium;
-                    }
-                    if (NoNext && tontaiCcuoi) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                        }
-                    } else if (NoNext) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                        }
-                    } else if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"- {V1}" });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                    }
-                }
-                // 4 kí tự CVVC, có VVC liền, chia 2 nốt, ví dụ "thiết" "tiên"
-                if (dem == 4 && tontaiVVC && tontaiC) {
-                    string C = loi.Substring(0, 1);
-                    string V1 = loi.Substring(1, 1);
-                    string VVC = loi.Substring(1);
-                    string N = loi.Substring(3);
-                    C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    VVC = VVC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                 .Replace("ư", "U").Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                    N = N.Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                    if (NoNext && tontaiCcuoi) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                        }
-                    } else if (NoNext) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                        }
-                    } else if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                    }
-                } else XO = true;
 
-                // 4 kí tự CVVC, chia 3 nốt, ví dụ "thoát"
-                if (dem == 4 && tontaiC && tontaiCcuoi && XO) {
-                    string C = loi.Substring(0, 1);
-                    string V1 = loi.Substring(1, 1);
-                    string V2 = loi.Substring(2, 1);
-                    string VC = loi.Substring(2);
-                    if (V1 + V2 == "oa" || V1 + V2 == "oe") {
-                        V1 = "u";
-                    }
-                    C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    VC = VC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                 .Replace("ư", "U").Replace("C", "ch");
-                    if (ViTriNgan) {
-                        ViTri = Short;
-                    } else {
-                        ViTri = Medium;
-                    }
-                    if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{VC}", position = ViTri });
-                    }
-                }
-                // 4 kí tự CVVV/CVVC, chia 3 nốt, ví dụ "ngoại" "ngoan"
-                if (dem == 4 && kocoCcuoi && tontaiC && XO) {
-                    string C = loi.Substring(0, 1);
-                    string V1 = loi.Substring(1, 1);
-                    string V2 = loi.Substring(2, 1);
-                    string V3 = loi.Substring(3);
-                    if (loi.EndsWith("uya")) {
-                        V3 = "A";
-                    }
-                    if (V1 + V2 == "oa" || V1 + V2 == "oe") {
-                        V1 = "u";
-                    }
-                    C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    V3 = V3.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U")
-                        .Replace("N", "ng").Replace("J", "nh");
-                    if (ViTriNgan) {
-                        ViTri = Short;
-                    } else {
-                        ViTri = Medium;
-                    }
-                    if (NoNext) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V2} {V3}", position = ViTri });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V3} -", position = End });
-                        }
-                    } else if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{V2} {V3}", position = ViTri });
-                    }
-                }
-                // 5 kí tự CVVVC, có VVC liền, chia 3 nốt, ví dụ "thuyết" "thuyền"
-                if (dem == 5 && tontaiVVC && tontaiC) {
-                    string C = loi.Substring(0, 1);
-                    string V1 = loi.Substring(1, 1);
-                    string V2 = loi.Substring(2, 1);
-                    string VVC = loi.Substring(2);
-                    string N = loi.Substring(4);
-                    C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                    V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                    VVC = VVC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                 .Replace("ư", "U").Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                    N = N.Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                    if (ViTriNgan) {
-                        ViTri = Short;
-                    } else {
-                        ViTri = Medium;
-                    }
-                    if (NoNext && tontaiCcuoi) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                        }
-                    } else if (NoNext) {
-                        if (prevNeighbour == null) {
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                        }
-                    } else if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"- {C}{V1}" });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                    }
-                }
-                if (BR) {
-                    string num = loi.Substring(5);
-                    if (num == "") {
-                        num = "1";
-                    }
-                    if (prevNeighbour == null) {
-                        phonemes.Add(
-                            new Phoneme { phoneme = $"breath{num}" });
-                    }
+            int duration = notes.Sum(n => n.duration);
+            var time = Timing(duration);
+
+            bool dotStart = note.lyric.StartsWith(".");
+            bool nextDotStart = nextNeighbour != null && nextNeighbour.Value.lyric.StartsWith(".");
+
+            bool prevIsBreath = prevNeighbour != null && prevNeighbour.Value.lyric.StartsWith("breath");
+
+            bool noNext = (nextNeighbour == null && note.lyric != "R") || nextDotStart;
+            bool breath = note.lyric.StartsWith("breath");
+
+            string lyric = note.lyric;
+            string loi = Normalize(lyric);
+
+            if (loi == "quôc")
+                loi = "quâc";
+
+            var phonemes = new List<Phoneme>();
+
+            bool prevHasOto = prevNeighbour != null && HasValidPrevOto(prevNeighbour.Value);
+
+            if (prevNeighbour == null || !prevHasOto || dotStart || prevIsBreath) {
+                Build(
+                    phonemes,
+                    loi,
+                    lyric,
+                    prefix: "-",
+                    noNext,
+                    time,
+                    allowInitial: true);
+            } else {
+                string prefix = PreviousVowel(prevNeighbour);
+                if (prefix != null) {
+                    Build(
+                        phonemes,
+                        loi,
+                        lyric,
+                        prefix,
+                        noNext,
+                        time,
+                        allowInitial: false);
+                } else {
+                    Build(
+                        phonemes,
+                        loi,
+                        lyric,
+                        prefix: "-",
+                        noNext,
+                        time,
+                        allowInitial: true);
                 }
             }
-            if (prevNeighbour != null) {
-                var lyric = prevNeighbour?.phoneticHint ?? prevNeighbour?.lyric;
-                var unicode = ToUnicodeElements(lyric);
-                if (vowelLookup.TryGetValue(unicode.LastOrDefault() ?? string.Empty, out var vow)) {
-                    string PR = prevNeighbour?.lyric;
-                    if (PR.StartsWith("?")) {
-                        vow = PR.Substring(PR.Length - 1, 1);
-                        if (PR.EndsWith("nh")) {
-                            vow = "nh";
-                        }
-                        if (PR.EndsWith("ng")) {
-                            vow = "ng";
-                        }
-                        if (PR.EndsWith("ch") || PR.EndsWith("t") || PR.EndsWith("k") || PR.EndsWith("p")) {
-                            vow = "-";
-                        }
-                    }
-                    if (PR != "R") {
-                        PR = PR.ToLower();
-                    }
-                    if (PR == "gi") {
-                        PR = "zi";
-                    }
-                    PR = PR.Replace('à', 'a').Replace('á', 'a').Replace('ả', 'a').Replace('ã', 'a').Replace('ạ', 'a');
-                    PR = PR.Replace('ằ', 'ă').Replace('ắ', 'ă').Replace('ẳ', 'ă').Replace('ẵ', 'ă').Replace('ặ', 'ă');
-                    PR = PR.Replace('ầ', 'â').Replace('ấ', 'â').Replace('ẩ', 'â').Replace('ẫ', 'â').Replace('ậ', 'â');
-                    PR = PR.Replace('ờ', 'ơ').Replace('ớ', 'ơ').Replace('ở', 'ơ').Replace('ỡ', 'ơ').Replace('ợ', 'ơ');
-                    PR = PR.Replace('ì', 'i').Replace('í', 'i').Replace('ỉ', 'i').Replace('ĩ', 'i').Replace('ị', 'i');
-                    PR = PR.Replace('ỳ', 'y').Replace('ý', 'y').Replace('ỷ', 'y').Replace('ỹ', 'y').Replace('ỵ', 'y');
-                    PR = PR.Replace('è', 'e').Replace('é', 'e').Replace('ẻ', 'e').Replace('ẽ', 'e').Replace('ẹ', 'e');
-                    PR = PR.Replace('ề', 'ê').Replace('ế', 'ê').Replace('ể', 'ê').Replace('ễ', 'ê').Replace('ệ', 'ê');
-                    PR = PR.Replace('ò', 'o').Replace('ó', 'o').Replace('ỏ', 'o').Replace('õ', 'o').Replace('ọ', 'o');
-                    PR = PR.Replace('ồ', 'ô').Replace('ố', 'ô').Replace('ổ', 'ô').Replace('ỗ', 'ô').Replace('ộ', 'ô');
-                    PR = PR.Replace('ù', 'u').Replace('ú', 'u').Replace('ủ', 'u').Replace('ũ', 'u').Replace('ụ', 'u');
-                    PR = PR.Replace('ừ', 'ư').Replace('ứ', 'ư').Replace('ử', 'ư').Replace('ữ', 'ư').Replace('ự', 'ư');
-                    PR = PR.Replace("ch", "C").Replace("d", "z").Replace("đ", "d").Replace("ph", "f").Replace("ch", "C")
-                        .Replace("gi", "z").Replace("gh", "g").Replace("c", "k").Replace("kh", "K").Replace("ng", "N")
-                        .Replace("ngh", "N").Replace("nh", "J").Replace("x", "s").Replace("tr", "Z").Replace("th", "T")
-                        .Replace("qu", "w");
-                    a = (PR.EndsWith("ua") || PR.EndsWith("ưa") || PR.EndsWith("ia") || PR.EndsWith("uya"));
-                    if (a) {
-                        vow = "A";
-                    }
-                    a = (PR.EndsWith("uN") || PR.EndsWith("ôN") || PR.EndsWith("oN"));
-                    if (PR.EndsWith("uôN")) {
-                        vow = "ng";
-                    } else if (a) {
-                        vow = "m";
-                    }
-                    a = (PR.EndsWith("breaT") || PR.EndsWith("C"));
-                    if (a) {
-                        vow = "-";
-                    }
-                    if (PR.EndsWith("ao") || PR.EndsWith("eo")) {
-                        vow = "u";
-                    }
-                    XO = false;
-                    if (note.lyric.StartsWith("?")) {
-                        phoneme = note.lyric.Substring(1);
-                    } else {
-                        // 1 kí tự 
-                        if (dem == 1) {
-                            string N = loi;
-                            N = N.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                     .Replace("ư", "U").Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh")
-                                     .Replace("Z", "tr").Replace("T", "th");
-                            if (NoNext) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {N}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                            } else phonemes.Add(
-                                new Phoneme { phoneme = $"{vow} {N}" });
-                        }
-                        // 2 kí tự CV, ví dụ: "ba"
-                        if ((dem == 2) && tontaiC) {
-                            string N = loi;
-                            string N2 = loi.Substring(1, 1);
-                            N = N.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                     .Replace("ư", "U").Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh")
-                                     .Replace("Z", "tr").Replace("T", "th");
-                            N2 = N2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                     .Replace("ư", "U");
-                            if (NoNext) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {N}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{N2} -", position = End });
-                            } else phonemes.Add(
-                                 new Phoneme { phoneme = $"{vow} {N}" });
-                        }
-                        // 2 kí tự VV/VC, ví dụ: "oa" "an"
-                        if ((dem == 2) && kocoC && kocoCcuoi) {
-                            string V1 = loi.Substring(0, 1);
-                            string V2 = loi.Substring(1, 1);
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                 .Replace("ư", "U");
-                            V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                         .Replace("ư", "U").Replace("N", "ng").Replace("J", "nh");
-                            a = (loi.EndsWith("ia") || loi.EndsWith("ua") || loi.EndsWith("ưa"));
-                            if (a) {
-                                V2 = "A";
-                            }
-                            if (loi.EndsWith("oa") || loi.EndsWith("oe")) {
-                                V1 = "u";
-                            }
-                            if (note.lyric == "ao" || note.lyric == "eo") {
-                                V2 = "u";
-                            }
-                            string N = V2;
-                            if (loi == "ôN" || loi == "uN" || loi == "oN") {
-                                N = "m";
-                            }
-                            if (NoNext) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = ViTri });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                            } else {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = ViTri });
-                            }
-                        }
-                        // 2 kí tự VC, ví dụ "át"
-                        if ((dem == 2) && tontaiCcuoi) {
-                            string V1 = loi.Substring(0, 1);
-                            string V2 = loi.Substring(1, 1);
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                 .Replace("ư", "U");
-                            V2 = V2.Replace("C", "ch");
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1}{V2}", position = ViTri });
-                        }
-                        // 3 kí tự VVC chia 3 nốt, ví dụ: "oát"
-                        if ((dem == 3) && tontaiCcuoi && koVVCchia && kocoC) {
-                            string V1 = loi.Substring(0, 1);
-                            string V2 = loi.Substring(1, 1);
-                            string VC = loi.Substring(1);
-                            if (loi.StartsWith("oa") || loi.StartsWith("oe")) {
-                                V1 = "u";
-                            }
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                   .Replace("ư", "U");
-                            V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                   .Replace("ư", "U");
-                            VC = VC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                   .Replace("ư", "U").Replace("C", "ch");
-                            if (ViTriDai) {
-                                ViTri = Medium;
-                            }
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{VC}", position = ViTri });
-                        }
-                        // 3 kí tự VVV chia 3 nốt, ví dụ: "oan" "oai"
-                        if ((dem == 3) && koVVCchia && kocoC) {
-                            string V1 = loi.Substring(0, 1);
-                            string V2 = loi.Substring(1, 1);
-                            string V3 = loi.Substring(2);
-                            if (loi.EndsWith("uya")) {
-                                V3 = "A";
-                            }
-                            if (loi.StartsWith("oa") || loi.StartsWith("oe")) {
-                                V1 = "u";
-                            }
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                   .Replace("ư", "U");
-                            V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                   .Replace("ư", "U");
-                            V3 = V3.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                   .Replace("ư", "U").Replace("N", "ng").Replace("J", "nh");
-                            if (ViTriNgan) {
-                                ViTri = Short;
-                            } else {
-                                ViTri = Medium;
-                            }
-                            if (NoNext) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V2} {V3}", position = ViTri });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V3} -", position = End });
-                            } else {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V2} {V3}", position = ViTri });
-                            }
-                        }
-                        // 3 kí tự VVV/VVC chia 2 nốt, ví dụ: "yên" "ướt"
-                        if ((dem == 3) && tontaiVVC && kocoC) {
-                            string V1 = loi.Substring(0, 1);
-                            string VVC = loi.Substring(0);
-                            string N = loi.Substring(2);
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                   .Replace("ư", "U");
-                            VVC = VVC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                   .Replace("ư", "U").Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                            N = N.Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                            if (NoNext && tontaiCcuoi) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            } else if (NoNext) {
-                                phonemes.Add(
-                                new Phoneme { phoneme = $"{vow} {V1}" });
-                                phonemes.Add(
-                                new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                                phonemes.Add(
-                                new Phoneme { phoneme = $"{N} -", position = End });
-                            } else {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            }
-                        }
-                        // 3 kí tự CVC, ví dụ: "hát"
-                        if (dem == 3 && tontaiC && tontaiCcuoi) {
-                            string C = loi.Substring(0, 1);
-                            string V1 = loi.Substring(1, 1);
-                            string V2 = loi.Substring(2);
-                            C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            V2 = V2.Replace("C", "ch");
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1}{V2}", position = ViTri });
-                        }
-                        // 3 kí tự CVV/CVC, ví dụ: "hoa" "han"
-                        if (dem == 3 && tontaiC && kocoCcuoi) {
-                            string C = loi.Substring(0, 1);
-                            string V1 = loi.Substring(1, 1);
-                            string V2 = loi.Substring(2);
-                            if (loi.EndsWith("oa") || loi.EndsWith("oe")) {
-                                V1 = "u";
-                            }
-                            C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U")
-                                .Replace("N", "ng").Replace("J", "nh");
-                            a = (loi.EndsWith("ia") || loi.EndsWith("ua") || loi.EndsWith("ưa"));
-                            if (a && (note.lyric != "qua")) {
-                                V2 = "A";
-                            }
-                            if (note.lyric.EndsWith("ao") || note.lyric.EndsWith("eo")) {
-                                V2 = "u";
-                            }
-                            string N = V2;
-                            if (loi.EndsWith("ôN") || loi.EndsWith("uN") || loi.EndsWith("oN")) {
-                                N = "m";
-                            }
-                            if (NoNext) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = ViTri });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                            } else {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = ViTri });
-                            }
-                        }
-                        // 4 kí tự VVVC có VVC liền, chia 3 nốt, ví dụ "uyết" "uyên"
-                        if (dem == 4 && kocoC && tontaiVVC) {
-                            string V1 = loi.Substring(0, 1);
-                            string V2 = loi.Substring(1, 1);
-                            string VVC = loi.Substring(1);
-                            string N = loi.Substring(3);
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            VVC = VVC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                         .Replace("ư", "U").Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                            N = N.Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                            if (ViTriNgan) {
-                                ViTri = Short;
-                            } else {
-                                ViTri = Medium;
-                            }
-                            if (NoNext && tontaiCcuoi) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            } else if (NoNext) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                            } else {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            }
-                        }
-                        // 4 kí tự CVVC, có VVC liền, chia 2 nốt, ví dụ "thiết" "tiên"
-                        if (dem == 4 && tontaiVVC && tontaiC) {
-                            string C = loi.Substring(0, 1);
-                            string V1 = loi.Substring(1, 1);
-                            string VVC = loi.Substring(1);
-                            string N = loi.Substring(3);
-                            C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            VVC = VVC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                         .Replace("ư", "U").Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                            N = N.Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                            if (NoNext && tontaiCcuoi) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            } else if (NoNext) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                            } else {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            }
-                        } else XO = true;
-                        // 4 kí tự CVVC, chia 3 nốt, ví dụ "thoát"
-                        if (dem == 4 && tontaiC && tontaiCcuoi && XO) {
-                            string C = loi.Substring(0, 1);
-                            string V1 = loi.Substring(1, 1);
-                            string V2 = loi.Substring(2, 1);
-                            string VC = loi.Substring(2);
-                            if (V1 + V2 == "oa" || V1 + V2 == "oe") {
-                                V1 = "u";
-                            }
-                            C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            VC = VC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                         .Replace("ư", "U").Replace("C", "ch");
-                            if (ViTriNgan) {
-                                ViTri = Short;
-                            } else {
-                                ViTri = Medium;
-                            }
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                            phonemes.Add(
-                            new Phoneme { phoneme = $"{VC}", position = ViTri });
-                        }
-                        // 4 kí tự CVVV/CVVC, chia 3 nốt, ví dụ "ngoại" "ngoan"
-                        if (dem == 4 && kocoCcuoi && tontaiC && XO) {
-                            string C = loi.Substring(0, 1);
-                            string V1 = loi.Substring(1, 1);
-                            string V2 = loi.Substring(2, 1);
-                            string V3 = loi.Substring(3);
-                            if (loi.EndsWith("uya")) {
-                                V3 = "A";
-                            }
-                            if (V1 + V2 == "oa" || V1 + V2 == "oe") {
-                                V1 = "u";
-                            }
-                            C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            V3 = V3.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U")
-                                .Replace("N", "ng").Replace("J", "nh");
-                            if (ViTriNgan) {
-                                ViTri = Short;
-                            } else {
-                                ViTri = Medium;
-                            }
-                            if (NoNext) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V2} {V3}", position = ViTri });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V3} -", position = End });
-                            } else {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V2} {V3}", position = ViTri });
-                            }
-                        }
-                        // 5 kí tự CVVVC, có VVC liền, chia 3 nốt, ví dụ "thuyết" "thuyền"
-                        if (dem == 5 && tontaiVVC && tontaiC) {
-                            string C = loi.Substring(0, 1);
-                            string V1 = loi.Substring(1, 1);
-                            string V2 = loi.Substring(2, 1);
-                            string VVC = loi.Substring(2);
-                            string N = loi.Substring(4);
-                            C = C.Replace("C", "ch").Replace("K", "kh").Replace("N", "ng").Replace("J", "nh").Replace("Z", "tr").Replace("T", "th");
-                            V1 = V1.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            V2 = V2.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O").Replace("ư", "U");
-                            VVC = VVC.Replace("ă", "a").Replace("â", "A").Replace("ơ", "@").Replace("y", "i").Replace("ê", "E").Replace("ô", "O")
-                                         .Replace("ư", "U").Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                            N = N.Replace("C", "ch").Replace("N", "ng").Replace("J", "nh");
-                            if (ViTriNgan) {
-                                ViTri = Short;
-                            } else {
-                                ViTri = Medium;
-                            }
-                            if (NoNext && tontaiCcuoi) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            } else if (NoNext) {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{N} -", position = End });
-                            } else {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} {C}{V1}" });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{V1} {V2}", position = Long });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{VVC}", position = ViTri });
-                            }
-                        }
-                        if (BR) {
-                            string num = loi.Substring(5);
-                            if (num == "") {
-                                num = "1";
-                            }
-                            if (vow == "-") {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"breath{num}" });
-                            } else {
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"{vow} -", position = -60 });
-                                phonemes.Add(
-                            new Phoneme { phoneme = $"breath{num}" });
-                            }
-                        }
-                    }
-                }
+
+            if (breath && prevNeighbour == null) {
+                AddBreath(phonemes, loi, time);
             }
-            int noteIndex = 0;
+
             for (int i = 0; i < phonemes.Count; i++) {
-                var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == i) ?? default;
-                string alt = (attr.alternate ?? GetParentAlternate())?.ToString() ?? string.Empty;
-                string color = attr.voiceColor ?? GetParentVoiceColor();
-                int toneShift = attr.toneShift ?? GetParentToneShift();
-                var phoneme1 = phonemes[i];
-                while (noteIndex < notes.Length - 1 && notes[noteIndex].position - note.position < phoneme1.position) {
+                var p = phonemes[i];
+                p.phoneme = DecodePhoneme(p.phoneme);
+                phonemes[i] = p;
+            }
+
+            MapOto(phonemes, note, notes, prevNeighbours);
+
+            return new Result {
+                phonemes = phonemes.ToArray()
+            };
+        }
+
+        private bool HasValidPrevOto(Note prevNote) {
+            if (singer == null) return false;
+
+            string lyric = prevNote.phoneticHint ?? prevNote.lyric ?? "";
+            if (string.IsNullOrEmpty(lyric) || lyric == "R") return false;
+
+            return true;
+        }
+
+        static TimingInfo Timing(int duration) {
+            if (duration < 350) {
+                return new TimingInfo(
+                    shortPos: duration / 2,
+                    longPos: duration / 6,
+                    mediumPos: duration / 3,
+                    endPos: duration * 4 / 5);
+            }
+
+            return new TimingInfo(
+                shortPos: duration - 170,
+                longPos: 90,
+                mediumPos: 180,
+                endPos: duration - 50);
+        }
+
+        static bool IsStopFinal(char c) {
+            return c == 'p' || c == 't' || c == 'k' || c == 'C';
+        }
+
+        static bool IsNasalFinal(char c) {
+            return c == 'n' || c == 'm' || c == 'N' || c == 'J';
+        }
+
+        static List<string> ToUnicodeElements(string input) {
+            var result = new List<string>();
+            if (string.IsNullOrEmpty(input)) return result;
+            var enumerator = System.Globalization.StringInfo.GetTextElementEnumerator(input);
+            while (enumerator.MoveNext()) {
+                result.Add(enumerator.GetTextElement());
+            }
+            return result;
+        }
+
+        static string Normalize(string input) {
+            if (string.IsNullOrEmpty(input))
+                return "";
+
+            string cleanDotInput = input.StartsWith(".") ? input[1..] : input;
+
+            bool keepHardR = cleanDotInput.EndsWith("2");
+            string cleanInput = keepHardR ? cleanDotInput[..^1] : cleanDotInput;
+
+            string s = cleanInput == "R" ? cleanInput : cleanInput.ToLower();
+
+            s = s
+                .Replace('à', 'a').Replace('á', 'a').Replace('ả', 'a')
+                .Replace('ã', 'a').Replace('ạ', 'a')
+                .Replace('ằ', 'ă').Replace('ắ', 'ă').Replace('ẳ', 'ă')
+                .Replace('ẵ', 'ă').Replace('ặ', 'ă')
+                .Replace('ầ', 'â').Replace('ấ', 'â').Replace('ẩ', 'â')
+                .Replace('ẫ', 'â').Replace('ậ', 'â')
+                .Replace('ờ', 'ơ').Replace('ớ', 'ơ').Replace('ở', 'ơ')
+                .Replace('ỡ', 'ơ').Replace('ợ', 'ơ')
+                .Replace('ì', 'i').Replace('í', 'i').Replace('ỉ', 'i')
+                .Replace('ĩ', 'i').Replace('ị', 'i')
+                .Replace('ỳ', 'y').Replace('ý', 'y').Replace('ỷ', 'y')
+                .Replace('ỹ', 'y').Replace('ỵ', 'y')
+                .Replace('è', 'e').Replace('é', 'e').Replace('ẻ', 'e')
+                .Replace('ẽ', 'e').Replace('ẹ', 'e')
+                .Replace('ề', 'ê').Replace('ế', 'ê').Replace('ể', 'ê')
+                .Replace('ễ', 'ê').Replace('ệ', 'ê')
+                .Replace('ò', 'o').Replace('ó', 'o').Replace('ỏ', 'o')
+                .Replace('õ', 'o').Replace('ọ', 'o')
+                .Replace('ồ', 'ô').Replace('ố', 'ô').Replace('ổ', 'ô')
+                .Replace('ỗ', 'ô').Replace('ộ', 'ô')
+                .Replace('ù', 'u').Replace('ú', 'u').Replace('ủ', 'u')
+                .Replace('ũ', 'u').Replace('ụ', 'u')
+                .Replace('ừ', 'ư').Replace('ứ', 'ư').Replace('ử', 'ư')
+                .Replace('ữ', 'ư').Replace('ự', 'ư');
+
+            bool giException =
+                s == "gi" || s == "gin" || s == "gim" ||
+                s == "ginh" || s == "ging" || s == "git" ||
+                s == "gip" || s == "gic" || s == "gich";
+
+            if (giException) {
+                return s
+                    .Replace("gi", "zi")
+                    .Replace("ng", "N")
+                    .Replace("nh", "J")
+                    .Replace("ch", "C")
+                    .Replace("c", "k");
+            }
+
+            string result = s
+                .Replace("ch", "C")
+                .Replace("d", "z")
+                .Replace("đ", "d")
+                .Replace("ph", "f")
+                .Replace("gi", "z")
+                .Replace("gh", "g")
+                .Replace("ngh", "N")
+                .Replace("ng", "N")
+                .Replace("nh", "J")
+                .Replace("tr", "Z")
+                .Replace("th", "T")
+                .Replace("kh", "K")
+                .Replace("x", "s")
+                .Replace("q", "k")
+                .Replace("c", "k");
+
+            if (!keepHardR) {
+                result = result.Replace("r", "z");
+            }
+
+            return result;
+        }
+
+        static string DecodePhoneme(string phoneme) {
+            if (string.IsNullOrEmpty(phoneme)) return phoneme;
+            return phoneme
+                .Replace("J", "nh")
+                .Replace("N", "ng")
+                .Replace("C", "ch")
+                .Replace("K", "kh")
+                .Replace("Z", "tr")
+                .Replace("T", "th");
+        }
+
+        static void Build(
+            List<Phoneme> output,
+            string s,
+            string original,
+            string prefix,
+            bool noNext,
+            TimingInfo t,
+            bool allowInitial) {
+
+            if (string.IsNullOrEmpty(s))
+                return;
+
+            if (s == "R") {
+                output.Add(new Phoneme {
+                    phoneme = $"{prefix} R"
+                });
+                return;
+            }
+
+            bool hasInitial = Initials.Contains(s[0]);
+            bool hasFinal = Finals.Contains(s[^1]);
+            bool vvc = EndsWithAny(s, VvcEndings);
+            bool shortPos = EndsWithAny(s, ShortEndings)
+                           || s.EndsWith("uya") && original != "qua";
+            bool longPos = EndsWithAny(s, LongEndings)
+                           || original.EndsWith("qua")
+                           || s == "ăm";
+            bool mediumPos = EndsWithAny(s, MediumEndings);
+
+            int pos = t.shortPos;
+            if (mediumPos) pos = t.mediumPos;
+            if (shortPos) pos = t.shortPos;
+            if (longPos) pos = t.longPos;
+            if (s.EndsWith("uôN")) pos = t.shortPos;
+
+            if (s.Length >= 2 && s[0] == 'y' && Vowels.ContainsKey(s[1])) {
+                string initial = "y";
+                string vowel = EncodeV(s[1].ToString());
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {initial}{vowel}" : $"{prefix} {initial}{vowel}"
+                });
+
+                if (s.Length > 2) {
+                    string rest = Encode(s.Substring(2));
+                    output.Add(new Phoneme {
+                        phoneme = $"{vowel} {rest}",
+                        position = pos
+                    });
+                } else if (noNext) {
+                    output.Add(new Phoneme {
+                        phoneme = $"{vowel} -",
+                        position = t.endPos
+                    });
+                }
+                return;
+            }
+
+            if (s.Length == 1) {
+                string n = Encode(s);
+
+                if (allowInitial) {
+                    output.Add(new Phoneme {
+                        phoneme = $"- {n}"
+                    });
+                } else {
+                    output.Add(new Phoneme {
+                        phoneme = $"{prefix} {n}"
+                    });
+                }
+
+                if (noNext) {
+                    output.Add(new Phoneme {
+                        phoneme = $"{n} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 2 && hasInitial) {
+                string n = Encode(s);
+                string v = EncodeV(s[1].ToString());
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial
+                        ? $"- {n}"
+                        : $"{prefix} {n}"
+                });
+
+                if (noNext) {
+                    output.Add(new Phoneme {
+                        phoneme = $"{v} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 2 && !hasInitial && !hasFinal) {
+                string v1 = EncodeV(s[0].ToString());
+                string v2 = EncodeV(s[1].ToString());
+
+                if (s.EndsWith("ia") || s.EndsWith("ua") || s.EndsWith("ưa"))
+                    v2 = "A";
+
+                if (s == "oa") { v1 = "O"; v2 = "a"; } else if (s == "uy") { v1 = "O"; v2 = "i"; } else if (s == "oe") { v1 = "O"; v2 = "e"; } else if (s == "uê") { v1 = "O"; v2 = "E"; } else if (s == "oă") { v1 = "O"; v2 = "a"; } else if (s == "uâ") { v1 = "O"; v2 = "A"; } else if (original == "ao" || original == ".ao") { v1 = "a"; v2 = "O"; } else if (original == "eo" || original == ".eo") { v1 = "e"; v2 = "O"; }
+
+                string tail = v2;
+                if (s == "ôN" || s == "uN" || s == "oN")
+                    tail = "m";
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {v1}" : $"{prefix} {v1}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = $"{v1} {v2}",
+                    position = pos
+                });
+
+                if (noNext) {
+                    output.Add(new Phoneme {
+                        phoneme = $"{tail} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 2 && hasFinal) {
+                string v = EncodeV(s[0].ToString());
+                string c = EncodeFinal(s[1].ToString());
+                bool isStop = IsStopFinal(s[1]);
+                bool isNasal = IsNasalFinal(s[1]);
+
+                if (s == "ăm") {
+                    v = "O";
+                }
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {v}" : $"{prefix} {v}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = isStop ? $"{v}{c}" : $"{v} {c}",
+                    position = pos
+                });
+
+                if (noNext && isNasal) {
+                    string finalTail = c;
+                    if (s == "oN" || s == "ON" || s == "uN") {
+                        finalTail = "m";
+                    }
+                    output.Add(new Phoneme {
+                        phoneme = $"{finalTail} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 3 && hasInitial && hasFinal) {
+                string c = EncodeInitial(s[0].ToString());
+                string v = EncodeV(s[1].ToString());
+                string tail = EncodeFinal(s[2].ToString());
+                bool isStop = IsStopFinal(s[2]);
+                bool isNasal = IsNasalFinal(s[2]);
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {c}{v}" : $"{prefix} {c}{v}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = isStop ? $"{v}{tail}" : $"{v} {tail}",
+                    position = pos
+                });
+
+                if (noNext && isNasal) {
+                    string finalTail = tail;
+                    if (s.EndsWith("oN") || s.EndsWith("ON") || s.EndsWith("uN")) {
+                        finalTail = "m";
+                    }
+                    output.Add(new Phoneme {
+                        phoneme = $"{finalTail} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 3 && hasFinal && !hasInitial && !vvc) {
+                string v1 = EncodeV(s[0].ToString());
+                string v2 = EncodeV(s[1].ToString());
+                string tail = EncodeFinal(s[2].ToString());
+                bool isStop = IsStopFinal(s[2]);
+                bool isNasal = IsNasalFinal(s[2]);
+
+                if (s.StartsWith("oa") || s.StartsWith("oe") || s.StartsWith("oă") || s.StartsWith("uâ"))
+                    v1 = "O";
+
+                if (longPos)
+                    pos = t.mediumPos;
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {v1}" : $"{prefix} {v1}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = $"{v1} {v2}",
+                    position = t.longPos
+                });
+                output.Add(new Phoneme {
+                    phoneme = isStop ? $"{v2}{tail}" : $"{v2} {tail}",
+                    position = pos
+                });
+
+                if (noNext && isNasal) {
+                    string finalTail = tail;
+                    if (s.EndsWith("oN") || s.EndsWith("ON") || s.EndsWith("uN")) {
+                        finalTail = "m";
+                    }
+                    output.Add(new Phoneme {
+                        phoneme = $"{finalTail} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 3 && !hasInitial && !vvc) {
+                string v1 = EncodeV(s[0].ToString());
+                string v2 = EncodeV(s[1].ToString());
+                string v3 = Encode(s.Substring(2));
+
+                if (s.EndsWith("uya"))
+                    v3 = "A";
+
+                if (s.StartsWith("oa") || s.StartsWith("oe") || s.StartsWith("oă") || s.StartsWith("uâ"))
+                    v1 = "O";
+
+                pos = shortPos ? t.shortPos : t.mediumPos;
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {v1}" : $"{prefix} {v1}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = $"{v1} {v2}",
+                    position = t.longPos
+                });
+                output.Add(new Phoneme {
+                    phoneme = $"{v2} {v3}",
+                    position = pos
+                });
+
+                if (noNext) {
+                    output.Add(new Phoneme {
+                        phoneme = $"{v3} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 3 && vvc && !hasInitial) {
+                string v1 = EncodeV(s[0].ToString());
+                string vvcPart = Encode(s);
+                bool isNasal = IsNasalFinal(s[^1]);
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {v1}" : $"{prefix} {v1}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = vvcPart,
+                    position = pos
+                });
+
+                if (noNext && isNasal) {
+                    string tailFinal = EncodeFinal(s[^1].ToString());
+                    if (s.EndsWith("oN") || s.EndsWith("ON") || s.EndsWith("uN")) {
+                        tailFinal = "m";
+                    }
+                    output.Add(new Phoneme {
+                        phoneme = $"{tailFinal} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 3 && hasInitial && !hasFinal) {
+                string c = EncodeInitial(s[0].ToString());
+                string v1 = EncodeV(s[1].ToString());
+                string v2 = Encode(s.Substring(2));
+
+                if (s == "kua" || original == "qua" || original == ".qua") {
+                    v1 = "O";
+                    v2 = "a";
+                } else if (s.EndsWith("oa")) { v1 = "O"; v2 = "a"; } else if (s.EndsWith("uy")) { v1 = "O"; v2 = "i"; } else if (s.EndsWith("oe")) { v1 = "O"; v2 = "e"; } else if (s.EndsWith("uê")) { v1 = "O"; v2 = "E"; } else if (s.EndsWith("oă")) { v1 = "O"; v2 = "a"; } else if (s.EndsWith("uâ")) { v1 = "O"; v2 = "A"; } else if (original.EndsWith("ao")) { v1 = "a"; v2 = "O"; } else if (original.EndsWith("eo")) { v1 = "e"; v2 = "O"; }
+
+                if ((s.EndsWith("ia") || s.EndsWith("ua") || s.EndsWith("ưa"))
+                    && original != "qua" && original != ".qua")
+                    v2 = "A";
+
+                string tail = v2;
+                if (s.EndsWith("ôN") || s.EndsWith("uN") || s.EndsWith("oN"))
+                    tail = "m";
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {c}{v1}" : $"{prefix} {c}{v1}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = $"{v1} {v2}",
+                    position = pos
+                });
+
+                if (noNext) {
+                    output.Add(new Phoneme {
+                        phoneme = $"{tail} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 4 && hasInitial && vvc) {
+                string c = EncodeInitial(s[0].ToString());
+                string v1 = EncodeV(s[1].ToString());
+                string vvcPart = Encode(s.Substring(1));
+                bool isNasal = IsNasalFinal(s[^1]);
+
+                pos = shortPos ? t.shortPos : t.mediumPos;
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {c}{v1}" : $"{prefix} {c}{v1}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = vvcPart,
+                    position = pos
+                });
+
+                if (noNext && isNasal) {
+                    string tailFinal = EncodeFinal(s[^1].ToString());
+                    if (s.EndsWith("oN") || s.EndsWith("ON") || s.EndsWith("uN")) {
+                        tailFinal = "m";
+                    }
+                    output.Add(new Phoneme {
+                        phoneme = $"{tailFinal} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 4 && !hasInitial && vvc) {
+                string v1 = EncodeV(s[0].ToString());
+                string v2 = EncodeV(s[1].ToString());
+                string vvcPart = Encode(s.Substring(1));
+                bool isNasal = IsNasalFinal(s[^1]);
+
+                pos = shortPos ? t.shortPos : t.mediumPos;
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {v1}" : $"{prefix} {v1}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = $"{v1} {v2}",
+                    position = t.longPos
+                });
+                output.Add(new Phoneme {
+                    phoneme = vvcPart,
+                    position = pos
+                });
+
+                if (noNext && isNasal) {
+                    string tailFinal = EncodeFinal(s[^1].ToString());
+                    if (s.EndsWith("oN") || s.EndsWith("ON") || s.EndsWith("uN")) {
+                        tailFinal = "m";
+                    }
+                    output.Add(new Phoneme {
+                        phoneme = $"{tailFinal} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 4 && hasInitial && hasFinal) {
+                string c = EncodeInitial(s[0].ToString());
+                string v1 = EncodeV(s[1].ToString());
+                string v2 = EncodeV(s[2].ToString());
+                string tail = EncodeFinal(s[3].ToString());
+                bool isStop = IsStopFinal(s[3]);
+                bool isNasal = IsNasalFinal(s[3]);
+
+                if (s.Substring(1, 2) == "oa" || s.Substring(1, 2) == "oe" || s.Substring(1, 2) == "oă" || s.Substring(1, 2) == "uâ")
+                    v1 = "O";
+
+                pos = shortPos ? t.shortPos : t.mediumPos;
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {c}{v1}" : $"{prefix} {c}{v1}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = $"{v1} {v2}",
+                    position = t.longPos
+                });
+                output.Add(new Phoneme {
+                    phoneme = isStop ? $"{v2}{tail}" : $"{v2} {tail}",
+                    position = pos
+                });
+
+                if (noNext && isNasal) {
+                    string finalTail = tail;
+                    if (s.EndsWith("oN") || s.EndsWith("ON") || s.EndsWith("uN")) {
+                        finalTail = "m";
+                    }
+                    output.Add(new Phoneme {
+                        phoneme = $"{finalTail} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 4 && hasInitial && !hasFinal) {
+                string c = EncodeInitial(s[0].ToString());
+                string v1 = EncodeV(s[1].ToString());
+                string v2 = EncodeV(s[2].ToString());
+                string v3 = Encode(s.Substring(3));
+
+                if (s == "kuao" || original == "quao" || original == ".quao") {
+                    v1 = "O";
+                    v2 = "a";
+                    v3 = "O";
+                } else if (s == "kueo" || original == "queo" || original == ".queo") {
+                    v1 = "O";
+                    v2 = "e";
+                    v3 = "O";
+                } else {
+                    if (s.EndsWith("uya"))
+                        v3 = "A";
+
+                    if (s.Substring(1, 2) == "oa" || s.Substring(1, 2) == "oe" || s.Substring(1, 2) == "oă" || s.Substring(1, 2) == "uâ")
+                        v1 = "O";
+                }
+
+                pos = shortPos ? t.shortPos : t.mediumPos;
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {c}{v1}" : $"{prefix} {c}{v1}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = $"{v1} {v2}",
+                    position = t.longPos
+                });
+                output.Add(new Phoneme {
+                    phoneme = $"{v2} {v3}",
+                    position = pos
+                });
+
+                if (noNext) {
+                    output.Add(new Phoneme {
+                        phoneme = $"{v3} -",
+                        position = t.endPos
+                    });
+                }
+
+                return;
+            }
+
+            if (s.Length == 5 && hasInitial && vvc) {
+                string c = EncodeInitial(s[0].ToString());
+                string v1 = EncodeV(s[1].ToString());
+                string vvcPart = Encode(s.Substring(2));
+                bool isNasal = IsNasalFinal(s[^1]);
+
+                if (s.Substring(1).StartsWith("uyê") || s.Substring(1).StartsWith("uyên") || s.Substring(1).StartsWith("uyêN")) {
+                    v1 = "O";
+                    string v2 = "i";
+
+                    pos = shortPos ? t.shortPos : t.mediumPos;
+
+                    output.Add(new Phoneme {
+                        phoneme = allowInitial ? $"- {c}{v1}" : $"{prefix} {c}{v1}"
+                    });
+                    output.Add(new Phoneme {
+                        phoneme = $"{v1} {v2}",
+                        position = t.longPos
+                    });
+                    output.Add(new Phoneme {
+                        phoneme = vvcPart,
+                        position = pos
+                    });
+
+                    if (noNext && isNasal) {
+                        string tailFinal = EncodeFinal(s[^1].ToString());
+                        if (s.EndsWith("oN") || s.EndsWith("ON") || s.EndsWith("uN")) {
+                            tailFinal = "m";
+                        }
+                        output.Add(new Phoneme {
+                            phoneme = $"{tailFinal} -",
+                            position = t.endPos
+                        });
+                    }
+                    return;
+                }
+
+                pos = shortPos ? t.shortPos : t.mediumPos;
+
+                output.Add(new Phoneme {
+                    phoneme = allowInitial ? $"- {c}{v1}" : $"{prefix} {c}{v1}"
+                });
+                output.Add(new Phoneme {
+                    phoneme = vvcPart,
+                    position = pos
+                });
+
+                if (noNext && isNasal) {
+                    string tailFinal = EncodeFinal(s[^1].ToString());
+                    if (s.EndsWith("oN") || s.EndsWith("ON") || s.EndsWith("uN")) {
+                        tailFinal = "m";
+                    }
+                    output.Add(new Phoneme {
+                        phoneme = $"{tailFinal} -",
+                        position = t.endPos
+                    });
+                }
+            }
+        }
+
+        static void AddBreath(
+            List<Phoneme> output,
+            string loi,
+            TimingInfo t) {
+
+            string number = loi.Length > 5
+                ? loi.Substring(5)
+                : "1";
+
+            output.Add(new Phoneme {
+                phoneme = $"breath{number}"
+            });
+        }
+
+        string PreviousVowel(Note? previous) {
+            string rawLyric = previous?.phoneticHint ?? previous?.lyric ?? "";
+            if (string.IsNullOrEmpty(rawLyric))
+                return null;
+
+            string lyric = rawLyric.EndsWith("2") ? rawLyric[..^1] : rawLyric;
+
+            var unicodeList = ToUnicodeElements(lyric);
+            string lastElement = unicodeList.LastOrDefault() ?? "";
+
+            string vow = vowelLookup.TryGetValue(
+                lastElement,
+                out var value)
+                ? value
+                : null;
+
+            if (vow == null)
+                return null;
+
+            string pr = lyric;
+
+            if (pr != "R")
+                pr = pr.ToLower();
+
+            if (pr == "gi")
+                pr = "zi";
+
+            pr = Normalize(pr);
+
+            if (pr.EndsWith("ua") ||
+                pr.EndsWith("ưa") ||
+                pr.EndsWith("ia") ||
+                pr.EndsWith("uya"))
+                vow = "A";
+
+            if (pr.EndsWith("uôN"))
+                vow = "ng";
+            else if (
+                pr.EndsWith("uN") ||
+                pr.EndsWith("ôN") ||
+                pr.EndsWith("oN"))
+                vow = "m";
+
+            if (pr.EndsWith("breaT") || pr.EndsWith("C"))
+                vow = "-";
+
+            if (pr.EndsWith("ao") || pr.EndsWith("eo") || pr.EndsWith("quao") || pr.EndsWith("queo"))
+                vow = "O";
+
+            return vow;
+        }
+
+        static string Encode(string s) {
+            if (string.IsNullOrEmpty(s))
+                return s;
+
+            string result = "";
+
+            foreach (char c in s) {
+                if (Vowels.TryGetValue(c, out var v))
+                    result += v;
+                else if (Consonants.TryGetValue(c, out var consonant))
+                    result += consonant;
+                else if (c == 'N')
+                    result += "ng";
+                else if (c == 'J')
+                    result += "nh";
+                else if (c == 'C')
+                    result += "ch";
+                else
+                    result += c;
+            }
+
+            return result;
+        }
+
+        static string EncodeV(string s) {
+            if (string.IsNullOrEmpty(s))
+                return s;
+
+            return Vowels.TryGetValue(s[0], out var v)
+                ? v
+                : s;
+        }
+
+        static string EncodeInitial(string s) {
+            if (string.IsNullOrEmpty(s))
+                return s;
+
+            return Consonants.TryGetValue(s[0], out var c)
+                ? c
+                : Encode(s);
+        }
+
+        static string EncodeFinal(string s) {
+            if (string.IsNullOrEmpty(s))
+                return s;
+
+            return s[0] switch {
+                'C' => "ch",
+                'N' => "ng",
+                'J' => "nh",
+                _ => s
+            };
+        }
+
+        static bool EndsWithAny(string value, IEnumerable<string> endings) {
+            foreach (var ending in endings)
+                if (value.EndsWith(ending))
+                    return true;
+
+            return false;
+        }
+
+        void MapOto(
+            List<Phoneme> phonemes,
+            Note note,
+            Note[] notes,
+            Note[] prevNeighbours) {
+
+            int noteIndex = 0;
+
+            for (int i = 0; i < phonemes.Count; i++) {
+                var attr = note.phonemeAttributes?
+                    .FirstOrDefault(a => a.index == i) ?? default;
+
+                string alt =
+                    (attr.alternate ?? GetParentAlternate())?
+                    .ToString() ?? "";
+
+                string color =
+                    attr.voiceColor ?? GetParentVoiceColor();
+
+                int toneShift =
+                    attr.toneShift ?? GetParentToneShift();
+
+                var p = phonemes[i];
+
+                while (
+                    noteIndex < notes.Length - 1 &&
+                    notes[noteIndex].position - note.position < p.position) {
                     noteIndex++;
                 }
-                int tone = (i == 0 && prevNeighbours != null && prevNeighbours.Length > 0)
-                    ? prevNeighbours.Last().tone : notes[noteIndex].tone;
-                if (singer.TryGetMappedOto($"{phoneme1.phoneme}{alt}", note.tone + toneShift, color, out var oto)) {
-                    phoneme1.phoneme = oto.Alias;
+
+                int tone =
+                    i == 0 &&
+                    prevNeighbours != null &&
+                    prevNeighbours.Length > 0
+                        ? prevNeighbours.Last().tone
+                        : notes[noteIndex].tone;
+
+                if (singer.TryGetMappedOto(
+                    $"{p.phoneme}{alt}",
+                    note.tone + toneShift,
+                    color,
+                    out var oto)) {
+
+                    p.phoneme = oto.Alias;
                 }
-                phonemes[i] = phoneme1;
+
+                phonemes[i] = p;
             }
-            return new Result { phonemes = phonemes.ToArray() };
+        }
+
+        readonly struct TimingInfo {
+            public readonly int shortPos;
+            public readonly int longPos;
+            public readonly int mediumPos;
+            public readonly int endPos;
+
+            public TimingInfo(
+                int shortPos,
+                int longPos,
+                int mediumPos,
+                int endPos) {
+
+                this.shortPos = shortPos;
+                this.longPos = longPos;
+                this.mediumPos = mediumPos;
+                this.endPos = endPos;
+            }
         }
     }
 }
