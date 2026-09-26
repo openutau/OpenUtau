@@ -359,11 +359,11 @@ namespace OpenUtau.App.ViewModels {
 
         public void OpenLocation() {
             if (Singer != null) {
-                OpenLocation(Singer);
+                OpenSingerLocation(Singer);
             }
         }
 
-        public static void OpenLocation(USinger singer) {
+        public static void OpenSingerLocation(USinger singer) {
             try {
                 var location = singer.Location;
                 if (File.Exists(location)) {
