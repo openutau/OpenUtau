@@ -194,6 +194,21 @@ namespace OpenUtau.UiTest {
                 Assert.Equal("b", track.ExpressionGraph);
                 DocManager.Inst.Undo();
                 Assert.Null(track.ExpressionGraph);
+                DocManager.Inst.Redo();
+                Assert.Equal("b", track.ExpressionGraph);
+                // Accepting unchanged settings must not add an undo entry.
+                var unchanged = new TrackSettingsDialog(track);
+                try {
+                    unchanged.Show();
+                    HeadlessUi.Flush();
+                    unchanged.GetVisualDescendants().OfType<Button>().Last().RaiseEvent(
+                        new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                    HeadlessUi.Flush();
+                } finally {
+                    unchanged.Close();
+                }
+                DocManager.Inst.Undo();
+                Assert.Null(track.ExpressionGraph);
                 Assert.Empty(HeadlessUi.Errors.Snapshot());
             } finally {
                 dialog.Close();

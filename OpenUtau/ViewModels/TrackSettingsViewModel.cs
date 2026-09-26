@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using DynamicData.Binding;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.ExpressionGraph;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -139,18 +140,27 @@ namespace OpenUtau.App.ViewModels {
         public void Finish() {
             var project = DocManager.Inst.Project;
             int index = project.tracks.IndexOf(Track);
-            if (Graph != null && index >= 0 && Graph.Id != Track.ExpressionGraph) {
-                string? id = Graph.Id;
-                Core.ExpressionGraph.ExpressionGraphEdits.Apply(project, draft => draft.TrackOverrides[index] = id);
-            }
-            DocManager.Inst.StartUndoGroup("command.track.setting");
             var settings = Track.RendererSettings.Clone();
             if (Renderers.CLASSIC == Track.RendererSettings.renderer) {
                 settings.resampler = Resampler?.ToString() ?? string.Empty;
                 settings.wavtool = Wavtool?.ToString() ?? string.Empty;
             }
             settings.rendererSettings = RendererSettings.ToDictionary(row => row.Key, row => row.Value);
-            DocManager.Inst.ExecuteCmd(new TrackChangeRenderSettingCommand(DocManager.Inst.Project, Track, settings));
+            var current = Track.RendererSettings;
+            bool settingsChanged = settings.resampler != current.resampler || settings.wavtool != current.wavtool
+                || settings.rendererSettings.Count != current.rendererSettings.Count
+                || settings.rendererSettings.Any(pair =>
+                    !current.rendererSettings.TryGetValue(pair.Key, out var value) || value != pair.Value);
+            // Accepting the dialog is one edit, including both graph and renderer settings.
+            DocManager.Inst.StartUndoGroup("command.track.setting");
+            if (Graph != null && index >= 0 && Graph.Id != Track.ExpressionGraph) {
+                var draft = new ExpressionGraphEdits.Draft(project);
+                draft.TrackOverrides[index] = Graph.Id;
+                DocManager.Inst.ExecuteCmd(new SetExpressionGraphsCommand(project, draft.ToState()));
+            }
+            if (settingsChanged) {
+                DocManager.Inst.ExecuteCmd(new TrackChangeRenderSettingCommand(project, Track, settings));
+            }
             DocManager.Inst.EndUndoGroup();
         }
     }
