@@ -22,3 +22,12 @@ cc_library(
         "@world",
     ],
 )
+
+cc_test(
+    name = "effects_test",
+    srcs = ["effects_test.cpp"],
+    deps = [
+        ":effects",
+        "@gtest//:gtest_main",
+    ],
+)
