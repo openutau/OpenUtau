@@ -16,6 +16,8 @@
       <ResourceInclude x:Key="strings-id-ID" Source="/Strings/Strings.id-ID.axaml"/>
       <ResourceInclude x:Key="strings-it-IT" Source="/Strings/Strings.it-IT.axaml"/>
       <ResourceInclude x:Key="strings-ja-JP" Source="/Strings/Strings.ja-JP.axaml"/>
+      <ResourceInclude x:Key="strings-kk-Cyrl-KZ" Source="/Strings/Strings.kk-Cyrl-KZ.axaml"/>
+      <ResourceInclude x:Key="strings-kk-Latn-KZ" Source="/Strings/Strings.kk-Latn-KZ.axaml"/>
       <ResourceInclude x:Key="strings-ko-KR" Source="/Strings/Strings.ko-KR.axaml"/>
       <ResourceInclude x:Key="strings-nl-NL" Source="/Strings/Strings.nl-NL.axaml"/>
       <ResourceInclude x:Key="strings-pl-PL" Source="/Strings/Strings.pl-PL.axaml"/>

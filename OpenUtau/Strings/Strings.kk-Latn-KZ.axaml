@@ -1,0 +1,563 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <system:String x:Key="context.note.copy">Notanı köşiru</system:String>
+  <system:String x:Key="context.note.delete">Notanı joyu</system:String>
+  <system:String x:Key="context.note.pasteparameters">Parametrlardı tandap, qoyu</system:String>
+  <system:String x:Key="context.part.delete">Bölikti joyu</system:String>
+  <system:String x:Key="context.part.gotofile">File ornın köru</system:String>
+  <system:String x:Key="context.part.rename">Bölik atın özgertu</system:String>
+  <system:String x:Key="context.part.replaceaudio">Audiofayldı özgertu</system:String>
+  <system:String x:Key="context.part.transcribe">Jazba böligin jasau üşin dıbıstı transkripцiyalau</system:String>
+  <system:String x:Key="context.part.transcribing">Transkripцiyalau</system:String>
+  <system:String x:Key="context.pitch.easein">Kirudi jeñildetu</system:String>
+  <system:String x:Key="context.pitch.easeinout">Kiru/şığudı jeñildetu</system:String>
+  <system:String x:Key="context.pitch.easeout">Şığudı jeñildetu</system:String>
+  <system:String x:Key="context.pitch.linear">Tüzu sızıq</system:String>
+  <system:String x:Key="context.pitch.pointadd">Nükteni qosu</system:String>
+  <system:String x:Key="context.pitch.pointdel">Nükteni joyu</system:String>
+  <system:String x:Key="context.pitch.pointsnapprev">Aldınğı notamen baylanıstıru</system:String>
+  <system:String x:Key="context.timeline.addtempo">{0} jıldamdığın özgertu</system:String>
+  <system:String x:Key="context.timeline.addtimesig">Uaqıt belgisiniñ özgerisin qosu</system:String>
+  <system:String x:Key="context.timeline.deltempo">{0} tempiniñ özgeruin joyu</system:String>
+  <system:String x:Key="context.timeline.deltimesig">Uaqıt belgisiniñ özgerisin joyu</system:String>
+
+  <system:String x:Key="debug.clear">Tazalau</system:String>
+  <system:String x:Key="debug.copylog">Jurnaldı köşiru</system:String>
+  <system:String x:Key="debug.reverselogorder">Keri jurnal tärtibi</system:String>
+
+  <system:String x:Key="dialogs.about.caption">OpenUTAU jaylı</system:String>
+  <system:String x:Key="dialogs.about.message">
+    OpenUtau'nıñ maqsatı zamanaui paydalanuşı täjiribesi jäne intelektualdı ändetu sintezin qoldauı bar UTAU qauımdastığı üşin aşıq bastapqı öndeu ortası. Bizdi Github'tan baqılañız.
+  </system:String>
+  <system:String x:Key="dialogs.exitsave.caption">OpenUtau'dı jabu</system:String>
+  <system:String x:Key="dialogs.exitsave.message">Saqtalmağan özgerister bar. Saqtağıñız kele me?</system:String>
+  <system:String x:Key="dialogs.export.caption">Şığaru</system:String>
+  <system:String x:Key="dialogs.export.savefirst">Jobañızdı saqtañız</system:String>
+  <system:String x:Key="dialogs.importtracks.caption">Joldı jükteu</system:String>
+  <system:String x:Key="dialogs.importtracks.importtempo">Jüktelgen jobada ilesken jıldamdıq nükteleri bar. Olardı qoldanğıñız kele me?</system:String>
+  <system:String x:Key="dialogs.installdependency.caption">Täueldilikterdi ornatu</system:String>
+  <system:String x:Key="dialogs.installdependency.message">Ornatıluda</system:String>
+  <system:String x:Key="dialogs.installdll.caption">Phonemizer'di ornatu</system:String>
+  <system:String x:Key="dialogs.installdll.message">Ornatıluda</system:String>
+  <system:String x:Key="dialogs.messagebox.cancel">Bas tartu</system:String>
+  <system:String x:Key="dialogs.messagebox.copy">Qateni pernetaqtağa köşiru</system:String>
+  <system:String x:Key="dialogs.messagebox.no">Joq</system:String>
+  <system:String x:Key="dialogs.messagebox.ok">OK</system:String>
+  <system:String x:Key="dialogs.messagebox.yes">Iä</system:String>
+  <system:String x:Key="dialogs.noresampler.caption">Resampler joq</system:String>
+  <system:String x:Key="dialogs.noresampler.message">Resampler joq! Tandaulı Resampler'din .exe nemese .dll file'ın Resamplers bumasına salıp, parametrlardan resampler'di tañdañız</system:String>
+  <system:String x:Key="dialogs.remaptimeaxis.message">Būl qūral jobanıñ jıldamdığın notalardıñ nağız ornalasuı men ūzaqtığın(sekundtarmen eseptegende) auıstırmay özgertedi
+  Jaña BPM:</system:String>
+  <system:String x:Key="dialogs.timesig.caption">Soqqı</system:String>
+  <system:String x:Key="dialogs.tracksettings.caption">Jol baptauları</system:String>
+  <system:String x:Key="dialogs.tracksettings.location">Ornalasuı</system:String>
+  <system:String x:Key="dialogs.tracksettings.renderer">Renderer</system:String>
+  <system:String x:Key="dialogs.tracksettings.setasdefault">Bastapqıday ornatu</system:String>
+  <system:String x:Key="dialogs.unsupportedfile.caption">Qoldanuğa jaramsız pişim</system:String>
+  <system:String x:Key="dialogs.unsupportedfile.message">Qoldau körsetilmeytin file pişimi: </system:String>
+  <system:String x:Key="dialogs.voicecolorremapping">Dauıstıñ tüsin özgertu</system:String>
+  <system:String x:Key="dialogs.voicecolorremapping.caption">Osı joldağı barlıq notalarğa qoldanıladı:</system:String>
+
+  <system:String x:Key="errors.caption">Qate</system:String>
+  <system:String x:Key="errors.details">Qate jaylı</system:String>
+  <system:String x:Key="errors.diffsinger.downloadvocoder1">Dauıs qoder </system:String>
+  <system:String x:Key="errors.diffsinger.downloadvocoder2">üktelmedi. Eger ol sizde ornatılmağan bolsa, onı tömendegi URL mekenjayınan jüktep alıñız: </system:String>
+  <system:String x:Key="errors.encryptedarchive">Şifrlanğan mūrağat faylına qoldau körsetilmeydi. Mūrağat faylın küştep aşıp köriñizşi.</system:String>
+  <system:String x:Key="errors.expression.abbrlong">abreviatura ūzındığı 1 nemese 4 sipattama bolu kerek</system:String>
+  <system:String x:Key="errors.expression.abbrset">Abreviatura qosılu kerek</system:String>
+  <system:String x:Key="errors.expression.abbrunique">Abreviatura erekşe boluı kerek</system:String>
+  <system:String x:Key="errors.expression.default">Jalpı şama minimum jäne maksimum arasında boluı kerek</system:String>
+  <system:String x:Key="errors.expression.flagunique">Tular erekşe bolu kerek</system:String>
+  <system:String x:Key="errors.expression.marge">Kelesi örnekter qaytalanatın jalauşalarğa baylanıstı biriktirildi.</system:String>
+  <system:String x:Key="errors.expression.min">Minimum maksimumnan kişi boluı kerek</system:String>
+  <system:String x:Key="errors.expression.name">Atau qosıluı kerek</system:String>
+  <system:String x:Key="errors.failed.export">Eksporttalmadı</system:String>
+  <system:String x:Key="errors.failed.importaudio">Audio importtalmadı</system:String>
+  <system:String x:Key="errors.failed.importfiles">Fayldar importtalmadı</system:String>
+  <system:String x:Key="errors.failed.importmidi">midi importtalmadı</system:String>
+  <system:String x:Key="errors.failed.installsinger">Änşi ornatılmadı</system:String>
+  <system:String x:Key="errors.failed.load">Jüktelmedi</system:String>
+  <system:String x:Key="errors.failed.loadprefs">Baptaular jüktelmedi. Olardı ornatıñız</system:String>
+  <system:String x:Key="errors.failed.openfile">Aşılmadı</system:String>
+  <system:String x:Key="errors.failed.openlocation">Aumaq aşılmadı</system:String>
+  <system:String x:Key="errors.failed.render">Renderleu ötpedi</system:String>
+  <system:String x:Key="errors.failed.runeditingmacro">Editteytin makro bastalınbadı</system:String>
+  <system:String x:Key="errors.failed.save">Saqtalınbadı</system:String>
+  <system:String x:Key="errors.failed.savesingerconfig">Äşiniñ pişini jüktelmedi</system:String>
+  <system:String x:Key="errors.failed.searchsinger">Änşi tabılmadı</system:String>
+  <system:String x:Key="errors.install.cpp">Eñ soñğı Visual C++ Redistributable nūsqasın ornatıp köriñiz. https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170</system:String>
+  <system:String x:Key="errors.lyrics.regex">Keyipker qarapayım örnekte qoldanılmaydı.</system:String>
+  <system:String x:Key="errors.lyrics.regexpreview">- qarapayım örnek qatesi -</system:String>
+
+  <system:String x:Key="exps.abbr">Qısqartu sözi</system:String>
+  <system:String x:Key="exps.apply">Qoldanu</system:String>
+  <system:String x:Key="exps.caption">Aytıluı</system:String>
+  <system:String x:Key="exps.defaultvalue">Ädepki</system:String>
+  <system:String x:Key="exps.flag">Resampler tuları</system:String>
+  <system:String x:Key="exps.getsuggestions">Render'den şıqqan bar äserin qosu</system:String>
+  <system:String x:Key="exps.isflag">Resampler tuı</system:String>
+  <system:String x:Key="exps.maxvalue">Eñ köbi</system:String>
+  <system:String x:Key="exps.minvalue">Eñ azı</system:String>
+  <system:String x:Key="exps.name">Atauı</system:String>
+  <system:String x:Key="exps.optionvalues">Parametr mäni</system:String>
+  <system:String x:Key="exps.sepbycomma">Mänderdi ',' arqılı bölu</system:String>
+  <system:String x:Key="exps.type">Türi</system:String>
+  <system:String x:Key="exps.type.curve">Qisıq</system:String>
+  <system:String x:Key="exps.type.numerical">Sandıq män</system:String>
+  <system:String x:Key="exps.type.options">Parametrlar</system:String>
+
+  <system:String x:Key="languages.de">Nemisşe</system:String>
+  <system:String x:Key="languages.en">Ağılşınşa</system:String>
+  <system:String x:Key="languages.es">Ispanşa</system:String>
+  <system:String x:Key="languages.fr">Frantsuzşa</system:String>
+  <system:String x:Key="languages.invariant">Audarılmağan</system:String>
+  <system:String x:Key="languages.it">Italiyanşa</system:String>
+  <system:String x:Key="languages.ja">Japonşa</system:String>
+  <system:String x:Key="languages.ko">Kärisşe</system:String>
+  <system:String x:Key="languages.pl">Polyakşa</system:String>
+  <system:String x:Key="languages.pt">Portugalşa</system:String>
+  <system:String x:Key="languages.ru">Orısşa</system:String>
+  <system:String x:Key="languages.vi">Vetnamşa</system:String>
+  <system:String x:Key="languages.zh">Qıtayşa</system:String>
+  <system:String x:Key="languages.zh-yue">Kantonşa</system:String>
+  <system:String x:Key="languages.th">Tayşa</system:String>
+
+  <system:String x:Key="lyrics.apply">Qoldanu</system:String>
+  <system:String x:Key="lyrics.cancel">Bas tartu</system:String>
+  <system:String x:Key="lyrics.caption">Mätindi öñdeu</system:String>
+  <system:String x:Key="lyrics.livepreview">Naqtı uaqıttağını aldın ala qarau</system:String>
+  <system:String x:Key="lyrics.max">Eñ köbi</system:String>
+  <system:String x:Key="lyrics.reset">Qayta qalıpqa keltiru</system:String>
+  <system:String x:Key="lyrics.selectnotes">Aldımen bir-neşe nota tañdanız!</system:String>
+  <system:String x:Key="lyrics.separators">Bölgişter</system:String>
+
+  <system:String x:Key="lyricsreplace.after">Keyin :</system:String>
+  <system:String x:Key="lyricsreplace.before">Deyin :</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvalphabet">Älippeni öşiru</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvnonhiragana">Xiraganadan basqasın öşiru</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvphonetichint">Dıbıs belgilerin öşiru</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvspace">Bos orındı jäne būrınğısın öşiru</system:String>
+  <system:String x:Key="lyricsreplace.preset.rmvtone">Tonnıñ Suffix'in öşiru</system:String>
+  <system:String x:Key="lyricsreplace.presets">Ornatılğandarı</system:String>
+  <system:String x:Key="lyricsreplace.preview">Aldın ala qarau</system:String>
+  <system:String x:Key="lyricsreplace.regex">Tūraqtı äserler qoldanıla aladı</system:String>
+  <system:String x:Key="lyricsreplace.replace"> Jalpı mätindik almastırular</system:String>
+
+  <system:String x:Key="menu.edit">Öñdeu</system:String>
+  <system:String x:Key="menu.edit.copy">Köşiru</system:String>
+  <system:String x:Key="menu.edit.cut">Kesu</system:String>
+  <system:String x:Key="menu.edit.delete">Öşiru</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes">Tañdalmağan notalar öñdeuin qūlıptau</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.expressions">Örnek</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.pitchpoints">Qadam nükteleri</system:String>
+  <system:String x:Key="menu.edit.lockunselectednotes.vibrato">Diril</system:String>
+  <system:String x:Key="menu.edit.paste">Qoyu</system:String>
+  <system:String x:Key="menu.edit.redo">Qaytalau</system:String>
+  <system:String x:Key="menu.edit.selectall">Barlığın tandau</system:String>
+  <system:String x:Key="menu.edit.undo">Boldırmau</system:String>
+  <system:String x:Key="menu.file">File</system:String>
+  <system:String x:Key="menu.file.exit">Şığu</system:String>
+  <system:String x:Key="menu.file.exportaudio">Dıbıstı Şığaru</system:String>
+  <system:String x:Key="menu.file.exportds">DiffSinger Script'tarın Şığaru</system:String>
+  <system:String x:Key="menu.file.exportds.v2">DiffSinger Script'tarın Şığaru (v2)</system:String>
+  <system:String x:Key="menu.file.exportds.v2withoutpitch">DiffSinger Script'tarın Şığaru (v2, qadam qisıqsız)</system:String>
+  <system:String x:Key="menu.file.exportmidi">Midi File'ın Şığaru</system:String>
+  <system:String x:Key="menu.file.exportmixdown">Aralas Wav File'ın Şığaru</system:String>
+  <system:String x:Key="menu.file.exportproject">Joba File'ın Şığaru</system:String>
+  <system:String x:Key="menu.file.exportust">Ust File'ın Şığaru</system:String>
+  <system:String x:Key="menu.file.exportustto">Ust File'darın Mūnda Şığaru...</system:String>
+  <system:String x:Key="menu.file.exportwav">Wav File'darın Şığaru</system:String>
+  <system:String x:Key="menu.file.exportwavto">Wav File'darın Mūnda Şığaru...</system:String>
+  <system:String x:Key="menu.file.importaudio">Dıbıstı Jükteu...</system:String>
+  <system:String x:Key="menu.file.importmidi">Midi Jükteu...</system:String>
+  <system:String x:Key="menu.file.importmidi.drywetmidi">DryWetMidi Jükteuşi</system:String>
+  <system:String x:Key="menu.file.importmidi.naudio">Naudio Jükteuşi</system:String>
+  <system:String x:Key="menu.file.importtracks">Joldardı Jükteu...</system:String>
+  <system:String x:Key="menu.file.new">Jasau</system:String>
+  <system:String x:Key="menu.file.newfromtemplate">Ülgi boyınşa jasau</system:String>
+  <system:String x:Key="menu.file.open">Aşu...</system:String>
+  <system:String x:Key="menu.file.openas">Qalayşa aşu</system:String>
+  <system:String x:Key="menu.file.openexportlocation">Şığu Aymağın Köoru</system:String>
+  <system:String x:Key="menu.file.openprojectlocation">Joba aymağın köru</system:String>
+  <system:String x:Key="menu.file.openrecent">Jaqında Aşılğandar</system:String>
+  <system:String x:Key="menu.file.save">Saqtau</system:String>
+  <system:String x:Key="menu.file.saveas">Mūnda Saqtau...</system:String>
+  <system:String x:Key="menu.file.savetemplate">Ülgini Saqtau...</system:String>
+  <system:String x:Key="menu.help">Kömek</system:String>
+  <system:String x:Key="menu.help.about">OpenUtau jaylı</system:String>
+  <system:String x:Key="menu.help.checkupdate">Jañartulardı tekseru</system:String>
+  <system:String x:Key="menu.help.logslocation">Jurnal ornın aşu</system:String>
+  <system:String x:Key="menu.help.reportissue">Mäsele turalı xabarlau</system:String>
+  <system:String x:Key="menu.help.wiki">OpenUtau Wiki</system:String>
+  <system:String x:Key="menu.project">Joba</system:String>
+  <system:String x:Key="menu.project.expressions">Örnekter...</system:String>
+  <system:String x:Key="menu.project.remaptimeaxis">Nota orının saqtap, qarqımdı baptau</system:String>
+  <system:String x:Key="menu.tools">Qūraldar</system:String>
+  <system:String x:Key="menu.tools.clearcache">Jedel Jadını Tazalau</system:String>
+  <system:String x:Key="menu.tools.debugwindow">Jöñdeu terezesi</system:String>
+  <system:String x:Key="menu.tools.dependency.install">Täueldilikti ornatu (.oudep)...</system:String>
+  <system:String x:Key="menu.tools.layout">Ornalasu</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit11">Köldeneñ 1:1</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit12">Köldeneñ 1:2</system:String>
+  <system:String x:Key="menu.tools.layout.hsplit13">Köldeneñ 1:3</system:String>
+  <system:String x:Key="menu.tools.layout.vsplit11">Tik 1:1</system:String>
+  <system:String x:Key="menu.tools.layout.vsplit12">Tik 1:2</system:String>
+  <system:String x:Key="menu.tools.layout.vsplit13">Tik 1:3</system:String>
+  <system:String x:Key="menu.tools.prefs">Parametrlar...</system:String>
+  <system:String x:Key="menu.tools.singer.install">Änşini ornatu...</system:String>
+  <system:String x:Key="menu.tools.singer.installadv">Änşini ornatu (Joğarı)...</system:String>
+  <system:String x:Key="menu.tools.singers">Änşiler...</system:String>
+  <system:String x:Key="menu.view">Köru</system:String>
+
+  <system:String x:Key="notedefaults.lyric">Än mätini</system:String>
+  <system:String x:Key="notedefaults.lyric.defaultlyric">Ädepki</system:String>
+  <system:String x:Key="notedefaults.portamento">Portamento</system:String>
+  <system:String x:Key="notedefaults.portamento.length">Ūzındığı</system:String>
+  <system:String x:Key="notedefaults.portamento.start">Bastau</system:String>
+  <system:String x:Key="notedefaults.preset">Aldın ala ornatu</system:String>
+  <system:String x:Key="notedefaults.preset.namenew">Aldın ala ornatudı atıu</system:String>
+  <system:String x:Key="notedefaults.preset.remove">Joyu</system:String>
+  <system:String x:Key="notedefaults.preset.remove.tooltip">Soñğı tağayındalğan aldın ala ornatudı joyadı.</system:String>
+  <system:String x:Key="notedefaults.preset.save">Saqtau</system:String>
+  <system:String x:Key="notedefaults.preset.save.tooltip">Ağımdağı parametrlerdi jaña aldın ala ornatu retinde saqtaydı.</system:String>
+  <system:String x:Key="notedefaults.reset">Barlıq parametrlardı qalıpqa keltiru</system:String>
+  <system:String x:Key="notedefaults.reset.tooltip">Barlıq parametrlardı qalıpqa keltiredi.
+    Eskertu: Būl opцiya aldın ala ornatulardı da joyadı</system:String>
+  <system:String x:Key="notedefaults.vibrato">Diril</system:String>
+  <system:String x:Key="notedefaults.vibrato.autominlength">Eñ qısqa nota ūzındığı</system:String>
+  <system:String x:Key="notedefaults.vibrato.autotoggle">Ūzındıq boyınşa dirildi automat'tı türde qosu</system:String>
+  <system:String x:Key="notedefaults.vibrato.depth">Terendi</system:String>
+  <system:String x:Key="notedefaults.vibrato.drift">Biiktigi</system:String>
+  <system:String x:Key="notedefaults.vibrato.in">Birtindep engizui</system:String>
+  <system:String x:Key="notedefaults.vibrato.length">Sozıluı</system:String>
+  <system:String x:Key="notedefaults.vibrato.out">Birtindep şığaruı</system:String>
+  <system:String x:Key="notedefaults.vibrato.period">Kezeñ</system:String>
+  <system:String x:Key="notedefaults.vibrato.shift">Ornın auıstıru</system:String>
+  <system:String x:Key="notedefaults.vibrato.vollink">Baylanıstı dıbıs kölemi</system:String>
+
+  <system:String x:Key="noteproperty">Nota sipattarı</system:String>
+  <system:String x:Key="noteproperty.apply">Qoldanu</system:String>
+  <system:String x:Key="noteproperty.basic">Negizgi</system:String>
+  <system:String x:Key="noteproperty.cancel">Bas tartu</system:String>
+  <system:String x:Key="noteproperty.set">Ornatu</system:String>
+  <system:String x:Key="noteproperty.setlongnote">Tek ūzan notalardı ornatu</system:String>
+  <system:String x:Key="noteproperty.tone">Qadam</system:String>
+  <system:String x:Key="noteproperty.vibratoenable">Qosu</system:String>
+
+  <system:String x:Key="oto.alias">Bürkenşik atı</system:String>
+  <system:String x:Key="oto.color">Tüs</system:String>
+  <system:String x:Key="oto.consonant">Dauıssız dıbıs</system:String>
+  <system:String x:Key="oto.cutoff">Ayağı</system:String>
+  <system:String x:Key="oto.edit.consonant">Dauıssız dıbıstı ornatu</system:String>
+  <system:String x:Key="oto.edit.cutoff">Ayağın ornatu</system:String>
+  <system:String x:Key="oto.edit.offset">Basın ornatu</system:String>
+  <system:String x:Key="oto.edit.overlap">Qabatasuın ornatu</system:String>
+  <system:String x:Key="oto.edit.preutter">Kirispe ornatu</system:String>
+  <system:String x:Key="oto.file">File</system:String>
+  <system:String x:Key="oto.offset">Bası</system:String>
+  <system:String x:Key="oto.overlap">Qabatasuı</system:String>
+  <system:String x:Key="oto.phonetic">Phonetic</system:String>
+  <system:String x:Key="oto.prefix">Prefix</system:String>
+  <system:String x:Key="oto.preutter">Kirispe</system:String>
+  <system:String x:Key="oto.set">Ornatu</system:String>
+  <system:String x:Key="oto.suffix">Suffix</system:String>
+
+  <system:String x:Key="phoneticassistant.caption">Phonetic Kömekşisi</system:String>
+  <system:String x:Key="phoneticassistant.copy">Köşiru</system:String>
+
+  <system:String x:Key="pianoroll.menu.batch">Jalpılay öñdeu</system:String>
+  <system:String x:Key="pianoroll.menu.batch.running">Jalpılay öñdelisterdi jügirtu</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics">Än mätini</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.dashtoplus">"-" men "+" almastıru</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.edit">Mätindi öñdeu</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.hiraganatoromaji">Hiragana'nı Romaji'ge audaru</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.insertslur">Slur eñgizu</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.javcvtocv">Japondıq VCV'nı CV'ğa audaru</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.movesuffixtovoicecolor">Suffix'ti VoiceColor'ğa jıljıtu</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removelettersuffix">Ärip Suffix'in joyu</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removephonetichint">Phonetic'alıq sipattamanı joyu</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.removetonesuffix">Notanıñ Suffix'in joyu</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.romajitohiragana">Romaji'di Hiragana'ğa audaru</system:String>
+  <system:String x:Key="pianoroll.menu.notedefaults">Ädepki mätindi ornatu</system:String>
+  <system:String x:Key="pianoroll.menu.notes">Nota</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addbreath">Tınıs qosu</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addtaildash">Soñına "-" qosu</system:String>
+  <system:String x:Key="pianoroll.menu.notes.addtailrest">Soñına "R" qosu</system:String>
+  <system:String x:Key="pianoroll.menu.notes.autolegato">Nota arasındağı bos orındardı toltıru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.bakepitch">Nota qisığın PITD pitch nüktelerine türlendiru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.clear.vibratos">Dirildi tazalau</system:String>
+  <system:String x:Key="pianoroll.menu.notes.fixoverlap">Qabattasqan notalardı dūrıstau</system:String>
+  <system:String x:Key="pianoroll.menu.notes.hanzitopinyin">Hanzi'di Pinyin'ge audaru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.lengthencrossfade">Crossfade'tı ūzartu</system:String>
+  <system:String x:Key="pianoroll.menu.notes.loadrenderedpitch">Render'lingen pitch'ti jükteu</system:String>
+  <system:String x:Key="pianoroll.menu.notes.octavedown">Bir actave tüsiru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.octaveup">Bir actave köteru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.quantize15">1/128-ge quant'tau</system:String>
+  <system:String x:Key="pianoroll.menu.notes.quantize30">1/64-ke quant'tau</system:String>
+  <system:String x:Key="pianoroll.menu.notes.removetaildash">Soñınañ "-" alu</system:String>
+  <system:String x:Key="pianoroll.menu.notes.removetailrest">Soñınañ "R" alu</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.aliases">Öñdelgen phoneme'nıñ aaliases'iñ qalpına keltiru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.all">Barlığın qalpına keltiru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.allparameters">Barlıq parametrlerdi qalpına keltiru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.exps">Barlıq mimiqalardı qalpına keltiru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.phonemetimings">Phoneme kezderin qalpına keltiru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.pitchbends">Qadamdı iiludi qalpına keltiru</system:String>
+  <system:String x:Key="pianoroll.menu.notes.reset.vibratos">Dirildi qalpına keltiru</system:String>
+  <system:String x:Key="pianoroll.menu.part">Böligi</system:String>
+  <system:String x:Key="pianoroll.menu.part.legacypluginexp">Būrınğı plagin (sınaqta)</system:String>
+  <system:String x:Key="pianoroll.menu.part.singer">Änşi men Dıbıs parametrleri</system:String>
+  <system:String x:Key="pianoroll.menu.plugin.openfolder">Bumanı aşu</system:String>
+  <system:String x:Key="pianoroll.menu.plugin.reload">Qayta jükteu</system:String>
+  <system:String x:Key="pianoroll.menu.reset">Qalpına keltiru</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote">Notalardı Izdeu</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.all">Barlığın Tandau</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.close">Jabu</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.next">Kelesi</system:String>
+  <system:String x:Key="pianoroll.menu.searchnote.prev">Aldınğı</system:String>
+  <system:String x:Key="pianoroll.toggle.finalpitch">Soñğı pitch'ti körsetu (R)</system:String>
+  <system:String x:Key="pianoroll.toggle.noteparams">Nota parametrlerin körsetu (\)</system:String>
+  <system:String x:Key="pianoroll.toggle.phoneme">Phoneme'lardı kqrsetu (O)</system:String>
+  <system:String x:Key="pianoroll.toggle.pitch">Pitch qisığın körsetu (I)</system:String>
+  <system:String x:Key="pianoroll.toggle.snap">Qosudı Qosu (P)</system:String>
+  <system:String x:Key="pianoroll.toggle.snap.auto">Auto</system:String>
+  <system:String x:Key="pianoroll.toggle.snap.autotriplet">Auto (üştik)</system:String>
+  <system:String x:Key="pianoroll.toggle.tips">Anıqtamanı körsetu (T)</system:String>
+  <system:String x:Key="pianoroll.toggle.tone">Nota tonıñ auıstıru (Y)</system:String>
+  <system:String x:Key="pianoroll.toggle.vibrato">Dirildi körsetu (U)</system:String>
+  <system:String x:Key="pianoroll.toggle.waveform">Tolqındı körsetu (W)</system:String>
+  <system:String x:Key="pianoroll.tool.drawpitch">Pitch suretin salu qūralı (4)
+    Sol jaq basu arqılı suret salıñız
+    Qalpına keltiru üşin oñ jaqtı basıñız
+    Tañdau üşin Ctrl ūzaq basıñız
+    Joldardı tegisteu üşin Alt basıp tūrıñız</system:String>
+  <system:String x:Key="pianoroll.tool.eraser">Öşirgiş qūralı (3)</system:String>
+  <system:String x:Key="pianoroll.tool.knife">Pışaq qūraldarı (5)</system:String>
+  <system:String x:Key="pianoroll.tool.overwritepitch">Pitch'ti qayta anıqtau qūralı (Ctrl + 4)
+    Sol jaq basu arqılı suret salıñız (diril jäne mod+ qayta jazu)
+    Qalpına keltiru üşin oñ jaqtı basıñız
+    Tañdau üşin Ctrl ūzaq basıñız
+    Joldardı tegisteu üşin Alt basıp tūrıñız
+  </system:String>
+  <system:String x:Key="pianoroll.tool.penplus">Qalam+ qūralı (Ctrl + 2) 
+    Qalpına keltiru üşin oñ jaqtı basıñız
+    Tañdau üşin Ctrl ūzaq basıñız
+    Joldardı tegisteu üşin Alt basıp tūrıñız</system:String>
+  <system:String x:Key="pianoroll.tool.penv2">Qalam qūralı (2)
+    Sol jaq basu arqılı suret salıñız
+    Tañdau üşin Ctrl ūzaq basıñız</system:String>
+  <system:String x:Key="pianoroll.tool.selectionv2">Tañdau qūralı (1)</system:String>
+
+  <system:String x:Key="prefs.advanced">Qosımşa parametrlar</system:String>
+  <system:String x:Key="prefs.advanced.beta">Beta nūsqası</system:String>
+  <system:String x:Key="prefs.advanced.importtempo">Joldardı jüktegen kezde jüktelgen jobanıñ qadamın saqtau</system:String>
+  <system:String x:Key="prefs.advanced.importtempo.always">Ärqaşan</system:String>
+  <system:String x:Key="prefs.advanced.importtempo.ask">Sūrau</system:String>
+  <system:String x:Key="prefs.advanced.importtempo.never">Eşqaşan</system:String>
+  <system:String x:Key="prefs.advanced.lyricshelper">Mätindik kömekşi</system:String>
+  <system:String x:Key="prefs.advanced.lyricshelper.brackets">Mätindik kömekşige jaqşalardı qosu</system:String>
+  <system:String x:Key="prefs.advanced.rememberfiletypes">Kelesi file türlerin «Jaqında Aşılğandar» retinde este saqtau</system:String>
+  <system:String x:Key="prefs.advanced.resamplerlogging">Resampler Jurnalınıñ Şığısı</system:String>
+  <system:String x:Key="prefs.advanced.resamplerlogging.warn">Resampler şığısın jurnal file'ına saqtaydı. Būl parametr paydalanuşı Interface'sin jäne Render'in jūmısın bayaulatadı.</system:String>
+  <system:String x:Key="prefs.advanced.stable">Tūraqtı nūsqa</system:String>
+  <system:String x:Key="prefs.advanced.vlabelerpath">vLabeler Ornı</system:String>
+  <system:String x:Key="prefs.appearance">Kelbet</system:String>
+  <system:String x:Key="prefs.appearance.degree">Tarazılıq därejesin qalayşa körsetu</system:String>
+  <system:String x:Key="prefs.appearance.degree.numbered">Sanı (1 2 3 4 5 6 7)</system:String>
+  <system:String x:Key="prefs.appearance.degree.off">Joq</system:String>
+  <system:String x:Key="prefs.appearance.degree.solfege">Solfège (do re mi pa sol la si)</system:String>
+  <system:String x:Key="prefs.appearance.lang">Til</system:String>
+  <system:String x:Key="prefs.appearance.showghostnotes">Piano-roll terezesinde basqa joldardın notaların körsetu</system:String>
+  <system:String x:Key="prefs.appearance.showicon">Piano-roll terezesinde keyipker belgisin körsetu</system:String>
+  <system:String x:Key="prefs.appearance.showportrait">Piano-roll terezesinde keyipker beynesin körsetu</system:String>
+  <system:String x:Key="prefs.appearance.sortorder">Änşilerdi qalayşa sūrıptau</system:String>
+  <system:String x:Key="prefs.appearance.theme">Taqırıp</system:String>
+  <system:String x:Key="prefs.appearance.theme.dark">Tün</system:String>
+  <system:String x:Key="prefs.appearance.theme.light">Kün</system:String>
+  <system:String x:Key="prefs.appearance.trackcolor"> UI işinde jol tüsterin paydalanu</system:String>
+  <system:String x:Key="prefs.cache">Jelde Jadı</system:String>
+  <system:String x:Key="prefs.cache.clearonquit">Şığu kezinde Jelde Jadanı tazalau</system:String>
+  <system:String x:Key="prefs.cache.diffsingertensorcache">DiffSinger Tensor'lıq Jelde Jadısı</system:String>
+  <system:String x:Key="prefs.caption">Parametrlar</system:String>
+  <system:String x:Key="prefs.note.restart">Eskertu: Osı parametrdi özgertkennen keyin OpenUTAU bağdarlamasın qayta iske qosıñız.</system:String>
+  <system:String x:Key="prefs.off">Öşirluli</system:String>
+  <system:String x:Key="prefs.on">Qosulı</system:String>
+  <system:String x:Key="prefs.otoeditor">Oto Öñdeuşi</system:String>
+  <system:String x:Key="prefs.otoeditor.select">Ädepki Oto Öndeuşisi</system:String>
+  <system:String x:Key="prefs.otoeditor.setparampath">setParam Ornatu</system:String>
+  <system:String x:Key="prefs.paths">File Ornı</system:String>
+  <system:String x:Key="prefs.paths.addlsinger">Änşilerdin qosımşa ornalasu ornı</system:String>
+  <system:String x:Key="prefs.paths.addlsinger.install">Änşilerdin qosımşa ornalasu ornın ornatu</system:String>
+  <system:String x:Key="prefs.paths.loaddeepfolders">Balıq tereñ bumalardı jükteu</system:String>
+  <system:String x:Key="prefs.paths.reset">Qalpına keltiru</system:String>
+  <system:String x:Key="prefs.paths.select">Tandau</system:String>
+  <system:String x:Key="prefs.penplus">Pen Plus Qūralın Ädepki retinde Ornatu</system:String>
+  <system:String x:Key="prefs.playback">Oynatu</system:String>
+  <system:String x:Key="prefs.playback.autoscroll">Auto-Aynaldıru</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode">Auto-Aynaldıru Ädisi</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode.pagescroll">Betti Aynaldıru</system:String>
+  <system:String x:Key="prefs.playback.autoscrollmode.stationarycursor">Bekitilgen Cursor</system:String>
+  <system:String x:Key="prefs.playback.backend">Dıbıs Backend'i</system:String>
+  <system:String x:Key="prefs.playback.backend.auto">Auto'mattıq</system:String>
+  <system:String x:Key="prefs.playback.backend.mini">MiniAudio</system:String>
+  <system:String x:Key="prefs.playback.cursorposition">Auto-Aynaldırudan keyin</system:String>
+  <system:String x:Key="prefs.playback.device">Oynatu Qūrılğısı</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime">Kidirtilgen kezde cursor</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.off">Eşteña istemeu</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.on">Cursor'dı jäne display ornınıñ oynatu bastalğan jerge qaytaru</system:String>
+  <system:String x:Key="prefs.playback.lockstarttime.onlycursor">Tek cursor'dı oynatu bastalğan jerge qaytaru</system:String>
+  <system:String x:Key="prefs.playback.test">Tekseru</system:String>
+  <system:String x:Key="prefs.rendering">Render'lau</system:String>
+  <system:String x:Key="prefs.rendering.defaultrenderer">Classic'alıq UTAU dauıs köziniñ ädepki render'i </system:String>
+  <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger Render'iniñ Tereñdigi</system:String>
+  <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Render'ieiñ Qadamdarı</system:String>
+  <system:String x:Key="prefs.rendering.onnxgpu">GPU</system:String>
+  <system:String x:Key="prefs.rendering.onnxrunner">Machine'lıq oqıtu</system:String>
+  <system:String x:Key="prefs.rendering.phasecomp">Phase'lıq tüzetu</system:String>
+  <system:String x:Key="prefs.rendering.prerender">Pre-render</system:String>
+  <system:String x:Key="prefs.rendering.resampler">Resampler</system:String>
+  <system:String x:Key="prefs.rendering.resampler.morewarn">
+    Eskertu: moresampler tolıq qoldau körsetpeydi. Ol bayau boluı jäne GPU paydalanuı jükti boluı mümkin. Eger siz onı äli de paydalanğıñız kelse:
+    1. moreconfig.txt faylındağı "resampler-compatibility" parametrin "on" küyine ornatıñız.
+    2. moreconfig.txt faylındağı "auto-update-llsm-mrq" parametrin "off" küyine ornatıñız.
+    3. Moresampler jetispeytin llsm faylın jasau üşin şıdamdılıqpen kütiñiz.
+  </system:String>
+  <system:String x:Key="prefs.rendering.resampler.note">
+    Eskertu: Resampler'di paydalanu üşin tandaulı Resampler'din .exe nemese .dll file'ın OpenUTAU bumasındağı Resamplers bumasına salıp, parametrlardan resampler'di tañdañız.
+  </system:String>
+  <system:String x:Key="prefs.rendering.skipmuted">Skip muted tracks</system:String>
+  <system:String x:Key="prefs.rendering.threads.cpuwarn">
+    Eskertu: Köp ağındı Render qadamdarı OpenUTAU jūmısın bayaudatuı mümkin.
+  </system:String>
+  <system:String x:Key="prefs.rendering.threads.numthreads">Eñ köp Render Ağındarı</system:String>
+  <system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>
+
+  <system:String x:Key="progress.loadingsingers">Änşi Jüktelude...</system:String>
+  <system:String x:Key="progress.saved">Joba Saqьaldı. {0}</system:String>
+  <system:String x:Key="progress.waitingrendering">Render'lenude</system:String>
+
+  <system:String x:Key="singers.caption">Änşi</system:String>
+  <system:String x:Key="singers.editoto.editinsetparam">setParam kömegimen öñdeu</system:String>
+  <system:String x:Key="singers.editoto.editinvlabeler">vLabeler kömegimen öñdeu</system:String>
+  <system:String x:Key="singers.editoto.gotosource">Bastapqı Dıbıs Ornın Aşu</system:String>
+  <system:String x:Key="singers.editoto.regenfrq">FRQ qalpına keltiru</system:String>
+  <system:String x:Key="singers.editoto.regenfrq.regenerating">FRQ qalpına keltirui</system:String>
+  <system:String x:Key="singers.editoto.reset">Bastapqı Dıbıs Parametrlerin Qalpına Keltiru</system:String>
+  <system:String x:Key="singers.editoto.save">Bastapqı Dıbıs Parametrlerin Saqtau</system:String>
+  <system:String x:Key="singers.editoto.searchalias">Alias Izdeu</system:String>
+  <system:String x:Key="singers.editoto.setsetparampath">setParam Ornatu (v4.0b or nemese odan joğarı) Onı jüktep alıñız jäne qalauıñız boyınşa joldı ornatıñız! http://nwp8861.blog92.fc2.com/</system:String>
+  <system:String x:Key="singers.editoto.setvlabelerpath">vLabeler Ornatu (1.0.0-beta1 nemese odan joğarı) Onı jüktep alıñız jäne qalauıñız boyınşa joldı ornatıñız! https://github.com/sdercolin/vlabeler</system:String>
+  <system:String x:Key="singers.errorreport">Änşi Error Report Fele'ıñ Şığaru</system:String>
+  <system:String x:Key="singers.location">File Ornı</system:String>
+  <system:String x:Key="singers.otoview.moveleft">Solğa Jıljıtu</system:String>
+  <system:String x:Key="singers.otoview.moveright">Oñğa Jıljıtu</system:String>
+  <system:String x:Key="singers.otoview.selectnext">Kelesini Tañdau</system:String>
+  <system:String x:Key="singers.otoview.selectprev">Artağını Tandau</system:String>
+  <system:String x:Key="singers.otoview.showall">Barlığın Körsetu</system:String>
+  <system:String x:Key="singers.otoview.zoomin">Ülkeytu</system:String>
+  <system:String x:Key="singers.otoview.zoomout">Kişireytu</system:String>
+  <system:String x:Key="singers.playsample">Ülgi dauıstı oynatu</system:String>
+  <system:String x:Key="singers.publish">Änşini Taratu Päketin Jasau</system:String>
+  <system:String x:Key="singers.publish.description">Jeke dıbıs deregin taratu üşin zip file'ın jasau.</system:String>
+  <system:String x:Key="singers.publish.ignoretypes">Kelesi file'dar taratu bumasına kirmeydi (gitignore pişiminde jazılğan):</system:String>
+  <system:String x:Key="singers.publish.publish">Jasau</system:String>
+  <system:String x:Key="singers.publish.useignore"> Körsetilgen türdegi file'dardı taratu bumasına qosuğa jol bermeu</system:String>
+  <system:String x:Key="singers.readme">readme.txt File'ıñ Aşu</system:String>
+  <system:String x:Key="singers.readme.notfound">readme.txt tabılmadı</system:String>
+  <system:String x:Key="singers.refresh">Qayta Jükteu</system:String>
+  <system:String x:Key="singers.setdefaultphonemizer">Ädepki Phonemizer'dı Ornau</system:String>
+  <system:String x:Key="singers.setencoding">Tañba Encode'ıñ Ornatu</system:String>
+  <system:String x:Key="singers.setimage">Keyipker Belgisin Ornatu</system:String>
+  <system:String x:Key="singers.setportrait">Keyipker Beynesin Ornatu</system:String>
+  <system:String x:Key="singers.setsingertype">Änşi Türin Ornatu</system:String>
+  <system:String x:Key="singers.subbanks.cancel">Bas tartu</system:String>
+  <system:String x:Key="singers.subbanks.clear">Tazalau</system:String>
+  <system:String x:Key="singers.subbanks.color">Tüs</system:String>
+  <system:String x:Key="singers.subbanks.color.add">Tüs Qosu</system:String>
+  <system:String x:Key="singers.subbanks.color.remove">Tüsti Joyu</system:String>
+  <system:String x:Key="singers.subbanks.color.rename">Atın Özgertu</system:String>
+  <system:String x:Key="singers.subbanks.edit">Işki dauıs közin öñdeu</system:String>
+  <system:String x:Key="singers.subbanks.export">prefix.map Şığaru</system:String>
+  <system:String x:Key="singers.subbanks.import">prefix.map Jükteu</system:String>
+  <system:String x:Key="singers.subbanks.reset">Qalpına keltiru</system:String>
+  <system:String x:Key="singers.subbanks.save">Saqtau</system:String>
+  <system:String x:Key="singers.subbanks.selectall">Barlığın Tandau</system:String>
+  <system:String x:Key="singers.subbanks.set">Ornatu</system:String>
+  <system:String x:Key="singers.subbanks.tone">Ton</system:String>
+  <system:String x:Key="singers.subbanks.toneranges">Diapazon</system:String>
+  <system:String x:Key="singers.usefilename">File atauın alias retinde paydalanu</system:String>
+  <system:String x:Key="singers.visitwebsite">Web-Sayttı Aşu</system:String>
+
+  <system:String x:Key="singersetup.archivefileencoding">Mūrağat File'dardın Encode'tau</system:String>
+  <system:String x:Key="singersetup.archivefileencoding.prompt">File atauında büzılğan tañbalar qtelesin tudındatpaydın code'taudı tañdañız.</system:String>
+  <system:String x:Key="singersetup.back">Qaytaru</system:String>
+  <system:String x:Key="singersetup.install">Ornatu</system:String>
+  <system:String x:Key="singersetup.missinginfo">Osı dauıstıq deregi üşin character.yaml faylına kelesi parametrlerdi qosıñız.</system:String>
+  <system:String x:Key="singersetup.next">Kelesi</system:String>
+  <system:String x:Key="singersetup.singertype">Änşi Türi</system:String>
+  <system:String x:Key="singersetup.textfileencoding">Mätindik File'dardı Encode'tau</system:String>
+  <system:String x:Key="singersetup.textfileencoding.prompt">Būzılğan mätin qatesin tudırmaytın encode'taudı tañdañız.</system:String>
+
+  <system:String x:Key="tip.aliasbox">Alias'tı almastıru</system:String>
+  <system:String x:Key="tip.exps">Sol jaq tüymeni basu: Bet älpetin ornatu
+Oñ jaq tüymeni basu: Bet älpetin qalpına keltiru</system:String>
+  <system:String x:Key="tip.exps.notsupported">Būl render bet älpetin qoldamaydı.</system:String>
+  <system:String x:Key="tip.lyricbox.next">Tab: Kelesi nota</system:String>
+  <system:String x:Key="tip.lyricbox.prev">Shift+Tab: Artağı nota</system:String>
+  <system:String x:Key="tip.notes.basics">Tañdau qūralı
+    Qorap Tandau: Notalardı tañdau
+    Ctrl + Qorap Tandau: Birneşe nota tañdau
+    ↑/↓: Tañdalğan notalardı auıstıru
+    Ctrl + ↑/↓: Tañdalğan notalardı oktava boyınşa auıstıru
+Qalam qūralı
+    Sol jaq tüymeni basu: Notalardı qosu
+    Oñ jaq tüymeni basu: Notanı joyu
+    Oñ jaq tüymeni basu + Süyreu: Qaytalanatın notalardı joyu
+Jalpı
+    T: Anıqtamanı körsetu
+    Notalardı süyretu: Notalardı jıldıtu
+    Notanıñ soñın süyretu: Notanıñ ūzındığın özgertu
+    Alt + Notanıñ soñın süyretu: Körşi notalar arasındağı şekaranı özgertu
+    Keñistik: Oynatudı bastau</system:String>
+  <system:String x:Key="tip.notes.zoomx">◀ Solğa jäne oñğa masştabtau üşin osını aynaldarıñız ▶</system:String>
+  <system:String x:Key="tip.notes.zoomy"> Joğarı jäne tömen masştabtau üşin osını aynaldırıñız ▶</system:String>
+
+  <system:String x:Key="tracks.duplicate">Joldı Duplicate'tau</system:String>
+  <system:String x:Key="tracks.duplicatesettings">Joldı Duplicate'tau parametrları</system:String>
+  <system:String x:Key="tracks.installsinger">Änşini Ornatu</system:String>
+  <system:String x:Key="tracks.more">Köbirek körsetu</system:String>
+  <system:String x:Key="tracks.movedown">Astına</system:String>
+  <system:String x:Key="tracks.moveup">Üstine</system:String>
+  <system:String x:Key="tracks.mute">Dıbıssız</system:String>
+  <system:String x:Key="tracks.mute.allothers">Osı joldan basqasınıñ dıbısın alu</system:String>
+  <system:String x:Key="tracks.mute.only"> Tek osı joldıñ dıbısın alu</system:String>
+  <system:String x:Key="tracks.mute.unmuteall">Barlıq joldardıñ dıbısın qosu</system:String>
+  <system:String x:Key="tracks.opensingers">Änşiler bumasın aşu</system:String>
+  <system:String x:Key="tracks.openaddsingers">Änşiler bumasın aşu (qosımşa)</system:String>
+  <system:String x:Key="tracks.remove">Joyu</system:String>
+  <system:String x:Key="tracks.rename">Joldıñ atın özgertu</system:String>
+  <system:String x:Key="tracks.selectrenderer">Render'di Tandau</system:String>
+  <system:String x:Key="tracks.selectsinger">Änşini Tandau</system:String>
+  <system:String x:Key="tracks.solo">Solo</system:String>
+  <system:String x:Key="tracks.solo.add">Qosımşa Solo (basqa joldardıñ solo'sınan bas tartpaydı)</system:String>
+  <system:String x:Key="tracks.solo.only">Jalğız Solo (basqa joldardıñ solo'sınan bas tartadı)</system:String>
+  <system:String x:Key="tracks.solo.unsoloall">Barlıq joldardan solo'nı alıp tastau</system:String>
+  <system:String x:Key="tracks.trackcolor">Joldıñ tüsin özgertu</system:String>
+  <system:String x:Key="tracks.tracksettings">Jol Baptauları</system:String>
+
+  <FontFamily x:Key="ui.fontfamily">Segoe UI,San Francisco,Helvetica Neue</FontFamily>
+
+  <system:String x:Key="updater.caption">Jañartulardı Tekseru</system:String>
+  <system:String x:Key="updater.description">Aşıq ändetu synthes platform'ası</system:String>
+  <system:String x:Key="updater.github">GitHub</system:String>
+  <system:String x:Key="updater.status.available">V{0} nūsqası qoljetimdi!</system:String>
+  <system:String x:Key="updater.status.checking">Jañartulardı tekseru...</system:String>
+  <system:String x:Key="updater.status.notavailable">Soñğı nūsqanı paydalanuda</system:String>
+  <system:String x:Key="updater.status.unknown">Jañartulardı tekseru mümkin bolmadı</system:String>
+  <system:String x:Key="updater.update">Jañartu</system:String>
+
+  <system:String x:Key="warning">Eskertu</system:String>
+  <system:String x:Key="warning.asciipath">OpenUtau'dıñ negizgi aymağı ("{0}") ASCII'ge tiesili emes tañbalardı qoldanuda. Sondıqtan .exe Resampler'ler jūmıs istemeui mümkin.</system:String>
+  <system:String x:Key="warning.renderer">Būl render'de eşqanday parametrler joq</system:String>
+</ResourceDictionary>
