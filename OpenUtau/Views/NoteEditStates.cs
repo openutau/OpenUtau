@@ -469,6 +469,15 @@ namespace OpenUtau.App.Views {
             if (note.duration <= snapUnit) {
                 return;
             }
+            // Nothing to split when no split point is valid (e.g. snapping is on and the
+            // note is shorter than two snap units): Update() would build an invalid range.
+            int minNoteTicks = notesVm.IsSnapOn ? snapUnit : 15;
+            int maxLeftNoteTicks = notesVm.IsSnapOn && snapUnit > 0
+                ? (note.duration - 1) / snapUnit * snapUnit
+                : note.duration - 15;
+            if (maxLeftNoteTicks < minNoteTicks) {
+                return;
+            }
             newNote = notesVm.MaybeAddNote(point, false);
             if (newNote == null) {
                 return;
@@ -502,6 +511,11 @@ namespace OpenUtau.App.Views {
                 ? (oldDur - 1) / snapUnit * snapUnit
                 : oldDur - 15;
             int maxDelta = maxNoteTicks - note.duration;
+            // maxNegDelta is rounded down to the grid, so the bounds can cross; fall back to
+            // maxNoteTicks, the only valid split point, instead of letting Math.Clamp throw.
+            if (maxDelta < -maxNegDelta) {
+                maxNegDelta = -maxDelta;
+            }
 
             deltaDuration = Math.Clamp(deltaDuration, -maxNegDelta, maxDelta);
 
