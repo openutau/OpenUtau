@@ -400,24 +400,10 @@ namespace OpenUtau.Plugin.Builtin {
             }
             return phonemes;
         }
-        protected override string ValidateAlias(string alias, int tone = 0) {
-            if (HasOto(alias, tone)) return alias;
-            
-            string baseResolved = base.ValidateAlias(alias, tone);
-            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
-                if (HasOto(baseResolved, tone)) {
-                    return baseResolved;
-                }
-                alias = baseResolved;
-            }
-            //foreach (var consonant in new[] { "w" }) {
-            //    alias = alias.Replace("w", "u");
-            //}
-            //foreach (var consonant in new[] { "y" }) {
-            //    alias = alias.Replace("y", "i");
-            // }
+        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+            string candidate = alias;
 
-            var rules = new Dictionary<string, string> {
+            var rules = new Dictionary<string, string>(StringComparer.Ordinal) {
                 { "I", "y" }, { "U", "w" }, 
                 { "BB", "B" }, { "DD", "D" },
                 { "ff", "f" }, 
@@ -433,15 +419,29 @@ namespace OpenUtau.Plugin.Builtin {
                 { "x", "h" }
             };
 
-            foreach (var rule in rules.OrderByDescending(rule => rule.Key.Length)) {
-                alias = alias.Replace(rule.Key, rule.Value);
-            }
-            alias = alias.Replace("h", "x").Replace("xx", "x");
+            // Apply dictionary substitutions while honoring YAML suppression
+            foreach (var rule in rules.OrderByDescending(r => r.Key.Length)) {
+                string tokenKey = rule.Key.Trim();
+                if (suppressedTokens != null && suppressedTokens.Contains(tokenKey)) continue;
 
-            foreach (var consonant in new[] { "jj" }) {
-                alias = alias.Replace("jj", "L");
+                candidate = candidate.Replace(rule.Key, rule.Value, StringComparison.Ordinal);
             }
-            return base.ValidateAlias(alias);
+
+            // Secondary adjustments
+            if (suppressedTokens == null || !suppressedTokens.Contains("h")) {
+                candidate = candidate.Replace("h", "x", StringComparison.Ordinal);
+            }
+            candidate = candidate.Replace("xx", "x", StringComparison.Ordinal);
+
+            if (suppressedTokens == null || !suppressedTokens.Contains("jj")) {
+                candidate = candidate.Replace("jj", "L", StringComparison.Ordinal);
+            }
+
+            if (!string.Equals(candidate, alias, StringComparison.Ordinal) && HasOto(candidate, tone)) {
+                return candidate;
+            }
+
+            return null;
         }
 
         protected override bool NoGap => true;
