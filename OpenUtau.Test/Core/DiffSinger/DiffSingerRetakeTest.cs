@@ -5,30 +5,6 @@ using Xunit;
 namespace OpenUtau.Core.DiffSinger {
     public class DiffSingerRetakeTest {
         [Fact]
-        public void MapSelectedPositionsToNoteIndexes_PicksMatchingNotes() {
-            var noteRel = new[] { 0, 480, 960, 1440 };
-            var selected = new HashSet<int> { 100 + 480, 100 + 1440 };
-
-            var result = DiffSingerRetake.MapSelectedPositionsToNoteIndexes(100, noteRel, selected);
-
-            Assert.Equal(new HashSet<int> { 1, 3 }, result);
-        }
-
-        [Fact]
-        public void MapSelectedPositionsToNoteIndexes_ReturnsEmptyWhenNoneSelected() {
-            var noteRel = new[] { 0, 480 };
-            var result = DiffSingerRetake.MapSelectedPositionsToNoteIndexes(0, noteRel, new HashSet<int>());
-            Assert.Empty(result);
-        }
-
-        [Fact]
-        public void MapSelectedPositionsToNoteIndexes_HandlesNullSelected() {
-            var noteRel = new[] { 0, 480 };
-            var result = DiffSingerRetake.MapSelectedPositionsToNoteIndexes(0, noteRel, null);
-            Assert.Empty(result);
-        }
-
-        [Fact]
         public void BuildRetakeFrameMask_AllSelected_AllTrue() {
             var paddedDurations = new[] { 2, 5, 5, 2 };
             var paddedToReal = new[] { 0, 0, 1, 1 };

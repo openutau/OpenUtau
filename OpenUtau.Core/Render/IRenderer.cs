@@ -92,6 +92,23 @@ namespace OpenUtau.Core.Render {
     }
 
     /// <summary>
+    /// How expensive pitch generation is when it runs automatically after edits (live pitch).
+    /// </summary>
+    public enum LivePitchCost {
+        /// <summary>Live pitch is not available for this renderer.</summary>
+        Unsupported,
+        /// <summary>Fast enough to regenerate shortly after each edit.</summary>
+        Light,
+        /// <summary>Slow: waits longer after edits and never runs twice at once for the same part.</summary>
+        Heavy,
+    }
+
+    /// <summary>
+    /// Sampling options for pitch generation. Renderers that cannot tune sampling ignore them.
+    /// </summary>
+    public sealed record PitchGenerationOptions(double? Steps = null, bool FastRealtime = false);
+
+    /// <summary>
     /// Interface of phrase-based renderer.
     /// </summary>
     public interface IRenderer {
@@ -99,6 +116,12 @@ namespace OpenUtau.Core.Render {
         bool SupportsRenderPitch => false;
         bool SupportsRealCurve => false;
         bool SupportsPhonemeEnvelope => true;
+        LivePitchCost LivePitchCost { get { return LivePitchCost.Unsupported; } }
+        /// <summary>
+        /// Whether live pitch Fast mode (fewer sampling steps) makes a difference.
+        /// When false, Fast mode runs as Normal for this renderer.
+        /// </summary>
+        bool SupportsFastLivePitch => false;
         bool SupportsExpression(UExpressionDescriptor descriptor);
         RenderResult Layout(RenderPhrase phrase);
 
@@ -133,6 +156,7 @@ namespace OpenUtau.Core.Render {
         Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender = false, RenderPhraseEvents? renderEvents = null);
         RenderPitchResult LoadRenderedPitch(RenderPhrase phrase);
         RenderPitchResult LoadRenderedPitch(RenderPhrase phrase, HashSet<int> selectedNotePositions) { return LoadRenderedPitch(phrase); }
+        RenderPitchResult LoadRenderedPitch(RenderPhrase phrase, HashSet<int> selectedNotePositions, PitchGenerationOptions options) { return LoadRenderedPitch(phrase, selectedNotePositions); }
         List<RenderRealCurveResult> LoadRenderedRealCurves(RenderPhrase phrase) { return new List<RenderRealCurveResult>(0);}
         void ScheduleRealCurveRefresh(UProject project, UVoicePart part, UCommand command) { }
         UExpressionDescriptor[] GetSuggestedExpressions(USinger singer, URenderSettings renderSettings);
