@@ -6,6 +6,7 @@ using System.Text;
 using K4os.Hash.xxHash;
 using NAudio.Wave;
 using OpenUtau.Core;
+using OpenUtau.Core.Format;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using Serilog;
@@ -24,29 +25,30 @@ namespace OpenUtau.Classic {
             return $"{XXH32.DigestOf(Encoding.UTF8.GetBytes(s)):x8}";
         }
 
-        public void CopySourceTemp(string source, string temp) {
+        public void CopySourceTemp(string source, string temp, IResampler resampler) {
             lock (Renderers.GetCacheLock(temp)) {
                 DecodeOrStamp(source, temp);
-                var metaFiles = GetMetaFiles(source, temp);
+                var metaFiles = GetMetaFiles(source, temp, resampler);
                 metaFiles.ForEach(t => CopyOrStamp(t.Item1, t.Item2, false));
             }
         }
 
-        public void CopyBackMetaFiles(string source, string temp) {
+        public void CopyBackMetaFiles(string source, string temp, IResampler resampler) {
             lock (Renderers.GetCacheLock(temp)) {
-                var metaFiles = GetMetaFiles(source, temp);
+                var metaFiles = GetMetaFiles(source, temp, resampler);
                 metaFiles.ForEach(t => CopyOrStamp(t.Item2, t.Item1, false));
             }
         }
 
-        private List<Tuple<string, string>> GetMetaFiles(string source, string sourceTemp) {
+        private List<Tuple<string, string>> GetMetaFiles(string source, string sourceTemp, IResampler resampler) {
             string ext = Path.GetExtension(source);
             string noExt = source.Substring(0, source.Length - ext.Length);
             string frqExt = ext.Replace('.', '_') + ".frq";
             string tempExt = Path.GetExtension(sourceTemp);
+            var exeResampler = resampler as ExeResampler;
             string tempNoExt = sourceTemp.Substring(0, sourceTemp.Length - ext.Length);
             string tempFrqExt = tempExt.Replace('.', '_') + ".frq";
-            return new List<Tuple<string, string>>() {
+            var ResamplerFiles = new List<Tuple<string, string>>() {
                 Tuple.Create(noExt + frqExt, tempNoExt + tempFrqExt),
                 Tuple.Create(source + ".llsm", sourceTemp + ".llsm"),
                 Tuple.Create(source + ".uspec", sourceTemp + ".uspec"),
@@ -62,6 +64,13 @@ namespace OpenUtau.Classic {
                 Tuple.Create(noExt + ".hifi.npz", tempNoExt + ".hifi.npz"),
                 //Tuple.Create(noExt + ".lessaudio", tempNoExt + ".lessaudio"),
             };
+            if (exeResampler.Manifest != null && exeResampler.Manifest.files != null) {
+                var files = exeResampler.Manifest.files;
+                for (int i = 0; i < files.Length; i++) {
+                    ResamplerFiles.Add(Tuple.Create(noExt + $"{files[i]}", tempNoExt + $"{files[i]}"));
+                }
+            }
+            return ResamplerFiles;
         }
 
         private void CopyOrStamp(string source, string dest, bool required) {
