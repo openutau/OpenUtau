@@ -64,6 +64,11 @@
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.4" />
   </ItemGroup>
   <ItemGroup>
+    <!-- TIFA aligner language tables (syllable/mora -> phone) and the
+         per-language phone inventory, taken from tifa.cpp releases. -->
+    <EmbeddedResource Include="Analysis\Tifa\Resources\*.txt" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Update="Analysis\Crepe\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

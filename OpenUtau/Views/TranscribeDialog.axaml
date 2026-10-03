@@ -46,9 +46,15 @@
                        IsChecked="{Binding UseSome}"
                        IsEnabled="{Binding SomeAvailable}"/>
         </Panel>
+        <Panel ToolTip.Tip="{Binding TifaNotFoundTip}">
+          <RadioButton Content="TIFA"
+                       IsChecked="{Binding UseTifa}"
+                       IsEnabled="{Binding TifaAvailable}"/>
+        </Panel>
       </StackPanel>
 
-      <Panel ToolTip.Tip="{Binding RmvpeNotFoundTip}">
+      <Panel ToolTip.Tip="{Binding RmvpeNotFoundTip}"
+             IsVisible="{Binding RmvpeVisible}">
         <Grid ColumnDefinitions="Auto,Auto"
               Background="Transparent"
               PointerPressed="OnRmvpeRowPressed">
@@ -162,6 +168,34 @@
                     TickPlacement="BottomRight"/>
           </Grid>
 
+        </StackPanel>
+      </Border>
+
+      <!-- TIFA options panel: align the phoneme timing of an existing track -->
+      <Border IsVisible="{Binding TifaOptionsVisible}"
+              BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseHighBrush}"
+              CornerRadius="4" Padding="8">
+        <StackPanel Spacing="6">
+          <TextBlock Text="{DynamicResource dialogs.transcribe.tifa.options}"
+                     FontWeight="SemiBold"/>
+
+          <Grid ColumnDefinitions="160,*">
+            <Label Content="{DynamicResource dialogs.transcribe.tifa.track}"/>
+            <ComboBox Grid.Column="1" HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding TifaTrackOptions}"
+                      SelectedIndex="{Binding TifaTargetTrackIndex}"/>
+          </Grid>
+
+          <Grid ColumnDefinitions="160,*">
+            <Label Content="{DynamicResource dialogs.transcribe.tifa.language}"/>
+            <ComboBox Grid.Column="1" HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding TifaLanguageOptions}"
+                      SelectedIndex="{Binding TifaLanguageIndex}"/>
+          </Grid>
+
+          <TextBlock Text="{DynamicResource dialogs.transcribe.tifa.hint}"
+                     TextWrapping="Wrap"
+                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
         </StackPanel>
       </Border>
 
