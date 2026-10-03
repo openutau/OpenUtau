@@ -213,6 +213,10 @@
             <TextBlock Text="{DynamicResource prefs.advanced.lyricshelper.brackets}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding LyricsHelperBrackets}"/>
           </Grid>
+          <Grid>
+              <TextBlock Text="{DynamicResource prefs.rendering.statusintrackbackground}" HorizontalAlignment="Left"/>
+              <ToggleSwitch IsChecked="{Binding RenderStatusInTrackBar}"/>
+          </Grid>
         </StackPanel>
 
         <!-- Rendering -->

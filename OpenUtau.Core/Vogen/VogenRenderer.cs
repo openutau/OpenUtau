@@ -53,7 +53,7 @@ namespace OpenUtau.Core.Vogen {
             };
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender = false, RenderPhraseEvents? renderEvents = null) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress globalProgress, Progress partProgress, int trackNo, CancellationTokenSource cancellation, bool isPreRender = false, RenderPhraseEvents? renderEvents = null) {
             var task = Task.Run(() => {
                 lock (lockObj) {
                     if (cancellation.IsCancellationRequested) {
@@ -63,7 +63,8 @@ namespace OpenUtau.Core.Vogen {
                     var wavPath = Path.Join(PathManager.Inst.CachePath, $"vog-{phrase.hash:x16}.wav");
                     phrase.AddCacheFile(wavPath);
                     string progressInfo = $"Track {trackNo + 1}: {this} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
-                    progress.Complete(0, progressInfo);
+                    globalProgress.Complete(0, progressInfo);
+                    partProgress.Complete(0, progressInfo);
                     if (File.Exists(wavPath)) {
                         try {
                             using (var waveStream = Wave.OpenFile(wavPath)) {
@@ -80,7 +81,8 @@ namespace OpenUtau.Core.Vogen {
                     if (result.samples != null) {
                         Renderers.ApplyDynamics(phrase, result);
                     }
-                    progress.Complete(phrase.phones.Length, progressInfo);
+                    globalProgress.Complete(phrase.phones.Length, progressInfo);
+                    partProgress.Complete(phrase.phones.Length, progressInfo);
                     return result;
                 }
             });

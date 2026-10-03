@@ -99,7 +99,7 @@ namespace OpenUtau.Core.DiffSinger {
                 && IRenderer.GapOverlapsPadding(this, track, prev, next);
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress globalProgress, Progress partProgress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var task = Task.Run(() => {
                 lock (lockObj) {
                     if (cancellation.IsCancellationRequested) {
@@ -142,7 +142,8 @@ namespace OpenUtau.Core.DiffSinger {
                     if (result.samples != null) {
                         Renderers.ApplyDynamics(phrase, result);
                     }
-                    progress.Complete(phrase.phones.Length, progressInfo);
+                    globalProgress.Complete(phrase.phones.Length, progressInfo);
+                    partProgress.Complete(phrase.phones.Length, progressInfo);
                     return result;
                 }
             });

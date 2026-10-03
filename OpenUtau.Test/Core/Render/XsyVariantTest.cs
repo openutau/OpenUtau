@@ -37,7 +37,7 @@ namespace OpenUtau.Core {
             public bool SupportsRenderPitch => false;
             public bool SupportsExpression(UExpressionDescriptor descriptor) => false;
             public RenderResult Layout(RenderPhrase phrase) => new RenderResult();
-            public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo,
+            public Task<RenderResult> Render(RenderPhrase phrase, Progress globalProgress, Progress partProgress, int trackNo,
                     CancellationTokenSource cancellation, bool isPreRender = false, RenderPhraseEvents? renderEvents = null) {
                 throw new NotImplementedException();
             }

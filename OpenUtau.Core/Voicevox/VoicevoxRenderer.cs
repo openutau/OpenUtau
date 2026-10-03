@@ -63,14 +63,15 @@ namespace OpenUtau.Core.Voicevox {
             };
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress globalProgress, Progress partProgress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var task = Task.Run(() => {
                 lock (lockObj) {
                     if (cancellation.IsCancellationRequested) {
                         return new RenderResult();
                     }
                     string progressInfo = $"Track {trackNo + 1}: {this} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
-                    progress.Complete(0, progressInfo);
+                    globalProgress.Complete(0, progressInfo);
+                    partProgress.Complete(0, progressInfo);
                     ulong toneHash = HashPhraseGroups(phrase);
                     var wavPath = Path.Join(PathManager.Inst.CachePath, $"vv-{phrase.hash:x16}_{toneHash:x16}.wav");
                     phrase.AddCacheFile(wavPath);
@@ -154,7 +155,8 @@ namespace OpenUtau.Core.Voicevox {
                             }
                         }
                     }
-                    progress.Complete(phrase.phones.Length, progressInfo);
+                    globalProgress.Complete(phrase.phones.Length, progressInfo);
+                    partProgress.Complete(phrase.phones.Length, progressInfo);
                     if (File.Exists(wavPath)) {
                         using (var waveStream = new WaveFileReader(wavPath)) {
 

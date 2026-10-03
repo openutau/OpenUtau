@@ -43,7 +43,7 @@ namespace OpenUtau.Core.Pipeline {
                 positionMs = phrase.positionMs,
                 estimatedLengthMs = phrase.durationMs + phrase.leadingMs,
             };
-            public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo,
+            public Task<RenderResult> Render(RenderPhrase phrase, Progress globalProgress, Progress partProgress, int trackNo,
                     System.Threading.CancellationTokenSource cancellation, bool isPreRender = false,
                     RenderPhraseEvents? renderEvents = null) => throw new NotImplementedException();
             public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase) => null;

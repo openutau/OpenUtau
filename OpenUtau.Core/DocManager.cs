@@ -546,7 +546,8 @@ namespace OpenUtau.Core {
 
         private void Publish(UCommand cmd, bool isUndo = false) {
             lock (lockObj) {
-                foreach (var sub in subscribers) {
+                for (var index = 0; index < subscribers.Count; index++) {
+                    var sub = subscribers[index];
                     sub.OnNext(cmd, isUndo);
                 }
             }

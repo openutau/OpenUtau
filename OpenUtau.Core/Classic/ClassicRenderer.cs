@@ -54,15 +54,15 @@ namespace OpenUtau.Classic {
             };
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress globalProgress, Progress partProgress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             if (phrase.wavtool == SharpWavtool.nameConvergence || phrase.wavtool == SharpWavtool.nameSimple) {
-                return RenderInternal(phrase, progress, trackNo, cancellation, isPreRender);
+                return RenderInternal(phrase, globalProgress, partProgress, trackNo, cancellation, isPreRender);
             } else {
-                return RenderExternal(phrase, progress, trackNo, cancellation, isPreRender);
+                return RenderExternal(phrase, globalProgress, partProgress, trackNo, cancellation, isPreRender);
             }
         }
 
-        public Task<RenderResult> RenderInternal(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
+        public Task<RenderResult> RenderInternal(RenderPhrase phrase, Progress globalProgress, Progress partProgress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
             var resamplerItems = new List<ResamplerItem>();
             foreach (var phone in phrase.phones) {
                 resamplerItems.Add(new ResamplerItem(phrase, phone));
@@ -88,7 +88,8 @@ namespace OpenUtau.Classic {
                             VoicebankFiles.Inst.CopyBackMetaFiles(item.inputFile, item.inputTemp);
                         }
                     }
-                    progress.Complete(1, $"Track {trackNo + 1}: {item.resampler} \"{item.phone.phoneme}\"");
+                    globalProgress.Complete(1, $"Track {trackNo + 1}: {item.resampler} \"{item.phone.phoneme}\"");
+                    partProgress.Complete(1, $"Track {trackNo + 1}: {item.resampler} \"{item.phone.phoneme}\"");
                 });
                 var result = Layout(phrase);
                 var wavtool = new SharpWavtool(true);
@@ -101,14 +102,15 @@ namespace OpenUtau.Classic {
             return task;
         }
 
-        public Task<RenderResult> RenderExternal(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
+        public Task<RenderResult> RenderExternal(RenderPhrase phrase, Progress globalProgress, Progress partProgress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
             var resamplerItems = new List<ResamplerItem>();
             foreach (var phone in phrase.phones) {
                 resamplerItems.Add(new ResamplerItem(phrase, phone));
             }
             var task = Task.Run(() => {
                 string progressInfo = $"Track {trackNo + 1} : {phrase.wavtool} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
-                progress.Complete(0, progressInfo);
+                globalProgress.Complete(0, progressInfo);
+                partProgress.Complete(0, progressInfo);
                 var wavPath = Path.Join(PathManager.Inst.CachePath, $"cat-{phrase.hash:x16}.wav");
                 phrase.AddCacheFile(wavPath);
                 var result = Layout(phrase);
@@ -131,7 +133,8 @@ namespace OpenUtau.Classic {
                         VoicebankFiles.Inst.CopyBackMetaFiles(item.inputFile, item.inputTemp);
                     }
                 }
-                progress.Complete(phrase.phones.Length, progressInfo);
+                globalProgress.Complete(phrase.phones.Length, progressInfo);
+                partProgress.Complete(phrase.phones.Length, progressInfo);
                 if (result.samples != null) {
                     Renderers.ApplyDynamics(phrase, result);
                 }

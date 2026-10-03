@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
@@ -10,13 +11,15 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using NWaves.Signals;
+using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 using ReactiveUI;
 using ReactiveUI.Primitives;
 using Serilog;
 
 namespace OpenUtau.App.Controls {
-    class PartControl : Control, IDisposable, IProgress<int> {
+    class PartControl : Control, IDisposable, IProgress<int>, ICmdSubscriber {
         public static readonly DirectProperty<PartControl, double> TickWidthProperty =
             AvaloniaProperty.RegisterDirect<PartControl, double>(
                 nameof(TickWidth),
@@ -131,6 +134,7 @@ namespace OpenUtau.App.Controls {
         private double pianoRollViewTickOffset;
         private double pianoRollViewViewportTicks;
         private Geometry pointGeometry;
+        private double renderProgress;
 
         public readonly UPart part;
         private readonly PartsCanvas partsCanvas;
@@ -143,6 +147,8 @@ namespace OpenUtau.App.Controls {
         public PartControl(UPart part, PartsCanvas canvas) {
             this.part = part;
             partsCanvas = canvas;
+            DocManager.Inst.AddSubscriber(this);
+            
             bitmapData = new int[0];
             pointGeometry = new EllipseGeometry(new Rect(0, 0, 6, 6));
 
@@ -170,6 +176,8 @@ namespace OpenUtau.App.Controls {
                     }
                 }, CancellationToken.None, TaskContinuationOptions.None, scheduler);
             }
+            
+            renderProgress = 1f;
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
@@ -206,16 +214,21 @@ namespace OpenUtau.App.Controls {
                 FadeOut = wavePart.fadeout;
             }
         }
-
+        
         public override void Render(DrawingContext context) {
             var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
+            var renderingBackgroundBrush = ThemeManager.AccentBrush1Semi;
+            
             // Background
-            context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
-
+            double split = Single.Lerp(1, (float)(Width - 1), (float) renderProgress);
+            
+            context.DrawRectangle(renderingBackgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+            context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, split - 1, Height - 1), 4, 4);
+            
             // Text
             var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
             using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
-                context.DrawRectangle(backgroundBrush, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
+                context.DrawRectangle(new SolidColorBrush(new Color(0, 0, 0, 0), 0), null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
                 textLayout.Draw(context, new Point());
             }
 
@@ -374,12 +387,26 @@ namespace OpenUtau.App.Controls {
         }
 
         public void Report(int value) {
+            renderProgress = value * 0.0001f;
+            InvalidateVisual();
         }
 
         public void Dispose() {
             bitmap?.Dispose();
             unbinds.ForEach(u => u.Dispose());
             unbinds.Clear();
+        }
+
+
+        public void OnNext(UCommand cmd, bool isUndo) {
+            if (!Preferences.Default.RenderStatusInTrackBar) return;
+                
+            if (cmd is ProgressBarNotification progressBarNotification) {
+                if (part.Id.Equals(progressBarNotification.PartId)) {
+                    Log.Information("Part {partname} render at {progress}%", part.DisplayName, (int) (progressBarNotification.Progress));
+                    Report((int)(progressBarNotification.Progress * 100));
+                }
+            }
         }
     }
 }

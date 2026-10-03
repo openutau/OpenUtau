@@ -74,7 +74,7 @@ namespace OpenUtau.Classic {
             };
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress globalProgress, Progress partProgress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var resamplerItems = new List<ResamplerItem>();
             foreach (var phone in phrase.phones) {
                 resamplerItems.Add(new ResamplerItem(phrase, phone));
@@ -84,7 +84,8 @@ namespace OpenUtau.Classic {
                 var wavPath = Path.Join(PathManager.Inst.CachePath, $"wdl-v{version}-{phrase.hash:x16}.wav");
                 phrase.AddCacheFile(wavPath);
                 string progressInfo = $"Track {trackNo + 1}: {this} {string.Join(" ", phrase.phones.Select(p => p.phoneme))}";
-                progress.Complete(0, progressInfo);
+                globalProgress.Complete(0, progressInfo);
+                partProgress.Complete(0, progressInfo);
                 var cacheLock = Renderers.GetCacheLock(wavPath);
                 lock (cacheLock) {
                     if (File.Exists(wavPath)) {
@@ -204,7 +205,8 @@ namespace OpenUtau.Classic {
                         }
                     }
                 }
-                progress.Complete(phrase.phones.Length, progressInfo);
+                globalProgress.Complete(phrase.phones.Length, progressInfo);
+                partProgress.Complete(phrase.phones.Length, progressInfo);
                 if (result.samples != null) {
                     Renderers.ApplyDynamics(phrase, result);
                 }
