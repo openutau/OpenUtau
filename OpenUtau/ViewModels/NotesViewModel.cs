@@ -56,6 +56,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool ShowTips { get; set; }
+        [Reactive] public partial bool ShowOperationHint { get; set; }
         [Reactive] public partial bool PlayTone { get; set; }
         [Reactive] public partial bool ShowVibrato { get; set; }
         [Reactive] public partial bool ShowPitch { get; set; }
@@ -271,6 +272,12 @@ namespace OpenUtau.App.ViewModels {
                     DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
                     DocManager.Inst.ExecuteCmd(new PreRenderNotification());
                 });
+            ShowOperationHint = Preferences.Default.ShowOperationHint;
+            this.WhenAnyValue(x => x.ShowOperationHint)
+            .Subscribe(showOperationHint => {
+                Preferences.Default.ShowOperationHint = showOperationHint;
+                Preferences.Save();
+            });
             ShowVibrato = Preferences.Default.ShowVibrato;
             this.WhenAnyValue(x => x.ShowVibrato)
             .Subscribe(showVibrato => {
