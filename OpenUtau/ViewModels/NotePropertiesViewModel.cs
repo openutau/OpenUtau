@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia.Media;
+using OpenUtau.Api;
 using OpenUtau.Core;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
+using ReactiveUI.Primitives;
 using ReactiveUI.SourceGenerators;
 using SharpCompress;
-using OpenUtau.Api;
-using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.ViewModels {
     public partial class NotePropertiesViewModel : ViewModelBase, ICmdSubscriber {
@@ -145,14 +145,17 @@ namespace OpenUtau.App.ViewModels {
                     PanelControlPressed = false;
                     DocManager.Inst.EndUndoGroup();
                 }
-                NoteLoading = true;
 
+                NoteLoading = true;
                 selectedNotes.Clear();
                 selectedNotes.UnionWith(e.selectedNotes);
                 selectedNotes.UnionWith(e.tempSelectedNotes);
                 OnSelectNotes();
-
                 NoteLoading = false;
+
+                if (Preferences.Default.AutoMovePlayhead && selectedNotes.Count > 0 && Part != null) {
+                    DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(Part.position + selectedNotes.First().position));
+                }
             });
 
             DocManager.Inst.AddSubscriber(this);
