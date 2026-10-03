@@ -133,6 +133,7 @@
                         TickOrigin="{Binding NotesViewModel.TickOrigin}"
                         TickOffset="{Binding NotesViewModel.TickOffset}"
                         SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"
+                        Swing="{Binding NotesViewModel.Swing, Mode=OneWay}"
                         SnapTicks="{Binding NotesViewModel.SnapTicks}"
                         ShowBar="True"/>
       <!-- Notes backgrounds end -->
@@ -150,6 +151,7 @@
                         TickOrigin="{Binding NotesViewModel.TickOrigin}"
                         TickOffset="{Binding NotesViewModel.TickOffset}"
                         SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"
+                        Swing="{Binding NotesViewModel.Swing, Mode=OneWay}"
                         ShowBar="False"/>
       <!-- Expression backgrounds end -->
       <Canvas Name="PortraitCanvas" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" IsHitTestVisible="False">
@@ -645,7 +647,8 @@
                         TickWidth="{Binding NotesViewModel.TickWidth}"
                         TickOrigin="{Binding NotesViewModel.TickOrigin}"
                         TickOffset="{Binding NotesViewModel.TickOffset}"
-                        SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"/>
+                        SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"
+                        Swing="{Binding NotesViewModel.Swing, Mode=OneWay}"/>
       <c:ExpressionCanvas Grid.Row="5" Grid.Column="1" Opacity="0.2"
                           IsVisible="{Binding NotesViewModel.ShowExpressions}"
                           TickWidth="{Binding NotesViewModel.TickWidth}"
