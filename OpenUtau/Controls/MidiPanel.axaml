@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:OpenUtau.App.ViewModels"
+             x:Class="OpenUtau.App.Controls.MidiPanel"
+             x:DataType="vm:PianoRollViewModel"
+             Focusable="False">
+  <Grid RowDefinitions="Auto,Auto" Width="200" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4">
+      <ToggleButton Content="●" IsChecked="{Binding MidiInViewModel.RecReady}" ToolTip.Tip="{DynamicResource pianoroll.midi.recready}"
+                    Width="20" Height="20" Foreground="DarkRed" Classes="toolbar" Margin="4"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+        <ToggleButton.Styles>
+          <Style Selector="ToggleButton:checked /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="DarkRed"/>
+          </Style>
+          <Style Selector="ToggleButton:pointerover /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="DarkRed"/>
+          </Style>
+        </ToggleButton.Styles>
+      </ToggleButton>
+      <ComboBox ItemsSource="{Binding MidiInViewModel.DeviceList}" SelectedIndex="{Binding MidiInViewModel.MidiDeviceNum}"
+                Width="156" Margin="4"/>
+    </StackPanel>
+    
+    <StackPanel Grid.Row="1" Margin="4">
+      <TextBlock Text="{DynamicResource pianoroll.midi.sensitivity}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4,4,4,0"/>
+      <StackPanel Margin="4" Orientation="Horizontal">
+        <Slider Classes="fader" Value="{Binding MidiInViewModel.ExpandIntervalMs}" Minimum="100" Maximum="500"
+                TickFrequency="50" IsSnapToTickEnabled="true" Width="130" Margin="0,0,8,0"/>
+        <TextBlock Text="{Binding MidiInViewModel.ExpandIntervalMs}" Width="26" VerticalAlignment="Center"/>
+        <TextBlock Text="ms" VerticalAlignment="Center"/>
+      </StackPanel>
+    </StackPanel>
+  </Grid>
+</UserControl>

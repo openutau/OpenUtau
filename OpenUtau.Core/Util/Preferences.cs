@@ -170,6 +170,8 @@ namespace OpenUtau.Core.Util {
             public string PlaybackDevice = string.Empty;
             public int PlaybackDeviceNumber;
             public int? PlaybackDeviceIndex;
+            public string MidiDevice = string.Empty;
+            public int MidiStepInterval = 300;
             public bool ShowPrefs = true;
             public bool ShowTips = true;
             public string ThemeName = "Light";
