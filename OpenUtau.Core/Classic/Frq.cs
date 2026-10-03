@@ -9,6 +9,11 @@ using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Classic {
     public class OtoFrq {
+        /// <summary>
+        /// Fraction of frames dropped from each end when computing the center tone.
+        /// </summary>
+        private const double CenterTrimRatio = 0.30;
+
         public double[] toneDiffFix = new double[0];
         public double[] toneDiffStretch = new double[0];
         public int hopSize;
@@ -30,12 +35,51 @@ namespace OpenUtau.Classic {
                     ConvertMsToFrqLength(frq, oto.Offset - oto.Cutoff)
                     : frq.f0.Length - ConvertMsToFrqLength(frq, oto.Cutoff);
                 var completionF0 = Completion(frq.f0);
-                var averageTone = MusicMath.FreqToTone(frq.averageF0);
+                // The reference tone is taken from the whole oto region [offset, cutoff), independently
+                // of the note length and of the part actually used by the renderer. Raw f0 is used
+                // instead of completionF0, because Completion() replaces unvoiced frames with
+                // interpolated pitches, which would then be counted as sung pitches.
+                var averageTone = CenterTone(frq.f0, frq.averageF0, offset, cutoff);
                 toneDiffFix = completionF0.Skip(offset).Take(consonant - offset).Select(f => MusicMath.FreqToTone(f) - averageTone).ToArray();
                 toneDiffStretch = completionF0.Skip(consonant).Take(cutoff - consonant).Select(f => MusicMath.FreqToTone(f) - averageTone).ToArray();
 
                 loaded = true;
             }
+        }
+
+        /// <summary>
+        /// Center tone of the oto region [start, end), used as the reference of the pitch deviations.
+        /// The lowest and the highest <see cref="CenterTrimRatio"/> of the voiced frames are dropped
+        /// and the rest is averaged, so that a few outliers (attack glide, noise spike) cannot detune
+        /// the whole note. Averaging is done on tones instead of on frequencies, which is the geometric
+        /// mean and matches how pitch is perceived. Unvoiced frames (f0 &lt;= 60) are ignored. If the
+        /// region holds no voiced frame the whole file is used, and lastly the average f0 stored in
+        /// the frq file.
+        /// </summary>
+        /// <param name="frqs">Raw f0 track, not the output of Completion().</param>
+        /// <param name="fallbackF0">Average f0 stored in the frq file.</param>
+        /// <param name="start">Index of the first frame of the oto region.</param>
+        /// <param name="end">Index just past the last frame of the oto region.</param>
+        private static double CenterTone(double[] frqs, double fallbackF0, int start, int end) {
+            start = Math.Clamp(start, 0, frqs.Length);
+            end = Math.Clamp(end, start, frqs.Length);
+            var tones = VoicedTones(frqs.Skip(start).Take(end - start));
+            if (tones.Count == 0) {
+                tones = VoicedTones(frqs);
+            }
+            if (tones.Count == 0) {
+                return fallbackF0 > 60 ? MusicMath.FreqToTone(fallbackF0) : 0;
+            }
+            tones.Sort();
+            int trim = Math.Min((int)(tones.Count * CenterTrimRatio), (tones.Count - 1) / 2);
+            return tones.Skip(trim).Take(tones.Count - trim * 2).Average();
+        }
+
+        /// <summary>
+        /// Converts the voiced frames of an f0 track (above 60 Hz) to tones. Unvoiced frames are skipped.
+        /// </summary>
+        private static List<double> VoicedTones(IEnumerable<double> frqs) {
+            return frqs.Where(f => f > 60).Select(f => MusicMath.FreqToTone(f)).ToList();
         }
 
         private void Load(string otoPath, out IFrqFiles? frqFile) {
