@@ -8,6 +8,8 @@ using Serilog;
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Japanese CVVC Phonemizer (legacy)", "JA CVVC", "TUBS",language:"JA")]
     public class JapaneseCVVCPhonemizer : Phonemizer {
+        protected override string[] Solfages => ["ど", "ど", "れ", "れ", "み", "ふぁ", "ふぁ", "そ", "そ", "ら", "ら", "し"];
+
         static readonly string[] plainVowels = new string[] {"あ","い","う","え","お","を","ん","ン"};
         static readonly string[] nonVowels = new string[]{"息","吸","R","-","k","ky","g","gy",
                                                            "s","sh","z","j","t","ch","ty","ts",

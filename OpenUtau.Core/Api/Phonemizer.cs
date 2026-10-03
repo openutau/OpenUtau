@@ -154,6 +154,9 @@ namespace OpenUtau.Api {
         public string Language { get; set; }
         internal Exception? SetUpException { get; set; }
 
+        protected virtual string[] Solfages => DefaultSolfages;
+        private static readonly string[] DefaultSolfages = ["do", "do", "re", "re", "mi", "fa", "fa", "sol", "sol", "la", "la", "si"];
+
         protected double bpm;
         protected TimeAxis timeAxis;
 
@@ -188,6 +191,13 @@ namespace OpenUtau.Api {
         public virtual void SetUp(Note[][] notes, UProject project, UTrack track) {
             this.project = project;
             this.track = track;
+        }
+
+        public string CompleteLyrics(string lyric, int tone, int key) {
+            if (!string.IsNullOrWhiteSpace(lyric)) return lyric;
+            int index = (tone - key) % 12;
+            if (index < 0) index += 12;
+            return Solfages[index];
         }
 
         /// <summary>

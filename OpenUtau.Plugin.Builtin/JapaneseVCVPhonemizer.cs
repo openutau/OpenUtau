@@ -6,6 +6,8 @@ using OpenUtau.Core.Ustx;
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Japanese VCV Phonemizer (legacy)", "JA VCV", language: "JA")]
     public class JapaneseVCVPhonemizer : Phonemizer {
+        protected override string[] Solfages => ["ど", "ど", "れ", "れ", "み", "ふぁ", "ふぁ", "そ", "そ", "ら", "ら", "し"];
+
         /// <summary>
         /// The lookup table to convert a hiragana to its tail vowel.
         /// </summary>

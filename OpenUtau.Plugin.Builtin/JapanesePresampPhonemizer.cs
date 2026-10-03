@@ -12,6 +12,7 @@ using OpenUtau.Core;
 namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Japanese presamp Phonemizer", "JA VCV & CVVC", "Maiko", language: "JA")]
     public class JapanesePresampPhonemizer : Phonemizer {
+        protected override string[] Solfages => ["ど", "ど", "れ", "れ", "み", "ふぁ", "ふぁ", "そ", "そ", "ら", "ら", "し"];
 
         // CV, VCV, CVVCを含むすべての日本語VBをサポートする予定です。Will support all Japanese VBs including CV, VCV, CVVC
         // 基本的な仕様はpresampに準拠します。Basic behavior conforms to presamp
@@ -26,7 +27,6 @@ namespace OpenUtau.Plugin.Builtin {
         private int localPresampGeneration = 0;
         private static PresampWatcher presampWatcher;
         private static string currentlyWatchedPresampDir;
-
 
         // in case voicebank is missing certain symbols
         static readonly string[] substitution = new string[] {
