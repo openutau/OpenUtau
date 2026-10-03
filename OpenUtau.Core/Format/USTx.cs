@@ -10,7 +10,7 @@ using Serilog;
 
 namespace OpenUtau.Core.Format {
     public class Ustx {
-        public static readonly Version kUstxVersion = new Version(0, 10);
+        public static readonly Version kUstxVersion = new Version(0, 11);
 
         public const string DYN = "dyn";
         public const string PITD = "pitd";
@@ -34,8 +34,6 @@ namespace OpenUtau.Core.Format {
         public const string SHFC = "shfc";
         public const string TENC = "tenc";
         public const string VOIC = "voic";
-        public const string CLRY = "clry";
-        public const string XSY = "xsy";
         public const string GRWC = "grwc";
         public const string RPIT = "rpit";
         public const string PITO = "pito";
@@ -65,9 +63,6 @@ namespace OpenUtau.Core.Format {
             project.RegisterExpression(new UExpressionDescriptor("tone shift (curve)", SHFC, -1200, 1200, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("tension (curve)", TENC, -100, 100, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("voicing (curve)", VOIC, 0, 100, 100) { type = UExpressionType.Curve });
-            project.RegisterExpression(new UExpressionDescriptor("voice color y", CLRY, false, new string[0]));
-            project.RegisterExpression(new UExpressionDescriptor("cross synthesis (curve)", XSY, 0, 100, 0) { type = UExpressionType.Curve });
-            project.RegisterExpression(new UExpressionDescriptor("growl (curve)", GRWC, 0, 100, 0) { type = UExpressionType.Curve });
             // Absolute pitches in cents, for expression graphs: the pitch the DiffSinger pitch model rendered, and
             // the user's own pitch override.
             project.RegisterExpression(new UExpressionDescriptor("rendered pitch (masked curve)", RPIT, 2400, 10800, 6000) { type = UExpressionType.MaskedCurve });

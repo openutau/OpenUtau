@@ -10,7 +10,7 @@ namespace OpenUtau.App.ViewModels {
             Params.Add(new PasteParameter("pitch points", ""));
             Params.Add(new PasteParameter("vibrato", ""));
             foreach(var exp in DocManager.Inst.Project.expressions) {
-                if(exp.Value.type is Core.Ustx.UExpressionType.Numerical or Core.Ustx.UExpressionType.Options) {
+                if(exp.Value.type is Core.Ustx.UExpressionType.Numerical or Core.Ustx.UExpressionType.Options or  Core.Ustx.UExpressionType.MorphingCurve) {
                     Params.Add(new PasteParameter(exp.Value.name, exp.Key));
                 }
             }

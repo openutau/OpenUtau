@@ -744,7 +744,7 @@ namespace OpenUtau.App.Views {
             }
             if (descriptor.type == UExpressionType.MaskedCurve) {
                 UpdateCurveExp(pointer, point, masked: true);
-            } else if (descriptor.type != UExpressionType.Curve) {
+            } else if (descriptor.type != UExpressionType.Curve && descriptor.type != UExpressionType.MorphingCurve) {
                 UpdatePhonemeExp(pointer, point);
             } else {
                 UpdateCurveExp(pointer, point);
@@ -909,7 +909,7 @@ namespace OpenUtau.App.Views {
                 lastPoint = point;
                 return;
             }
-            if (descriptor.type != UExpressionType.Curve) {
+            if (descriptor.type != UExpressionType.Curve && descriptor.type != UExpressionType.MorphingCurve) {
                 ResetPhonemeExp(pointer, point);
             } else {
                 ResetCurveExp(pointer, point);

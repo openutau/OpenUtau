@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using NAudio.Wave;
@@ -43,8 +42,6 @@ namespace OpenUtau.Classic {
             Ustx.DYN,
             Ustx.PITD,
             Ustx.CLR,
-            Ustx.CLRY,
-            Ustx.XSY,
             Ustx.SHFT,
             Ustx.VEL,
             Ustx.VOL,
@@ -63,7 +60,11 @@ namespace OpenUtau.Classic {
         public bool SupportsRenderPitch => false;
 
         public bool SupportsExpression(UExpressionDescriptor descriptor) {
-            return supportedExp.Contains(descriptor.abbr);
+            return descriptor.isFlag
+                || !string.IsNullOrEmpty(descriptor.flag)
+                || supportedExp.Contains(descriptor.abbr)
+                || descriptor.type == UExpressionType.MorphingCurve
+                || descriptor.abbr.StartsWith("cl", StringComparison.OrdinalIgnoreCase);
         }
 
         public RenderResult Layout(RenderPhrase phrase) {
@@ -93,6 +94,7 @@ namespace OpenUtau.Classic {
                         }
                     }
                 }
+
                 if (result.samples == null) {
                     var phraseSynth = new Worldline.PhraseSynthV2(44100, hopSize, 2048, useHnsep: version == 11);
                     double posOffsetMs = phrase.positionMs - phrase.leadingMs;
@@ -260,7 +262,25 @@ namespace OpenUtau.Classic {
         }
 
         public UExpressionDescriptor[] GetSuggestedExpressions(USinger singer, URenderSettings renderSettings) {
-            return new UExpressionDescriptor[] { };
+            var expressions = new List<UExpressionDescriptor>();
+            if (singer != null && singer.Subbanks != null) {
+                var uniqueColors = singer.Subbanks.Select(s => s.Color).Where(c => !string.IsNullOrEmpty(c)).Distinct().ToList();
+                int colorIndex = 1;
+                foreach (var colorName in uniqueColors) {
+                    expressions.Add(new UExpressionDescriptor {
+                        name = $"voice color {colorIndex:D2} {colorName}",
+                        abbr = $"cl{colorIndex:D2}",
+                        type = UExpressionType.MorphingCurve,
+                        min = 0,
+                        max = 100,
+                        defaultValue = 0,
+                        isFlag = false,
+                        flag = ""
+                    });
+                    colorIndex++;
+                }
+            }
+            return expressions.ToArray();
         }
 
         // The Worldline-R variants render the same expressions, so share Worldline-R's graphs.
@@ -273,4 +293,3 @@ namespace OpenUtau.Classic {
         };
     }
 }
-

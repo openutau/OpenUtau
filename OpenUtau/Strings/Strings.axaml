@@ -221,6 +221,8 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="dialogs.unsupportedfile.caption">Unsupported file format</system:String>
   <system:String x:Key="dialogs.unsupportedfile.message">Unsupported file format: </system:String>
   <system:String x:Key="dialogs.voicecolorremapping">Voice color remapping</system:String>
+  <system:String x:Key="dialogs.voicecolorremapping.legacyxsy.notif">Legacy voice color expressions (xsy / clry) on track "{0}" have been converted to morphing curves (cl01, cl02, ...).</system:String>
+  <system:String x:Key="dialogs.xsyvoicecolorremapping.caption">Legacy voice color expressions (xsy / clry) on track "{0}" have been converted to morphing curves (cl01, cl02, ...).</system:String>
   <system:String x:Key="dialogs.voicecolorremapping.caption">Applies to all notes in this track:</system:String>
   <system:String x:Key="dialogs.voicecolorremapping.error">This singer has no voice color</system:String>
 
@@ -370,6 +372,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="exps.type">Type</system:String>
   <system:String x:Key="exps.type.curve">Curve</system:String>
   <system:String x:Key="exps.type.maskedcurve">Masked Curve</system:String>
+  <system:String x:Key="exps.type.morphingcurve">Morphing Curve</system:String>
   <system:String x:Key="exps.type.numerical">Numerical</system:String>
   <system:String x:Key="exps.type.options">Options</system:String>
 
@@ -843,6 +846,8 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.rendering.threads.numthreads">Maximum Render Threads</system:String>
   <system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>
   <system:String x:Key="prefs.utau">UTAU</system:String>
+  <system:String x:Key="prefs.advanced.autodeletemorphcache">Auto Delete Morph Cache</system:String>
+  <system:String x:Key="prefs.advanced.phasemorphing">Auto Phase-locked Morphing</system:String>
 
   <system:String x:Key="progress.cachecleared">Cache cleared.</system:String>
   <system:String x:Key="progress.clearingcache">Clearing cache...</system:String>

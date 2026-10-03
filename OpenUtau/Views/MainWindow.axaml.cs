@@ -1946,14 +1946,285 @@ namespace OpenUtau.App.Views {
         async void ValidateTracksVoiceColor() {
             DocManager.Inst.StartUndoGroup("command.track.remapvc");
             foreach (var track in DocManager.Inst.Project.tracks) {
+                await RemapLegacyXsyAndClryAsync(track);
                 if (track.ValidateVoiceColor(out var oldColors, out var newColors)) {
                     await VoiceColorRemappingAsync(track, oldColors, newColors);
                 }
                 await RemapImportedVocalModesAsync(track);
             }
+            CleanupLegacyExpressions();
             DocManager.Inst.EndUndoGroup();
         }
 
+        async Task RemapLegacyXsyAndClryAsync(UTrack track) {
+            var project = DocManager.Inst.Project;
+            var voiceParts = project.parts
+                .Where(p => p.trackNo == track.TrackNo && p is UVoicePart)
+                .Cast<UVoicePart>()
+                .ToList();
+
+            // Fast-path exit if this track contains no legacy curves or parameters
+            bool hasLegacyParams = voiceParts.Any(p =>
+                p.curves.Any(c => c.abbr == "xsy") ||
+                p.notes.Any(n => n.phonemeExpressions.Any(e => e.abbr == "clry")));
+
+            if (!hasLegacyParams) {
+                return;
+            }
+
+            // 1. Get the authoritative unique colors exactly as GetSuggestedExpressions does
+            var uniqueColors = new List<string>();
+            if (track.Singer != null) {
+                track.Singer.EnsureLoaded();
+                if (track.Singer.Loaded && track.Singer.Subbanks != null) {
+                    uniqueColors = track.Singer.Subbanks
+                        .Select(s => s.Color)
+                        .Where(c => !string.IsNullOrEmpty(c))
+                        .Distinct()
+                        .ToList();
+                }
+            }
+
+            // 2. Identify the source color list that 'clry' was indexed against
+            string[] sourceOptions = track.VoiceColorNames ?? track.VoiceColorExp?.options ?? Array.Empty<string>();
+            if (sourceOptions.Length == 0 && project.expressions.TryGetValue("clry", out var clryDesc) && clryDesc.options != null) {
+                sourceOptions = clryDesc.options;
+            }
+
+            // 3. Build a lookup: raw clry int -> target curve index (cl01, cl02, etc.)
+            // Resolving by color NAME eliminates off-by-one shifts and missing subbank discrepancies
+            var rawToTargetIndexMap = new Dictionary<int, int>();
+
+            int ResolveTargetIndex(int rawIdx) {
+                if (rawToTargetIndexMap.TryGetValue(rawIdx, out int cached)) {
+                    return cached;
+                }
+
+                int targetIdx = -1;
+
+                // Try resolving by color name through the track's source color options
+                if (rawIdx >= 0 && rawIdx < sourceOptions.Length && !string.IsNullOrEmpty(sourceOptions[rawIdx])) {
+                    string colorName = sourceOptions[rawIdx];
+                    int match = uniqueColors.FindIndex(c => string.Equals(c, colorName, StringComparison.OrdinalIgnoreCase));
+                    if (match >= 0) {
+                        targetIdx = match + 1;
+                    }
+                }
+
+                // Fallback: if name lookup didn't match, map raw index directly if within bounds
+                if (targetIdx == -1) {
+                    if (rawIdx > 0 && rawIdx <= uniqueColors.Count) {
+                        targetIdx = rawIdx;
+                    }
+                }
+
+                rawToTargetIndexMap[rawIdx] = targetIdx;
+                return targetIdx;
+            }
+
+            var targetDescriptors = new Dictionary<int, UExpressionDescriptor>();
+            for (int i = 0; i < uniqueColors.Count; i++) {
+                int colorIdx = i + 1;
+                string colorName = uniqueColors[i];
+                string abbr = $"cl{colorIdx:D2}";
+
+                if (!project.expressions.TryGetValue(abbr, out var desc)) {
+                    desc = new UExpressionDescriptor {
+                        name = $"voice color {colorIdx:D2} {colorName}",
+                        abbr = abbr,
+                        type = UExpressionType.MorphingCurve,
+                        min = 0,
+                        max = 100,
+                        defaultValue = 0,
+                        isFlag = false,
+                        flag = ""
+                    };
+                    project.RegisterExpression(desc);
+                }
+                targetDescriptors[colorIdx] = desc;
+            }
+
+            // Offload point zipping and curve segmentation
+            var processedParts = await Task.Run(() => {
+                var results = new List<(UVoicePart Part, Dictionary<int, (List<int> Xs, List<int> Ys)> ColorData)>();
+
+                const int DefaultCrossfadeTicks = 120; // ~60-80ms at 120 BPM
+
+                foreach (var part in voiceParts) {
+                    var xsyCurve = part.curves.FirstOrDefault(c => c.abbr == "xsy");
+                    if (xsyCurve == null || xsyCurve.xs.Count == 0 || part.notes.Count == 0) {
+                        results.Add((part, new Dictionary<int, (List<int>, List<int>)>()));
+                        continue;
+                    }
+
+                    var noteList = part.notes.OrderBy(n => n.position).ToList();
+
+                    // Collect consecutive note boundaries with their resolved voice color targets
+                    var noteSegments = new List<(int startTick, int endTick, int targetColorIndex)>();
+
+                    for (int i = 0; i < noteList.Count; i++) {
+                        var note = noteList[i];
+                        var clryExp = note.phonemeExpressions.FirstOrDefault(e => e.abbr == "clry");
+                        int rawIdx = clryExp != null ? (int)clryExp.value : 0;
+                        int targetIdx = ResolveTargetIndex(rawIdx);
+
+                        noteSegments.Add((note.position, note.End, targetIdx));
+                    }
+
+                    // Pre-sort and interpolate xsy points
+                    var rawPoints = xsyCurve.xs
+                        .Zip(xsyCurve.ys, (x, y) => (x, y))
+                        .OrderBy(p => p.x)
+                        .ToList();
+
+                    int SampleXsy(int tick) {
+                        if (rawPoints.Count == 0) return 0;
+                        if (tick <= rawPoints[0].x) return rawPoints[0].y;
+                        if (tick >= rawPoints[^1].x) return rawPoints[^1].y;
+
+                        int idx = rawPoints.BinarySearch((tick, 0), Comparer<(int x, int y)>.Create((a, b) => a.x.CompareTo(b.x)));
+                        if (idx >= 0) return rawPoints[idx].y;
+
+                        idx = ~idx;
+                        var p0 = rawPoints[idx - 1];
+                        var p1 = rawPoints[idx];
+                        double t = (double)(tick - p0.x) / (p1.x - p0.x);
+                        return (int)Math.Round(p0.y + t * (p1.y - p0.y));
+                    }
+
+                    // Build crossfaded color curves
+                    var colorCurves = new Dictionary<int, (List<int> Xs, List<int> Ys)>();
+
+                    void AddPoint(int colorIdx, int x, int y) {
+                        if (colorIdx <= 0 || !targetDescriptors.ContainsKey(colorIdx)) return;
+                        if (!colorCurves.TryGetValue(colorIdx, out var curveData)) {
+                            curveData = (new List<int>(), new List<int>());
+                            colorCurves[colorIdx] = curveData;
+                        }
+                        if (curveData.Xs.Count > 0 && curveData.Xs[^1] == x) {
+                            curveData.Ys[^1] = y;
+                        } else {
+                            curveData.Xs.Add(x);
+                            curveData.Ys.Add(y);
+                        }
+                    }
+
+                    for (int i = 0; i < noteSegments.Count; i++) {
+                        var cur = noteSegments[i];
+                        int prevColor = (i > 0) ? noteSegments[i - 1].targetColorIndex : -1;
+                        int nextColor = (i < noteSegments.Count - 1) ? noteSegments[i + 1].targetColorIndex : -1;
+
+                        // Calculate fade-in boundary
+                        int fadeInStart = cur.startTick;
+                        int fadeInEnd = cur.startTick;
+                        if (i > 0) {
+                            int gap = cur.startTick - noteSegments[i - 1].endTick;
+                            int fadeLen = Math.Min(DefaultCrossfadeTicks, Math.Max(20, (cur.endTick - cur.startTick) / 3));
+                            if (gap < DefaultCrossfadeTicks) {
+                                fadeInStart = (noteSegments[i - 1].endTick + cur.startTick) / 2 - fadeLen / 2;
+                                fadeInEnd = fadeInStart + fadeLen;
+                            } else {
+                                fadeInStart = cur.startTick - fadeLen / 2;
+                                fadeInEnd = cur.startTick + fadeLen / 2;
+                            }
+                        } else {
+                            fadeInStart = Math.Max(0, cur.startTick - DefaultCrossfadeTicks / 2);
+                            fadeInEnd = cur.startTick;
+                        }
+
+                        // Calculate fade-out boundary
+                        int fadeOutStart = cur.endTick;
+                        int fadeOutEnd = cur.endTick;
+                        if (i < noteSegments.Count - 1) {
+                            int gap = noteSegments[i + 1].startTick - cur.endTick;
+                            int fadeLen = Math.Min(DefaultCrossfadeTicks, Math.Max(20, (cur.endTick - cur.startTick) / 3));
+                            if (gap < DefaultCrossfadeTicks) {
+                                fadeOutStart = (cur.endTick + noteSegments[i + 1].startTick) / 2 - fadeLen / 2;
+                                fadeOutEnd = fadeOutStart + fadeLen;
+                            } else {
+                                fadeOutStart = cur.endTick - fadeLen / 2;
+                                fadeOutEnd = cur.endTick + fadeLen / 2;
+                            }
+                        } else {
+                            fadeOutStart = cur.endTick;
+                            fadeOutEnd = cur.endTick + DefaultCrossfadeTicks / 2;
+                        }
+
+                        if (cur.targetColorIndex <= 0) {
+                            continue;
+                        }
+
+                        if (prevColor != cur.targetColorIndex) {
+                            AddPoint(cur.targetColorIndex, fadeInStart, 0);
+                            for (int x = fadeInStart + 10; x < fadeInEnd; x += 15) {
+                                double factor = (double)(x - fadeInStart) / Math.Max(1, fadeInEnd - fadeInStart);
+                                AddPoint(cur.targetColorIndex, x, (int)Math.Round(SampleXsy(x) * factor));
+                            }
+                        }
+
+                        var bodyPoints = rawPoints.Where(p => p.x >= fadeInEnd && p.x <= fadeOutStart);
+                        foreach (var pt in bodyPoints) {
+                            AddPoint(cur.targetColorIndex, pt.x, pt.y);
+                        }
+                        if (nextColor != cur.targetColorIndex) {
+                            for (int x = fadeOutStart + 10; x < fadeOutEnd; x += 15) {
+                                double factor = 1.0 - (double)(x - fadeOutStart) / Math.Max(1, fadeOutEnd - fadeOutStart);
+                                AddPoint(cur.targetColorIndex, x, (int)Math.Round(SampleXsy(x) * factor));
+                            }
+                            AddPoint(cur.targetColorIndex, fadeOutEnd, 0);
+                        }
+                    }
+
+                    results.Add((part, colorCurves));
+                }
+
+                return results;
+            });
+
+            // Apply curves and clean up legacy expressions
+            foreach (var (part, colorData) in processedParts) {
+                foreach (var (colorIdx, data) in colorData) {
+                    if (!targetDescriptors.TryGetValue(colorIdx, out var descriptor)) {
+                        continue;
+                    }
+
+                    part.curves.RemoveAll(c => c.abbr == descriptor.abbr);
+                    part.curves.Add(new UCurve(descriptor) {
+                        xs = data.Xs,
+                        ys = data.Ys
+                    });
+                }
+
+                part.curves.RemoveAll(c => c.abbr == "xsy");
+                foreach (var note in part.notes) {
+                    note.phonemeExpressions.RemoveAll(e => e.abbr == "clry");
+                }
+            }
+
+            var message = string.Format(
+                ThemeManager.GetString("dialogs.voicecolorremapping.legacyxsy.notif"),
+                track.TrackName);
+
+            await MessageBox.Show(
+                this,
+                message,
+                ThemeManager.GetString("dialogs.voicecolorremapping.caption") ?? "Voice Color Migration",
+                MessageBox.MessageBoxButtons.Ok);
+        }
+
+        void CleanupLegacyExpressions() {
+            var project = DocManager.Inst.Project;
+            bool hasXsy = project.parts.OfType<UVoicePart>().Any(p => p.curves.Any(c => c.abbr == "xsy"));
+            bool hasClry = project.parts.OfType<UVoicePart>().Any(p => p.notes.Any(n => n.phonemeExpressions.Any(e => e.abbr == "clry")));
+
+            if (!hasXsy) {
+                project.expressions.Remove("xsy");
+            }
+            if (!hasClry) {
+                project.expressions.Remove("clry");
+            }
+        }
+        
         async Task RemapImportedVocalModesAsync(UTrack track) {
             if (track.Singer?.SingerType != USingerType.DiffSinger) return;
             track.Singer.EnsureLoaded();
@@ -1994,7 +2265,7 @@ namespace OpenUtau.App.Views {
             if (abbr.StartsWith("cl", StringComparison.OrdinalIgnoreCase)) return false;
             return abbr != Ustx.DYN && abbr != Ustx.PITD && abbr != Ustx.TENC &&
                 abbr != Ustx.BREC && abbr != Ustx.GENC && abbr != Ustx.VOIC &&
-                abbr != Ustx.SHFC && abbr != Ustx.CLR && abbr != Ustx.CLRY &&
+                abbr != Ustx.SHFC && abbr != Ustx.CLR &&
                 abbr != "opec";
         }
         async Task VoiceColorRemappingAsync(UTrack track, string[] oldColors, string[] newColors) {
