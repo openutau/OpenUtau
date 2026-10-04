@@ -21,6 +21,10 @@ namespace OpenUtau.Core {
 
         private HashSet<USinger> singersUsed = new HashSet<USinger>();
 
+        // YAML Watcher & timestamp tracking for character.yaml
+        private readonly List<YamlWatcher> singerWatchers = new List<YamlWatcher>();
+        private readonly ConcurrentDictionary<string, DateTime> charYamlLastWriteTimes = new ConcurrentDictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+
         public void Initialize() {
             SearchAllSingers();
         }
@@ -44,6 +48,86 @@ namespace OpenUtau.Core {
             }
             stopWatch.Stop();
             Log.Information($"Search all singers: {stopWatch.Elapsed}");
+            CacheCharacterYamlTimestamps();
+            SetupSingerWatchers();
+        }
+
+        private void CacheCharacterYamlTimestamps() {
+            charYamlLastWriteTimes.Clear();
+            var singers = Singers.Values.ToArray();
+            foreach (var singer in singers) {
+                if (singer == null || string.IsNullOrEmpty(singer.Location)) {
+                    continue;
+                }
+                try {
+                    string charYaml = Path.Combine(singer.Location, "character.yaml");
+                    if (File.Exists(charYaml)) {
+                        charYamlLastWriteTimes[charYaml] = File.GetLastWriteTimeUtc(charYaml);
+                    }
+                } catch { }
+            }
+        }
+
+        private void SetupSingerWatchers() {
+            foreach (var watcher in singerWatchers) {
+                watcher.Dispose();
+            }
+            singerWatchers.Clear();
+
+            // Attach YamlWatcher to each singers root path
+            foreach (var path in PathManager.Inst.SingersPaths) {
+                if (Directory.Exists(path)) {
+                    try {
+                        singerWatchers.Add(new YamlWatcher(path, OnSingerYamlChanged));
+                    } catch (Exception ex) {
+                        Log.Error(ex, $"[SingerManager] Failed to start YAML watcher for '{path}'");
+                    }
+                }
+            }
+        }
+
+        private void OnSingerYamlChanged() {
+            // Brief sleep to allow editors/writers to finish flushing and close file handles
+            Thread.Sleep(300);
+            var singers = Singers.Values.ToArray();
+
+            foreach (var singer in singers) {
+                if (singer == null || string.IsNullOrEmpty(singer.Location)) {
+                    continue;
+                }
+                string charYaml;
+                try {
+                    charYaml = Path.Combine(singer.Location, "character.yaml");
+                    if (!File.Exists(charYaml)) {
+                        continue;
+                    }
+                } catch {
+                    continue;
+                }
+                DateTime currentWriteTime;
+                try {
+                    currentWriteTime = File.GetLastWriteTimeUtc(charYaml);
+                } catch (IOException) {
+                    // File is temporarily locked by editor; the next event or debounce will catch it
+                    continue;
+                } catch {
+                    continue;
+                }
+                if (charYamlLastWriteTimes.TryGetValue(charYaml, out var lastWriteTime)) {
+                    if (currentWriteTime > lastWriteTime) {
+                        charYamlLastWriteTimes[charYaml] = currentWriteTime;
+                        string singerName = singer.Id ?? Path.GetFileName(singer.Location);
+                        Log.Information($"[SingerManager] character.yaml modified for '{singerName}'. Scheduling reload...");
+                        ScheduleReload(singer);
+                    }
+                } else {
+                    // First time detecting this character.yaml
+                    charYamlLastWriteTimes[charYaml] = currentWriteTime;
+                    string singerName = singer.Id ?? Path.GetFileName(singer.Location);
+                    Log.Information($"[SingerManager] character.yaml detected for '{singerName}'. Scheduling reload...");
+                    ScheduleReload(singer);
+                }
+            }
         }
 
         public USinger GetSinger(string name) {
@@ -105,15 +189,16 @@ namespace OpenUtau.Core {
                 new Task(() => {
                     DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"Reloaded {singer.Id}"));
                     DocManager.Inst.ExecuteCmd(new OtoChangedNotification(external: true));
+                    DocManager.Inst.ExecuteCmd(new VoiceColorRemappingNotification(-1, true));
                 }).Start(DocManager.Inst.MainScheduler);
             }
         }
 
-        //Check which singers are in use and free memory for those that are not.
-        //UI thread only: it mutates the singer map the UI reads.
+        // Check which singers are in use and free memory for those that are not.
+        // UI thread only: it mutates the singer map the UI reads.
         public void ReleaseSingersNotInUse(UProject project) {
             Util.ThreadGuard.AssertUi();
-            //Check which singers are in use
+            // Check which singers are in use
             var singersInUse = new HashSet<USinger>();
             foreach (var track in project.tracks) {
                 var singer = track.Singer;
@@ -121,13 +206,13 @@ namespace OpenUtau.Core {
                     singersInUse.Add(singer);
                 }
             }
-            //Release singers that are no longer in use
+            // Release singers that are no longer in use
             foreach (var singer in singersUsed) {
                 if (!singersInUse.Contains(singer)) {
                     singer.FreeMemory();
                 }
             }
-            //Update singers used
+            // Update singers used
             singersUsed = singersInUse;
         }
     }
