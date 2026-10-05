@@ -418,6 +418,7 @@ namespace OpenUtau.App.Controls {
             penTool.Classes.Remove("penTool");
             penTool.Classes.Remove("penPlusTool");
             penTool.Classes.Add(ViewModel.EditTool.PenToolVariation == 1 ? "penPlusTool" : "penTool");
+            ToolTip.SetTip(penTool, ViewModel.EditTool.PenToolVariation == 1 ? ViewModel.PenPlusToolTip : ViewModel.PenToolTip);
         }
 
         void SearchNote() {
@@ -606,6 +607,9 @@ namespace OpenUtau.App.Controls {
                 var element = (TrackBackground)sender;
                 keyboardPlayState.Update(args.Pointer, args.GetPosition(element));
             }
+            Cursor = null;
+            ViewModel.SetOperationHintText("Keyboard");
+            args.Handled = true;
         }
 
         public void KeyboardPointerReleased(object sender, PointerReleasedEventArgs args) {
@@ -671,6 +675,9 @@ namespace OpenUtau.App.Controls {
                     UpdateRangeSelection(point.Position);
                 }
             }
+            Cursor = null;
+            ViewModel.SetOperationHintText("Timeline");
+            args.Handled = true;
         }
 
         public void TimelinePointerReleased(object sender, PointerReleasedEventArgs args) {
@@ -1018,6 +1025,7 @@ namespace OpenUtau.App.Controls {
         public void NotesCanvasPointerMoved(object sender, PointerEventArgs args) {
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
+            ViewModel.SetOperationHintText("NotesCanvas");
             args.Handled = true;
             if (ValueTipCanvas != null) {
                 valueTipPointerPosition = args.GetCurrentPoint(ValueTipCanvas!).Position;
@@ -1242,6 +1250,7 @@ namespace OpenUtau.App.Controls {
         public void ExpCanvasPointerMoved(object sender, PointerEventArgs args) {
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
+            ViewModel.SetOperationHintText("ExpCanvas");
             args.Handled = true;
             if (ValueTipCanvas != null) {
                 valueTipPointerPosition = args.GetCurrentPoint(ValueTipCanvas!).Position;
@@ -1371,6 +1380,7 @@ namespace OpenUtau.App.Controls {
         }
 
         public void PhonemeCanvasPointerMoved(object sender, PointerEventArgs args) {
+            ViewModel.SetOperationHintText("PhonemeCanvas");
             args.Handled = true;
             if (ViewModel?.NotesViewModel?.Part == null) {
                 return;
@@ -1435,6 +1445,7 @@ namespace OpenUtau.App.Controls {
 
         public void BackgroundPointerMoved(object sender, PointerEventArgs args) {
             Cursor = null;
+            ViewModel.SetOperationHintText("Background");
             args.Handled = true;
         }
 
