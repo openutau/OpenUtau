@@ -7,7 +7,7 @@ using OpenUtau.Core;
 namespace OpenUtau.App.Controls {
     public static class ToastControl {
         public static Notification GetNotification(ToastNotification notif, Window window) {
-            var message = ThemeManager.GetString(notif.translationKey);
+            var message = string.Format(ThemeManager.GetString(notif.translationKey), notif.replaces);
             var type = NotificationType.Warning;
             switch (notif.type) {
                 case "Information":

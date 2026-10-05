@@ -41,6 +41,7 @@ namespace OpenUtau.Core {
         public readonly string windowType;
         public readonly string message;
         public readonly string translationKey;
+        public readonly string[] replaces;
 
         /// <summary>
         /// Not currently in use
@@ -62,11 +63,13 @@ namespace OpenUtau.Core {
         /// <param name="windowType">"MainWindow" or "Pianoroll" (If the specified window is not on top, a toast will always appear in the main window).</param>
         /// <param name="message">This is not displayed in the UI. The actual text is specified by translationKey.</param>
         /// <param name="translationKey">The key for the text that actually appears on the toast.</param>
+        /// <param name="replaces">Values to replace placeholders in the translated message.</param>
         /// <param name="e">If there are any associated exceptions, clicking the toast notification will display a standard error dialog.</param>
-        public ToastNotification(string windowType, string message, string translationKey, Exception? e = null) {
+        public ToastNotification(string windowType, string message, string translationKey, string[]? replaces = null, Exception? e = null) {
             this.windowType = windowType;
             this.message = message;
             this.translationKey = translationKey;
+            this.replaces = replaces ?? Array.Empty<string>();
             this.e = e;
         }
         public override string ToString() => $"Toast notification: {message}";
