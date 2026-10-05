@@ -74,6 +74,8 @@ namespace OpenUtau.Classic {
         public Subbank[] Subbanks { get; set; }
         [Description("UTAU voicebanks only: also use each sample's file name, without extension, as an alias.")]
         public bool? UseFilenameAsAlias = null;
+        public UExpressionDescriptor[] expressions;
+
 
         public void Save(Stream stream) {
             using (var writer = new StreamWriter(stream, Encoding.UTF8)) {
