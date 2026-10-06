@@ -10,7 +10,9 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using NWaves.Signals;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 using ReactiveUI;
 using ReactiveUI.Primitives;
 using Serilog;
@@ -145,6 +147,8 @@ namespace OpenUtau.App.Controls {
         private WriteableBitmap? bitmap;
         private int[] bitmapData;
 
+        private Dictionary<RenderPhrase, bool> renderPhraseStates = [];
+        
         public PartControl(UPart part, PartsCanvas canvas) {
             this.part = part;
             partsCanvas = canvas;
@@ -215,20 +219,46 @@ namespace OpenUtau.App.Controls {
 
         public override void Render(DrawingContext context) {
             var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
+            var renderingBrush = Selected ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi;
             // Background
-            context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
-
-            // Text
-            var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
-            using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
-                context.DrawRectangle(backgroundBrush, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
-                textLayout.Draw(context, new Point());
+            if (Preferences.Default.RenderStatusInTrackBar && part is UVoicePart) {
+                context.DrawRectangle(renderingBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+            } else {
+                context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
             }
 
-            if (part == null) {
-                return;
-            }
             if (part is UVoicePart voicePart) {
+                // Note Render Status
+                
+                // Phrase blocks won't render if renderPhraseStates is empty.
+                if (Preferences.Default.RenderStatusInTrackBar) {
+                    // Reset phrase states to match part phrases
+                    if (renderPhraseStates.Count != voicePart.renderPhrases.Count) {
+                        renderPhraseStates.Clear();
+                        foreach (var phrase in voicePart.renderPhrases) renderPhraseStates.Add(phrase, false);
+                    }
+                }
+
+                List<Rect> renderBlocks = [];
+                
+                // Draw part phrase blocks - accounting for whitespace.
+                for (int i = 0; i < renderPhraseStates.Count; i++) {
+                    var (phrase, rendered) = renderPhraseStates.ElementAt(i);
+
+                    double initial = renderBlocks.ElementAtOrDefault(i-1).Right;
+                    double phraseStart = (phrase.position * tickWidth);
+                    double startX = phraseStart;
+                    double width = (phrase.end * tickWidth - phrase.position * tickWidth) + (phraseStart - startX);
+                    double endX = startX + width;
+                    
+                    Point topLeft = new Point(startX, 1);
+                    Point bottomRight = new Point(Math.Truncate(endX), Height - 1);
+                    
+                    var rect = new Rect(topLeft, bottomRight);
+                    renderBlocks.Add(rect); 
+                    context.DrawRectangle(rendered ? backgroundBrush : renderingBrush, null, rect);
+                }
+                
                 // Notes
                 if (voicePart.notes.Count > 0) {
                     int maxTone = voicePart.notes.Max(note => note.tone);
@@ -287,6 +317,13 @@ namespace OpenUtau.App.Controls {
                 if (wavePart.fadeout > 0) {
                     context.DrawLine(fadePen, new Point(Width - 1, Height - 2), new Point(FadeOut, 2));
                 }
+            }
+            
+            // Text
+            var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
+            using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
+                context.DrawRectangle(Brushes.Transparent, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
+                textLayout.Draw(context, new Point());
             }
         }
 
@@ -420,6 +457,16 @@ namespace OpenUtau.App.Controls {
             }
         }
 
+        public void UpdateRenderStatus(int startTick, int endTick, bool rendered) {
+            foreach (var phrase in renderPhraseStates) {
+                if (phrase.Key.position.Equals(startTick) && phrase.Key.end.Equals(endTick)) {
+                    renderPhraseStates[phrase.Key] = rendered;
+                    InvalidateVisual();
+                    return;
+                }
+            }
+        }
+        
         public void Report(int value) {
         }
 

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using NAudio.CoreAudioApi;
+using OpenUtau.Core.Pipeline;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 
@@ -188,6 +190,26 @@ namespace OpenUtau.Core {
             Info = info;
         }
         public override string ToString() => $"Set progress {Progress} {Info}";
+    }
+
+    public class PhraseRenderStateNotification : UNotification{
+        public UVoicePart Part { get; }
+        public int StartTick { get; }
+        public int EndTick { get; }
+        public bool Rendered { get; }
+
+        public PhraseRenderStateNotification(UVoicePart part, int startTick, int endTick, bool rendered) {
+            Part = part;
+            StartTick = startTick;
+            EndTick = endTick;
+            Rendered = rendered;
+        }
+        
+        public string ToLogString() => Rendered
+            ? $"{Part.DisplayName} | Rendered {StartTick}-{EndTick}"
+            : $"{Part.DisplayName} | Unrendered {StartTick}-{EndTick}";
+        
+        public override string ToString() => "Phrase Render State";
     }
 
     public class VolumeChangeNotification : UNotification {

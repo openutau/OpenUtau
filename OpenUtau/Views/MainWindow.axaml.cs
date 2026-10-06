@@ -2139,6 +2139,12 @@ namespace OpenUtau.App.Views {
                     }
                     _ = RemapImportedVocalModesAsync(track);
                 }
+            } else if (cmd is PhraseRenderStateNotification phraseRenderNotif) {
+                partsCanvas.HandlePhraseRenderStateEvent(
+                    phraseRenderNotif.Part, 
+                    phraseRenderNotif.StartTick,
+                    phraseRenderNotif.EndTick,
+                    phraseRenderNotif.Rendered);
             }
         }
     }
