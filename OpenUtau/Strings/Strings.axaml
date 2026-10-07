@@ -43,6 +43,7 @@
   <system:String x:Key="command.part.move">Move part(s)</system:String>
   <system:String x:Key="command.part.paste">Paste part(s)</system:String>
   <system:String x:Key="command.part.transcribe">Transcribe audio to create a note part</system:String>
+  <system:String x:Key="command.phoneme.align">Align phoneme timing to audio</system:String>
   <system:String x:Key="command.phoneme.edit">Edit phoneme</system:String>
   <system:String x:Key="command.phoneme.reset">Reset phoneme</system:String>
   <system:String x:Key="command.pitch.add">Add pitch point</system:String>
@@ -213,6 +214,17 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="dialogs.transcribe.game.segradius">Boundary Radius</system:String>
   <system:String x:Key="dialogs.transcribe.game.segthreshold">Boundary Threshold</system:String>
   <system:String x:Key="dialogs.transcribe.game.steps">Sampling Steps</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.hint">Reads the phoneme timing of the recording and moves the target track's phonemes to match. The notes and lyrics are not changed.</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.language">Language</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.language.auto">[from phonemizer]</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.notarget">The target track has no notes. Fill in lyrics first.</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.notfound">The TIFA aligner is not installed. Install the tifa-ggml package to align phoneme timing.</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.options">Phoneme Timing (TIFA)</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.result.body">Aligned {0} of {1} phonemes. Unresolved notes: {2}. Uncertain notes: {3}.</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.result.caption">Phoneme Timing</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.result.lowagreement">The aligner's confidence is low: the lyrics may not match the recording.</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.track">Target Track</system:String>
+  <system:String x:Key="context.part.aligningphonemes">Aligning phonemes</system:String>
   <system:String x:Key="dialogs.transcribe.longchunk.message">One or more audio segments are very long and may consume large amount of memory when transcribing. This usually happens when the audio contains accompaniment. Still proceed?</system:String>
   <system:String x:Key="dialogs.transcribe.midialgorithm">Algorithm</system:String>
   <system:String x:Key="dialogs.transcribe.rmvpe">Extract pitch using RMVPE</system:String>

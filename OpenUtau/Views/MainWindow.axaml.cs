@@ -1708,6 +1708,51 @@ namespace OpenUtau.App.Views {
                         }).GetAwaiter().GetResult();
                     };
                     UVoicePart? voicePart;
+                    if (transcribeVm.SelectedAlgorithm == TranscribeAlgorithm.TIFA) {
+                        var project = DocManager.Inst.Project;
+                        var targetTrack = transcribeVm.TifaTargetTrack;
+                        var targetPart = targetTrack == null ? null : project.parts
+                            .OfType<UVoicePart>()
+                            .FirstOrDefault(p => p.trackNo == targetTrack.TrackNo && p.notes.Count > 0
+                                && p.position < wavePart.End && p.End > wavePart.position);
+                        if (targetTrack == null || targetPart == null) {
+                            throw new InvalidOperationException(
+                                ThemeManager.GetString("dialogs.transcribe.tifa.notarget"));
+                        }
+                        string alignText = ThemeManager.GetString("context.part.aligningphonemes");
+                        msgbox.SetText($"{alignText} {part.name}");
+                        var tifaOptions = new TifaOptions {
+                            // Classic banks render the consonant before the
+                            // phoneme anchor (oto preutter), so the audible
+                            // onset is what has to land on the measured
+                            // boundary. Model singers have no oto.
+                            AudibleOnset = targetTrack.Singer?.SingerType == USingerType.Classic,
+                        };
+                        var alignResult = await Task.Run(() => Tifa.Extract(
+                            project, wavePart, targetPart, transcribeVm.TifaResolvedLanguage, tifaOptions,
+                            (chunk, chunks) => {
+                                msgbox.SetText(chunks > 1
+                                    ? $"{alignText} {part.name} ({chunk}/{chunks})"
+                                    : $"{alignText} {part.name}");
+                            }, cts.Token));
+                        if (alignResult.Cancelled || cancelled) {
+                            return;
+                        }
+                        if (!alignResult.Success) {
+                            throw new InvalidOperationException(alignResult.Error);
+                        }
+                        int applied = ApplyPhonemeTiming(targetPart, alignResult);
+                        await MessageBox.Show(this,
+                            string.Format(ThemeManager.GetString("dialogs.transcribe.tifa.result.body"),
+                                applied, targetPart.phonemes.Count,
+                                alignResult.Unresolved.Count, alignResult.UncertainNotes)
+                            + (alignResult.Agreement < 0.5
+                                ? "\n" + ThemeManager.GetString("dialogs.transcribe.tifa.result.lowagreement")
+                                : string.Empty),
+                            ThemeManager.GetString("dialogs.transcribe.tifa.result.caption"),
+                            MessageBox.MessageBoxButtons.Ok);
+                        return;
+                    }
                     if (transcribeVm.SelectedAlgorithm == TranscribeAlgorithm.SOME) {
                         voicePart = await Task.Run(() => {
                             using (var some = new Some()) {
@@ -1787,6 +1832,29 @@ namespace OpenUtau.App.Views {
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Apply phoneme timing extracted from a recording as per-phoneme
+        /// offsets, in a single undoable edit. A phoneme whose position changed
+        /// while the aligner ran is left alone.
+        /// </summary>
+        int ApplyPhonemeTiming(UVoicePart part, TifaExtractionResult result) {
+            int applied = 0;
+            DocManager.Inst.StartUndoGroup("command.phoneme.align", deferValidate: true);
+            foreach (var move in result.Moves) {
+                var phoneme = part.phonemes
+                    .FirstOrDefault(p => p.Parent == move.Note && p.index == move.Index);
+                if (phoneme == null || phoneme.position != move.OldPositionTick) {
+                    continue;
+                }
+                int currentOffset = move.Note.GetPhonemeOverride(move.Index).offset ?? 0;
+                DocManager.Inst.ExecuteCmd(new PhonemeOffsetCommand(
+                    part, move.Note, move.Index, currentOffset + move.Offset));
+                ++applied;
+            }
+            DocManager.Inst.EndUndoGroup();
+            return applied;
         }
 
         public void OnWelcomeRecovery(object sender, RoutedEventArgs args) {
