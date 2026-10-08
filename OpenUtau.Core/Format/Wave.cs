@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,7 +24,11 @@ namespace OpenUtau.Core.Format {
                 }
             }
             if (tag == "RIFF") {
-                return new WaveFileReader(filepath);
+                var reader = new WaveFileReader(filepath);
+                if (reader.WaveFormat.BitsPerSample == 24) {
+                    return Convert24BitTo16BitStream(reader);
+                }
+                return reader;
             }
             if (ext == ".mp3") {
                 if (OverrideMp3Reader != null) {
@@ -57,6 +61,15 @@ namespace OpenUtau.Core.Format {
 #endif
             }
             throw new Exception("Unsupported audio file format.");
+        }
+
+        private static WaveStream Convert24BitTo16BitStream(WaveFileReader reader) {
+            var format24 = new WaveFormat(reader.WaveFormat.SampleRate, 24, reader.WaveFormat.Channels);
+            var rawStream = new RawSourceWaveStream(reader, format24);
+            var sampleProvider = rawStream.ToSampleProvider();
+            var provider16 = new SampleToWaveProvider16(sampleProvider);
+
+            return new WaveProviderToWaveStream(provider16, rawStream, reader);
         }
 
         public static float[] GetStereoSamples(WaveStream waveStream) {
@@ -168,6 +181,57 @@ namespace OpenUtau.Core.Format {
             for (int i = 0; i < samples.Length; i++) {
                 samples[i] *= scale;
             }
+        }
+    }
+    public class WaveProviderToWaveStream : WaveStream {
+        private readonly IWaveProvider _source;
+        private readonly WaveStream _sourceStream;
+        private readonly WaveStream _rootStream;
+
+        public WaveProviderToWaveStream(IWaveProvider source, WaveStream sourceStream, WaveStream rootStream = null) {
+            _source = source ?? throw new ArgumentNullException(nameof(source));
+            _sourceStream = sourceStream ?? throw new ArgumentNullException(nameof(sourceStream));
+            _rootStream = rootStream ?? sourceStream;
+        }
+
+        public override WaveFormat WaveFormat => _source.WaveFormat;
+
+        public override long Length {
+            get {
+                if (_sourceStream.WaveFormat.AverageBytesPerSecond == 0) return 0;
+
+                double seconds = (double)_sourceStream.Length / _sourceStream.WaveFormat.AverageBytesPerSecond;
+                return (long)(seconds * WaveFormat.AverageBytesPerSecond);
+            }
+        }
+
+        public override long Position {
+            get {
+                if (_sourceStream.WaveFormat.AverageBytesPerSecond == 0) return 0;
+
+                double seconds = (double)_sourceStream.Position / _sourceStream.WaveFormat.AverageBytesPerSecond;
+                return (long)(seconds * WaveFormat.AverageBytesPerSecond);
+            }
+            set {
+                if (_sourceStream.WaveFormat.AverageBytesPerSecond == 0) return;
+
+                double seconds = (double)value / WaveFormat.AverageBytesPerSecond;
+                long sourcePosition = (long)(seconds * _sourceStream.WaveFormat.AverageBytesPerSecond);
+
+                int blockAlign = _sourceStream.WaveFormat.BlockAlign;
+                _sourceStream.Position = (sourcePosition / blockAlign) * blockAlign;
+            }
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) {
+            return _source.Read(buffer, offset, count);
+        }
+
+        protected override void Dispose(bool disposing) {
+            if (disposing) {
+                _rootStream?.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }
