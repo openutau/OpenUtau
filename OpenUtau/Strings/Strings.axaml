@@ -949,6 +949,14 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="singersetup.textfileencoding">Text File Encoding</system:String>
   <system:String x:Key="singersetup.textfileencoding.prompt">Choose an encoding that make file contents look right.</system:String>
   <system:String x:Key="singersetup.title">Singer Setup</system:String>
+  
+  <system:String x:Key="solfege.do">do</system:String>
+  <system:String x:Key="solfege.fa">fa</system:String>
+  <system:String x:Key="solfege.la">la</system:String>
+  <system:String x:Key="solfege.mi">mi</system:String>
+  <system:String x:Key="solfege.re">re</system:String>
+  <system:String x:Key="solfege.sol">sol</system:String>
+  <system:String x:Key="solfege.ti">ti</system:String>
 
   <system:String x:Key="themeeditor.cancel">Cancel</system:String>
   <system:String x:Key="themeeditor.save">Save</system:String>
