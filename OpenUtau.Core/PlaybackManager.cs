@@ -12,7 +12,6 @@ using OpenUtau.Core.SignalChain;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using Serilog;
-using System.Collections.Concurrent;
 
 namespace OpenUtau.Core {
     public class SineGenerator : ISampleProvider {
@@ -265,6 +264,7 @@ namespace OpenUtau.Core {
 
         double startMs;
         public int StartTick => DocManager.Inst.Project.timeAxis.MsPosToTickPos(startMs);
+        public int returnPosition = 0;
         // One cancellation source per render lane so starting playback, pre-rendering
         // or exporting no longer cancel each other in flight.
         CancellationTokenSource renderCancellation;
@@ -435,6 +435,11 @@ namespace OpenUtau.Core {
         }
 
         public void PausePlayback() {
+            if (Preferences.Default.LockStartTime != 0) {
+                StopPlayback();
+                DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(returnPosition, pause: true));
+                return;
+            }
             AudioOutput.Pause();
             StartingToPlay = false;
             PlayingMaster = false;
@@ -468,14 +473,19 @@ namespace OpenUtau.Core {
                     RenderEngine engine = new RenderEngine(project, startTick: tick, endTick: endTick, trackNo: trackNo);
                     var result = engine.RenderMixdown(DocManager.Inst.MainScheduler, ref renderCancellation, wait: false, applyMixFx: true, planner: MixPlanner);
                     playbackMix = new PlaybackMix(result.Item1, metronomeEngine);
+                    this.returnPosition = tick;
+                    var startTick = tick;
+                    if (Preferences.Default.PreRoll) {
+                        startTick = Math.Max(0, tick - (480 * 4 * Preferences.Default.PreRollMeasure));
+                    }
                     var playbackAdapter = new MasterAdapter(playbackMix);
                     // Hold mode: wait for pending phrases (today's behaviour), except
                     // in loop mode where a pending phrase must not stall the clock.
                     // Failed phrases never hold in either mode.
                     playbackAdapter.HoldWhenUnready = !LoopPlayback;
-                    playbackAdapter.SetPosition((int)(project.timeAxis.TickPosToMsPos(tick) * 44100 / 1000) * 2);
+                    playbackAdapter.SetPosition((int)(project.timeAxis.TickPosToMsPos(startTick) * 44100 / 1000) * 2);
                     faders = result.Item2;
-                    StartPlayback(project.timeAxis.TickPosToMsPos(tick), playbackAdapter);
+                    StartPlayback(project.timeAxis.TickPosToMsPos(startTick), playbackAdapter);
 
                     Task.Factory.StartNew(() => {
                         DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());

@@ -223,9 +223,9 @@
             <RowDefinition Height="4"/>
           </Grid.RowDefinitions>
           <Panel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Height="24">
-            <Border Classes="playback" Width="72" HorizontalAlignment="Left" Margin="4,0">
+            <Border Classes="playback" Width="68" HorizontalAlignment="Left" Margin="5,0">
               <Grid>
-                <TextBlock Width="28" HorizontalAlignment="Left"
+                <TextBlock Width="24" HorizontalAlignment="Left"
                           Background="Transparent" PointerPressed="OnEditTimeSignature">
                   <TextBlock.Text>
                     <MultiBinding StringFormat="{}{0}/{1}">
@@ -244,7 +244,7 @@
                 </TextBlock>
               </Grid>
             </Border>
-            <Border Classes="playback" HorizontalAlignment="Center">
+            <Border Classes="playback" Width="148" HorizontalAlignment="Center" Margin="5,0,0,0">
               <StackPanel Orientation="Horizontal">
                 <Button Command="{Binding PlaybackViewModel.SeekStart}" Height="18">
                   <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
@@ -267,6 +267,11 @@
                   <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
                         Data="M5.19 4.86H11.11V2.8l2.53 3.09-2.53 3.1V6.93H6.05V8.99H4.35V6.93c0-1.14.34-2.07.84-2.07ZM12.81 13.13H6.88v2.07L4.35 12.1l2.53-3.1V11.06h5.08V8.99H13.65v2.07c0 1.14-.34 2.07-.84 2.07Z"/>
                 </ToggleButton>
+                <ToggleButton IsChecked="{Binding PreRoll}" PointerPressed="OnClickPreRoll"
+                              ToolTip.Tip="{DynamicResource tip.playback.preroll}">
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Width="12" Height="12" Stretch="Uniform"
+                        Data="M760-200v-160q0-50-35-85t-85-35H273l144 144-57 56-240-240 240-240 57 56-144 144h367q83 0 141.5 58.5T840-360v160h-80Z"/>
+                </ToggleButton>
                 <ToggleButton IsChecked="{Binding PlaybackViewModel.Metronome}" Height="18"
                               ToolTip.Tip="{DynamicResource prefs.playback.metronome}">
                   <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
@@ -274,7 +279,7 @@
                 </ToggleButton>
               </StackPanel>
             </Border>
-            <Border Classes="playback" Width="72" HorizontalAlignment="Right" Margin="4,0">
+            <Border Classes="playback" Width="64" HorizontalAlignment="Right" Margin="5,0">
               <Grid>
                 <TextBlock Text="{Binding Path=PlaybackViewModel.PlayPosTime, StringFormat={}{0:mm\\:ss\\.fff}}"/>
               </Grid>
