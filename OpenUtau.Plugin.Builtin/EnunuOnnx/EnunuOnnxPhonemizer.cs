@@ -19,7 +19,7 @@ using Serilog;
 //This phonemizer uses onnxruntime to run ML models. No Python needed. 
 
 namespace OpenUtau.Plugin.Builtin {
-    [Phonemizer("Enunu Onnx Phonemizer", "ENUNU X")]
+    [Phonemizer("Enunu Onnx Phonemizer", "ENUNU X", engine: "Enunu")]
     public class EnunuOnnxPhonemizer : Phonemizer {
         readonly string PhonemizerType = "ENUNU X";
 
