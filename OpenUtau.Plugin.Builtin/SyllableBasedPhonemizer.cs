@@ -32,7 +32,7 @@ namespace OpenUtau.Plugin.Builtin {
     /// If your oto hase same symbols for them, like "n" for stretchable "n" from a long note and "n" from CV,
     /// then you can use a vitrual symbol [N], and then replace it with [n] in ValidateAlias().
     /// </summary>
-    public abstract class SyllableBasedPhonemizer : Phonemizer, IG2pSymbols {
+    public abstract class SyllableBasedPhonemizer : Phonemizer, IG2pSymbols, IPhonemizerEnding {
 
         /// <summary>
         /// Syllable is [V] [C..] [V]
@@ -1106,6 +1106,23 @@ namespace OpenUtau.Plugin.Builtin {
                 return null;
             }
 
+            // UNIVERSAL INTERFACE DELEGATION:
+            // If the note belongs to another phonemizer that implements IPhonemizerEnding
+            // (including SBP, PhonemeBasedPhonemizer, or third-party plugins), query it directly.
+            if (inputNotes[0].phonemizer is IPhonemizerEnding endingPhonemizer && endingPhonemizer != this) {
+                var result = endingPhonemizer.GetEnding(inputNotes);
+                if (result.HasValue) {
+                    return new Ending() {
+                        prevV = result.Value.prevV,
+                        cc = result.Value.cc,
+                        tone = inputNotes.Last().tone,
+                        attr = inputNotes.Last().phonemeAttributes,
+                        duration = inputNotes.Sum(n => n.duration),
+                        position = inputNotes.Sum(n => n.duration)
+                    };
+                }
+            }
+
             (var symbols, var vowelIds, var notes) = GetSymbolsAndVowels(inputNotes);
             if (symbols == null || vowelIds == null || notes == null) {
                 return null;
@@ -1119,6 +1136,17 @@ namespace OpenUtau.Plugin.Builtin {
                 duration = notes.Skip(vowelIds.Length - 1).Sum(n => n.duration),
                 position = notes.Sum(n => n.duration)
             };
+        }
+
+        /// <summary>
+        /// Explicit implementation of IPhonemizerEnding for foreign phonemizers querying SBP.
+        /// </summary>
+        (string prevV, string[] cc)? IPhonemizerEnding.GetEnding(Note[] notes) {
+            var ending = MakeEnding(notes);
+            if (ending.HasValue) {
+                return (ending.Value.prevV, ending.Value.cc);
+            }
+            return null;
         }
 
         /// <summary>

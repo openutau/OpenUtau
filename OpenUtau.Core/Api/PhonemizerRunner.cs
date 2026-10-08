@@ -128,6 +128,12 @@ namespace OpenUtau.Api {
                     timestamp = request.timestamp,
                 };
             }
+            for (int i = 0; i < notes.Length; i++) {
+                var p = phonemizers[request.notePhonemizerIndices[i]];
+                for (int j = 0; j < notes[i].Length; j++) {
+                    notes[i][j].phonemizer = p;
+                }
+            }
             foreach (var p in phonemizers) {
                 p.SetUpException = null;
                 try {
