@@ -1,0 +1,93 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ae="using:AvaloniaEdit"
+        x:Class="OpenUtau.App.Views.YamlMigrationDialog"
+        Title="{DynamicResource yamlmigration.caption}"
+        Width="1000" Height="650" MinWidth="200" MinHeight="300"
+        WindowStartupLocation="CenterScreen">
+  <Grid RowDefinitions="Auto,*,Auto,*,Auto" Margin="10">
+
+    <!-- Header / Info Bar -->
+    <Border Grid.Row="0" Margin="0,0,0,8" Padding="10" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="4">
+      <StackPanel Spacing="4">
+        <TextBlock Name="TitleBanner" FontWeight="Bold" FontSize="14"/>
+        <TextBlock Text="{DynamicResource yamlmigration.description}" 
+                   Opacity="0.8" FontSize="12" TextWrapping="Wrap"/>
+      </StackPanel>
+    </Border>
+
+    <!-- Top Pane: Two Side-by-Side Windows (Old vs New) -->
+    <Grid Grid.Row="1" ColumnDefinitions="*,8,*">
+      <!-- Left Window: Old / Local Version -->
+      <Grid Grid.Column="0" RowDefinitions="Auto,*">
+        <Border Grid.Row="0" Background="{DynamicResource SystemControlHighlightBaseLowBrush}" Padding="6,4">
+          <TextBlock Name="OldVersionLabel" Text="{DynamicResource yamlmigration.local.title}" FontWeight="SemiBold"/>
+        </Border>
+        <Border Grid.Row="1" BorderThickness="1,0,1,1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
+          <ae:TextEditor Name="OldEditor" IsReadOnly="True" ShowLineNumbers="True" FontSize="12"
+                         FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace"
+                         HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
+        </Border>
+      </Grid>
+
+      <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" Background="Transparent"/>
+
+      <!-- Right Window: New Upstream Version -->
+      <Grid Grid.Column="2" RowDefinitions="Auto,*">
+        <Border Grid.Row="0" Background="{DynamicResource SystemControlHighlightBaseLowBrush}" Padding="6,4">
+          <TextBlock Name="NewVersionLabel" Text="{DynamicResource yamlmigration.incoming.title}" FontWeight="SemiBold"/>
+        </Border>
+        <Border Grid.Row="1" BorderThickness="1,0,1,1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
+          <ae:TextEditor Name="NewEditor" IsReadOnly="True" ShowLineNumbers="True" FontSize="12"
+                         FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace"
+                         HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
+        </Border>
+      </Grid>
+    </Grid>
+
+    <!-- Middle Action Strip: Resolution Options + Diff Legend -->
+    <Border Grid.Row="2" Margin="0,8" Padding="6" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="4">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+        <Button Name="UseOldButton" Grid.Column="0" Margin="0,0,6,0" Content="{DynamicResource yamlmigration.useold}"/>
+        <Button Name="UseNewButton" Grid.Column="1" Margin="0,0,6,0" Content="{DynamicResource yamlmigration.usenew}"/>
+        <Button Name="AutoMergeButton" Grid.Column="2" Margin="0,0,6,0" FontWeight="SemiBold" Content="{DynamicResource yamlmigration.automerge}"/>
+
+        <!-- Diff Legend -->
+        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Margin="0,0,4,0">
+          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <Border Width="12" Height="12" Background="#332ecc71" BorderBrush="#2ecc71" BorderThickness="1" CornerRadius="2"/>
+            <TextBlock Text="{DynamicResource yamlmigration.legend.added}" FontSize="11" Opacity="0.85"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <Border Width="12" Height="12" Background="#333498db" BorderBrush="#3498db" BorderThickness="1" CornerRadius="2"/>
+            <TextBlock Text="{DynamicResource yamlmigration.legend.local}" FontSize="11" Opacity="0.85"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <Border Width="12" Height="12" Background="#38e67e22" BorderBrush="#e67e22" BorderThickness="1" CornerRadius="2"/>
+            <TextBlock Text="{DynamicResource yamlmigration.legend.modified}" FontSize="11" Opacity="0.85"/>
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Bottom Pane: Merged Output Window -->
+    <Grid Grid.Row="3" RowDefinitions="Auto,*">
+      <Border Grid.Row="0" Background="{DynamicResource SystemControlHighlightAccentBrush}" Padding="6,4">
+        <TextBlock Text="{DynamicResource yamlmigration.result.title}" Foreground="White" FontWeight="SemiBold"/>
+      </Border>
+      <Border Grid.Row="1" BorderThickness="1,0,1,1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
+        <ae:TextEditor Name="ResultEditor" ShowLineNumbers="True" FontSize="12"
+                       FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace"
+                       Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                       HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
+      </Border>
+    </Grid>
+
+    <!-- Bottom Action Bar -->
+    <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" Margin="0,8,0,0">
+      <TextBlock Name="ValidationSummary" Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource yamlmigration.status.checking}"/>
+      <Button Name="RevertButton" Grid.Column="1" Margin="4,0" MinWidth="90" IsEnabled="False" Content="{DynamicResource yamlmigration.revert}"/>
+      <Button Name="SaveButton" Grid.Column="2" Margin="4,0,0,0" MinWidth="120" FontWeight="Bold" Content="{DynamicResource yamlmigration.save}"/>
+    </Grid>
+  </Grid>
+</Window>

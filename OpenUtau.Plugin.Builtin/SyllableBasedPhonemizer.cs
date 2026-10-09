@@ -504,6 +504,81 @@ namespace OpenUtau.Plugin.Builtin {
                 return null;
             }
         }
+        private static readonly HashSet<string> activeMigrations = new();
+        private static readonly System.Threading.SemaphoreSlim migrationSemaphore = new(1, 1);
+        private static void OpenMigrationUIDirectly(string filePath, string oldYamlText, string templateYamlText, string oldVersion, string newVersion) {
+            Task.Run(async () => {
+                // Queue windows so only 1 dialog shows at a time
+                await migrationSemaphore.WaitAsync();
+                try {
+                    Type dialogType = AppDomain.CurrentDomain.GetAssemblies()
+                        .Select(a => a.GetType("OpenUtau.App.Views.YamlMigrationDialog"))
+                        .FirstOrDefault(t => t != null);
+
+                    Type dispatcherType = AppDomain.CurrentDomain.GetAssemblies()
+                        .Select(a => a.GetType("Avalonia.Threading.Dispatcher"))
+                        .FirstOrDefault(t => t != null);
+
+                    if (dialogType == null || dispatcherType == null) return;
+
+                    var uiThreadProp = dispatcherType.GetProperty("UIThread", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    var uiThread = uiThreadProp?.GetValue(null);
+                    if (uiThread == null) return;
+
+                    var postMethod = dispatcherType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                        .FirstOrDefault(m => m.Name == "Post" && 
+                                            m.GetParameters().Length >= 1 && 
+                                            m.GetParameters()[0].ParameterType == typeof(Action));
+
+                    if (postMethod == null) return;
+
+                    var tcs = new TaskCompletionSource<bool>();
+
+                    Action showAction = () => {
+                        try {
+                            var dialog = Activator.CreateInstance(dialogType, filePath, oldYamlText, templateYamlText, oldVersion, newVersion);
+                            
+                            var locProp = dialogType.GetProperty("WindowStartupLocation");
+                            if (locProp != null) {
+                                locProp.SetValue(dialog, Enum.ToObject(locProp.PropertyType, 2)); // CenterScreen
+                            }
+
+                            // Listen to Closed event to release the queue
+                            var closedEvent = dialogType.GetEvent("Closed");
+                            EventHandler closedHandler = null;
+                            closedHandler = (s, e) => {
+                                closedEvent?.RemoveEventHandler(dialog, closedHandler);
+                                tcs.TrySetResult(true);
+                            };
+                            closedEvent?.AddEventHandler(dialog, closedHandler);
+
+                            var showMethod = dialogType.GetMethod("Show", Type.EmptyTypes);
+                            showMethod?.Invoke(dialog, null);
+
+                            var activateMethod = dialogType.GetMethod("Activate", Type.EmptyTypes);
+                            activateMethod?.Invoke(dialog, null);
+                        } catch (Exception ex) {
+                            Log.Error(ex, $"[SBP] Error launching dialog for '{filePath}'");
+                            tcs.TrySetResult(false);
+                        }
+                    };
+
+                    var postParams = postMethod.GetParameters();
+                    object[] invokeArgs = postParams.Length == 1
+                        ? new object[] { showAction }
+                        : new object[] { showAction, postParams[1].HasDefaultValue ? postParams[1].DefaultValue : Enum.ToObject(postParams[1].ParameterType, 0) };
+
+                    postMethod.Invoke(uiThread, invokeArgs);
+
+                    // Wait until this specific window is closed before showing the next one in queue
+                    await tcs.Task;
+                } catch (Exception ex) {
+                    Log.Error(ex, $"[SBP] Sequential migration UI error for '{filePath}'");
+                } finally {
+                    migrationSemaphore.Release();
+                }
+            });
+        }
 
         public override void SetSinger(USinger singer) {
             if (_singerLoaded && this.singer == singer && localSbpGeneration == globalSbpGeneration) {
@@ -551,65 +626,82 @@ namespace OpenUtau.Plugin.Builtin {
                     : null;
 
                 // Local helper function to update and backup YAML files safely
+                
+
                 void UpdateYamlIfNeeded(string filePath, bool isGlobal) {
                     if (string.IsNullOrEmpty(filePath)) return;
-
-                    bool shouldWriteTemplate = false;
-                    bool shouldBackupOldFile = false;
                     string currentVersion = "unknown";
+                    bool needsMigration = false;
 
                     if (File.Exists(filePath)) {
                         if (YamlTemplate != null && !string.IsNullOrEmpty(YamlVersion)) {
                             try {
                                 currentVersion = ReadVersionFast(filePath);
 
-                                // Update if missing, or if the parsed decimal is strictly lower than the target YamlVersion
                                 if (string.IsNullOrEmpty(currentVersion)) {
-                                    shouldWriteTemplate = true;
-                                    shouldBackupOldFile = true;
+                                    needsMigration = true;
                                 } else if (Version.TryParse(currentVersion, out Version currV) && 
                                         Version.TryParse(YamlVersion, out Version targetV)) {
                                     if (currV < targetV) {
-                                        shouldWriteTemplate = true;
-                                        shouldBackupOldFile = true;
+                                        needsMigration = true;
                                     }
                                 } else if (currentVersion != YamlVersion && !double.TryParse(currentVersion, out _)) {
-                                    // Fallback string check if version formats aren't purely numeric (e.g., "1.3b")
-                                    shouldWriteTemplate = true;
-                                    shouldBackupOldFile = true;
+                                    needsMigration = true;
                                 }
                             } catch (Exception ex) {
-                                Log.Error(ex, $"Syntax error detected in '{filePath}'. Skipping template update to protect data.");
-                                return; 
+                                Log.Error(ex, $"[SBP] Syntax error in '{filePath}'. Skipping template update.");
+                                return;
                             }
                         }
                     } else if (isGlobal && YamlTemplate != null) {
-                        shouldWriteTemplate = true;
-                    }
-
-                    if (shouldBackupOldFile && File.Exists(filePath)) {
-                        try {
-                            // Include the version in the backup file name, e.g., arpa_backup(1.2).yaml
-                            string safeVersion = string.IsNullOrEmpty(currentVersion) ? "unknown" : currentVersion;
-                            string backupFile = Path.Combine(Path.GetDirectoryName(filePath), $"{Path.GetFileNameWithoutExtension(YamlFileName)}_backup({safeVersion}){Path.GetExtension(YamlFileName)}");
-                            
-                            if (File.Exists(backupFile)) File.Delete(backupFile);
-                            File.Move(filePath, backupFile);
-                            Log.Information($"Old {YamlFileName} backed up to {backupFile}");
-                        } catch (Exception e) {
-                            Log.Error(e, $"Failed to back up {filePath}. Aborting overwrite.");
-                            return;
-                        }
-                    }
-
-                    if (shouldWriteTemplate) {
                         try {
                             File.WriteAllBytes(filePath, YamlTemplate);
-                            Log.Information($"'{filePath}' created or updated to version {YamlVersion ?? "default"}");
-                        } catch (Exception e) {
-                            Log.Error(e, $"Failed to write template to {filePath}");
-                        }
+                        } catch { }
+                        return;
                     }
+
+                    if (!needsMigration) return;
+
+                    // 1. Back up original file text FIRST
+                    string oldYamlText = File.ReadAllText(filePath, Encoding.UTF8);
+                    try {
+                        string safeVersion = string.IsNullOrEmpty(currentVersion) ? "unknown" : currentVersion;
+                        string backupFile = Path.Combine(
+                            Path.GetDirectoryName(filePath),
+                            $"{Path.GetFileNameWithoutExtension(YamlFileName)}_backup({safeVersion}){Path.GetExtension(YamlFileName)}"
+                        );
+                        if (!File.Exists(backupFile)) {
+                            File.WriteAllText(backupFile, oldYamlText, Encoding.UTF8);
+                            Log.Information($"[SBP] Preserved backup at '{backupFile}'");
+                        }
+                    } catch (Exception ex) {
+                        Log.Error(ex, $"[SBP] Failed to create backup for {filePath}");
+                    }
+
+                    // 2. Prevent duplicate popups for the same file
+                    lock (activeMigrations) {
+                        if (activeMigrations.Contains(filePath)) return;
+                        activeMigrations.Add(filePath);
+                    }
+
+                    string templateYamlText = Encoding.UTF8.GetString(YamlTemplate);
+
+                    // 3. Directly launch the 3-window migration UI
+                    Task.Run(() => {
+                        try {
+                            OpenMigrationUIDirectly(filePath, oldYamlText, templateYamlText, currentVersion, YamlVersion);
+                        } finally {
+                            // Allow re-checking after 5 seconds if closed without saving
+                            Task.Delay(5000).ContinueWith(_ => {
+                                lock (activeMigrations) {
+                                    activeMigrations.Remove(filePath);
+                                }
+                            });
+                        }
+                    });
+
+                    // NOTE: NEVER call File.WriteAllBytes(filePath, YamlTemplate) here.
+                    // The user's file is kept intact until they click "Save & Finish" in the dialog.
                 }
 
                 UpdateYamlIfNeeded(globalFile, true);
@@ -1612,6 +1704,7 @@ namespace OpenUtau.Plugin.Builtin {
             public string version { get; set; }
             public bool? isglides { get; set; }
             public SymbolData[] symbols { get; set; } = Array.Empty<SymbolData>();
+            public EntryData[] entries { get; set; } = Array.Empty<EntryData>();
             public Replacement[] replacements { get; set; } = Array.Empty<Replacement>();
             public Replacement[] fallbacks { get; set; } = Array.Empty<Replacement>();
             public Timings[] timings { get; set; } = Array.Empty<Timings>();
@@ -1619,6 +1712,7 @@ namespace OpenUtau.Plugin.Builtin {
             public VowelSustainData[] vowelsustains { get; set; } = Array.Empty<VowelSustainData>();
 
             public class SymbolData { public string symbol { get; set; } public string type { get; set; } }
+            public class EntryData { public string grapheme { get; set; } public string[] phonemes { get; set; } }
             public class Timings { public string symbol { get; set; } public double value { get; set; } }
             public class DiphthongData { public string from { get; set; } public string to { get; set; } }
             public class VowelSustainData { public string symbol { get; set; } public string sustain { get; set; } public double offset { get; set; } }
@@ -1627,20 +1721,43 @@ namespace OpenUtau.Plugin.Builtin {
         public class Replacement {
             public object from { get; set; }
             public object to { get; set; }
-            public string where { get; set; } = "inside";
 
+            private string _where = "inside";
+            public string where {
+                get => string.IsNullOrEmpty(_where) ? "inside" : _where;
+                set => _where = string.IsNullOrEmpty(value) ? "inside" : value;
+            }
+
+            // Controls YamlDotNet serialization: omits 'where' when it is the default "inside"
+            public bool ShouldSerializewhere() => !string.IsNullOrEmpty(_where) && _where != "inside";
+            public bool ShouldSerializeWhere() => !string.IsNullOrEmpty(_where) && _where != "inside";
+
+            [YamlDotNet.Serialization.YamlIgnore]
             public List<string> FromList {
                 get {
                     if (from is string s) return new List<string> { s };
-                    if (from is IEnumerable<object> list) return list.Select(x => x.ToString() ?? "null").ToList();
+                    if (from is System.Collections.IEnumerable list) {
+                        var res = new List<string>();
+                        foreach (var item in list) {
+                            if (item != null) res.Add(item.ToString());
+                        }
+                        return res;
+                    }
                     return new List<string>();
                 }
             }
 
+            [YamlDotNet.Serialization.YamlIgnore]
             public List<string> ToList {
                 get {
                     if (to is string s) return new List<string> { s };
-                    if (to is IEnumerable<object> list) return list.Select(x => x.ToString() ?? "null").ToList();
+                    if (to is System.Collections.IEnumerable list) {
+                        var res = new List<string>();
+                        foreach (var item in list) {
+                            if (item != null) res.Add(item.ToString());
+                        }
+                        return res;
+                    }
                     return new List<string>();
                 }
             }
@@ -1710,13 +1827,17 @@ namespace OpenUtau.Plugin.Builtin {
             // Sort validRules by the length of the matching array descending.
             // This guarantees multi-phoneme matches evaluate BEFORE 1:1 matches.
             var validRules = mergingReplacements.Concat(splittingReplacements)
-                .Where(r => r.where == "all" || (!isBoundary && r.where == "inside") || (isBoundary && r.where == "boundary"))
+                .Where(r => r.where == "all" || 
+                            (!isBoundary && (r.where == "inside" || string.IsNullOrEmpty(r.where))) || 
+                            (isBoundary && r.where == "boundary"))
                 .OrderByDescending(r => r.FromList.Count)
                 .ThenByDescending(r => r.FromList.Sum(s => s.Length)) // Prioritize longer strings
                 .ToList();
                 
             var validSplits = splittingReplacements
-                .Where(r => r.where == "all" || (!isBoundary && r.where == "inside") || (isBoundary && r.where == "boundary"))
+                .Where(r => r.where == "all" || 
+                            (!isBoundary && (r.where == "inside" || string.IsNullOrEmpty(r.where))) || 
+                            (isBoundary && r.where == "boundary"))
                 .OrderByDescending(r => r.FromList.Sum(s => s.Length)) // Sort fallback splits too
                 .ToList();
 

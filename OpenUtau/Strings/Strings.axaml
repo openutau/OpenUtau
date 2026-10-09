@@ -1067,4 +1067,25 @@ General
   <system:String x:Key="yamleditor.value">Value: {0}</system:String>
   <system:String x:Key="yamleditor.warnings">Warnings: {0}. OpenUtau ignores these parts; you can still save.</system:String>
   <system:String x:Key="yamleditor.wrongtype">Expected {0}.</system:String>
+
+  <system:String x:Key="yamlmigration.caption">YAML Version Migration &amp; Conflict Resolver</system:String>
+  <system:String x:Key="yamlmigration.description">Review differences between your local customizations and the new upstream template. Edit the merged result directly or use the quick-action merge controls below.</system:String>
+  <system:String x:Key="yamlmigration.banner.format">Migration Conflict: {0} ({1} ➔ {2})</system:String>
+  <system:String x:Key="yamlmigration.local.title">Current / Local (Old Version)</system:String>
+  <system:String x:Key="yamlmigration.local.version">Current / Local (v{0})</system:String>
+  <system:String x:Key="yamlmigration.incoming.title">Incoming / Upstream (New Version)</system:String>
+  <system:String x:Key="yamlmigration.incoming.version">Incoming / Template (v{0})</system:String>
+  <system:String x:Key="yamlmigration.useold">Take Current (Keep Local)</system:String>
+  <system:String x:Key="yamlmigration.usenew">Take Incoming (Reset to Template)</system:String>
+  <system:String x:Key="yamlmigration.automerge">⚡ Smart Auto-Merge (Preserve Customizations)</system:String>
+  <system:String x:Key="yamlmigration.legend.added">Incoming Added</system:String>
+  <system:String x:Key="yamlmigration.legend.local">Local Custom</system:String>
+  <system:String x:Key="yamlmigration.legend.modified">Modified</system:String>
+  <system:String x:Key="yamlmigration.result.title">Merged Output (Result - Editable with Real-Time Validation)</system:String>
+  <system:String x:Key="yamlmigration.save">Save &amp; Finish</system:String>
+  <system:String x:Key="yamlmigration.revert">Revert</system:String>
+  <system:String x:Key="yamlmigration.status.checking">Checking YAML syntax...</system:String>
+  <system:String x:Key="yamlmigration.status.valid">✅ YAML is valid and ready to save.</system:String>
+  <system:String x:Key="yamlmigration.status.errors">❌ {0} Error(s) detected. Fix errors before saving.</system:String>
+  <system:String x:Key="yamlmigration.status.warnings">⚠️ {0} Warning(s) detected (can be saved).</system:String>
 </ResourceDictionary>
