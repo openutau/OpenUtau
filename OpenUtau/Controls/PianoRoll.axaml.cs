@@ -525,7 +525,7 @@ namespace OpenUtau.App.Controls {
             if (notesVM.Part == null) {
                 return;
             }
-            var edit = new QuantizeNotes(notesVM.Project.resolution * 4 / notesVM.SnapDiv);
+            var edit = new QuantizeNotes(notesVM.SnapDiv, notesVM.Swing);
             edit.Run(notesVM.Project, notesVM.Part, notesVM.Selection.ToList(), DocManager.Inst);
         }
 
@@ -1574,7 +1574,8 @@ namespace OpenUtau.App.Controls {
             }
             var project = DocManager.Inst.Project;
             int snapUnit = project.resolution * 4 / notesVm.SnapDiv;
-            int deltaTicks = notesVm.IsSnapOn ? snapUnit : 15;
+            int nextSnapUnit = MusicMath.GetEffectiveSnapUnit(project.resolution, playVm.PlayPosTick, 0, notesVm.SnapDiv, notesVm.Swing);
+            int prevSnapUnit = snapUnit * 2 - nextSnapUnit;
 
             bool isNone = args.KeyModifiers == KeyModifiers.None;
             bool isAlt = args.KeyModifiers == KeyModifiers.Alt;
@@ -1766,11 +1767,11 @@ namespace OpenUtau.App.Controls {
                         return true;
                     }
                     if (isAlt) {
-                        notesVm.ResizeSelectedNotes(-1 * deltaTicks);
+                        notesVm.ResizeSelectedNotes(-1);
                         return true;
                     }
                     if (isCtrl) {
-                        notesVm.MoveSelectedNotes(-1 * deltaTicks);
+                        notesVm.MoveSelectedNotes(-1);
                         return true;
                     }
                     if (isShift) {
@@ -1784,11 +1785,11 @@ namespace OpenUtau.App.Controls {
                         return true;
                     }
                     if (isAlt) {
-                        notesVm.ResizeSelectedNotes(deltaTicks);
+                        notesVm.ResizeSelectedNotes(1);
                         return true;
                     }
                     if (isCtrl) {
-                        notesVm.MoveSelectedNotes(deltaTicks);
+                        notesVm.MoveSelectedNotes(1);
                         return true;
                     }
                     if (isShift) {
@@ -1798,13 +1799,13 @@ namespace OpenUtau.App.Controls {
                     break;
                 case Key.OemPlus:
                     if (isNone) {
-                        notesVm.ResizeSelectedNotes(deltaTicks);
+                        notesVm.ResizeSelectedNotes(1);
                         return true;
                     }
                     break;
                 case Key.OemMinus:
                     if (isNone) {
-                        notesVm.ResizeSelectedNotes(-1 * deltaTicks);
+                        notesVm.ResizeSelectedNotes(-1);
                         return true;
                     }
                     break;
@@ -1926,7 +1927,7 @@ namespace OpenUtau.App.Controls {
                 case Key.OemOpenBrackets:
                     // move playhead left
                     if (isNone) {
-                        playVm.MovePlayPos(playVm.PlayPosTick - snapUnit);
+                        playVm.MovePlayPos(playVm.PlayPosTick - prevSnapUnit);
                         return true;
                     }
                     // to selection start
@@ -1945,7 +1946,7 @@ namespace OpenUtau.App.Controls {
                 case Key.OemCloseBrackets:
                     // move playhead right
                     if (isNone) {
-                        playVm.MovePlayPos(playVm.PlayPosTick + snapUnit);
+                        playVm.MovePlayPos(playVm.PlayPosTick + nextSnapUnit);
                         return true;
                     }
                     // to selection end

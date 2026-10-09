@@ -37,6 +37,11 @@ namespace OpenUtau.App.Controls {
                 nameof(SnapDiv),
                 o => o.SnapDiv,
                 (o, v) => o.SnapDiv = v);
+        public static readonly DirectProperty<TickBackground, int> SwingProperty =
+            AvaloniaProperty.RegisterDirect<TickBackground, int>(
+                nameof(Swing),
+                o => o.Swing,
+                (o, v) => o.Swing = v);
         public static readonly DirectProperty<TickBackground, ObservableCollection<int>?> SnapTicksProperty =
             AvaloniaProperty.RegisterDirect<TickBackground, ObservableCollection<int>?>(
                 nameof(SnapTicks),
@@ -69,6 +74,10 @@ namespace OpenUtau.App.Controls {
             get => _snapDiv;
             set => SetAndRaise(SnapDivProperty, ref _snapDiv, value);
         }
+        public int Swing {
+            get => _swing;
+            set => SetAndRaise(SwingProperty, ref _swing, value);
+        }
         public ObservableCollection<int>? SnapTicks {
             get => _snapTicks;
             set => SetAndRaise(SnapTicksProperty, ref _snapTicks, value);
@@ -83,6 +92,7 @@ namespace OpenUtau.App.Controls {
         private double _tickOffset;
         private int _tickOrigin;
         private int _snapDiv;
+        private int _swing;
         private ObservableCollection<int>? _snapTicks;
         private bool _showBar = true;
 
@@ -118,6 +128,7 @@ namespace OpenUtau.App.Controls {
                 change.Property == TickWidthProperty ||
                 change.Property == TickOffsetProperty ||
                 change.Property == SnapDivProperty ||
+                change.Property == SwingProperty ||
                 change.Property == ShowBarProperty) {
                 InvalidateVisual();
             }
@@ -129,6 +140,10 @@ namespace OpenUtau.App.Controls {
             }
             var project = Core.DocManager.Inst.Project;
             int snapUnit = project.resolution * 4 / SnapDiv;
+            int baseSnapUnit = snapUnit;
+            double maxSwingOffset = baseSnapUnit / 3.0;
+            double normalizedSwing = Math.Max(0, Math.Min(100, Swing)) / 100.0;
+            double swingOffset = maxSwingOffset * normalizedSwing;
             while (snapUnit * TickWidth < ViewConstants.MinTicklineWidth) {
                 snapUnit *= 2; // Avoid drawing too dense.
             }
@@ -168,12 +183,22 @@ namespace OpenUtau.App.Controls {
                         ticksPerLine = nextBarTick - barTick;
                     }
                 }
+
                 if (nextBarTick > leftTick) {
                     for (int tick = barTick + ticksPerLine; tick < nextBarTick; tick += ticksPerLine) {
-                        SnapTicks?.Add(tick);
                         project.timeAxis.TickPosToBarBeat(tick, out int snapBar, out int snapBeat, out int snapRemainingTicks);
                         var pen = snapRemainingTicks != 0 ? penDanshed : penBeatUnit;
-                        x = Math.Round(tick * TickWidth - pixelOffset) + 0.5;
+
+                        double visualTick = tick;
+                        if (Swing > 0 && SnapDiv > 0) {
+                            long gridIndex = (long)Math.Round((double)tick / baseSnapUnit);
+                            if (gridIndex % 2 != 0) {
+                                visualTick += swingOffset;
+                            }
+                        }
+                        SnapTicks?.Add((int)visualTick);
+
+                        x = Math.Round(visualTick * TickWidth - pixelOffset) + 0.5;
                         y = ShowBar ? 24 : 0;
                         context.DrawLine(pen, new Point(x, y), new Point(x, Bounds.Height + 0.5f));
                     }
