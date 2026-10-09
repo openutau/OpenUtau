@@ -121,6 +121,9 @@
   <data name="g2p-arpabet" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>g2p-arpabet.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="g2p-brapa" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>g2p-brapa.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="g2p-de" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>g2p-de.zip;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
