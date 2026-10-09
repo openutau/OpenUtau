@@ -988,6 +988,8 @@ General
 
   <system:String x:Key="tracks.duplicate">Duplicate Track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>
+  <system:String x:Key="tracks.rotateselectedtracksingers">Rotate singers across selected tracks</system:String>
+  <system:String x:Key="tracks.standardizesettings">Standardize Track Settings</system:String>
   <system:String x:Key="tracks.favorite">Favorites</system:String>
   <system:String x:Key="tracks.installsinger">Install singer</system:String>
   <system:String x:Key="tracks.mixfx">Track Polish...</system:String>
