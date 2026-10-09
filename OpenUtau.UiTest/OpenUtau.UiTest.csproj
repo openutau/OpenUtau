@@ -11,6 +11,7 @@
     <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
   </PropertyGroup>
 
   <ItemGroup>
