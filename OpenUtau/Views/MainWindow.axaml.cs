@@ -122,7 +122,7 @@ namespace OpenUtau.App.Views {
             PartReplaceAudioCommand = ReactiveCommand.Create<UPart>(part => ReplaceAudio(part));
             PartTranscribeCommand = ReactiveCommand.Create<UPart>(part => Transcribe(part));
             PartMergeCommand = ReactiveCommand.Create<UPart>(part => MergePart(part));
-            PartSplitCommand = ReactiveCommand.Create<UPart>(async part =>  await SplitPart(part));
+            PartSplitCommand = ReactiveCommand.Create<UPart>(async part => await SplitParts());
 
             AddHandler(DragDrop.DropEvent, OnDrop);
 
@@ -1882,22 +1882,70 @@ namespace OpenUtau.App.Views {
             DocManager.Inst.ExecuteCmd(new AddPartCommand(DocManager.Inst.Project, mergedPart));
             DocManager.Inst.EndUndoGroup();
         }
-        async Task SplitPart(UPart part) {
-            int tick = DocManager.Inst.playPosTick;
+
+        async Task SplitParts() {
+            UVoicePart[] selectedParts = viewModel.TracksViewModel.Parts
+                .Where(viewModel.TracksViewModel.SelectedParts.Contains)
+                .OfType<UVoicePart>()
+                .OrderBy((part) => part.trackNo)
+                .ToArray();
+            List<int?> partSplitTick = [];
+            int currentPlayPos = DocManager.Inst.playPosTick;
+            foreach (UVoicePart part in selectedParts) {
+                int tick = currentPlayPos;
+                List<UNote> notesInTheWay = part.notes
+                    .Where(n => (n.position < tick - part.position) && (n.End > tick - part.position))
+                    .ToList();
+                
+                viewModel.TracksViewModel.DeselectParts();
+                if (viewModel.TracksViewModel.Parts.Contains(part)) viewModel.TracksViewModel.SelectPart(part);
+                
+                if (notesInTheWay.Count != 0) {
+                    var res = await MessageBox.Show(
+                        this,
+                        ThemeManager.GetString("dialogs.splitpart.intheway"),
+                        ThemeManager.GetString("dialogs.splitpart.caption") + " | " + part.DisplayName,
+                        MessageBox.MessageBoxButtons.YesNo);
+                    if (res == MessageBox.MessageBoxResult.No) { 
+                        partSplitTick.Add(null);
+                        continue;
+                    }
+
+                    do {
+                        tick = part.position + notesInTheWay.Max(n => n.End);
+                        notesInTheWay = part.notes
+                            .Where(n => (n.position < tick - part.position) && (n.End > tick - part.position))
+                            .ToList();
+                    } while (notesInTheWay.Count != 0);
+                }
+                partSplitTick.Add(tick);
+            }
+            viewModel.TracksViewModel.DeselectParts();
+            
+            if (partSplitTick.All(tick => tick == null)) return;
+            DocManager.Inst.StartUndoGroup();
+            try {
+                for (int i = 0; i < partSplitTick.Count; i++) {
+                    var part = selectedParts[i];
+                    if (partSplitTick[i] == null) {
+                        if (viewModel.TracksViewModel.Parts.Contains(part)) viewModel.TracksViewModel.SelectPart(part);
+                        continue;
+                    }
+                    SplitPart(selectedParts[i], (int)partSplitTick[i]!);
+                }
+            } finally {
+                DocManager.Inst.EndUndoGroup();
+            }
+        }
+        
+        // Splits the parts at the tick, does nothing if any notes exist within the tick
+        void SplitPart(UPart part, int tick) {
             if (part.position >= tick || part.End <= tick) return;
             if (part is not UVoicePart vp) return;
             var notesInTheWay = vp.notes.Where(n => (n.position < tick - vp.position) && (n.End > tick - vp.position));
             if (notesInTheWay.Any()) {
-                var res = await MessageBox.Show(
-                    this,
-                    ThemeManager.GetString("dialogs.splitpart.intheway"),
-                    ThemeManager.GetString("dialogs.splitpart.caption"),
-                    MessageBox.MessageBoxButtons.YesNo);
-                if (res == MessageBox.MessageBoxResult.No) { return; }
-                do {
-                    tick = vp.position + notesInTheWay.Max(n => n.End);
-                    notesInTheWay = vp.notes.Where(n => (n.position < tick - vp.position) && (n.End > tick - vp.position));
-                } while (notesInTheWay.Any());
+                Log.Warning("{PartName} contains a note at Tick {Tick}, doing nothing.", part.DisplayName, tick);
+                return;
             }
 
             static SortedSet<UNote> GetNotes(IEnumerable<UNote> notes, int relTick, bool after) => after
@@ -1938,13 +1986,12 @@ namespace OpenUtau.App.Views {
                 curves = curvesAfter,
                 Duration = vp.End - tick
             };
-
-            DocManager.Inst.StartUndoGroup();
+            
             DocManager.Inst.ExecuteCmd(new RemovePartCommand(DocManager.Inst.Project, vp));
             DocManager.Inst.ExecuteCmd(new AddPartCommand(DocManager.Inst.Project, firstPart));
             DocManager.Inst.ExecuteCmd(new AddPartCommand(DocManager.Inst.Project, secondPart));
-            DocManager.Inst.EndUndoGroup();
         }
+        
         public async void OnWelcomeRecent(object sender, PointerPressedEventArgs args) {
             if (sender is StackPanel panel &&
                 panel.DataContext is RecentFileInfo fileInfo) {

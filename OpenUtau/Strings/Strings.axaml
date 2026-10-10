@@ -81,7 +81,7 @@
   <system:String x:Key="context.part.nopitchsource">No wave part available</system:String>
   <system:String x:Key="context.part.rename">Rename part</system:String>
   <system:String x:Key="context.part.replaceaudio">Reselect audio file</system:String>
-  <system:String x:Key="context.part.split">Split part at playhead</system:String>
+  <system:String x:Key="context.part.split">Split parts at playhead</system:String>
   <system:String x:Key="context.part.transcribe">Transcribe audio to create a note part</system:String>
   <system:String x:Key="context.part.transcribing">Transcribing</system:String>
   <system:String x:Key="context.pitch.easein">Ease in</system:String>
