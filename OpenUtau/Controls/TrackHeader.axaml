@@ -67,6 +67,10 @@
       <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
     </Style>
+    <!-- Workaround for cut tooltips https://github.com/AvaloniaUI/Avalonia/issues/21240 -->
+    <Style Selector="ToolTip /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="UseLayoutRounding" Value="True"/>
+    </Style>
   </UserControl.Styles>
   <UserControl.Resources>
     <ContextMenu x:Key="RenderersMenuRes" Classes="context" Name="RenderersMenu" Placement="BottomEdgeAlignedLeft" 
@@ -93,7 +97,7 @@
     </ContextMenu>
   </UserControl.Resources>
   <Border Margin="1,1,1,1" BorderThickness="1" BorderBrush="{Binding HeaderBorderBrush}"
-           CornerRadius="2" PointerPressed="HeaderPointerPressed">
+           CornerRadius="2" PointerPressed="HeaderPointerPressed" UseLayoutRounding="False">
     <Grid ColumnDefinitions="auto,*" Background="Transparent">
       <Panel Grid.Column="0" VerticalAlignment="Stretch" Background="Transparent" PointerWheelChanged="MoveHandleScrolled"
              PointerMoved="MoveHandleMoved" PointerPressed="MoveHandlePressed" PointerReleased="MoveHandleReleased">
@@ -111,18 +115,18 @@
            settings with the renderer and fx with the faders. Rows hidden at small track heights
            fold into the more menu; settings goes along with the renderer. -->
       <Grid Grid.Column="1" ColumnDefinitions="*,auto,auto,auto" RowDefinitions="auto,auto,auto,auto,auto,*">
-        <Button Classes="clear" Grid.Row="0" Margin="1" Padding="2,1,0,0" Height="18"
+        <Button Classes="clear" Grid.Row="0" Margin="1" Padding="2,0,0,0" Height="18"
                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                 Content="{Binding TrackName}" Click="TrackNameButtonClicked"/>
-        <Button Name="SingerButton" Grid.Row="1" Grid.ColumnSpan="4" Classes="clear" Margin="1" Padding="2,1,0,0" Height="18" IsVisible="{Binding IsSingerVisible}"
+        <Button Name="SingerButton" Grid.Row="1" Grid.ColumnSpan="4" Classes="clear" Margin="1" Padding="2,0,0,0" Height="18" IsVisible="{Binding IsSingerVisible}"
                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                 Content="{Binding Singer, TargetNullValue={StaticResource tracks.selectsinger}}" Click="SingerButtonClicked"
                 ContextRequested="SingerButtonContextRequested" ToolTip.Tip="{Binding Singer}"/>
-        <Button Grid.Row="2" Grid.ColumnSpan="4" Classes="clear" Margin="1" Padding="2,1,0,0" Height="18" IsVisible="{Binding IsPhonemizerVisible}"
+        <Button Grid.Row="2" Grid.ColumnSpan="4" Classes="clear" Margin="1" Padding="2,0,0,0" Height="18" IsVisible="{Binding IsPhonemizerVisible}"
                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                 Content="{Binding PhonemizerTag}" Click="PhonemizerButtonClicked" ContextRequested="PhonemizerButtonContextRequested"
                 ToolTip.Tip="{Binding Phonemizer}" ContextMenu="{StaticResource PhonemizerMenuRes}"/>
-        <Button Grid.Row="3" Grid.ColumnSpan="3" Classes="clear" Margin="1" Padding="2,1,0,0" Height="18" IsVisible="{Binding IsRendererVisible}"
+        <Button Grid.Row="3" Grid.ColumnSpan="3" Classes="clear" Margin="1" Padding="2,0,0,0" Height="18" IsVisible="{Binding IsRendererVisible}"
                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                 Content="{Binding Renderer}" Click="RendererButtonClicked" ContextRequested="RendererButtonContextRequested"
                 ToolTip.Tip="{DynamicResource tracks.selectrenderer}" ContextMenu="{StaticResource RendererMenuRes}"/>

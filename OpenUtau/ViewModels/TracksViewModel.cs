@@ -212,7 +212,10 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void OnYZoomed(Point position, double delta) {
-            double trackHeight = TrackHeight + Math.Sign(delta) * ViewConstants.TrackHeightDelta;
+            SetTrackHeight(TrackHeight + Math.Sign(delta) * ViewConstants.TrackHeightDelta);
+        }
+
+        public void SetTrackHeight(double trackHeight) {
             trackHeight = Math.Clamp(trackHeight, ViewConstants.TrackHeightMin, ViewConstants.TrackHeightMax);
             trackHeight = Math.Max(trackHeight, TrackCount);
             TrackHeight = trackHeight;

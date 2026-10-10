@@ -49,6 +49,11 @@ namespace OpenUtau.App.Controls {
         private ReactiveCommand<BatchEdit, RxVoid>? noteBatchEditCommand;
 
         private Window RootWindow => (Window)TopLevel.GetTopLevel(this)!;
+
+        private readonly ValueGlide hScroll;
+        private readonly ValueGlide vScroll;
+        private readonly ZoomGlide xZoom;
+        private readonly ZoomGlide yZoom;
         
         public static readonly StyledProperty<Thickness> OffScreenMarginProperty = AvaloniaProperty.Register<PianoRoll, Thickness>(nameof(OffScreenMargin));
         public Thickness OffScreenMargin {
@@ -59,6 +64,11 @@ namespace OpenUtau.App.Controls {
         public PianoRoll(PianoRollViewModel model) {
             InitializeComponent();
             DataContext = ViewModel = model;
+            var smoothViewport = new SmoothViewport(this);
+            hScroll = smoothViewport.Scroll(HScrollBar);
+            vScroll = smoothViewport.Scroll(VScrollBar);
+            xZoom = smoothViewport.Zoom((position, delta) => ViewModel.NotesViewModel.OnXZoomed(position, delta));
+            yZoom = smoothViewport.Zoom((position, delta) => ViewModel.NotesViewModel.OnYZoomed(position, delta));
             ValueTip.IsVisible = false;
             SetPenToolIcon();
             penTool.AddHandler(PointerPressedEvent, OnToolButtonPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
@@ -607,14 +617,12 @@ namespace OpenUtau.App.Controls {
         }
 
         public void HScrollPointerWheelChanged(object sender, PointerWheelEventArgs args) {
-            var scrollbar = (ScrollBar)sender;
-            scrollbar.Value = Math.Max(scrollbar.Minimum, Math.Min(scrollbar.Maximum, scrollbar.Value - scrollbar.SmallChange * args.Delta.Y));
+            hScroll.By(-HScrollBar.SmallChange * args.Delta.Y, SmoothViewport.IsWheelStep(args.Delta.Y));
             LyricBox?.EndEdit();
         }
 
         public void VScrollPointerWheelChanged(object sender, PointerWheelEventArgs args) {
-            var scrollbar = (ScrollBar)sender;
-            scrollbar.Value = Math.Max(scrollbar.Minimum, Math.Min(scrollbar.Maximum, scrollbar.Value - scrollbar.SmallChange * args.Delta.Y));
+            vScroll.By(-VScrollBar.SmallChange * args.Delta.Y, SmoothViewport.IsWheelStep(args.Delta.Y));
             LyricBox?.EndEdit();
         }
 
@@ -623,12 +631,12 @@ namespace OpenUtau.App.Controls {
             var position = args.GetCurrentPoint((Visual)sender).Position;
             var size = control.Bounds.Size;
             position = position.WithX(position.X / size.Width).WithY(position.Y / size.Height);
-            ViewModel.NotesViewModel.OnXZoomed(position, 0.1 * args.Delta.Y);
+            xZoom.By(position, 0.1 * args.Delta.Y, SmoothViewport.IsWheelStep(args.Delta.Y));
             LyricBox?.EndEdit();
         }
 
         public void ViewScalerPointerWheelChanged(object sender, PointerWheelEventArgs args) {
-            ViewModel.NotesViewModel.OnYZoomed(new Point(0, 0.5), 0.1 * args.Delta.Y);
+            yZoom.By(new Point(0, 0.5), 0.1 * args.Delta.Y, SmoothViewport.IsWheelStep(args.Delta.Y));
             LyricBox?.EndEdit();
         }
 
@@ -922,7 +930,7 @@ namespace OpenUtau.App.Controls {
                 }
             }
             // Note context menu
-            if (ViewModel.EditTool.IsMatch([EditTools.CursorTool, EditTools.PenTool, EditTools.KnifeTool]) || args.KeyModifiers == cmdKey) {
+            if (ViewModel.EditTool.IsMatch([EditTools.CursorTool, EditTools.PenTool, EditTools.KnifeTool, EditTools.PitchPointTool]) || args.KeyModifiers == cmdKey) {
                 var hitInfo = ViewModel.NotesViewModel.HitTest.HitTestNote(point.Position);
                 var vibHitInfo = ViewModel.NotesViewModel.HitTest.HitTestVibrato(point.Position);
                 if ((hitInfo.hitBody && hitInfo.note != null) || vibHitInfo.hit) {
@@ -993,6 +1001,20 @@ namespace OpenUtau.App.Controls {
             }
         }
 
+        private void UpdateEditState(PointerEventArgs args, Control control, PointerPoint point) {
+            if (editState == null) {
+                return;
+            }
+            if (editState.UsesIntermediatePoints) {
+                // The last of these is the current point.
+                foreach (var p in args.GetIntermediatePoints(control)) {
+                    editState.Update(p.Pointer, p.Position);
+                }
+            } else {
+                editState.Update(point.Pointer, point.Position);
+            }
+        }
+
         public void NotesCanvasPointerMoved(object sender, PointerEventArgs args) {
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
@@ -1006,7 +1028,7 @@ namespace OpenUtau.App.Controls {
                 editState.shiftHeld = args.KeyModifiers == KeyModifiers.Shift;
                 editState.ctrlHeld = args.KeyModifiers == cmdKey;
                 editState.altHeld = args.KeyModifiers == KeyModifiers.Alt;
-                editState.Update(point.Pointer, point.Position);
+                UpdateEditState(args, control, point);
                 return;
             }
             if (ViewModel?.NotesViewModel?.HitTest == null) {
@@ -1122,16 +1144,14 @@ namespace OpenUtau.App.Controls {
                     delta = new Vector(delta.Y, delta.X);
                 }
                 if (delta.X != 0) {
-                    HScrollBar.Value = Math.Max(HScrollBar.Minimum,
-                        Math.Min(HScrollBar.Maximum, HScrollBar.Value - HScrollBar.SmallChange * delta.X));
+                    hScroll.By(-HScrollBar.SmallChange * delta.X, SmoothViewport.IsWheelStep(delta.X));
                 }
                 if (delta.Y != 0) {
-                    VScrollBar.Value = Math.Max(VScrollBar.Minimum,
-                        Math.Min(VScrollBar.Maximum, VScrollBar.Value - VScrollBar.SmallChange * delta.Y));
+                    vScroll.By(-VScrollBar.SmallChange * delta.Y, SmoothViewport.IsWheelStep(delta.Y));
                 }
             } else if (args.KeyModifiers == KeyModifiers.Alt) {
                 position = position.WithX(position.X / size.Width).WithY(position.Y / size.Height);
-                ViewModel.NotesViewModel.OnYZoomed(position, 0.1 * args.Delta.Y);
+                yZoom.By(position, 0.1 * args.Delta.Y, SmoothViewport.IsWheelStep(args.Delta.Y));
             } else if (args.KeyModifiers == cmdKey) {
                 TimelinePointerWheelChanged(TimelineCanvas, args);
             }
@@ -1229,7 +1249,7 @@ namespace OpenUtau.App.Controls {
             if (editState != null) {
                 editState.ctrlShiftHeld = ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool;
                 editState.shiftHeld = (args.KeyModifiers == KeyModifiers.Shift && (ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool || ViewModel.CurveViewModel.CurveTool == CurveTools.CurvePenTool));
-                editState.Update(point.Pointer, point.Position);
+                UpdateEditState(args, control, point);
             } else {
                 Cursor = null;
             }

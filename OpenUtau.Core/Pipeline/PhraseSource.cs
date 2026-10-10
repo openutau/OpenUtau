@@ -5,6 +5,7 @@ using System.Numerics;
 using OpenUtau.Classic;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 
 namespace OpenUtau.Core.Pipeline {
     /// <summary>
@@ -233,7 +234,8 @@ namespace OpenUtau.Core.Pipeline {
 
         internal PhonemeSource(UPhoneme phoneme, int noteIndex, TimeAxis axis,
                 int partPosition, UTrack track, UProject project,
-                string trackResampler, bool xsyAvailable, IReadOnlyList<UExpressionDescriptor>? graphExpressions) {
+                string trackResampler, bool xsyAvailable, IReadOnlyList<UExpressionDescriptor> flagExpressions,
+                IReadOnlyList<UExpressionDescriptor>? graphExpressions) {
             Position = phoneme.position;
             Duration = phoneme.Duration;
             End = phoneme.End;
@@ -275,7 +277,7 @@ namespace OpenUtau.Core.Pipeline {
                 && !string.IsNullOrEmpty(engDescriptor.options[eng])) {
                 Resampler = engDescriptor.options[eng];
             }
-            Flags = phoneme.GetResamplerFlags(project, track);
+            Flags = UPhoneme.BuildResamplerFlags(flagExpressions, abbr => phoneme.GetExpression(project, track, abbr).Item1);
             string voiceColor = phoneme.GetVoiceColor(project, track);
             Suffix = track.Singer.Subbanks
                 .FirstOrDefault(subbank => subbank.Color == voiceColor)?.Suffix ?? string.Empty;
@@ -390,8 +392,8 @@ namespace OpenUtau.Core.Pipeline {
         public readonly IReadOnlyDictionary<string, UMaskedRun[]>? MaskedCurves;
         /// <summary>The per-phoneme values graph inputs read. Only set when the track has a graph.</summary>
         public readonly ExpressionGraph.PhonemeAnchors? PhonemeAnchors;
-        /// <summary>The track's expressions in flag order. Only set when the track has a graph.</summary>
-        public readonly UExpressionDescriptor[] FlagExpressions = Array.Empty<UExpressionDescriptor>();
+        /// <summary>The track's expressions in flag order.</summary>
+        public readonly UExpressionDescriptor[] FlagExpressions;
         /// <summary>The per-phoneme expressions a graph can drive, by abbreviation.</summary>
         public readonly IReadOnlyDictionary<string, UExpressionDescriptor> DrivablePhonemeExpressions =
             new Dictionary<string, UExpressionDescriptor>();
@@ -400,6 +402,8 @@ namespace OpenUtau.Core.Pipeline {
         public readonly PhonemeSource[] Phonemes;
         /// <summary>Half-open [start, end) index ranges into <see cref="Phonemes"/>.</summary>
         public readonly (int Start, int End)[] PhraseGroups;
+        // Shared by graph contexts for this immutable snapshot; unused graphs pay no indexing cost.
+        internal readonly Lazy<int[][]> PhraseNoteIndex;
 
         internal PhraseSource(
                 PartId partId, DocRevision revision, long generation,
@@ -447,9 +451,9 @@ namespace OpenUtau.Core.Pipeline {
                 .Where(d => d.type == UExpressionType.Curve)
                 .ToDictionary(d => d.abbr, d => (int)d.defaultValue);
             ExpressionGraph = OpenUtau.Core.ExpressionGraph.ExpressionGraphProgram.ForTrack(project, track);
+            FlagExpressions = UPhoneme.GetExpressionDescriptors(project, track).ToArray();
             List<UExpressionDescriptor>? graphExpressions = null;
             if (ExpressionGraph != null) {
-                FlagExpressions = UPhoneme.GetExpressionDescriptors(project, track).ToArray();
                 graphExpressions = FlagExpressions
                     .Where(d => d.type is UExpressionType.Numerical or UExpressionType.Options)
                     .ToList();
@@ -466,9 +470,11 @@ namespace OpenUtau.Core.Pipeline {
                 var p = phonemes[i];
                 Phonemes[i] = new PhonemeSource(p,
                     p.Parent != null ? noteIndexByNote[p.Parent] : -1,
-                    Axis, part.position, track, project, Resampler, XsyAvailable, graphExpressions);
+                    Axis, part.position, track, project, Resampler, XsyAvailable, FlagExpressions, graphExpressions);
             }
             PhraseGroups = groups;
+            PhraseNoteIndex = new Lazy<int[][]>(() => PhraseGroups
+                .Select(g => PhraseNotes(g.Start, g.End).ToArray()).ToArray());
             if (ExpressionGraph != null) {
                 // Options expressions are indices, not values; the graph neither reads nor drives them.
                 var numerical = graphExpressions!.Where(d => d.type == UExpressionType.Numerical).Select(d => d.abbr);
@@ -492,14 +498,20 @@ namespace OpenUtau.Core.Pipeline {
                 return null;
             }
             var renderer = track.RendererSettings.Renderer;
+            float maxMergeMs = Preferences.Default.MergePhrasesSec * 1000;
             var groups = new List<(int, int)>();
             int start = 0;
             for (int i = 1; i < phonemes.Count; ++i) {
-                // A gap normally starts a new phrase, but the renderer may ask
-                // to keep adjacent phrases together when their padded audio
-                // would overlap (e.g. DiffSinger input padding).
-                if (phonemes[i - 1].End != phonemes[i].position
-                    && !renderer.ShouldMergePhrases(project, track, phonemes[i - 1], phonemes[i])) {
+                if (phonemes[i - 1].End == phonemes[i].position) {
+                    continue;   // No gap: same phrase
+                }
+                // A gap normally starts a new phrase, but the renderer may ask to keep
+                // adjacent phrases together when their padded audio would overlap
+                // (e.g. DiffSinger input padding). The merged phrase is capped so a run
+                // of short gaps cannot chain into one huge render unit.
+                bool merge = renderer.ShouldMergePhrases(project, track, phonemes[i - 1], phonemes[i])
+                    && (maxMergeMs <= 0 || phonemes[i].EndMs - phonemes[start].PositionMs <= maxMergeMs);
+                if (!merge) {
                     groups.Add((start, i));
                     start = i;
                 }
@@ -510,6 +522,25 @@ namespace OpenUtau.Core.Pipeline {
                 DocManager.Inst.Revision,
                 generation, project, track, part, phonemes,
                 groups.Select(g => (g.Item1, g.Item2)).ToArray());
+        }
+
+        // The musical notes of a phrase, including extension notes but not pitch-context neighbors.
+        internal List<int> PhraseNotes(int start, int end) {
+            var result = new List<int> { Phonemes[start].NoteIndex };
+            int last = Phonemes[end - 1].NoteIndex;
+            while (Notes[last].Next != -1 && Notes[Notes[last].Next].Extends != -1) {
+                last = Notes[last].Next;
+            }
+            while (result.Last() != last) {
+                result.Add(Notes[result.Last()].Next);
+            }
+            int tail = result.Last();
+            int next = Notes[tail].Next;
+            while (next != -1 && Notes[next].Extends == tail) {
+                result.Add(next);
+                next = Notes[next].Next;
+            }
+            return result;
         }
 
         public RenderPhrase[] BuildPhrases() {

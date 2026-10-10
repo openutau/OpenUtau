@@ -3,167 +3,501 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:OpenUtau.App.ViewModels"
+        xmlns:c="using:OpenUtau.App.Controls"
         mc:Ignorable="d"
         x:Class="OpenUtau.App.Views.MixFxDialog"
         x:DataType="vm:MixFxViewModel"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource mixfx.caption}"
-        Width="640" Height="540"
+        Width="840" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
+        CanResize="False"
+        Background="{DynamicResource RackBackground}">
+  <!-- A rack of three hardware-style faceplates.  The rack chrome (window,
+       bars, standard controls) follows the app theme; each faceplate keeps
+       its own palette, set through the Plate* / Knob* / Screen* resources on
+       the faceplate Border and picked up by the styles below. -->
+  <Window.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="RackBackground" Color="#181818"/>
+          <SolidColorBrush x:Key="RackBar" Color="#262626"/>
+          <SolidColorBrush x:Key="RackText" Color="#E0E0E0"/>
+          <SolidColorBrush x:Key="RackTextDim" Color="#A8A8A8"/>
+          <SolidColorBrush x:Key="EqPlate" Color="#1F3656"/>
+          <SolidColorBrush x:Key="CompPlate" Color="#1C1C1C"/>
+          <SolidColorBrush x:Key="ReverbPlate" Color="#E0D8C8"/>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="RackBackground" Color="#CFCFCF"/>
+          <SolidColorBrush x:Key="RackBar" Color="#EDEDED"/>
+          <SolidColorBrush x:Key="RackText" Color="#1E1E1E"/>
+          <SolidColorBrush x:Key="RackTextDim" Color="#555555"/>
+          <SolidColorBrush x:Key="EqPlate" Color="#2B5283"/>
+          <SolidColorBrush x:Key="CompPlate" Color="#2B2B2B"/>
+          <SolidColorBrush x:Key="ReverbPlate" Color="#F0E9DB"/>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Window.Resources>
+
   <Window.Styles>
-    <Style Selector="TextBlock.lbl">
-      <Setter Property="VerticalAlignment" Value="Center"/>
-      <Setter Property="FontSize" Value="11"/>
+    <Style Selector="Border.bar">
+      <Setter Property="Background" Value="{DynamicResource RackBar}"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="12,8"/>
     </Style>
-    <Style Selector="TextBlock.section">
-      <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="FontSize" Value="13"/>
-      <Setter Property="Margin" Value="0,0,0,4"/>
-    </Style>
-    <Style Selector="TextBlock.val">
-      <Setter Property="HorizontalAlignment" Value="Right"/>
-      <Setter Property="FontSize" Value="11"/>
-      <Setter Property="FontFamily" Value="monospace"/>
-      <Setter Property="Opacity" Value="0.8"/>
-    </Style>
-    <Style Selector="Slider">
-      <Setter Property="Margin" Value="0,-2,0,-2"/>
-    </Style>
-    <Style Selector="Border.column">
-      <Setter Property="Padding" Value="10"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+    <!-- Standard controls keep the app's style, with slightly rounded corners. -->
+    <Style Selector="Border.bar Button, Border.bar ComboBox, Border.bar CheckBox">
       <Setter Property="CornerRadius" Value="3"/>
     </Style>
+    <Style Selector="Border.bar CheckBox /template/ Border#NormalRectangle">
+      <Setter Property="CornerRadius" Value="3"/>
+    </Style>
+    <Style Selector="TextBlock.caption">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="LetterSpacing" Value="1"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Foreground" Value="{DynamicResource RackTextDim}"/>
+    </Style>
+
+    <!-- Faceplate: bevel sheen, corner screws. -->
+    <Style Selector="Border.plate">
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="#80000000"/>
+      <Setter Property="ClipToBounds" Value="True"/>
+      <Setter Property="BoxShadow" Value="0 3 8 0 #60000000"/>
+    </Style>
+    <Style Selector="Border.sheen">
+      <Setter Property="IsHitTestVisible" Value="False"/>
+      <Setter Property="Background">
+        <LinearGradientBrush StartPoint="50%,0%" EndPoint="50%,100%">
+          <GradientStop Color="#1AFFFFFF" Offset="0"/>
+          <GradientStop Color="#00FFFFFF" Offset="0.35"/>
+          <GradientStop Color="#00000000" Offset="0.7"/>
+          <GradientStop Color="#22000000" Offset="1"/>
+        </LinearGradientBrush>
+      </Setter>
+    </Style>
+    <Style Selector="Ellipse.screw">
+      <Setter Property="Width" Value="11"/>
+      <Setter Property="Height" Value="11"/>
+      <Setter Property="Margin" Value="7"/>
+      <Setter Property="IsHitTestVisible" Value="False"/>
+      <Setter Property="Stroke" Value="#60000000"/>
+      <Setter Property="Fill">
+        <RadialGradientBrush GradientOrigin="35%,30%" Center="45%,40%">
+          <GradientStop Color="#E0E0E0" Offset="0"/>
+          <GradientStop Color="#8A8A8A" Offset="0.6"/>
+          <GradientStop Color="#3C3C3C" Offset="1"/>
+        </RadialGradientBrush>
+      </Setter>
+    </Style>
+    <Style Selector="Border.rule">
+      <Setter Property="Height" Value="1"/>
+      <Setter Property="Background" Value="{DynamicResource PlateRule}"/>
+      <Setter Property="Margin" Value="0,10"/>
+    </Style>
+    <Style Selector="TextBlock.title">
+      <Setter Property="FontSize" Value="17"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="LetterSpacing" Value="2"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Foreground" Value="{DynamicResource PlateTitle}"/>
+    </Style>
+
+    <!-- Screen: curve display + preset selector in one recessed bezel. -->
+    <Style Selector="Border.bezel">
+      <Setter Property="Background" Value="{DynamicResource ScreenBackground}"/>
+      <Setter Property="BorderBrush" Value="#E0080808"/>
+      <Setter Property="BorderThickness" Value="2"/>
+      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="ClipToBounds" Value="True"/>
+      <Setter Property="BoxShadow" Value="0 1 0 0 #30FFFFFF"/>
+    </Style>
+    <Style Selector=":is(c|FxDisplay)">
+      <Setter Property="Height" Value="120"/>
+      <Setter Property="Background" Value="{DynamicResource ScreenBackground}"/>
+      <Setter Property="CurveBrush" Value="{DynamicResource ScreenCurve}"/>
+      <Setter Property="GridBrush" Value="{DynamicResource ScreenGrid}"/>
+    </Style>
+    <Style Selector="ComboBox.preset">
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="Height" Value="26"/>
+      <Setter Property="MinHeight" Value="26"/>
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="Padding" Value="8,0,0,0"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="BorderThickness" Value="0,1,0,0"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ScreenGrid}"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource ScreenCurve}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="LetterSpacing" Value="1"/>
+    </Style>
+    <Style Selector="ComboBox.preset:pointerover /template/ Border#Background">
+      <Setter Property="Background" Value="{DynamicResource ScreenHover}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ScreenGrid}"/>
+    </Style>
+    <Style Selector="ComboBox.preset:pressed /template/ Border#Background">
+      <Setter Property="Background" Value="{DynamicResource ScreenHover}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ScreenGrid}"/>
+    </Style>
+    <Style Selector="ComboBox.preset /template/ Path#DropDownGlyph">
+      <Setter Property="Fill" Value="{DynamicResource ScreenCurve}"/>
+    </Style>
+    <Style Selector="ComboBox.preset /template/ PathIcon#DropDownGlyph">
+      <Setter Property="Foreground" Value="{DynamicResource ScreenCurve}"/>
+    </Style>
+    <Style Selector="ComboBox.preset /template/ TextBlock#PlaceholderTextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ScreenGrid}"/>
+    </Style>
+    <!-- Its drop-down list in the same screen colours. -->
+    <Style Selector="ComboBox.preset /template/ Border#PopupBorder">
+      <Setter Property="Background" Value="{DynamicResource ScreenBackground}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ScreenGrid}"/>
+    </Style>
+    <Style Selector="ComboBox.preset ComboBoxItem">
+      <Setter Property="Foreground" Value="{DynamicResource ScreenCurve}"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Height" Value="24"/>
+      <Setter Property="Padding" Value="8,0"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="ComboBox.preset ComboBoxItem:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ScreenHover}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ScreenCurve}"/>
+    </Style>
+    <Style Selector="ComboBox.preset ComboBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ScreenHover}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ScreenCurve}"/>
+    </Style>
+
+    <!-- Knob cells: label, knob, value readout. -->
+    <Style Selector="StackPanel.knob">
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="Spacing" Value="1"/>
+    </Style>
+    <Style Selector="TextBlock.klabel">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="LetterSpacing" Value="1"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="TextWrapping" Value="NoWrap"/>
+      <Setter Property="TextTrimming" Value="None"/>
+      <Setter Property="Foreground" Value="{DynamicResource PlateText}"/>
+    </Style>
+    <Style Selector="TextBlock.kval">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontFamily" Value="monospace"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="Foreground" Value="{DynamicResource PlateTextDim}"/>
+    </Style>
+    <Style Selector="TextBlock.fixed">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontFamily" Value="monospace"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Foreground" Value="{DynamicResource PlateTextDim}"/>
+    </Style>
+    <Style Selector="c|Knob">
+      <Setter Property="CapBrush" Value="{DynamicResource KnobCap}"/>
+      <Setter Property="PointerBrush" Value="{DynamicResource KnobPointer}"/>
+      <Setter Property="TickBrush" Value="{DynamicResource PlateTick}"/>
+      <Setter Property="TickActiveBrush" Value="{DynamicResource PlateTickActive}"/>
+    </Style>
+    <Style Selector="c|Knob.large">
+      <Setter Property="Width" Value="68"/>
+      <Setter Property="Height" Value="68"/>
+    </Style>
+    <Style Selector="c|Knob.small">
+      <Setter Property="Width" Value="52"/>
+      <Setter Property="Height" Value="52"/>
+    </Style>
+
+    <!-- Power switch: green LED + slide toggle, optional label as Content.
+         .idle = checked but the rack's master power is off (standby). -->
+    <Style Selector="ToggleButton.power">
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Foreground" Value="{DynamicResource RackText}"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <StackPanel Orientation="Horizontal" Spacing="7" Background="Transparent">
+            <Border Name="led" Width="9" Height="9" CornerRadius="5" Background="#1C2A1F"
+                    VerticalAlignment="Center"/>
+            <Border Width="32" Height="17" CornerRadius="9" Background="#0A0A0A"
+                    VerticalAlignment="Center">
+              <Ellipse Name="thumb" Width="13" Height="13" HorizontalAlignment="Left" Margin="2,0"
+                       Fill="#7A7A7A"/>
+            </Border>
+            <ContentPresenter Content="{TemplateBinding Content}" VerticalAlignment="Center"
+                              Foreground="{TemplateBinding Foreground}" FontWeight="SemiBold"
+                              FontSize="11" LetterSpacing="1"
+                              IsVisible="{TemplateBinding Content, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+          </StackPanel>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="ToggleButton.power:checked /template/ Border#led">
+      <Setter Property="Background" Value="#3FE063"/>
+    </Style>
+    <Style Selector="ToggleButton.power.idle:checked /template/ Border#led">
+      <Setter Property="Background" Value="#2F6B3C"/>
+    </Style>
+    <Style Selector="ToggleButton.power:checked /template/ Ellipse#thumb">
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="Fill" Value="#EDEDED"/>
+    </Style>
   </Window.Styles>
+
   <Border Margin="{Binding $parent[Window].WindowDecorationMargin}">
-    <DockPanel Margin="14" LastChildFill="True">
+    <DockPanel Margin="10">
 
-      <!-- TOP: title + enable + recommended -->
-      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,10">
-        <TextBlock Grid.Column="0" VerticalAlignment="Center" FontWeight="SemiBold"
-                   Text="{Binding TrackName}"/>
-        <CheckBox Grid.Column="1" IsChecked="{Binding Enabled}" VerticalAlignment="Center" Margin="0,0,4,0"/>
-        <TextBlock Grid.Column="2" Classes="lbl" Text="{DynamicResource mixfx.enabled}" Margin="0,0,12,0"/>
-        <Button Grid.Column="3" Content="{DynamicResource mixfx.recommended}"
-                Command="{Binding ApplyRecommendedCommand}"
-                ToolTip.Tip="{DynamicResource mixfx.recommended.tip}"/>
-      </Grid>
+      <!-- TOP: track + default settings + master power -->
+      <Border DockPanel.Dock="Top" Classes="bar" Margin="0,0,0,10">
+        <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
+          <TextBlock Grid.Column="0" Classes="caption" Margin="0,0,10,0" Text="TRACK"/>
+          <TextBlock Grid.Column="1" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14"
+                     Foreground="{DynamicResource RackText}" Text="{Binding TrackName}"/>
+          <!-- The label toggles too: the app's CheckBox template has no room for content. -->
+          <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" Margin="0,0,20,0"
+                      Background="Transparent" Cursor="Hand" Tapped="OnApplyOnExportTapped">
+            <CheckBox IsChecked="{Binding ApplyOnExportMixdown}" VerticalAlignment="Center"/>
+            <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource RackText}"
+                       Text="{DynamicResource mixfx.applyonexport}"/>
+          </StackPanel>
+          <Button Grid.Column="4" Margin="0,0,20,0" Content="{DynamicResource mixfx.recommended}"
+                  Command="{Binding ApplyRecommendedCommand}"
+                  ToolTip.Tip="{DynamicResource mixfx.recommended.tip}"/>
+          <ToggleButton Grid.Column="5" Classes="power" Content="POWER"
+                        IsChecked="{Binding Enabled}"
+                        ToolTip.Tip="{DynamicResource mixfx.enabled}"/>
+        </Grid>
+      </Border>
 
-      <!-- LIBRARY row -->
-      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,10">
-        <TextBlock Grid.Column="0" Classes="lbl" Margin="0,0,8,0"
-                   Text="{DynamicResource mixfx.library}"/>
-        <ComboBox Grid.Column="1" HorizontalAlignment="Stretch"
-                  ItemsSource="{Binding UserPresets}" SelectedItem="{Binding SelectedUserPreset}"
-                  PlaceholderText="{DynamicResource mixfx.library.placeholder}">
-          <ComboBox.ItemTemplate>
-            <DataTemplate>
-              <TextBlock Text="{Binding Name}"/>
-            </DataTemplate>
-          </ComboBox.ItemTemplate>
-        </ComboBox>
-        <Button Grid.Column="2" Margin="6,0,0,0" Content="{DynamicResource mixfx.library.save}"
-                Command="{Binding SaveUserPresetCommand}"/>
-        <Button Grid.Column="3" Margin="6,0,0,0" Content="{DynamicResource mixfx.library.delete}"
-                Command="{Binding DeleteUserPresetCommand}"
-                IsEnabled="{Binding CanDeleteSelectedPreset}"/>
-      </Grid>
+      <!-- BOTTOM: library + export option + OK/Cancel -->
+      <Border DockPanel.Dock="Bottom" Classes="bar" Margin="0,10,0,0">
+        <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto">
+          <TextBlock Grid.Column="0" Classes="caption" Margin="0,0,10,0"
+                     Text="{DynamicResource mixfx.library}"/>
+          <ComboBox Grid.Column="1" Width="240"
+                    ItemsSource="{Binding UserPresets}" SelectedItem="{Binding SelectedUserPreset}"
+                    PlaceholderText="{DynamicResource mixfx.library.placeholder}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding Name}"/>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Grid.Column="2" Margin="6,0,0,0" Content="{DynamicResource mixfx.library.save}"
+                  Command="{Binding SaveUserPresetCommand}"/>
+          <Button Grid.Column="3" Margin="6,0,0,0" Content="{DynamicResource mixfx.library.delete}"
+                  Command="{Binding DeleteUserPresetCommand}"
+                  IsEnabled="{Binding CanDeleteSelectedPreset}"/>
+          <Button Grid.Column="5" Content="{DynamicResource button.cancel}"
+                  MinWidth="70" Margin="0,0,8,0" Click="OnCancelClicked"/>
+          <Button Grid.Column="6" Content="{DynamicResource button.ok}"
+                  MinWidth="70" Click="OnOkClicked"/>
+        </Grid>
+      </Border>
 
-      <!-- BOTTOM: export checkbox + OK/Cancel -->
-      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,10,0,0">
-        <CheckBox Grid.Column="0" IsChecked="{Binding ApplyOnExportMixdown}" VerticalAlignment="Center"/>
-        <TextBlock Grid.Column="1" Classes="lbl" Margin="0,0,12,0" Text="{DynamicResource mixfx.applyonexport}"/>
-        <Button Grid.Column="3" Content="{DynamicResource button.cancel}"
-                MinWidth="70" Margin="0,0,8,0" Click="OnCancelClicked"/>
-        <Button Grid.Column="4" Content="{DynamicResource button.ok}"
-                MinWidth="70" Click="OnOkClicked"/>
-      </Grid>
-
-      <!-- BODY: 3 columns side by side -->
-      <Grid ColumnDefinitions="*,8,*,8,*" IsEnabled="{Binding Enabled}">
+      <!-- RACK: three faceplates.  Row 1 knobs shape the curve on the
+           screen; row 2 knobs fine-tune or set the output. -->
+      <Grid ColumnDefinitions="*,8,*,8,*">
 
         <!-- EQ -->
-        <Border Grid.Column="0" Classes="column">
-          <StackPanel Spacing="3">
-            <TextBlock Classes="section" Text="EQ"/>
-            <ComboBox HorizontalAlignment="Stretch" Margin="0,0,0,4"
-                      ItemsSource="{Binding EqPresets}" SelectedItem="{Binding SelectedEq}"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="Low (dB)"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding EqLowDb, StringFormat={}{0:+0.0;-0.0;0.0}}"/>
-            </Grid>
-            <Slider Minimum="-12" Maximum="12" Value="{Binding EqLowDb}" TickFrequency="0.5"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="Mid Freq"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding EqMidFreq, StringFormat={}{0:F0} Hz}"/>
-            </Grid>
-            <Slider Minimum="200" Maximum="6000" Value="{Binding EqMidFreq}" TickFrequency="50"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="Mid (dB)"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding EqMidDb, StringFormat={}{0:+0.0;-0.0;0.0}}"/>
-            </Grid>
-            <Slider Minimum="-12" Maximum="12" Value="{Binding EqMidDb}" TickFrequency="0.5"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="High (dB)"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding EqHighDb, StringFormat={}{0:+0.0;-0.0;0.0}}"/>
-            </Grid>
-            <Slider Minimum="-12" Maximum="12" Value="{Binding EqHighDb}" TickFrequency="0.5"/>
-          </StackPanel>
+        <Border Grid.Column="0" Classes="plate" Background="{DynamicResource EqPlate}">
+          <Border.Resources>
+            <SolidColorBrush x:Key="PlateTitle" Color="#F2F6FA"/>
+            <SolidColorBrush x:Key="PlateText" Color="#E6EDF5"/>
+            <SolidColorBrush x:Key="PlateTextDim" Color="#AFC2D9"/>
+            <SolidColorBrush x:Key="PlateRule" Color="#33FFFFFF"/>
+            <SolidColorBrush x:Key="PlateTick" Color="#4D6A8E"/>
+            <SolidColorBrush x:Key="PlateTickActive" Color="#8FD8FF"/>
+            <SolidColorBrush x:Key="KnobCap" Color="#B9B1A4"/>
+            <SolidColorBrush x:Key="KnobPointer" Color="#1A1A1A"/>
+            <SolidColorBrush x:Key="ScreenBackground" Color="#0B1622"/>
+            <SolidColorBrush x:Key="ScreenCurve" Color="#6FC8FF"/>
+            <SolidColorBrush x:Key="ScreenGrid" Color="#5C7A99"/>
+            <SolidColorBrush x:Key="ScreenHover" Color="#1A2C40"/>
+          </Border.Resources>
+          <Panel>
+            <Border Classes="sheen"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+            <StackPanel Margin="18,12,18,22">
+              <Grid ColumnDefinitions="*,Auto" Margin="8,0,0,10">
+                <TextBlock Classes="title" Text="EQ"/>
+                <ToggleButton Grid.Column="1" Classes="power" Classes.idle="{Binding !Enabled}"
+                              IsChecked="{Binding EqEnabled}"/>
+              </Grid>
+              <Border Classes="bezel">
+                <StackPanel>
+                  <c:EqCurveDisplay LowDb="{Binding EqLowDb}" MidFreq="{Binding EqMidFreq}"
+                                    MidDb="{Binding EqMidDb}" HighDb="{Binding EqHighDb}"/>
+                  <ComboBox Classes="preset" ItemsSource="{Binding EqPresets}" SelectedItem="{Binding SelectedEq}"/>
+                </StackPanel>
+              </Border>
+              <Grid ColumnDefinitions="*,*,*" Margin="0,14,0,0">
+                <StackPanel Grid.Column="0" Classes="knob">
+                  <TextBlock Classes="klabel" Text="LOW"/>
+                  <c:Knob Classes="large" Minimum="-12" Maximum="12" DefaultValue="0" Value="{Binding EqLowDb}"/>
+                  <TextBlock Classes="kval" Text="{Binding EqLowDb, StringFormat={}{0:+0.0;-0.0;0.0} dB}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Classes="knob">
+                  <TextBlock Classes="klabel" Text="MID"/>
+                  <c:Knob Classes="large" Minimum="-12" Maximum="12" DefaultValue="0" Value="{Binding EqMidDb}"/>
+                  <TextBlock Classes="kval" Text="{Binding EqMidDb, StringFormat={}{0:+0.0;-0.0;0.0} dB}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Classes="knob">
+                  <TextBlock Classes="klabel" Text="HIGH"/>
+                  <c:Knob Classes="large" Minimum="-12" Maximum="12" DefaultValue="0" Value="{Binding EqHighDb}"/>
+                  <TextBlock Classes="kval" Text="{Binding EqHighDb, StringFormat={}{0:+0.0;-0.0;0.0} dB}"/>
+                </StackPanel>
+              </Grid>
+              <Border Classes="rule"/>
+              <Grid ColumnDefinitions="*,*,*">
+                <TextBlock Grid.Column="0" Classes="fixed" Text="200 Hz"/>
+                <StackPanel Grid.Column="1" Classes="knob">
+                  <TextBlock Classes="klabel" Text="FREQUENCY"/>
+                  <c:Knob Classes="small" Minimum="200" Maximum="6000" DefaultValue="3000"
+                          CapBrush="#3F7FB0" PointerBrush="#F2F6FA" Value="{Binding EqMidFreq}"/>
+                  <TextBlock Classes="kval" Text="{Binding EqMidFreq, StringFormat={}{0:F0} Hz}"/>
+                </StackPanel>
+                <TextBlock Grid.Column="2" Classes="fixed" Text="8 kHz"/>
+              </Grid>
+            </StackPanel>
+          </Panel>
         </Border>
 
         <!-- Compressor -->
-        <Border Grid.Column="2" Classes="column">
-          <StackPanel Spacing="3">
-            <TextBlock Classes="section" Text="Compressor"/>
-            <ComboBox HorizontalAlignment="Stretch" Margin="0,0,0,4"
-                      ItemsSource="{Binding CompPresets}" SelectedItem="{Binding SelectedComp}"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="Threshold"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding CompThresholdDb, StringFormat={}{0:F1} dB}"/>
-            </Grid>
-            <Slider Minimum="-40" Maximum="0" Value="{Binding CompThresholdDb}" TickFrequency="1"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="Ratio"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding CompRatio, StringFormat={}{0:F1}:1}"/>
-            </Grid>
-            <Slider Minimum="1" Maximum="20" Value="{Binding CompRatio}" TickFrequency="0.1"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="Makeup"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding CompMakeupDb, StringFormat={}{0:F1} dB}"/>
-            </Grid>
-            <Slider Minimum="0" Maximum="12" Value="{Binding CompMakeupDb}" TickFrequency="0.1"/>
-          </StackPanel>
+        <Border Grid.Column="2" Classes="plate" Background="{DynamicResource CompPlate}">
+          <Border.Resources>
+            <SolidColorBrush x:Key="PlateTitle" Color="#D8D8D8"/>
+            <SolidColorBrush x:Key="PlateText" Color="#E2E2E2"/>
+            <SolidColorBrush x:Key="PlateTextDim" Color="#ABABAB"/>
+            <SolidColorBrush x:Key="PlateRule" Color="#26FFFFFF"/>
+            <SolidColorBrush x:Key="PlateTick" Color="#4A4A4A"/>
+            <SolidColorBrush x:Key="PlateTickActive" Color="#F2B544"/>
+            <SolidColorBrush x:Key="KnobCap" Color="#CFCFCF"/>
+            <SolidColorBrush x:Key="KnobPointer" Color="#1A1A1A"/>
+            <SolidColorBrush x:Key="ScreenBackground" Color="#EADBAE"/>
+            <SolidColorBrush x:Key="ScreenCurve" Color="#8C2416"/>
+            <SolidColorBrush x:Key="ScreenGrid" Color="#7D6B3E"/>
+            <SolidColorBrush x:Key="ScreenHover" Color="#DCCB98"/>
+          </Border.Resources>
+          <Panel>
+            <Border Classes="sheen"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+            <StackPanel Margin="18,12,18,22">
+              <Grid ColumnDefinitions="*,Auto" Margin="8,0,0,10">
+                <TextBlock Classes="title" Text="COMPRESSOR"/>
+                <ToggleButton Grid.Column="1" Classes="power" Classes.idle="{Binding !Enabled}"
+                              IsChecked="{Binding CompEnabled}"/>
+              </Grid>
+              <Border Classes="bezel">
+                <StackPanel>
+                  <c:CompCurveDisplay ThresholdDb="{Binding CompThresholdDb}" Ratio="{Binding CompRatio}"
+                                      MakeupDb="{Binding CompMakeupDb}"/>
+                  <ComboBox Classes="preset" ItemsSource="{Binding CompPresets}" SelectedItem="{Binding SelectedComp}"/>
+                </StackPanel>
+              </Border>
+              <Grid ColumnDefinitions="*,*" Margin="0,14,0,0">
+                <StackPanel Grid.Column="0" Classes="knob">
+                  <TextBlock Classes="klabel" Text="THRESHOLD"/>
+                  <c:Knob Classes="large" Minimum="-40" Maximum="0" DefaultValue="0" Value="{Binding CompThresholdDb}"/>
+                  <TextBlock Classes="kval" Text="{Binding CompThresholdDb, StringFormat={}{0:F1} dB}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Classes="knob">
+                  <TextBlock Classes="klabel" Text="RATIO"/>
+                  <c:Knob Classes="large" Minimum="1" Maximum="20" DefaultValue="1" Value="{Binding CompRatio}"/>
+                  <TextBlock Classes="kval" Text="{Binding CompRatio, StringFormat={}{0:F1}:1}"/>
+                </StackPanel>
+              </Grid>
+              <Border Classes="rule"/>
+              <StackPanel Classes="knob">
+                <TextBlock Classes="klabel" Text="MAKEUP"/>
+                <c:Knob Classes="small" Minimum="0" Maximum="12" DefaultValue="0" Value="{Binding CompMakeupDb}"/>
+                <TextBlock Classes="kval" Text="{Binding CompMakeupDb, StringFormat={}{0:F1} dB}"/>
+              </StackPanel>
+            </StackPanel>
+          </Panel>
         </Border>
 
         <!-- Reverb -->
-        <Border Grid.Column="4" Classes="column">
-          <StackPanel Spacing="3">
-            <TextBlock Classes="section" Text="Reverb"/>
-            <ComboBox HorizontalAlignment="Stretch" Margin="0,0,0,4"
-                      ItemsSource="{Binding ReverbPresets}" SelectedItem="{Binding SelectedReverb}"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="Size"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding ReverbSize, StringFormat={}{0:F2}}"/>
-            </Grid>
-            <Slider Minimum="0" Maximum="1" Value="{Binding ReverbSize}" TickFrequency="0.01"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="Damp"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding ReverbDamp, StringFormat={}{0:F2}}"/>
-            </Grid>
-            <Slider Minimum="0" Maximum="1" Value="{Binding ReverbDamp}" TickFrequency="0.01"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="Wet"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding ReverbWet, StringFormat={}{0:F2}}"/>
-            </Grid>
-            <Slider Minimum="0" Maximum="2" Value="{Binding ReverbWet}" TickFrequency="0.01"/>
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBlock Grid.Column="0" Classes="lbl" Text="Pre-Delay"/>
-              <TextBlock Grid.Column="1" Classes="val" Text="{Binding ReverbPreDelayMs, StringFormat={}{0:F0} ms}"/>
-            </Grid>
-            <Slider Minimum="0" Maximum="200" Value="{Binding ReverbPreDelayMs}" TickFrequency="1"/>
-          </StackPanel>
+        <Border Grid.Column="4" Classes="plate" Background="{DynamicResource ReverbPlate}">
+          <Border.Resources>
+            <SolidColorBrush x:Key="PlateTitle" Color="#A3281E"/>
+            <SolidColorBrush x:Key="PlateText" Color="#2B2621"/>
+            <SolidColorBrush x:Key="PlateTextDim" Color="#5E564C"/>
+            <SolidColorBrush x:Key="PlateRule" Color="#30000000"/>
+            <SolidColorBrush x:Key="PlateTick" Color="#B5AC9C"/>
+            <SolidColorBrush x:Key="PlateTickActive" Color="#B8342A"/>
+            <SolidColorBrush x:Key="KnobCap" Color="#2E2E2E"/>
+            <SolidColorBrush x:Key="KnobPointer" Color="#F0F0F0"/>
+            <SolidColorBrush x:Key="ScreenBackground" Color="#231F1A"/>
+            <SolidColorBrush x:Key="ScreenCurve" Color="#D9B872"/>
+            <SolidColorBrush x:Key="ScreenGrid" Color="#8C7D62"/>
+            <SolidColorBrush x:Key="ScreenHover" Color="#332D25"/>
+          </Border.Resources>
+          <Panel>
+            <Border Classes="sheen"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+            <Ellipse Classes="screw" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+            <StackPanel Margin="18,12,18,22">
+              <Grid ColumnDefinitions="*,Auto" Margin="8,0,0,10">
+                <TextBlock Classes="title" Text="REVERB"/>
+                <ToggleButton Grid.Column="1" Classes="power" Classes.idle="{Binding !Enabled}"
+                              IsChecked="{Binding ReverbEnabled}"/>
+              </Grid>
+              <Border Classes="bezel">
+                <StackPanel>
+                  <c:ReverbCurveDisplay RoomSize="{Binding ReverbSize}" Damp="{Binding ReverbDamp}"
+                                        Wet="{Binding ReverbWet}" PreDelayMs="{Binding ReverbPreDelayMs}"
+                                        Preset="{Binding SelectedReverb.Key, FallbackValue={x:Null}}"
+                                        HighBrush="#F2DFA8"/>
+                  <ComboBox Classes="preset" ItemsSource="{Binding ReverbPresets}" SelectedItem="{Binding SelectedReverb}"/>
+                </StackPanel>
+              </Border>
+              <Grid ColumnDefinitions="*,*" Margin="0,14,0,0">
+                <StackPanel Grid.Column="0" Classes="knob">
+                  <TextBlock Classes="klabel" Text="SIZE"/>
+                  <c:Knob Classes="large" Minimum="0" Maximum="1" DefaultValue="0.3" Value="{Binding ReverbSize}"/>
+                  <TextBlock Classes="kval" Text="{Binding ReverbSize, StringFormat={}{0:F2}}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Classes="knob">
+                  <TextBlock Classes="klabel" Text="DAMPING"/>
+                  <c:Knob Classes="large" Minimum="0" Maximum="1" DefaultValue="0.5" Value="{Binding ReverbDamp}"/>
+                  <TextBlock Classes="kval" Text="{Binding ReverbDamp, StringFormat={}{0:F2}}"/>
+                </StackPanel>
+              </Grid>
+              <Border Classes="rule"/>
+              <Grid ColumnDefinitions="*,*">
+                <StackPanel Grid.Column="0" Classes="knob">
+                  <TextBlock Classes="klabel" Text="PRE-DELAY"/>
+                  <c:Knob Classes="small" Minimum="0" Maximum="200" DefaultValue="0" Value="{Binding ReverbPreDelayMs}"/>
+                  <TextBlock Classes="kval" Text="{Binding ReverbPreDelayMs, StringFormat={}{0:F0} ms}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Classes="knob">
+                  <TextBlock Classes="klabel" Text="WET"/>
+                  <c:Knob Classes="small" Minimum="0" Maximum="2" DefaultValue="1" Value="{Binding ReverbWet}"/>
+                  <TextBlock Classes="kval" Text="{Binding ReverbWet, StringFormat={}{0:F2}}"/>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Panel>
         </Border>
 
       </Grid>

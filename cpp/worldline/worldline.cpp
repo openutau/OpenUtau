@@ -17,6 +17,7 @@
 #include "worldline/f0/f0_estimator.h"
 #include "worldline/f0/harvest_estimator.h"
 #include "worldline/f0/pyin_estimator.h"
+#include "worldline/model/continuous_noise.h"
 #include "worldline/model/effects.h"
 
 static double** to2d(double* const arr, int length, int width) {
@@ -238,5 +239,127 @@ DLL_API int WorldSynthesis(double* const f0, int f0_length,
   }
   delete[] ap;
 
+  return y_length;
+}
+
+static void CheapTrickF0In(const AnalysisConfig* config,
+                           std::vector<double>& samples,
+                           const std::vector<double>& ts, double* f0_in,
+                           int num_frames, double* sp_out) {
+  int sp_size = config->fft_size / 2 + 1;
+  double** sp_2d = to2d(sp_out, num_frames, sp_size);
+  CheapTrickOption ct_option;
+  InitializeCheapTrickOption(config->fs, &ct_option);
+  ct_option.f0_floor = config->f0_floor;
+  ct_option.fft_size = config->fft_size;
+  CheapTrick(samples.data(), samples.size(), config->fs, ts.data(), f0_in,
+             num_frames, &ct_option, sp_2d);
+  delete[] sp_2d;
+}
+
+DLL_API void HnAnalysisF0In(const AnalysisConfig* config, const float* samples,
+                            const float* harmonic, int num_samples,
+                            double* f0_in, int num_frames, double* sp_env_out,
+                            double* sp_harmonic_out, double* ap_out) {
+  std::vector<double> x(samples, samples + num_samples);
+  std::vector<double> h(harmonic, harmonic + num_samples);
+  std::vector<double> n(num_samples);
+  for (int i = 0; i < num_samples; ++i) {
+    n[i] = x[i] - h[i];
+  }
+  std::vector<double> ts(num_frames);
+  for (int i = 0; i < num_frames; ++i) {
+    ts[i] = i * config->frame_ms / 1000.0;
+  }
+  CheapTrickF0In(config, x, ts, f0_in, num_frames, sp_env_out);
+  CheapTrickF0In(config, h, ts, f0_in, num_frames, sp_harmonic_out);
+
+  int fft_size = config->fft_size;
+  int bins = fft_size / 2 + 1;
+  int width = static_cast<int>(
+      std::lround(400.0 / (static_cast<double>(config->fs) / fft_size)));
+  auto ph = worldline::StftPower(h.data(), num_samples, config->hop_size,
+                                 num_frames, fft_size);
+  auto pn = worldline::StftPower(n.data(), num_samples, config->hop_size,
+                                 num_frames, fft_size);
+  worldline::SmoothFreq(ph, bins, width);
+  worldline::SmoothFreq(pn, bins, width);
+  for (int i = 0; i < num_frames; ++i) {
+    bool unvoiced = f0_in[i] <= config->f0_floor;
+    for (int k = 0; k < bins; ++k) {
+      size_t j = static_cast<size_t>(i) * bins + k;
+      double v = unvoiced ? 1 : pn[j] / (ph[j] + pn[j] + 1e-20);
+      ap_out[j] = std::clamp(v, 1e-3, 1 - 1e-3);
+    }
+  }
+}
+
+DLL_API int WorldSynthesisContinuousNoise(
+    double* const f0, int f0_length, double* const sp,
+    double* const harmonic_sp, double* const ap, double* const stretch,
+    int fft_size, int hop_size, int fs, uint64_t seed, double* y,
+    double* const gender, double* const tension, double* const breathiness,
+    double* const voicing) {
+  if (f0_length <= 0) {
+    return 0;
+  }
+  int sp_size = fft_size / 2 + 1;
+  size_t count = static_cast<size_t>(f0_length) * sp_size;
+  double frame_period = hop_size * 1000.0 / fs;
+  int y_length = WorldSynthesisSampleCount(f0_length, frame_period, fs);
+
+  // Below f0 CheapTrick's sp is flat at the first harmonic's level, not a real
+  // spectrum; the separation's ratio there would render a hum under the voice.
+  // D4C's aperiodicity starts at -60 dB at 0 Hz for the same reason.
+  std::vector<double> ap_used(ap, ap + count);
+  double f0_floor = GetF0FloorForCheapTrick(fs, fft_size);
+  for (int i = 0; i < f0_length; ++i) {
+    if (f0[i] <= f0_floor) {
+      continue;
+    }
+    int below =
+        std::min(sp_size, static_cast<int>(std::ceil(f0[i] * fft_size / fs)));
+    std::fill_n(ap_used.begin() + static_cast<size_t>(i) * sp_size, below,
+                1e-3);
+  }
+
+  // Periodic half: harmonic_sp, fully periodic. Breathiness 0 mutes WORLD's
+  // own aperiodic part. Copies, since WorldSynthesis gender-shifts sp in place.
+  std::vector<double> periodic(y_length);
+  {
+    std::vector<double> sp_copy(harmonic_sp, harmonic_sp + count);
+    std::vector<double> ap_copy(count, 0.0);
+    std::vector<double> f0_copy(f0, f0 + f0_length);
+    std::vector<double> no_breath(f0_length, 0.0);
+    WorldSynthesis(f0_copy.data(), f0_length, sp_copy.data(), false, sp_size,
+                   ap_copy.data(), false, fft_size, frame_period, fs,
+                   periodic.data(), gender, tension, no_breath.data(),
+                   voicing);
+  }
+
+  // Noise half.
+  double window_power = worldline::WindowPower(hop_size);
+  std::vector<double> target(count);
+  std::vector<double> alpha(f0_length);
+  for (int i = 0; i < f0_length; ++i) {
+    double* row = target.data() + static_cast<size_t>(i) * sp_size;
+    std::copy(sp + static_cast<size_t>(i) * sp_size,
+              sp + static_cast<size_t>(i + 1) * sp_size, row);
+    worldline::ShiftGender(row, sp_size, std::lround((gender[i] - 0.5) * 200));
+    // WorldSynthesis's breathiness gain on the aperiodic amplitude.
+    double b = breathiness[i];
+    double gain = b > 0.5 ? b * 4 - 1 : b * 2;
+    const double* a = ap_used.data() + static_cast<size_t>(i) * sp_size;
+    for (int k = 0; k < sp_size; ++k) {
+      row[k] *= a[k] * window_power * gain * gain;
+    }
+    alpha[i] = std::clamp(2.0 - stretch[i], 0.0, 1.0);
+  }
+  auto noise =
+      worldline::ContinuousNoise(target.data(), f0_length, hop_size, y_length,
+                                 alpha.data(), seed, fft_size);
+  for (int i = 0; i < y_length; ++i) {
+    y[i] = periodic[i] + noise[i];
+  }
   return y_length;
 }

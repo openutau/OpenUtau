@@ -25,7 +25,7 @@ namespace OpenUtau.Core.ExpressionGraph {
 
     public enum GraphNodeRole { Input, Process, CurveOutput, PhonemeOutput, PitchOutput }
 
-    public enum GraphParameterKind { Number, Bool, Choice, Text, Expression }
+    public enum GraphParameterKind { Number, Bool, Choice, Text, Expression, Slider }
 
     /// <summary>A node parameter the editor shows. Input ports' fallback values are not listed here.</summary>
     public sealed class GraphNodeParameter {
@@ -36,6 +36,9 @@ namespace OpenUtau.Core.ExpressionGraph {
         public readonly string[] Options;
         /// <summary>Whether the editor labels it. Unlabeled ones are named by their node's title.</summary>
         public bool Labeled { get; init; } = true;
+        public double Minimum { get; init; } = 0;
+        public double Maximum { get; init; } = 100;
+        public double Step { get; init; } = 1;
 
         public GraphNodeParameter(string name, GraphParameterKind kind, string? @default = null, params string[] options) {
             Name = name;
@@ -109,7 +112,17 @@ namespace OpenUtau.Core.ExpressionGraph {
         public const string MapRange = "map_range";
         public const string Clamp = "clamp";
         public const string Lfo = "lfo";
+        public const string Time = "time";
+        public const string Smooth = "smooth";
+        public const string RandomRange = "random_range";
+        public const string Slew = "slew";
+        public const string Compare = "compare";
+        public const string And = "and";
+        public const string Or = "or";
+        public const string Not = "not";
+        public const string IfElse = "if_else";
         public const string NotePosition = "note_position";
+        public const string PhraseNotes = "phrase_notes";
         public const string NoteEnvelope = "note_envelope";
 
         /// <summary>The port of single-input nodes.</summary>
@@ -177,6 +190,68 @@ namespace OpenUtau.Core.ExpressionGraph {
             Binary(Divide, 0, 1, (x, y) => y == 0 ? 0 : x / y),
             Binary(Min, 0, 0, Math.Min),
             Binary(Max, 0, 0, Math.Max),
+            Binary(And, 0, 0, (x, y) => x != 0 && y != 0 ? 1 : 0),
+            Binary(Or, 0, 0, (x, y) => x != 0 || y != 0 ? 1 : 0),
+            new GraphNodeType(Not, GraphNodeRole.Process, value, new float[] { 0 },
+                a => Unary(a, x => x == 0 ? 1 : 0)),
+            new GraphNodeType(Compare, GraphNodeRole.Process, ab, new float[] { 0, 0 }, a => {
+                string? op = a.Node.GetString("operator");
+                var result = new float[a.Ticks.Length];
+                for (int i = 0; i < result.Length; ++i) {
+                    float x = a.Inputs[0][i], y = a.Inputs[1][i];
+                    bool match = op switch {
+                        "less_equal" => x <= y,
+                        "greater" => x > y,
+                        "greater_equal" => x >= y,
+                        "equal" => x == y,
+                        "not_equal" => x != y,
+                        _ => x < y,
+                    };
+                    result[i] = match ? 1 : 0;
+                }
+                return result;
+            }),
+            new GraphNodeType(IfElse, GraphNodeRole.Process, new[] { "condition", "then", "else" },
+                new float[] { 0, 1, 0 }, a => {
+                    var result = new float[a.Ticks.Length];
+                    for (int i = 0; i < result.Length; ++i) {
+                        result[i] = a.Inputs[0][i] != 0 ? a.Inputs[1][i] : a.Inputs[2][i];
+                    }
+                    return result;
+                }),
+            new GraphNodeType(Smooth, GraphNodeRole.Process, value, new float[] { 0 }, a => {
+                // Start at the first input, without inventing history outside this evaluation grid.
+                var result = (float[])a.Inputs[0].Clone();
+                double attack = a.Node.GetFloat("attack_ms", 20);
+                double release = a.Node.GetFloat("release_ms", 20);
+                for (int i = 1; i < result.Length; ++i) {
+                    double dt = a.Context.Axis.TickPosToMsPos(a.Context.PartPosition + a.Ticks[i])
+                        - a.Context.Axis.TickPosToMsPos(a.Context.PartPosition + a.Ticks[i - 1]);
+                    double tau = result[i] > result[i - 1] ? attack : release;
+                    double amount = tau > 0 ? 1 - Math.Exp(-Math.Max(0, dt) / tau) : 1;
+                    result[i] = (float)(result[i - 1] + (result[i] - result[i - 1]) * amount);
+                }
+                return result;
+            }),
+            new GraphNodeType(Slew, GraphNodeRole.Process, new[] { Value, "speed" }, new float[] { 0, 100 }, SlewValues),
+            new GraphNodeType(RandomRange, GraphNodeRole.Input, new[] { "min", "max" }, new float[] { 0, 1 }, a => {
+                double rate = a.Node.GetFloat("rate", 5);
+                if (!double.IsFinite(rate) || rate < 0) rate = 0;
+                int.TryParse(a.Node.GetString("seed"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int seed);
+                bool beats = a.Node.GetString("unit") == "beat";
+                var result = new float[a.Ticks.Length];
+                for (int i = 0; i < result.Length; i++) {
+                    double time = beats ? (a.Context.PartPosition + (double)a.Ticks[i]) / a.Context.Resolution
+                        : a.Context.Axis.TickPosToMsPos(a.Context.PartPosition + a.Ticks[i]) / 1000.0;
+                    // A fixed hash of the time bucket: independent of evaluation order and phrase splitting.
+                    long bucket = (long)Math.Floor(time * rate);
+                    double random = RandomUnit(bucket, seed);
+                    double lo = Math.Min(a.Inputs[0][i], a.Inputs[1][i]);
+                    double hi = Math.Max(a.Inputs[0][i], a.Inputs[1][i]);
+                    result[i] = (float)(lo + (hi - lo) * random);
+                }
+                return result;
+            }),
             // A to B by the factor, held within 0 to 1: e.g. a 0/1 mask picks one input or the other.
             new GraphNodeType(Mix, GraphNodeRole.Process, new[] { "a", "b", "factor" }, new float[] { 0, 0, 0.5f }, a => {
                 var x = a.Inputs[0];
@@ -217,6 +292,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                 double phase = a.Node.GetFloat("phase", 0);
                 float amplitude = a.Node.GetFloat("amplitude", 1);
                 float offset = a.Node.GetFloat("offset", 0);
+                string? shape = a.Node.GetString("shape");
                 var context = a.Context;
                 // Phase counts from the start of the project, so it doesn't depend on how notes group into phrases.
                 return Map(a, tick => {
@@ -224,8 +300,23 @@ namespace OpenUtau.Core.ExpressionGraph {
                     double cycles = perBeat
                         ? absTick / (double)context.Resolution * rate
                         : context.Axis.TickPosToMsPos(absTick) / 1000.0 * rate;
-                    return offset + amplitude * (float)Math.Sin(2 * Math.PI * (cycles + phase));
+                    double p = cycles + phase;
+                    p -= Math.Floor(p);
+                    double wave = shape switch {
+                        "triangle" => 1 - 4 * Math.Abs(p - 0.5),
+                        "square" => p < 0.5 ? 1 : -1,
+                        "saw" => 2 * p - 1,
+                        _ => Math.Sin(2 * Math.PI * (cycles + phase)),
+                    };
+                    return offset + amplitude * (float)wave;
                 });
+            }),
+            new GraphNodeType(Time, GraphNodeRole.Input, none, new float[0], a => {
+                var context = a.Context;
+                bool beats = a.Node.GetString("unit") == "beat";
+                return Map(a, tick => beats
+                    ? (float)((context.PartPosition + (double)tick) / context.Resolution)
+                    : (float)(context.Axis.TickPosToMsPos(context.PartPosition + tick) / 1000.0));
             }),
             new GraphNodeType(NotePosition, GraphNodeRole.Input, none, new float[0], a => {
                 var context = a.Context;
@@ -233,6 +324,16 @@ namespace OpenUtau.Core.ExpressionGraph {
                     var note = context.NoteAt(tick);
                     return note == null ? 0 : (float)(tick - note.Position) / note.Duration;
                 });
+            }),
+            new GraphNodeType(PhraseNotes, GraphNodeRole.Input, none, new float[0], new[] { "index", "count" }, a => {
+                var indices = new float[a.Ticks.Length];
+                var counts = new float[a.Ticks.Length];
+                for (int i = 0; i < a.Ticks.Length; i++) {
+                    var info = a.Context.PhraseNoteAt(a.Ticks[i], a.PhonemeIndices?[i]);
+                    indices[i] = info.index;
+                    counts[i] = info.count;
+                }
+                return new[] { indices, counts };
             }),
             new GraphNodeType(NoteEnvelope, GraphNodeRole.Input, none, new float[0], a => {
                 double attack = a.Node.GetFloat("attack_ms", 0);
@@ -263,13 +364,15 @@ namespace OpenUtau.Core.ExpressionGraph {
         public const string InputCategory = "input";
         public const string MathCategory = "math";
         public const string TimeCategory = "time";
+        public const string LogicCategory = "logic";
         public const string OutputCategory = "output";
 
         /// <summary>Node types by category, in the order the editor offers them.</summary>
         public static readonly (string category, string[] types)[] Categories = {
             (InputCategory, new[] { CurveInput, MaskedCurveInput, PhonemeInput, PitchInput, Constant }),
             (MathCategory, new[] { Add, Subtract, Multiply, Divide, Mix, Min, Max, Abs, MapRange, Clamp }),
-            (TimeCategory, new[] { Lfo, NotePosition, NoteEnvelope }),
+            (TimeCategory, new[] { Time, Lfo, RandomRange, NotePosition, PhraseNotes, NoteEnvelope, Smooth, Slew }),
+            (LogicCategory, new[] { Compare, And, Or, Not, IfElse }),
             (OutputCategory, new[] { CurveOutput, PhonemeOutput, PitchOutput }),
         };
 
@@ -291,10 +394,23 @@ namespace OpenUtau.Core.ExpressionGraph {
             },
             [Clamp] = new[] { Number("min", null), Number("max", null) },
             [Lfo] = new[] {
+                new GraphNodeParameter("shape", GraphParameterKind.Choice, "sine", "sine", "triangle", "square", "saw"),
                 Number("rate", "5"), new GraphNodeParameter("unit", GraphParameterKind.Choice, "hz", "hz", "beat"),
                 Number("phase", "0"), Number("amplitude", "1"), Number("offset", "0"),
             },
             [NoteEnvelope] = new[] { Number("attack_ms", "0"), Number("release_ms", "0") },
+            [Time] = new[] { new GraphNodeParameter("unit", GraphParameterKind.Choice, "seconds", "seconds", "beat") },
+            [Smooth] = new[] { Number("attack_ms", "20"), Number("release_ms", "20") },
+            [Slew] = new[] {
+                new GraphNodeParameter("speed", GraphParameterKind.Slider, "100") { Maximum = 1000 },
+                new GraphNodeParameter("easing", GraphParameterKind.Choice, "linear", "linear", "cubic"),
+            },
+            [RandomRange] = new[] {
+                Number("rate", "5"), Number("seed", "0"),
+                new GraphNodeParameter("unit", GraphParameterKind.Choice, "hz", "hz", "beat"),
+            },
+            [Compare] = new[] { new GraphNodeParameter("operator", GraphParameterKind.Choice, "less",
+                "less", "less_equal", "greater", "greater_equal", "equal", "not_equal") },
         };
 
         /// <summary>
@@ -376,6 +492,55 @@ namespace OpenUtau.Core.ExpressionGraph {
         internal static float[] Fill(NodeArgs a, float value) {
             var result = new float[a.Ticks.Length];
             Array.Fill(result, value);
+            return result;
+        }
+
+        static double RandomUnit(long bucket, int seed) {
+            unchecked {
+                ulong x = (ulong)bucket + (ulong)(uint)seed * 0x9E3779B97F4A7C15UL;
+                x += 0x9E3779B97F4A7C15UL;
+                x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9UL;
+                x = (x ^ (x >> 27)) * 0x94D049BB133111EBUL;
+                x ^= x >> 31;
+                return (x >> 11) * (1.0 / 9007199254740992.0);
+            }
+        }
+
+        // Local evaluation state only, like Smooth. A changed target restarts the transition
+        // from the last output, preserving cubic velocity for moving targets. Zero speed holds it.
+        // Cubic uses monotone Hermite easing, not bicubic interpolation (a surface operation).
+        static float[] SlewValues(NodeArgs a) {
+            var input = a.Inputs[0];
+            var result = new float[input.Length];
+            if (result.Length == 0) return result;
+            bool cubic = a.Node.GetString("easing") == "cubic";
+            double start = input[0], target = input[0], progress = 1;
+            double velocity = 0, tangent = 0;
+            result[0] = input[0];
+            for (int i = 1; i < result.Length; i++) {
+                double speed = a.Inputs[1][i];
+                speed = double.IsFinite(speed) ? Math.Max(0, speed) : 0;
+                if (input[i] != target) {
+                    start = result[i - 1];
+                    target = input[i];
+                    progress = 0;
+                    // A normalized Hermite tangent in [0, 1.5] remains monotone and has
+                    // derivative <= 1.5. Keep motion toward a moving target rather than
+                    // restarting from smoothstep's zero-velocity endpoint each sample.
+                    tangent = speed > 0 ? Math.Clamp(velocity * Math.Sign(target - start) * 1.5 / speed, 0, 1.5) : 0;
+                }
+                double dt = Math.Max(0, a.Context.Axis.TickPosToMsPos(a.Context.PartPosition + a.Ticks[i])
+                    - a.Context.Axis.TickPosToMsPos(a.Context.PartPosition + a.Ticks[i - 1])) / 1000;
+                double distance = Math.Abs(target - start);
+                // Cubic smoothstep's maximum slope is 1.5; scale duration so speed remains a hard limit.
+                progress = distance == 0 ? 1 : Math.Min(1, progress + dt * speed / (distance * (cubic ? 1.5 : 1)));
+                double t = cubic ? progress * progress * (3 - 2 * progress)
+                    + tangent * progress * (1 - progress) * (1 - progress) : progress;
+                result[i] = (float)(start + (target - start) * t);
+                double slope = cubic ? 6 * progress * (1 - progress)
+                    + tangent * (1 - 4 * progress + 3 * progress * progress) : 1;
+                velocity = progress >= 1 ? 0 : Math.Sign(target - start) * speed * slope / (cubic ? 1.5 : 1);
+            }
             return result;
         }
     }

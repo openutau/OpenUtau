@@ -169,14 +169,13 @@ namespace OpenUtau.Core.Ustx {
                 descriptor = VoiceColor2Exp;
                 return true;
             }
-            var trackExp = TrackExpressions.FirstOrDefault(e => e.abbr == abbr);
-            if (trackExp != null) {
-                descriptor = trackExp;
-                return true;
-            } else if (project.expressions.TryGetValue(abbr, out descriptor)) {
-                return true;
+            foreach (var trackExp in TrackExpressions) {
+                if (trackExp.abbr == abbr) {
+                    descriptor = trackExp;
+                    return true;
+                }
             }
-            return false;
+            return project.expressions.TryGetValue(abbr, out descriptor);
         }
 
         public List<UExpressionDescriptor> GetSupportedExps(UProject project) {

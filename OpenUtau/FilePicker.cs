@@ -71,6 +71,9 @@ namespace OpenUtau.App {
         public static FilePickerFileType DS { get; } = new("DS") {
             Patterns = new[] { "*.ds" },
         };
+        public static FilePickerFileType ExpressionGraph { get; } = new("Expression Graph") {
+            Patterns = new[] { "*.ougraph" },
+        };
         public static FilePickerFileType OUDEP { get; } = new("OpenUtau dependency") {
             Patterns = new[] { "*.oudep" },
         };

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using K4os.Hash.xxHash;
 using OpenUtau.Classic;
+using OpenUtau.Classic.Hifisampler;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using Serilog;
@@ -186,6 +187,8 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         public InferenceSession getAcousticSession() {
+            // DirectML session creation, Run and disposal must not overlap.
+            using var dmlScope = Onnx.EnterDmlScope();
             lock (SessionLock) {
                 if (acousticSession is null) {
                     var acousticPath = Path.Combine(Location, dsConfig.acoustic);
@@ -198,19 +201,43 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         public DsVocoder getVocoder() {
+            // DirectML session creation, Run and disposal must not overlap.
+            using var dmlScope = Onnx.EnterDmlScope();
             lock (SessionLock) {
                 if(vocoder is null) {
                     if(File.Exists(Path.Join(Location, "dsvocoder", "vocoder.yaml"))) {
+                        // Voicebank bundles its own vocoder.
                         vocoder = new DsVocoder(Path.Join(Location, "dsvocoder"));
-                        return vocoder;
+                    } else if(!string.IsNullOrEmpty(dsConfig.vocoder)) {
+                        // The author named a vocoder dependency; use it when installed.
+                        var named = Path.Combine(PathManager.Inst.DependencyPath, dsConfig.vocoder);
+                        if(File.Exists(Path.Combine(named, "vocoder.yaml"))) {
+                            vocoder = new DsVocoder(named);
+                        } else {
+                            // The named vocoder (e.g. an early "nsf_hifigan") is missing:
+                            // fall back to the universal pc-nsf-hifigan so older voicebanks
+                            // still render (and gain SHFC). If even that is absent, the install
+                            // prompt offers it instead of a stack trace.
+                            var pc = HifiVocoder.PackageId;
+                            var pcPath = Path.Combine(PathManager.Inst.DependencyPath, pc);
+                            if(File.Exists(Path.Combine(pcPath, "vocoder.yaml"))) {
+                                vocoder = new DsVocoder(pcPath);
+                            } else {
+                                throw new MissingPackageException(pc);
+                            }
+                        }
+                    } else {
+                        // No vocoder declared; keep the original "download a vocoder" hint.
+                        vocoder = new DsVocoder(Path.Combine(PathManager.Inst.DependencyPath, dsConfig.vocoder));
                     }
-                    vocoder = new DsVocoder(Path.Combine(PathManager.Inst.DependencyPath, dsConfig.vocoder));
                 }
                 return vocoder;
             }
         }
 
         public DsPitch? getPitchPredictor(){
+            // DirectML session creation, Run and disposal must not overlap.
+            using var dmlScope = Onnx.EnterDmlScope();
             lock (SessionLock) {
                 if(pitchPredictor is null) {
                     if(HasPitchPredictor){
@@ -222,6 +249,7 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         public DiffSingerSpeakerEmbedManager getSpeakerEmbedManager(){
+            using var dmlScope = Onnx.EnterDmlScope();
             lock (SessionLock) {
                 if(speakerEmbedManager is null) {
                     speakerEmbedManager = new DiffSingerSpeakerEmbedManager(dsConfig, Location);
@@ -231,6 +259,8 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         public DsVariance? getVariancePredictor(){
+            // DirectML session creation, Run and disposal must not overlap.
+            using var dmlScope = Onnx.EnterDmlScope();
             lock (SessionLock) {
                 if(variancePredictor is null) {
                     if(HasVariancePredictor){
@@ -256,8 +286,10 @@ namespace OpenUtau.Core.DiffSinger {
 
         public override void FreeMemory(){
             Log.Information($"Freeing memory for singer {Id}");
-            // The same lock the getters take, so a render already inside one of these models
-            // finishes before it is disposed instead of being left holding a freed handle.
+            // SessionLock only covers session creation, while a render may be mid-inference on a
+            // session it already holds; the DirectML scope keeps this disposal from tearing down a
+            // session that another thread is creating, running or disposing.
+            using var dmlScope = Onnx.EnterDmlScope();
             lock (SessionLock) {
                 acousticSession?.Dispose();
                 acousticSession = null;

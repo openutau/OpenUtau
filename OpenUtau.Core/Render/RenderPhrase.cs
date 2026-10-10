@@ -225,20 +225,7 @@ namespace OpenUtau.Core.Render {
                 .Take(phraseEnd - phraseStart)
                 .ToList();
             var notesOf = source.Notes;
-            var uNotes = new List<int> { phrasePhonemes.First().NoteIndex };
-            int endNote = phrasePhonemes.Last().NoteIndex;
-            while (notesOf[endNote].Next != -1 && notesOf[notesOf[endNote].Next].Extends != -1) {
-                endNote = notesOf[endNote].Next;
-            }
-            while (uNotes.Last() != endNote) {
-                uNotes.Add(notesOf[uNotes.Last()].Next);
-            }
-            int tail = uNotes.Last();
-            int next = notesOf[tail].Next;
-            while (next != -1 && notesOf[next].Extends == tail) {
-                uNotes.Add(next);
-                next = notesOf[next].Next;
-            }
+            var uNotes = source.PhraseNotes(phraseStart, phraseEnd);
             if (notesOf[uNotes.First()].Prev != -1
                 && notesOf[notesOf[uNotes.First()].Prev].End == notesOf[uNotes.First()].Position) {
                 uNotes.Insert(0, notesOf[uNotes.First()].Prev);
@@ -472,7 +459,7 @@ namespace OpenUtau.Core.Render {
                 }
                 var phrasePitch = new ExpressionGraph.PhrasePitch(pitchStart, pitchInterval,
                     pitchBend, vibrato, modPlus, pitchesBeforeVibrato);
-                var context = new ExpressionGraph.GraphContext(source, phrasePitch);
+                var context = new ExpressionGraph.GraphContext(source, phrasePitch, phraseStart);
                 var drivenPitch = source.ExpressionGraph.EvaluatePitch(context, ticks);
                 if (drivenPitch != null) {
                     Array.Copy(drivenPitch, pitches, pitches.Length);

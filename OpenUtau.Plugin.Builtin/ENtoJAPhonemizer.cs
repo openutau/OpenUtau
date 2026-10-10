@@ -27,7 +27,7 @@ namespace OpenUtau.Plugin.Builtin {
         protected override string[] GetConsonants() => consonants;
         protected override string GetDictionaryName() => "";
         protected override bool EnablePhonemeTokenization => true;
-
+        public Dictionary<string, bool> TransitionalClusterSettings = new Dictionary<string, bool>();
         public Dictionary<string, List<string>> WanaKanaDictionary = new Dictionary<string, List<string>>();
 
         protected override IG2p[] GetBaseG2ps() {
@@ -36,6 +36,7 @@ namespace OpenUtau.Plugin.Builtin {
 
         public class ChildYAMLData: YAMLData {
             public WanaKanaData[] wanakana { get; set; } = Array.Empty<WanaKanaData>();
+            public TransitionalClusterData[] transitionalclusters { get; set; } = Array.Empty<TransitionalClusterData>();
         }
 
         public class WanaKanaData {
@@ -45,7 +46,8 @@ namespace OpenUtau.Plugin.Builtin {
             public List<string> FromList {
                 get {
                     if (roma is string s) return new List<string> { s };
-                    if (roma is IEnumerable<object> list) return list.Select(x => x.ToString()).ToList();
+                    if (roma is IEnumerable<object> list) return list.Select(x => x?.ToString() ?? "").Where(x => !string.IsNullOrEmpty(x)).ToList();
+                    if (roma != null) return new List<string> { roma.ToString() };
                     return new List<string>();
                 }
             }
@@ -53,10 +55,16 @@ namespace OpenUtau.Plugin.Builtin {
             public List<string> ToList {
                 get {
                     if (kana is string s) return new List<string> { s };
-                    if (kana is IEnumerable<object> list) return list.Select(x => x.ToString()).ToList();
+                    if (kana is IEnumerable<object> list) return list.Select(x => x?.ToString() ?? "").Where(x => !string.IsNullOrEmpty(x)).ToList();
+                    if (kana != null) return new List<string> { kana.ToString() };
                     return new List<string>();
                 }
             }
+        }
+
+        public class TransitionalClusterData {
+            public string symbol { get; set; }
+            public bool value { get; set; } = true;
         }
 
         public override void SetSinger(USinger singer) {
@@ -78,26 +86,36 @@ namespace OpenUtau.Plugin.Builtin {
                         var data = Core.Yaml.DefaultDeserializer.Deserialize<ChildYAMLData>(File.ReadAllText(file));
 
                         if (data?.wanakana != null) {
-                            foreach (var entry in data.wanakana) {
+                            // Reverse the array so when we Insert(0), the top of the YAML stays at the top of the final list
+                            foreach (var entry in data.wanakana.Reverse()) {
                                 string key = string.Join("", entry.FromList);
                                 string value = string.Join(" ", entry.ToList);
+
+                                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value)) continue;
 
                                 if (!WanaKanaDictionary.ContainsKey(key)) {
                                     WanaKanaDictionary.Add(key, new List<string>());
                                 }
-                                
+                                // Prepends the Kana value to the very top of the priority list
                                 if (!WanaKanaDictionary[key].Contains(value)) {
-                                    WanaKanaDictionary[key].Add(value); 
+                                    WanaKanaDictionary[key].Insert(0, value); 
                                 }
-                                
-                                // Add the romaji (key) as a fallback at the very end of the candidates
+                                // Keeps the Romaji (key) as a fallback at the very end of the candidates
                                 if (!WanaKanaDictionary[key].Contains(key)) {
                                     WanaKanaDictionary[key].Add(key); 
                                 }
                             }
                         }
+                        TransitionalClusterSettings.Clear();
+                        if (data?.transitionalclusters != null) {
+                            foreach (var tc in data.transitionalclusters) {
+                                if (!string.IsNullOrEmpty(tc.symbol)) {
+                                    TransitionalClusterSettings[tc.symbol] = tc.value;
+                                }
+                            }
+                        }
                     } catch (Exception ex) {
-                        Log.Error($"Failed to parse wanakana from {file}: {ex.Message}");
+                        Log.Error($"Failed to parse yaml data from {file}: {ex.Message}");
                     }
                 }
             }
@@ -151,6 +169,13 @@ namespace OpenUtau.Plugin.Builtin {
             {"mye", new [] { "mi", "e" } }, {"ye", new [] { "i", "e" } }, {"rye", new [] { "ri", "e" } },
             {"wi", new [] { "u", "i" } }, {"we", new [] { "u", "e" } }, {"ulo", new [] { "u", "o" } },
         };
+
+        private bool IsTransitionalCEnabled(string symbol) {
+            if (TransitionalClusterSettings.TryGetValue(symbol, out bool isEnabled)) {
+                return isEnabled;
+            }
+            return true;
+        }
 
         protected override List<string> ProcessSyllable(Syllable syllable) {
             string prevV = string.IsNullOrEmpty(syllable.prevV) ? "" : ReplacePhoneme(syllable.prevV, syllable.tone);
@@ -217,7 +242,7 @@ namespace OpenUtau.Plugin.Builtin {
                             $"-{merged}", ValidateAlias($"-{merged}", syllable.tone)
                         )) {
                             hasStartAlias = true;
-                            step = i - 1;
+                            step = i; // Consumed i consonants from cluster
                             break;
                         }
                     }
@@ -230,7 +255,14 @@ namespace OpenUtau.Plugin.Builtin {
                             $"-{cc[0]}", ValidateAlias($"-{cc[0]}", syllable.tone)
                         )) {
                             hasStartAlias = true;
-                            step = 0;
+                            step = 1; // Consumed 1 consonant
+                        }
+                        // If no starting - c exists, use singular c before the hiragana one in clusters
+                        else if (cc.Length > 1 && TryAddPhoneme(phonemes, syllable.tone,
+                            cc[0], ValidateAlias(cc[0], syllable.tone)
+                        )) {
+                            hasStartAlias = true;
+                            step = 1; // Consumed 1 consonant
                         }
                     }
                 }
@@ -282,7 +314,10 @@ namespace OpenUtau.Plugin.Builtin {
                     // Singular C Handling
                     bool isStop = stop != null && stop.Contains(cc[i]);
                     bool hasRomanC = HasOto(cc[i], syllable.tone) || HasOto(ValidateAlias(cc[i], syllable.tone), syllable.tone);
-
+                    bool isTransitionEnabled = true;
+                    if (cc.Length == 2) {
+                        isTransitionEnabled = IsTransitionalCEnabled(cc[i]);
+                    }
                     // Skip the stop ONLY if a VC already absorbed it (usingVC && i == start) in a <= 2 CC cluster
                     if (isStop && usingVC && i == start && cc.Length <= 2 && !hasRomanC) {
                         continue;
@@ -306,7 +341,7 @@ namespace OpenUtau.Plugin.Builtin {
                             }
                         }
 
-                        if (selectedPhoneme != null) {
+                        if (selectedPhoneme != null && isTransitionEnabled) {
                             TryAddPhoneme(phonemes, syllable.tone, selectedPhoneme);
                             prevV = WanaKana.ToRomaji(selectedPhoneme).Last<char>().ToString();
                         }
@@ -336,7 +371,7 @@ namespace OpenUtau.Plugin.Builtin {
                             }
                         }
 
-                        if (selectedPhoneme != null) {
+                        if (selectedPhoneme != null && isTransitionEnabled) {
                             TryAddPhoneme(phonemes, syllable.tone, selectedPhoneme);
                             prevV = WanaKana.ToRomaji(selectedPhoneme).Last<char>().ToString();
                         }
@@ -345,7 +380,7 @@ namespace OpenUtau.Plugin.Builtin {
                         continue;
                     }
                     // Only fall back to Kana / CV representations if Roman standalone C doesn't exist in OTO
-                    else {
+                    else if (isTransitionEnabled) {
                         var hiraganaCC = ToHiragana(cc[i], syllable.tone);
                         var hiraganaVcv = TryVcv(prevV, hiraganaCC, syllable.tone);
 
@@ -369,8 +404,8 @@ namespace OpenUtau.Plugin.Builtin {
                 case false:
                     if (HasOto(TryVcv(prevV, hiraganaCv, syllable.vowelTone), syllable.vowelTone) || HasOto(ValidateAlias(TryVcv(prevV, hiraganaCv, syllable.vowelTone), syllable.vowelTone), syllable.vowelTone)) {
                         hiraganaCv = TryVcv(prevV, hiraganaCv, syllable.vowelTone);
-                    } else if (HasOto(TryVcv(prevV, cv, syllable.vowelTone), syllable.vowelTone) || HasOto(ValidateAlias(TryVcv(prevV, cv, syllable.vowelTone), syllable.vowelTone), syllable.vowelTone)) {
-                        hiraganaCv = TryVcv(prevV, cv, syllable.vowelTone);
+                    } else if (HasOto(FixCv(hiraganaCv, syllable.vowelTone), syllable.vowelTone) || HasOto(ValidateAlias(FixCv(hiraganaCv, syllable.vowelTone), syllable.vowelTone), syllable.vowelTone)) {
+                        hiraganaCv = FixCv(hiraganaCv, syllable.vowelTone);
                     } else if ((HasOto(crv, syllable.vowelTone) || HasOto(ValidateAlias(crv, syllable.vowelTone), syllable.vowelTone))
                     || (HasOto(cv, syllable.vowelTone) || HasOto(ValidateAlias(cv, syllable.vowelTone), syllable.vowelTone))) {
                         hiraganaCv = FixCv(AliasFormat($"{finalCons} {v}", "dynMid", syllable.vowelTone, ""), syllable.vowelTone);
@@ -378,16 +413,16 @@ namespace OpenUtau.Plugin.Builtin {
                         hiraganaCv = FixCv(hiraganaCv, syllable.vowelTone);
                     }
                     break;
-                case true when (HasOto(crv, syllable.vowelTone) || HasOto(ValidateAlias(crv, syllable.vowelTone), syllable.vowelTone))
-                    || (HasOto(cv, syllable.vowelTone) || HasOto(ValidateAlias(cv, syllable.vowelTone), syllable.vowelTone)):
-                    usingVC = true;
-                    hiraganaCv = FixCv(AliasFormat($"{finalCons} {v}", "dynMid", syllable.vowelTone, ""), syllable.vowelTone);
-                    break;
                 default:
                     usingVC = true;
                     var tryVcv = TryVcv(prevV, hiraganaCv, syllable.vowelTone);
                     if (HasOto(tryVcv, syllable.vowelTone) || HasOto(ValidateAlias(tryVcv, syllable.vowelTone), syllable.vowelTone)) {
                         hiraganaCv = tryVcv;
+                    } else if (HasOto(FixCv(hiraganaCv, syllable.vowelTone), syllable.vowelTone) || HasOto(ValidateAlias(FixCv(hiraganaCv, syllable.vowelTone), syllable.vowelTone), syllable.vowelTone)) {
+                        hiraganaCv = FixCv(hiraganaCv, syllable.vowelTone);
+                    } else if ((HasOto(crv, syllable.vowelTone) || HasOto(ValidateAlias(crv, syllable.vowelTone), syllable.vowelTone))
+                    || (HasOto(cv, syllable.vowelTone) || HasOto(ValidateAlias(cv, syllable.vowelTone), syllable.vowelTone))) {
+                        hiraganaCv = FixCv(AliasFormat($"{finalCons} {v}", "dynMid", syllable.vowelTone, ""), syllable.vowelTone);
                     } else {
                         hiraganaCv = FixCv(hiraganaCv, syllable.vowelTone);
                     }
@@ -396,6 +431,7 @@ namespace OpenUtau.Plugin.Builtin {
 
             var split = false;
             bool isStart = string.IsNullOrEmpty(syllable.prevV) || prevV == "-";
+            string finalAlias = null;
 
             if (isStart && cc.Length <= 1) {
                 var dashCv = $"- {hiraganaCv}";
@@ -403,26 +439,46 @@ namespace OpenUtau.Plugin.Builtin {
                 var dashRomaji = $"- {cv}";
                 var dashRomajiNoSpace = $"-{cv}";
 
-                if (HasOto(dashCv, syllable.vowelTone)) { hiraganaCv = dashCv; }
-                else if (HasOto(ValidateAlias(dashCv, syllable.vowelTone), syllable.vowelTone)) { hiraganaCv = ValidateAlias(dashCv, syllable.vowelTone); }
-                else if (HasOto(dashCvNoSpace, syllable.vowelTone)) { hiraganaCv = dashCvNoSpace; }
-                else if (HasOto(ValidateAlias(dashCvNoSpace, syllable.vowelTone), syllable.vowelTone)) { hiraganaCv = ValidateAlias(dashCvNoSpace, syllable.vowelTone); }
-                else if (HasOto(dashRomaji, syllable.vowelTone)) { hiraganaCv = dashRomaji; }
-                else if (HasOto(ValidateAlias(dashRomaji, syllable.vowelTone), syllable.vowelTone)) { hiraganaCv = ValidateAlias(dashRomaji, syllable.vowelTone); }
-                else if (HasOto(dashRomajiNoSpace, syllable.vowelTone)) { hiraganaCv = dashRomajiNoSpace; }
-                else if (HasOto(ValidateAlias(dashRomajiNoSpace, syllable.vowelTone), syllable.vowelTone)) { hiraganaCv = ValidateAlias(dashRomajiNoSpace, syllable.vowelTone); }
-            }
-
-            string finalAlias = null;
-            if (HasOto(hiraganaCv, syllable.vowelTone)) { finalAlias = hiraganaCv; }
-            else if (HasOto(ValidateAlias(hiraganaCv, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(hiraganaCv, syllable.vowelTone); }
-            else {
-                var dashCv = $"- {hiraganaCv}";
-                var dashCvNoSpace = $"-{hiraganaCv}";
+                // PRIORITY 1: Kana with Dash
                 if (HasOto(dashCv, syllable.vowelTone)) { finalAlias = dashCv; }
                 else if (HasOto(ValidateAlias(dashCv, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(dashCv, syllable.vowelTone); }
                 else if (HasOto(dashCvNoSpace, syllable.vowelTone)) { finalAlias = dashCvNoSpace; }
                 else if (HasOto(ValidateAlias(dashCvNoSpace, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(dashCvNoSpace, syllable.vowelTone); }
+                
+                // PRIORITY 2: Base Kana (No Dash)
+                else if (HasOto(hiraganaCv, syllable.vowelTone)) { finalAlias = hiraganaCv; }
+                else if (HasOto(ValidateAlias(hiraganaCv, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(hiraganaCv, syllable.vowelTone); }
+                
+                // PRIORITY 3: Romaji with Dash
+                else if (HasOto(dashRomaji, syllable.vowelTone)) { finalAlias = dashRomaji; }
+                else if (HasOto(ValidateAlias(dashRomaji, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(dashRomaji, syllable.vowelTone); }
+                else if (HasOto(dashRomajiNoSpace, syllable.vowelTone)) { finalAlias = dashRomajiNoSpace; }
+                else if (HasOto(ValidateAlias(dashRomajiNoSpace, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(dashRomajiNoSpace, syllable.vowelTone); }
+                
+                // PRIORITY 4: Base Romaji (No Dash)
+                else if (HasOto(cv, syllable.vowelTone)) { finalAlias = cv; }
+                else if (HasOto(ValidateAlias(cv, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(cv, syllable.vowelTone); }
+                
+                // PRIORITY 5: Complex Romaji Fallback (crv like "ky o")
+                else if (HasOto(crv, syllable.vowelTone)) { finalAlias = crv; }
+                else if (HasOto(ValidateAlias(crv, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(crv, syllable.vowelTone); }
+
+            } else {
+                // Non-start behavior (Mid-phrase syllables)
+                if (HasOto(hiraganaCv, syllable.vowelTone)) { finalAlias = hiraganaCv; }
+                else if (HasOto(ValidateAlias(hiraganaCv, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(hiraganaCv, syllable.vowelTone); }
+                else {
+                    var dashCv = $"- {hiraganaCv}";
+                    var dashCvNoSpace = $"-{hiraganaCv}";
+                    if (HasOto(dashCv, syllable.vowelTone)) { finalAlias = dashCv; }
+                    else if (HasOto(ValidateAlias(dashCv, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(dashCv, syllable.vowelTone); }
+                    else if (HasOto(dashCvNoSpace, syllable.vowelTone)) { finalAlias = dashCvNoSpace; }
+                    else if (HasOto(ValidateAlias(dashCvNoSpace, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(dashCvNoSpace, syllable.vowelTone); }
+                    
+                    // Final rescue fallback to Romaji for mid-phrase notes
+                    else if (HasOto(cv, syllable.vowelTone)) { finalAlias = cv; }
+                    else if (HasOto(ValidateAlias(cv, syllable.vowelTone), syllable.vowelTone)) { finalAlias = ValidateAlias(cv, syllable.vowelTone); }
+                }
             }
 
             if (finalAlias != null) {
@@ -679,6 +735,11 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
             if (ending.IsEndingV) {
+                // If there is no previous vowel (e.g. "-" on a pure tail note), do not generate a vowel tail
+                if (string.IsNullOrEmpty(prevV) || prevV == "-") {
+                    return phonemes;
+                }
+
                 TryAddPhoneme(phonemes, ending.tone, $"{prevV} {t}", $"{prevV} R", $"{prevV}{t}",
                 $"{ValidateAlias(prevV)} {t}", $"{ValidateAlias(prevV)} R", $"{ValidateAlias(prevV)}{t}");
                 
@@ -1056,18 +1117,20 @@ namespace OpenUtau.Plugin.Builtin {
             string fallbackAlias = alias;
             var singleRules = yamlFallbacks.Where(r => r.FromList.Count == 1).ToList();
             
-            // Romaji Fallbacks
-            foreach (var rule in singleRules) {
-                string fromKey = rule.FromList[0];
-                string toValue = rule.ToList.Count > 0 ? rule.ToList[0] : fromKey;
+            // Romaji Fallbacks (do not strip if WanaKanaDictionary already defines an exact match for alias)
+            if (!WanaKanaDictionary.ContainsKey(fallbackAlias)) {
+                foreach (var rule in singleRules) {
+                    string fromKey = rule.FromList[0];
+                    string toValue = rule.ToList.Count > 0 ? rule.ToList[0] : fromKey;
 
-                if (fallbackAlias == fromKey) {
-                    fallbackAlias = toValue;
-                    break;
-                } 
-                else if (fallbackAlias.EndsWith(fromKey) && fromKey != toValue) {
-                    fallbackAlias = fallbackAlias.Substring(0, fallbackAlias.Length - fromKey.Length) + toValue;
-                    break;
+                    if (fallbackAlias == fromKey) {
+                        fallbackAlias = toValue;
+                        break;
+                    } 
+                    else if (fallbackAlias.EndsWith(fromKey) && fromKey != toValue && !WanaKanaDictionary.ContainsKey(fromKey)) {
+                        fallbackAlias = fallbackAlias.Substring(0, fallbackAlias.Length - fromKey.Length) + toValue;
+                        break;
+                    }
                 }
             }
 
@@ -1078,11 +1141,21 @@ namespace OpenUtau.Plugin.Builtin {
             while (i < fallbackAlias.Length) {
                 bool foundMatch = false;
 
+                // Priority 1: Exact case match (Ordinal) so capital letters (N, J, C, S, T, Z) are distinct from lowercase
                 var potentialRomajiKeys = WanaKanaDictionary.Keys
                     .Where(key => fallbackAlias.Length >= i + key.Length &&
                                 fallbackAlias.Substring(i, key.Length).Equals(key, StringComparison.Ordinal))
                     .OrderByDescending(key => key.Length)
                     .ToList();
+
+                // Priority 2: Case-insensitive fallback only if no exact case key exists
+                if (potentialRomajiKeys.Count == 0) {
+                    potentialRomajiKeys = WanaKanaDictionary.Keys
+                        .Where(key => fallbackAlias.Length >= i + key.Length &&
+                                    fallbackAlias.Substring(i, key.Length).Equals(key, StringComparison.OrdinalIgnoreCase))
+                        .OrderByDescending(key => key.Length)
+                        .ToList();
+                }
 
                 foreach (var romajiKey in potentialRomajiKeys) {
                     var kanaValues = WanaKanaDictionary[romajiKey];

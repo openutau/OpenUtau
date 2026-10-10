@@ -50,17 +50,8 @@ namespace OpenUtau.Core.Voicevox {
         }
 
         public RenderResult Layout(RenderPhrase phrase) {
-            double frameMs = 1000.0 / VoicevoxUtils.fps;
-            int headFrames = (int)Math.Round(VoicevoxUtils.headS * VoicevoxUtils.fps);
-            const int AlignmentFrames = 1;
-
-            double correctionMs = (headFrames + AlignmentFrames) * frameMs;
-
-            return new RenderResult() {
-                leadingMs = phrase.leadingMs,
-                positionMs = phrase.positionMs - correctionMs,
-                estimatedLengthMs = phrase.durationMs + phrase.leadingMs,
-            };
+            var span = VoicevoxUtils.GetSynthSpan(phrase);
+            return VoicevoxUtils.ComputeLayout(span.startMs, span.endMs, phrase.leadingMs);
         }
 
         public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
@@ -107,10 +98,6 @@ namespace OpenUtau.Core.Voicevox {
                                 }
                                 for (int i = vsParams.volume.Count - vsParams.phonemes[vsParams.phonemes.Count - 1].frame_length; i < vsParams.volume.Count; i++) {
                                     vsParams.volume[i] = 0;
-                                }
-
-                                if (vsParams.phonemes.Count() > 0) {
-                                    result.positionMs = phrase.positionMs - phrase.timeAxis.TickPosToMsPos((vsParams.phonemes.First().frame_length / VoicevoxUtils.fps) * 1000d);
                                 }
 
                                 int speakerID = 0;
@@ -181,7 +168,7 @@ namespace OpenUtau.Core.Voicevox {
             //Create parameters for the update source. 
             VoicevoxQueryMain vqMain = VoicevoxUtils.NoteGroupsToVQuery(vNotes.ToArray(), phrase.timeAxis);
             VoicevoxSynthParams vsParams;
-            if (IsPhonemeNoteCountMatch(phrase)) {
+            if (VoicevoxUtils.IsPhonemeNoteCountMatch(phrase)) {
                 vsParams = VoicevoxUtils.VoicevoxVoiceBase(vqMain, baseSingerID);
             } else {
                 //vsParamsServer is a parameter to hold phonemes generated from note lyrics
@@ -247,10 +234,6 @@ namespace OpenUtau.Core.Voicevox {
             return vNotes;
         }
 
-        private bool IsPhonemeNoteCountMatch(RenderPhrase phrase) {
-            return phrase.phones.Length == phrase.notes.Where(note => !VoicevoxUtils.IsSyllableVowelExtensionNote(note.lyric)).Count() && phrase.phones.All(p => VoicevoxUtils.phoneme_List.kanas.ContainsKey(p.phoneme));
-        }
-
         private VoicevoxSynthParams PhonemeToVoicevoxSynthParams(RenderPhrase phrase) {
             VoicevoxSynthParams vsParams = new VoicevoxSynthParams();
             int headFrames = (int)Math.Round((VoicevoxUtils.headS * VoicevoxUtils.fps), MidpointRounding.AwayFromZero);
@@ -262,7 +245,7 @@ namespace OpenUtau.Core.Voicevox {
                 });
                 //Holds the end frame of the previous phoneme so that phonemes stay contiguous.
                 int cursor = phrase.phones.Length > 0
-                    ? (int)Math.Round((phrase.phones[0].positionMs / 1000.0) * VoicevoxUtils.fps, MidpointRounding.AwayFromZero)
+                    ? VoicevoxUtils.ToFrame(VoicevoxUtils.GetSynthSpan(phrase).startMs)
                     : 0;
                 for (int i = 0; i < phrase.phones.Length; i++) {
                     double endMs = phrase.phones[i].positionMs + phrase.phones[i].durationMs;
@@ -361,7 +344,10 @@ namespace OpenUtau.Core.Voicevox {
 
                     var result = new RenderPitchResult {
                         tones = f0.Select(value => (float)MusicMath.FreqToTone(value)).ToArray(),
-                        ticks = new float[vvTotalFrames]
+                        ticks = new float[vvTotalFrames],
+                        // The pau padding before and after the phrase is silence; without this mask its
+                        // pitch would be written past the phrase end, over the next phrase.
+                        voiced = PaddingVoicedMask(vsParams.phonemes.Select(p => p.frame_length).ToList()),
                     };
                     var layout = Layout(phrase);
                     var t = layout.positionMs - layout.leadingMs;
@@ -375,6 +361,22 @@ namespace OpenUtau.Core.Voicevox {
                 throw new VoicevoxException("Failed to create pitch data.", e);
             }
             return null;
+        }
+
+        /// <summary>
+        /// Per-frame voiced flags for a phoneme list that starts and ends with a pau padding:
+        /// false for the frames of the first and the last phoneme, true for the rest.
+        /// </summary>
+        internal static bool[] PaddingVoicedMask(IReadOnlyList<int> phonemeFrameLengths) {
+            var mask = new bool[phonemeFrameLengths.Sum()];
+            int offset = 0;
+            for (int i = 0; i < phonemeFrameLengths.Count; i++) {
+                int length = phonemeFrameLengths[i];
+                bool padding = i == 0 || i == phonemeFrameLengths.Count - 1;
+                Array.Fill(mask, !padding, offset, length);
+                offset += length;
+            }
+            return mask;
         }
 
         ulong HashPhraseGroups(RenderPhrase phrase) {

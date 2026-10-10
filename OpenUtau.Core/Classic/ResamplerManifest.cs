@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,7 @@ namespace OpenUtau.Classic {
         public bool expressionFilter = false;
         public RendererManifest renderer;
         public AnalysisManifest analysis;
+        public string[] files = Array.Empty<string>();
 
         public ResamplerManifest() { }
 

@@ -22,11 +22,28 @@
           <TextBlock Text="{DynamicResource expressiongraph.default}" VerticalAlignment="Center"/>
         </StackPanel>
       </StackPanel>
-      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="4" Margin="0,6">
+      <!-- Library actions: two rows of equal-width buttons spanning the column. -->
+      <UniformGrid DockPanel.Dock="Bottom" Columns="2" ColumnSpacing="4" Margin="0,0,0,6">
+        <UniformGrid.Styles>
+          <Style Selector="Button">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+          </Style>
+        </UniformGrid.Styles>
+        <Button Content="{DynamicResource expressiongraph.import}" Click="OnImport"/>
+        <Button Content="{DynamicResource expressiongraph.export}" Click="OnExport" Name="ExportButton"/>
+      </UniformGrid>
+      <UniformGrid DockPanel.Dock="Bottom" Columns="3" ColumnSpacing="4" Margin="0,6,0,4">
+        <UniformGrid.Styles>
+          <Style Selector="Button">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+          </Style>
+        </UniformGrid.Styles>
         <Button Content="{DynamicResource expressiongraph.new}" Click="OnNew" Name="NewButton"/>
         <Button Content="{DynamicResource expressiongraph.duplicate}" Click="OnDuplicate" Name="DuplicateButton"/>
         <Button Content="{DynamicResource expressiongraph.delete}" Click="OnDelete" Name="DeleteButton"/>
-      </StackPanel>
+      </UniformGrid>
       <ListBox Name="GraphList" SelectionChanged="OnGraphSelected"/>
     </DockPanel>
     <Border Grid.Column="1" Margin="0,10,10,0" BorderThickness="1" CornerRadius="4"

@@ -2,7 +2,7 @@ on:
   schedule:
     # Daily alpha build. Skipped if master has no new commits since the
     # last alpha release (see the next-version job below).
-    - cron: '0 0 * * *'
+    - cron: '0 12 * * *'
   workflow_dispatch:
     inputs:
       channel:

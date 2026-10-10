@@ -7,6 +7,12 @@ namespace OpenUtau.Core.Ustx {
     public class UMixFx {
         public bool Enabled { get; set; } = false;
 
+        // Per-module power switches.  Default true so ustx files written
+        // before these existed load with every module on, as they rendered.
+        public bool EqEnabled { get; set; } = true;
+        public bool CompEnabled { get; set; } = true;
+        public bool ReverbEnabled { get; set; } = true;
+
         // Preset name keys (kept for UI display only).  Slider values below
         // are the source of truth for the actual DSP.
         public string EqPreset { get; set; } = "vocal_air";
@@ -34,6 +40,9 @@ namespace OpenUtau.Core.Ustx {
         public UMixFx Clone() {
             return new UMixFx {
                 Enabled = Enabled,
+                EqEnabled = EqEnabled,
+                CompEnabled = CompEnabled,
+                ReverbEnabled = ReverbEnabled,
                 EqPreset = EqPreset,
                 CompPreset = CompPreset,
                 ReverbPreset = ReverbPreset,

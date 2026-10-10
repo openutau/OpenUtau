@@ -64,7 +64,9 @@ namespace OpenUtau.App.Views {
             if (cmd is LoadProjectNotification && track != null) {
                 Dispatcher.UIThread.Post(Close);
             } else if (cmd is ConfigureExpressionsCommand || cmd is LoadProjectNotification) {
-                Dispatcher.UIThread.Post(() => DataContext = new ExpressionsViewModel(track));
+                // Stay on the same page, e.g. the graphs after an import added expressions.
+                Dispatcher.UIThread.Post(() => DataContext = new ExpressionsViewModel(
+                    track, (DataContext as ExpressionsViewModel)?.Page));
             }
         }
 

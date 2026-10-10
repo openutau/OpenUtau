@@ -35,6 +35,11 @@ namespace OpenUtau.Classic {
 
         public double tempo;
         public int[] pitches;
+        public float[]? tension;
+        public float[]? breathiness;
+        public float[]? voicing;
+        public float[]? gender;
+        public float[]? growl;
 
         public ulong hash;
 
@@ -54,16 +59,21 @@ namespace OpenUtau.Classic {
 
             preutter = (float)phone.preutterMs;
             overlap = (float)phone.overlapMs;
-            offset = phone.oto.Offset;
             var stretchRatio = Math.Pow(2, 1.0 - velocity * 0.01);
-            double pitchLeadingMs = phone.oto.Preutter * stretchRatio;
-            skipOver = phone.oto.Preutter * stretchRatio - phone.leadingMs;
+            // A preutter past the oto's pulls in the audio before its offset, down to the start of the
+            // file, as if the offset were moved earlier: the consonant's end and a negative cutoff keep
+            // their place in the file. Rounded so that float noise does not change the hash.
+            double pulledMs = Math.Round(phone.leadingMs / stretchRatio - phone.oto.Preutter, 3);
+            pulledMs = Math.Clamp(pulledMs, 0, Math.Max(0, phone.oto.Offset));
+            offset = phone.oto.Offset - pulledMs;
+            double pitchLeadingMs = (phone.oto.Preutter + pulledMs) * stretchRatio;
+            skipOver = pitchLeadingMs - phone.leadingMs;
+            consonant = phone.oto.Consonant + pulledMs;
+            cutoff = phone.oto.Cutoff < 0 ? phone.oto.Cutoff - pulledMs : phone.oto.Cutoff;
             durRequired = phone.endMs - phone.positionMs + phone.durCorrectionMs + skipOver;
-            durRequired = Math.Max(durRequired, phone.oto.Consonant);
+            durRequired = Math.Max(durRequired, consonant);
             durRequired = Math.Ceiling(durRequired / 50.0 + 0.5) * 50.0;
             durCorrection = phone.durCorrectionMs;
-            consonant = phone.oto.Consonant;
-            cutoff = phone.oto.Cutoff;
 
             tempo = phone.adjustedTempo;
 
@@ -77,6 +87,17 @@ namespace OpenUtau.Classic {
 
             var pitchIntervalMs = MusicMath.TempoTickToMs(tempo, 5);
             var pitchSampleStartMs = phone.positionMs - pitchLeadingMs;
+
+            bool usesCurves = resampler is WorldlineResampler or HifisamplerResampler;
+            float[]? phraseGrowl = resampler is HifisamplerResampler
+                ? phrase.curves.FirstOrDefault(c => c.Item1 == Core.Format.Ustx.GRWC)?.Item2
+                : null;
+            float[]? NewCurve(float[]? phraseCurve) => usesCurves && phraseCurve != null ? new float[pitchCount] : null;
+            tension = NewCurve(phrase.tension);
+            breathiness = NewCurve(phrase.breathiness);
+            voicing = NewCurve(phrase.voicing);
+            gender = NewCurve(phrase.gender);
+            growl = NewCurve(phraseGrowl);
 
             for (int i = 0; i < pitches.Length; i++) {
                 var samplePosMs = pitchSampleStartMs + pitchIntervalMs * i;
@@ -92,9 +113,14 @@ namespace OpenUtau.Classic {
                 var diffPitchMs = samplePosMs - phrase.timeAxis.TickPosToMsPos(phrasePitchStartTick + sampleStart * 5);
                 var sampleAlpha = diffPitchMs / sampleInterval;
 
-                var sampleLerped = phrase.pitches[sampleStart] + (phrase.pitches[sampleEnd] - phrase.pitches[sampleStart]) * sampleAlpha;
+                double Lerp(float[] curve) => curve[sampleStart] + (curve[sampleEnd] - curve[sampleStart]) * sampleAlpha;
 
-                pitches[i] = (int)Math.Round(sampleLerped - phone.tone * 100);
+                pitches[i] = (int)Math.Round(Lerp(phrase.pitches) - phone.tone * 100);
+                if (tension != null) tension[i] = (float)Lerp(phrase.tension!);
+                if (breathiness != null) breathiness[i] = (float)Lerp(phrase.breathiness!);
+                if (voicing != null) voicing[i] = (float)Lerp(phrase.voicing!);
+                if (gender != null) gender[i] = (float)Lerp(phrase.gender!);
+                if (growl != null) growl[i] = (float)Lerp(phraseGrowl!);
             }
 
             hash = Hash();
@@ -141,6 +167,13 @@ namespace OpenUtau.Classic {
                     writer.Write(tempo);
                     foreach (int pitch in pitches) {
                         writer.Write(pitch);
+                    }
+                    foreach (var curve in new[] { tension, breathiness, voicing, gender, growl }) {
+                        if (curve != null) {
+                            foreach (float v in curve) {
+                                writer.Write(v);
+                            }
+                        }
                     }
                     return XXH64.DigestOf(stream.ToArray());
                 }

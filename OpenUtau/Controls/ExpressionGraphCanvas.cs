@@ -201,6 +201,7 @@ namespace OpenUtau.App.Controls {
                     }
                 }
                 foreach (var parameter in GraphNodeTypes.ParametersOf(node.type)) {
+                    if (type.Ports.Contains(parameter.Name)) continue;
                     var (label, field) = BuildParameter(node, parameter);
                     AddRow(null, label, field, null);
                 }
@@ -259,7 +260,11 @@ namespace OpenUtau.App.Controls {
             // Output nodes' only port is what they output.
             GraphNodeTypes.TryGet(node.type, out var type);
             var label = Label(type?.IsOutput == true ? Text("expressiongraph.input", "In") : Humanize(port));
-            var field = linked ? null
+            var parameter = GraphNodeTypes.ParametersOf(node.type).FirstOrDefault(p => p.Name == port);
+            if (parameter != null) {
+                label = Label(Text($"expressiongraph.param.{parameter.Name}", Humanize(parameter.Name)));
+            }
+            Control? field = linked ? null : parameter != null ? BuildParameter(node, parameter).field
                 : NumberBox(node, port, node.GetString(port) ?? fallback.ToString(CultureInfo.InvariantCulture), allowEmpty: false);
             return (dot, label, field);
         }
@@ -290,6 +295,35 @@ namespace OpenUtau.App.Controls {
             Control editor;
             string? value = node.GetString(parameter.Name);
             switch (parameter.Kind) {
+                case GraphParameterKind.Slider: {
+                        double.TryParse(value ?? parameter.Default, NumberStyles.Float,
+                            CultureInfo.InvariantCulture, out double initial);
+                        if (!double.IsFinite(initial)) initial = parameter.Minimum;
+                        var slider = new Slider {
+                            Minimum = parameter.Minimum, Maximum = parameter.Maximum,
+                            SmallChange = parameter.Step, LargeChange = parameter.Step * 10,
+                            Value = Math.Clamp(initial, parameter.Minimum, parameter.Maximum),
+                            MinWidth = 140,
+                        };
+                        var label = new TextBlock { Text = slider.Value.ToString("0.##", CultureInfo.InvariantCulture) };
+                        double committed = slider.Value;
+                        slider.PropertyChanged += (s, e) => {
+                            if (e.Property == Slider.ValueProperty) {
+                                label.Text = slider.Value.ToString("0.##", CultureInfo.InvariantCulture);
+                            }
+                        };
+                        void Commit() {
+                            if (slider.Value == committed) return;
+                            committed = slider.Value;
+                            Edit(g => Find(g, node.id)?.Set(parameter.Name, committed.ToString(CultureInfo.InvariantCulture)));
+                        }
+                        // Commit after the gesture, not on each drag tick: edits rebuild the node view.
+                        slider.AddHandler(PointerReleasedEvent, (s, e) => Commit(), RoutingStrategies.Bubble, true);
+                        slider.KeyUp += (s, e) => Commit();
+                        slider.LostFocus += (s, e) => Commit();
+                        editor = new StackPanel { Children = { slider, label } };
+                        break;
+                    }
                 case GraphParameterKind.Bool: {
                         var box = new CheckBox { IsChecked = value is "true" or "True" or "1" };
                         box.IsCheckedChanged += (s, e) =>

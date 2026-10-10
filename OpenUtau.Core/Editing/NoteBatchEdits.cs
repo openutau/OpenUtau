@@ -520,7 +520,12 @@ namespace OpenUtau.Core.Editing {
                 if (result == null) {
                     continue;
                 }
-                CollectRenderedPitch(result, phrase.position - part.position, phrase.duration, cleared, rendered);
+                int clearedBefore = cleared.Count;
+                int phraseStart = phrase.position - part.position;
+                CollectRenderedPitch(result, phraseStart, phrase.duration, cleared, rendered);
+                // The result's padding (1 s for Voicevox) overlaps the neighbouring phrases; only clear the
+                // phrase's own span, so their rendered pitch is not erased.
+                ClampRanges(cleared, clearedBefore, phraseStart - phrase.leading, phraseStart + phrase.duration);
                 // TODO: Optimize interpolation and command.
                 if (cancellationToken.IsCancellationRequested) break;
                 if (prefersOverride) {
@@ -598,6 +603,24 @@ namespace OpenUtau.Core.Editing {
                     docManager.ApplyTransient(all, validateOptions, preRender: !fastRealtime);
                 }
             });
+        }
+
+        /// <summary>
+        /// Limits the ranges from <paramref name="startIndex"/> on to [<paramref name="min"/>, <paramref name="max"/>],
+        /// dropping those left empty. A phrase's result also covers its silent padding, which overlaps the
+        /// neighbouring phrases; clearing the pitch stored there would erase pitch the phrase does not own.
+        /// </summary>
+        internal static void ClampRanges(List<(int from, int to)> ranges, int startIndex, int min, int max) {
+            for (int i = ranges.Count - 1; i >= startIndex; i--) {
+                var (from, to) = ranges[i];
+                from = Math.Max(from, min);
+                to = Math.Min(to, max);
+                if (from >= to) {
+                    ranges.RemoveAt(i);
+                } else {
+                    ranges[i] = (from, to);
+                }
+            }
         }
 
         /// <summary>

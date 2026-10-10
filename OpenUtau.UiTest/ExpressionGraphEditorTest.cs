@@ -1,6 +1,7 @@
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Headless;
 using Avalonia.Input;
@@ -53,7 +54,7 @@ namespace OpenUtau.UiTest {
                 HeadlessUi.Flush();
                 HeadlessUi.SaveScreenshot(window, "ExpressionsTab");
                 // The graphs share the expressions window, on their own tab.
-                window.FindControl<TabControl>("Tabs")!.SelectedItem = window.FindControl<TabItem>("GraphsTab");
+                window.FindControl<TabStrip>("Tabs")!.SelectedIndex = 2;
                 HeadlessUi.Flush();
                 var editor = window.FindControl<ExpressionGraphEditor>("GraphEditor")!;
                 var canvas = editor.FindControl<ExpressionGraphCanvas>("Canvas")!;
@@ -63,7 +64,7 @@ namespace OpenUtau.UiTest {
                 // A "power" graph for the track's renderer: dyn mapped to gender, not linked yet.
                 ExpressionGraphEdits.Apply(project, draft => {
                     draft.Graphs.Add(new UExpressionGraph { id = "power", name = "Power", renderer = Renderers.WORLDLINE_R2 });
-                    draft.Defaults[Renderers.WORLDLINE_R2] = "power";
+                    draft.Defaults[Renderers.WORLDLINE_R] = "power";  // the Worldline-R slot
                     var graph = draft.Find("power")!;
                     ExpressionGraphEdits.AddNode(graph, GraphNodeTypes.CurveInput, 20, 40).Set("abbr", "dyn");
                     var map = ExpressionGraphEdits.AddNode(graph, GraphNodeTypes.MapRange, 260, 40);
@@ -139,7 +140,7 @@ namespace OpenUtau.UiTest {
             var window = new ExpressionsDialog { Width = 1100, Height = 640 };
             try {
                 window.Show();
-                window.FindControl<TabControl>("Tabs")!.SelectedItem = window.FindControl<TabItem>("GraphsTab");
+                window.FindControl<TabStrip>("Tabs")!.SelectedIndex = 2;
                 HeadlessUi.Flush();
                 var editor = window.FindControl<ExpressionGraphEditor>("GraphEditor")!;
                 var canvas = editor.FindControl<ExpressionGraphCanvas>("Canvas")!;
@@ -164,6 +165,56 @@ namespace OpenUtau.UiTest {
         });
 
         [Fact]
+        public void RateSliderCommitsAndUndoes() => HeadlessUi.Run(() => {
+            MainWindowTest.InitCore();
+            HeadlessUi.Errors.Clear();
+            var original = DocManager.Inst.Project;
+            var project = Core.Format.Ustx.Create();
+            DocManager.Inst.ExecuteCmd(new LoadProjectNotification(project));
+            var window = new ExpressionsDialog { Width = 1100, Height = 640 };
+            try {
+                window.Show();
+                window.FindControl<TabStrip>("Tabs")!.SelectedIndex = 2;
+                ExpressionGraphEdits.Apply(project, draft => {
+                    var graph = new UExpressionGraph { id = "g", name = "Rate", renderer = Renderers.WORLDLINE_R2 };
+                    var node = new UGraphNode { id = 1, type = GraphNodeTypes.Slew };
+                    node.Set("speed", "100");
+                    graph.nodes.Add(node);
+                    draft.Graphs.Add(graph);
+                });
+                HeadlessUi.Flush();
+                var canvas = window.FindControl<ExpressionGraphEditor>("GraphEditor")!
+                    .FindControl<ExpressionGraphCanvas>("Canvas")!;
+                var slider = Assert.Single(canvas.GetVisualDescendants().OfType<Slider>());
+                Assert.Equal(100, slider.Value);
+                slider.Value = 125;
+                // While dragging, keep the control alive until the gesture commits.
+                Assert.Equal("100", project.expressionGraphs.Single().nodes.Single().GetString("speed"));
+                slider.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyUpEvent, Key = Key.Right });
+                HeadlessUi.Flush();
+                Assert.Equal("125", project.expressionGraphs.Single().nodes.Single().GetString("speed"));
+                DocManager.Inst.Undo();
+                HeadlessUi.Flush();
+                Assert.Equal("100", project.expressionGraphs.Single().nodes.Single().GetString("speed"));
+                Assert.Equal(100, Assert.Single(canvas.GetVisualDescendants().OfType<Slider>()).Value);
+                ExpressionGraphEdits.Apply(project, draft => {
+                    var graph = draft.Graphs.Single();
+                    graph.nodes.Add(new UGraphNode { id = 2, type = GraphNodeTypes.Constant });
+                    graph.links.Add(new UGraphLink { from = 2, to = 1, toPort = "speed" });
+                });
+                HeadlessUi.Flush();
+                Assert.Empty(canvas.GetVisualDescendants().OfType<Slider>());
+                DocManager.Inst.Undo();
+                HeadlessUi.Flush();
+                Assert.Equal(100, Assert.Single(canvas.GetVisualDescendants().OfType<Slider>()).Value);
+                Assert.Empty(HeadlessUi.Errors.Snapshot());
+            } finally {
+                window.Close();
+                DocManager.Inst.ExecuteCmd(new LoadProjectNotification(original));
+            }
+        });
+
+        [Fact]
         public void TrackSettingsPickTheTracksGraph() => HeadlessUi.Run(() => {
             MainWindowTest.InitCore();
             HeadlessUi.Errors.Clear();
@@ -174,7 +225,8 @@ namespace OpenUtau.UiTest {
                 draft.Graphs.Add(new UExpressionGraph { id = "a", name = "Graph A", renderer = Renderers.WORLDLINE_R2 });
                 draft.Graphs.Add(new UExpressionGraph { id = "b", name = "Graph B", renderer = Renderers.WORLDLINE_R2 });
                 draft.Graphs.Add(new UExpressionGraph { id = "c", name = "Graph C", renderer = Renderers.DIFFSINGER });
-                draft.Defaults[Renderers.WORLDLINE_R2] = "a";
+                // Defaults are per slot: the Worldline-R variants share Worldline-R's.
+                draft.Defaults[Renderers.WORLDLINE_R] = "a";
             });
             var track = project.tracks[0];
             track.RendererSettings.renderer = Renderers.WORLDLINE_R2;

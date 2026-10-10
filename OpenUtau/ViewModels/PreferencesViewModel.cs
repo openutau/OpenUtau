@@ -3,18 +3,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using OpenUtau.Audio;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.SourceGenerators;
 using ReactiveUI.Primitives;
-using ReactiveUI.Avalonia;
-using OpenUtau.Core.Render;
 using ReactiveUI.Primitives.Concurrency;
+using ReactiveUI.SourceGenerators;
 using Serilog;
 
 namespace OpenUtau.App.ViewModels {
@@ -70,7 +68,7 @@ namespace OpenUtau.App.ViewModels {
 
         // Paths
         public string SingerPath => PathManager.Inst.SingersPath;
-        public string AdditionalSingersPath => !string.IsNullOrWhiteSpace(PathManager.Inst.AdditionalSingersPath) ? PathManager.Inst.AdditionalSingersPath : "(None)";
+        public string AdditionalSingersPath => PathManager.Inst.AdditionalSingersPath;
         [Reactive] public partial bool InstallToAdditionalSingersPath { get; set; }
         [Reactive] public partial bool LoadDeepFolders { get; set; }
 
@@ -101,6 +99,9 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial GpuInfo OnnxGpu { get; set; }
         public bool ShowOnnxGpu => showOnnxGpu.Value;
 
+        public List<string> MergePhrasesSecs { get; } = new List<string> { "Auto", "2.5", "5", "7.5", "10" };
+        [Reactive] public partial int MergePhrasesSecIndex { get; set; }
+
         // GAME backend (onnx / ggml)
         public List<string> GameBackendOptions { get; } = new() { "ONNX", "GGML" };
         [Reactive] public partial string GameBackend { get; set; }
@@ -113,6 +114,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowIcon { get; set; }
         [Reactive] public partial bool ShowGhostNotes { get; set; }
         [Reactive] public partial bool NoteHoverGlow { get; set; }
+        [Reactive] public partial bool ReduceAnimations { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool DetachPianoRoll { get; set; }
@@ -208,6 +210,10 @@ namespace OpenUtau.App.ViewModels {
             OnnxGpu = OnnxGpuOptions.Count > 0
                 ? OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0])
                 : new GpuInfo();
+            MergePhrasesSecIndex = Math.Max(0, MergePhrasesSecs.IndexOf(
+                Preferences.Default.MergePhrasesSec == 0
+                    ? "Auto"
+                    : Preferences.Default.MergePhrasesSec.ToString()));
             // GAME backend: ONNX is the default, GGML is available when installed.
             // The options list always includes both so the ComboBox UX is stable.
             GameBackend = Preferences.Default.GameBackend switch {
@@ -229,6 +235,7 @@ namespace OpenUtau.App.ViewModels {
             ShowIcon = Preferences.Default.ShowIcon;
             ShowGhostNotes = Preferences.Default.ShowGhostNotes;
             NoteHoverGlow = Preferences.Default.NoteHoverGlow;
+            ReduceAnimations = Preferences.Default.ReduceAnimations;
             ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;
             ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
             DetachPianoRoll = Preferences.Default.DetachPianoRoll;
@@ -285,6 +292,8 @@ namespace OpenUtau.App.ViewModels {
                 });
             PersistOn(this.WhenAnyValue(vm => vm.AudioBackEnd),
                 index => Preferences.Default.AudioBackEnd = index);
+            PersistOn(this.WhenAnyValue(vm => vm.ReduceAnimations),
+                reduceAnimations => Preferences.Default.ReduceAnimations = reduceAnimations);
             PersistOn(this.WhenAnyValue(vm => vm.PlaybackAutoScroll),
                 autoScroll => Preferences.Default.PlaybackAutoScroll = autoScroll);
             PersistOn(this.WhenAnyValue(vm => vm.PlayPosMarkerMargin),
@@ -419,6 +428,18 @@ namespace OpenUtau.App.ViewModels {
                 index => Preferences.Default.OnnxRunner = index);
             PersistOn(this.WhenAnyValue(vm => vm.OnnxGpu),
                 gpu => Preferences.Default.OnnxGpu = gpu.deviceId);
+            this.WhenAnyValue(vm => vm.MergePhrasesSecIndex)
+                .Skip(1)
+                .Subscribe(index => {
+                    if (index < 0 || index >= MergePhrasesSecs.Count) {
+                        return;
+                    }
+                    string item = MergePhrasesSecs[index];
+                    Preferences.Default.MergePhrasesSec = item == "Auto" ? 0 : float.Parse(item);
+                    Preferences.Save();
+                    DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
+                    DocManager.Inst.ExecuteCmd(new PreRenderNotification());
+                });
             PersistOn(this.WhenAnyValue(vm => vm.GameBackend),
                 backend => Preferences.Default.GameBackend = backend == "GGML" ? "ggml" : "onnx");
             PersistOn(this.WhenAnyValue(vm => vm.RememberMid),

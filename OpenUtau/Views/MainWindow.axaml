@@ -244,33 +244,33 @@
                 </TextBlock>
               </Grid>
             </Border>
-            <Border Classes="playback" Width="127" HorizontalAlignment="Center">
+            <Border Classes="playback" HorizontalAlignment="Center">
               <StackPanel Orientation="Horizontal">
                 <Button Command="{Binding PlaybackViewModel.SeekStart}" Height="18">
-                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 0 0 L 2 0 L 2 9 L 0 9 Z M 2 4.5 L 7 0 L 7 9 Z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M5.35 4.3H7.44V13.7H5.35ZM7.44 9L12.65 4.3V13.7Z"/>
                 </Button>
                 <Button Click="OnPlayOrPause" Height="18">
-                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 0 0.5 7 4.62 0 8.73 Z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M5.35 4.3L12.65 9.01L5.35 13.7Z"/>
                 </Button>
                 <Button Command="{Binding PlaybackViewModel.Pause}" Height="18">
-                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 0 0 L 2 0 L 2 9 L 0 9 Z M 4 0 L 6 0 L 6 9 L 4 9 Z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M5.35 4.3H7.78V13.7H5.35ZM10.22 4.3H12.65V13.7H10.22Z"/>
                 </Button>
                 <Button Command="{Binding PlaybackViewModel.SeekEnd}" Height="18">
-                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 0 0 L 5 4.5 L 0 9 Z M 5 0 L 7 0 L 7 9 L 5 9 Z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M5.35 4.3L10.56 9L5.35 13.7ZM10.56 4.3H12.65V13.7H10.56Z"/>
                 </Button>
                 <ToggleButton IsChecked="{Binding PlaybackViewModel.LoopPlayback}"
                               ToolTip.Tip="{DynamicResource tip.playback.loop}" Height="18">
-                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="m.86 1.58h5.72v-2l2.45 3-2.45 3v-2h-4.9v2H.04v-2c0-1.1.33-2 .82-2zm7.36 8H2.49v2l-2.45-3 2.45-3v2H7.4v-2h1.64v2c0 1.1-.33 2-.82 2z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M5.19 4.86H11.11V2.8l2.53 3.09-2.53 3.1V6.93H6.05V8.99H4.35V6.93c0-1.14.34-2.07.84-2.07ZM12.81 13.13H6.88v2.07L4.35 12.1l2.53-3.1V11.06h5.08V8.99H13.65v2.07c0 1.14-.34 2.07-.84 2.07Z"/>
                 </ToggleButton>
                 <ToggleButton IsChecked="{Binding PlaybackViewModel.Metronome}" Height="18"
                               ToolTip.Tip="{DynamicResource prefs.playback.metronome}">
-                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M4.81-.15a.41.35 0 0 0-.39.26L1.35 9a.41.35 0 0 0 .39.46h8.17a.41.35 0 0 0 .39-.46L9.03 5.32 7.21 6.71c-.09.58-.67 1.04-1.36 1.04-.75 0-1.38-.55-1.38-1.2 0-.65.63-1.2 1.38-1.2.01 0 .02 0 .03 0L8.39 3.45 7.24.11a.41.35 0 0 0-.39-.26zM11.27 1.71a.77.67 0 0 0-.46.17L5.96 5.59a1.12.97 0 0 0-1.12.97 1.12.97 0 0 0 1.12.97 1.12.97 0 0 0 1.11-.92l4.86-3.73a.77.67 0 0 0 .07-.94.77.67 0 0 0-.63-.22z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M7.93 4.3a.43.34 0 0 0-.41.25L4.33 13.25a.43.34 0 0 0 .41.45h8.5a.43.34 0 0 0 .41-.45L12.32 9.65l-1.89 1.36c-.09.56-.7 1.02-1.42 1.02-.78 0-1.44-.54-1.44-1.18 0-.64.66-1.18 1.44-1.18.01 0 .02 0 .03 0l2.61-1.85-1.2-3.27a.43.34 0 0 0-.41-.25ZM14.65 6.13a.8.66 0 0 0-.48.16L9.13 9.92a1.17.95 0 0 0-1.17.95 1.17.95 0 0 0 1.17.95 1.17.95 0 0 0 1.16-.9l5.06-3.65a.8.66 0 0 0 .07-.92.8.66 0 0 0-.66-.22Z"/>
                 </ToggleButton>
               </StackPanel>
             </Border>

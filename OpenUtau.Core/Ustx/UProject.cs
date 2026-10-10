@@ -172,6 +172,12 @@ namespace OpenUtau.Core.Ustx {
             foreach (var kv in expressions) {
                 project.expressions.Add(kv.Key, kv.Value.Clone());
             }
+            // The graph library and each renderer's default go along; track overrides don't, as the
+            // template's tracks are new.
+            project.expressionGraphs = expressionGraphs?.Select(g => g.Clone()).ToList();
+            project.defaultExpressionGraphs = defaultExpressionGraphs == null
+                ? null
+                : new Dictionary<string, string>(defaultExpressionGraphs);
             return project;
         }
 

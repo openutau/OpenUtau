@@ -501,8 +501,7 @@ namespace OpenUtau.App.ViewModels {
 
         public void OpenMixFxDialog() {
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null) {
-                var dialog = new MixFxDialog(track);
-                dialog.ShowDialog(desktop.MainWindow);
+                MixFxDialog.Open(desktop.MainWindow, track);
             }
         }
     }

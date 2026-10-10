@@ -39,6 +39,7 @@ namespace OpenUtau.Plugin.Builtin {
                 .ToDictionary(parts => parts[0], parts => parts[1]);
         }
         private bool useConvel = true;
+        private uint baseBpm = 120;
 
         private readonly Dictionary<string, string> vcExceptions =
             new Dictionary<string, string>() {
@@ -185,6 +186,9 @@ namespace OpenUtau.Plugin.Builtin {
                 if (data?.useconvel != null) {
                     useConvel = data.useconvel.Value;
                 }
+                if (data?.basebpm != null) {
+                    baseBpm = data.basebpm.Value;
+                }
             } catch (Exception ex) {
                 Log.Error($"Failed to load vccv specific features from {YamlFileName}: {ex.Message}");
             }
@@ -193,6 +197,7 @@ namespace OpenUtau.Plugin.Builtin {
         private class VCCVYAMLData {
             public Dictionary<string, string> vcvowels { get; set; } = new Dictionary<string, string>();
             public bool? useconvel { get; set; }
+            public uint? basebpm { get; set; }
         }
         
         // this lets us get the unotes and utrack for convel
@@ -265,19 +270,23 @@ namespace OpenUtau.Plugin.Builtin {
             };
         }
 
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> classifyCache = new();
+        
         private string Classify(string alias) {
-            if (starlightccs.Contains(alias)) return "codaCC";
-            InitPatterns();
-            foreach (var (pattern, type) in patterns)
-                if (pattern.IsMatch(alias)) return type;
-            return "Unknown";
+            return classifyCache.GetOrAdd(alias, a => {
+                if (starlightccs.Contains(a)) return "codaCC";
+                InitPatterns();
+                foreach (var (pattern, type) in patterns)
+                    if (pattern.IsMatch(a)) return type;
+                return "Unknown";
+            });
         }
 
         float CalcConvel(UNote note) {
             if (note == null) return 100f;
             int absTick = partPos + note.position;
             float bpm = timeAxis != null ? (float)timeAxis.GetBpmAtTick(absTick) : 120f;
-            float baseConvel = 100 * (bpm / 120f);
+            float baseConvel = 100 * (bpm / baseBpm);
             float finalConvel;
             var trackVel = utrack?.TrackExpressions?.FirstOrDefault(e => e.abbr == "vel");
             float velMin = trackVel?.min ?? 0f;
@@ -339,9 +348,9 @@ namespace OpenUtau.Plugin.Builtin {
                 bool isManualOverride = false;
                 float vel = noteVel;
 
-                if (phonemeUN?.phonemeExpressions != null && phonemeUN.phonemeExpressions.Count > 0) {
-                    var userExp = phonemeUN.phonemeExpressions.FirstOrDefault(e => 
-                        (e.abbr == "vel" || e.descriptor?.abbr == "vel") && (e.index ?? 0) == i);
+                if (curUN?.phonemeExpressions != null && curUN.phonemeExpressions.Count > 0) {
+                    var userExp = curUN.phonemeExpressions.FirstOrDefault(e =>
+                        (e.abbr == "vel" || e.descriptor?.abbr == "vel") && e.index == i);
                     if (userExp != null) {
                         vel = userExp.value;
                         isManualOverride = true;
@@ -1114,40 +1123,65 @@ namespace OpenUtau.Plugin.Builtin {
             return alias;
         }
 
+        private static bool IsTransition(string type) {
+                switch(type) {
+                    case "VC": case "V C": case "VC-": case "VCC": case "VCC-": case "codaCC": case "C C": case "VC C": case "V-": case "CC-":
+                        return true;
+                    default:
+                        return false;
+                }
+        } 
+        
+        private int[] syllOfIndex = Array.Empty<int>();   // owning syllable (= note index in the group) per phoneme
+
+        private bool IsBaseAlias(string alias) {
+            if (string.IsNullOrEmpty(alias)) return false;
+            switch (Classify(alias)) {
+                case "-V": case "_V": case "V": case "-CV": case "_CV": case "CV":
+                    return true;
+                case "Unknown":
+                    // CCV / VV bases end in a vowel symbol; 1nks, 1nks- etc. don't
+                    return vowels.Any(v => alias.EndsWith(v));
+                default:
+                    return false;
+            }
+        }
+        
+        protected override void SyncAttributes(Note[] notes, List<string> phonemeSymbols, int startIndex, List<PhonemeAttributes> attrList) {
+            syllOfIndex = new int[phonemeSymbols.Count];
+            int bases = 0;
+            for (int i = 0; i < phonemeSymbols.Count; i++) {
+                syllOfIndex[i] = bases;                 // base phonemes seen before this one
+                if (IsBaseAlias(phonemeSymbols[i])) bases++;
+            }
+            base.SyncAttributes(notes, phonemeSymbols, startIndex, attrList);
+        }
+        
         protected override PhonemeAttributes GetDynamicPhonemeAttributes(string alias, int index, PhonemeAttributes currentAttr, Note[] notes) {
             if (unotes.Count == 0 || !useConvel) return currentAttr;
 
-            // If this phoneme itself was manually edited via the envelope/property editor, use it directly
-            if (currentAttr.consonantStretchRatio.HasValue && Math.Abs(currentAttr.consonantStretchRatio.Value - 1.0) > 0.0001) {
+            // Manual VEL edits already arrive through currentAttr
+            if (currentAttr.consonantStretchRatio.HasValue &&
+                Math.Abs(currentAttr.consonantStretchRatio.Value - 1.0) > 0.0001) {
                 return currentAttr;
             }
 
-            string type = Classify(alias);
+            int j = index >= 0 && index < syllOfIndex.Length ? syllOfIndex[index] : 0;
+            if (IsTransition(Classify(alias))) j--;     // VC / CC / endings take the previous note
+            j = Math.Min(j, notes.Length - 1);
 
-            int targetPos = notes[0].position;
-            if (notes.Length > 1) {
-                bool isTransition = (type == "VC" || type == "V C" || type == "VC-" || type == "VCC" 
-                    || type == "VCC-" || type == "codaCC" || type == "C C" || type == "VC C" || type == "V-" || type == "CC-");
-
-                int noteIdx = Math.Clamp(index / 2, 0, notes.Length - 1);
-                if (isTransition && noteIdx > 0) {
-                    noteIdx--;
-                }
-                targetPos = notes[noteIdx].position;
+            UNote targetUN;
+            if (j >= 0) {
+                (targetUN, _) = UNoteAt(notes[j].position);
+                
+            } else {
+                // before the first note of the group: use the note preceding the group
+                var (ownUN, _) = UNoteAt(notes[0].position);
+                int idx = unotes.IndexOf(ownUN);
+                targetUN = idx > 0 ? unotes[idx - 1] : ownUN;
             }
 
-            var (targetUN, _) = UNoteAt(targetPos);
-            float vel = targetUN != null ? CalcConvel(targetUN) : 100f;
-
-            if (targetUN?.phonemeExpressions != null && targetUN.phonemeExpressions.Count > 0) {
-                var userExp = targetUN.phonemeExpressions.FirstOrDefault(e => 
-                    (e.abbr == "vel" || e.descriptor?.abbr == "vel") && e.index == currentAttr.index);
-                if (userExp != null) {
-                    vel = userExp.value;
-                }
-            }
-
-            // Assign stretch ratio only to this specific phoneme
+            float vel = CalcConvel(targetUN);
             currentAttr.consonantStretchRatio = Math.Pow(2.0, (100.0 - vel) / 100.0);
             return currentAttr;
         }

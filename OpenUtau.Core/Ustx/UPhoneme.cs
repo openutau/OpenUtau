@@ -21,6 +21,9 @@ namespace OpenUtau.Core.Ustx {
         public double autoPreutter { get; private set; }
         public double autoOverlap { get; private set; }
         public double maxOtoPreutter { get; private set; }
+        /// <summary>The preutter that reaches back to the start of the file: past the oto's preutter,
+        /// rendering pulls in the audio before the oto's offset (<see cref="Classic.ResamplerItem"/>).</summary>
+        public double maxFilePreutter { get; private set; }
         public bool adjacent { get; private set; }
         public bool overlapped { get; private set; }
         public double tailIntrude { get; private set; }
@@ -123,6 +126,7 @@ namespace OpenUtau.Core.Ustx {
             double consonantStretch = Math.Pow(2f, 1.0f - GetExpression(project, track, Format.Ustx.VEL).Item1 / 100f);
             autoOverlap = oto.Overlap * consonantStretch;
             autoPreutter = maxOtoPreutter = oto.Preutter * consonantStretch;
+            maxFilePreutter = (oto.Preutter + Math.Max(0, oto.Offset)) * consonantStretch;
             adjacent = false;
             tailIntrude = 0;
             tailOverlap = 0;
@@ -217,19 +221,20 @@ namespace OpenUtau.Core.Ustx {
         /// If the phoneme does not have the corresponding expression, return the track's expression and false
         /// <summary>
         public Tuple<float, bool> GetExpression(UProject project, UTrack track, string abbr) {
-            track.TryGetExpDescriptor(project, abbr, out var descriptor);
+            // Loops rather than LINQ: phrase snapshots call this for every phoneme and expression.
             var note = Parent.Extends ?? Parent;
-            var phonemeExp = note.phonemeExpressions.FirstOrDefault(exp => exp.descriptor?.abbr == abbr && exp.index == index);
-            if (phonemeExp != null) {
-                return Tuple.Create(phonemeExp.value, true);
-            } else {
-                var phonemizerExp = note.phonemizerExpressions.FirstOrDefault(exp => exp.descriptor?.abbr == abbr && exp.index == index);
-                if (phonemizerExp != null) {
-                    return Tuple.Create(phonemizerExp.value, false);
-                } else {
-                    return Tuple.Create(descriptor.CustomDefaultValue, false);
+            foreach (var exp in note.phonemeExpressions) {
+                if (exp.descriptor?.abbr == abbr && exp.index == index) {
+                    return Tuple.Create(exp.value, true);
                 }
             }
+            foreach (var exp in note.phonemizerExpressions) {
+                if (exp.descriptor?.abbr == abbr && exp.index == index) {
+                    return Tuple.Create(exp.value, false);
+                }
+            }
+            track.TryGetExpDescriptor(project, abbr, out var descriptor);
+            return Tuple.Create(descriptor.CustomDefaultValue, false);
         }
 
         public void SetExpression(UProject project, UTrack track, string abbr, float? value) {

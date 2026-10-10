@@ -185,9 +185,11 @@ namespace OpenUtau.Core.Render {
                 fader.SetScaleToTarget();
                 faders.Add(fader);
 
-                ISignalSource trackOut = applyMixFx
-                    ? MixFxSource.WrapWith(fader, track.MixFx)
-                    : (ISignalSource)fader;
+                // Playback follows the track's MixFx live so Track Polish
+                // edits are heard while playing; export uses a fixed snapshot.
+                ISignalSource trackOut = !applyMixFx ? fader
+                    : wait ? MixFxSource.WrapWith(fader, track.MixFx)
+                    : MixFxSource.WrapLive(fader, track);
                 trackOutputs.Add(trackOut);
             }
             var task = Task.Run(() => {
@@ -203,7 +205,7 @@ namespace OpenUtau.Core.Render {
             }
             // Build the final mix.  All tracks (FX-wrapped or dry) sum into
             // a single WaveMix.  Bypass-as-pointer-identity in WrapWith keeps
-            // disabled tracks zero-cost.
+            // disabled tracks zero-cost on export.
             var resultMix = new WaveMix(trackOutputs);
             return Tuple.Create(resultMix, faders);
         }

@@ -73,6 +73,8 @@ namespace OpenUtau.Classic {
             resamplers.Clear();
             resamplersMap.Clear();
             resamplers.Add(new WorldlineResampler());
+            resamplers.Add(new HifisamplerResampler());
+            var builtInNames = resamplers.Select(r => r.ToString()).ToHashSet();
             string basePath = PathManager.Inst.ResamplersPath;
             try {
                 Directory.CreateDirectory(basePath);
@@ -80,9 +82,15 @@ namespace OpenUtau.Classic {
                     RecurseSubdirectories = true
                 })) {
                     var driver = LoadResampler(file, basePath);
-                    if (driver != null) {
-                        resamplers.Add(driver);
+                    if (driver == null) {
+                        continue;
                     }
+                    // A file named like a built-in resampler would replace it in resamplersMap.
+                    if (builtInNames.Contains(driver.ToString())) {
+                        Log.Warning($"Skipped resampler {file}: name conflict.");
+                        continue;
+                    }
+                    resamplers.Add(driver);
                 }
             } catch (Exception e) {
                 Log.Error(e, "Failed to search resamplers.");

@@ -19,3 +19,21 @@ cc_test(
         "@gtest//:gtest_main",
     ],
 )
+
+cc_library(
+    name = "continuous_noise",
+    srcs = ["continuous_noise.cpp"],
+    hdrs = ["continuous_noise.h"],
+    deps = [
+        "@world",
+    ],
+)
+
+cc_test(
+    name = "continuous_noise_test",
+    srcs = ["continuous_noise_test.cpp"],
+    deps = [
+        ":continuous_noise",
+        "@gtest//:gtest_main",
+    ],
+)

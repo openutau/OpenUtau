@@ -1,16 +1,24 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using NAudio.Wave;
 using NumSharp;
 using OpenUtau.Classic;
+using OpenUtau.Core.Analysis;
 using OpenUtau.Core.Format;
+using OpenUtau.Core.Util;
 using Serilog;
 
 namespace OpenUtau.Core.Render {
-    public class SynthRequestError : Exception { }
+    public class SynthRequestError : Exception {
+        /// <summary>The request that failed, when raised by <see cref="Worldline.PhraseSynthV2"/>.</summary>
+        public ResamplerItem? Item { get; internal set; }
+    }
 
     public class CutOffExceedDurationError : SynthRequestError { }
 
@@ -27,6 +35,72 @@ namespace OpenUtau.Core.Render {
         [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
         static extern int F0(
             float[] samples, int length, int fs, double framePeriod, int method, double[] f0);
+
+        /// <summary>
+        /// A source's f0 on cfg's frames: its .frq file when there is one (averaged onto the
+        /// frames, voiced frames only), otherwise analyzed.
+        /// </summary>
+        public static double[] SourceF0(string sourceFile, float[] samples, AnalysisConfig cfg) {
+            var frq = new Frq();
+            bool hasFrq = frq.Load(sourceFile);
+            var f0Src = F0(samples, cfg.fs, cfg.frame_ms, hasFrq ? -1 : 2);
+            if (hasFrq) {
+                for (int i = 0; i < f0Src.Length; ++i) {
+                    double ratio = (double)cfg.hop_size / frq.hopSize;
+                    int index0 = (int)Math.Floor(i * ratio);
+                    int index1 = (int)Math.Ceiling((i + 1) * ratio);
+                    index0 = Math.Min(frq.f0.Length - 1, index0);
+                    index1 = Math.Min(frq.f0.Length - 1, index1);
+                    double sumF0 = 0.0;
+                    int count = 0;
+                    for (int j = index0; j <= index1; ++j) {
+                        if (frq.f0[j] > cfg.f0_floor) {
+                            sumF0 += frq.f0[j];
+                            count += 1;
+                        }
+                    }
+                    if (count > 0) {
+                        f0Src[i] = sumF0 / count;
+                    } else {
+                        f0Src[i] = 0.0;
+                    }
+                }
+            }
+            return f0Src;
+        }
+
+        /// <summary>
+        /// Rd per frame (<see cref="GlottalRd"/>) from a harmonic spectral envelope (power,
+        /// [frames, fft_size / 2 + 1]) sampled at the harmonics of f0, smoothed over 20 ms.
+        /// </summary>
+        static double[] RdTrack(NDArray spHarmonic, double[] f0, AnalysisConfig cfg) {
+            int frames = Math.Min(f0.Length, spHarmonic.shape[0]);
+            int spSize = spHarmonic.shape[1];
+            var sp = spHarmonic.ToArray<double>();
+            double binHz = (double)cfg.fs / cfg.fft_size;
+            var rd = new double[frames];
+            var voiced = new bool[frames];
+            for (int i = 0; i < frames; ++i) {
+                if (f0[i] <= cfg.f0_floor) {
+                    continue;
+                }
+                int n = (int)Math.Min(GlottalRd.MaxFitHz / f0[i], (spSize - 2) * binHz / f0[i]);
+                if (n < 2) {
+                    continue;
+                }
+                var amplitudes = new double[n];
+                for (int k = 0; k < n; ++k) {
+                    double bin = (k + 1) * f0[i] / binHz;
+                    int b = (int)bin;
+                    double t = bin - b;
+                    double power = sp[i * spSize + b] * (1 - t) + sp[i * spSize + b + 1] * t;
+                    amplitudes[k] = Math.Sqrt(Math.Max(power, 0));
+                }
+                rd[i] = GlottalRd.Fit(amplitudes, f0[i]);
+                voiced[i] = true;
+            }
+            return GlottalRd.Smooth(rd, voiced, Math.Max(1, (int)Math.Round(20 / cfg.frame_ms)));
+        }
 
         public static double[] F0(float[] samples, int fs, double framePeriod, int method) {
             try {
@@ -171,9 +245,65 @@ namespace OpenUtau.Core.Render {
             return data;
         }
 
+        [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
+        static extern unsafe void HnAnalysisF0In(
+            ref AnalysisConfig config, float[] samples, float[] harmonic, int num_samples,
+            double[] f0_in, int num_frames, double* sp_env_out, double* sp_harmonic_out, double* ap_out);
+
+        /// <summary>
+        /// Worldline-R1.1 analysis from a harmonic/noise separation: the envelopes of
+        /// samples and of its harmonic part, and the noise/total power ratio as ap.
+        /// </summary>
+        public static unsafe void HnAnalysisF0In(ref AnalysisConfig config, float[] samples, float[] harmonic,
+            double[] f0In, out NDArray spEnv, out NDArray spEnvHarmonic, out NDArray ap) {
+            if (harmonic.Length != samples.Length) {
+                throw new ArgumentException("harmonic and samples differ in length");
+            }
+            int numFrames = f0In.Length;
+            int spSize = config.fft_size / 2 + 1;
+            spEnv = np.ndarray(new Shape(numFrames, spSize), typeof(double));
+            spEnvHarmonic = np.ndarray(new Shape(numFrames, spSize), typeof(double));
+            ap = np.ndarray(new Shape(numFrames, spSize), typeof(double));
+            HnAnalysisF0In(ref config, samples, harmonic, samples.Length, f0In, numFrames,
+                spEnv.Data<double>().Address, spEnvHarmonic.Data<double>().Address, ap.Data<double>().Address);
+        }
+
+        [DllImport("worldline", CallingConvention = CallingConvention.Cdecl)]
+        static extern int WorldSynthesisContinuousNoise(
+            double[] f0, int f0Length, double[] sp, double[] harmonicSp, double[] ap, double[] stretch,
+            int fftSize, int hopSize, int fs, ulong seed, double[] y,
+            double[] gender, double[] tension, double[] breathiness, double[] voicing);
+
+        /// <summary>
+        /// Worldline-R1.1 synthesis: WORLD's periodic half plus continuous noise (see
+        /// worldline.h). Features are frames x (fftSize/2+1), row-major.
+        /// </summary>
+        public static double[] WorldSynthesisContinuousNoise(
+            double[] f0, double[] sp, double[] harmonicSp, double[] ap, double[] stretch,
+            int fftSize, int hopSize, int fs, ulong seed,
+            double[] gender, double[] tension, double[] breathiness, double[] voicing) {
+            var data = new double[WorldSynthesisSampleCount(f0.Length, hopSize * 1000.0 / fs, fs)];
+            WorldSynthesisContinuousNoise(
+                f0, f0.Length, sp, harmonicSp, ap, stretch,
+                fftSize, hopSize, fs, seed, data,
+                gender, tension, breathiness, voicing);
+            return data;
+        }
+
         const int ResamplerPadding = 2;
         // world::kFloorF0StoneMask, the voiced threshold of the resampler auto gain.
-        const double ResamplerVoicedF0 = 40.0;
+        internal const double ResamplerVoicedF0 = 40.0;
+
+        /// <summary>
+        /// The resampler auto gain, (0.5 / peak)^(P / 100): the peak is the output's blended with
+        /// the whole source file's by voiced ratio, so a mostly unvoiced note (a consonant, a
+        /// breath) takes the file's peak instead of being overamplified.
+        /// </summary>
+        internal static double ResamplerAutoGain(double outMax, double wavMax, double voicedRatio, int peakComp) {
+            double weight = 1.0 / (1.0 + Math.Exp(5.0 - 10.0 * voicedRatio));
+            double max = outMax * weight + wavMax * (1.0 - weight);
+            return max == 0 ? 1.0 : Math.Pow(0.5 / max, peakComp * 0.01);
+        }
 
         /// <summary>
         /// Worldline resampler: renders one note to exactly item.durRequired ms,
@@ -225,16 +355,32 @@ namespace OpenUtau.Core.Render {
                 f0[i] = MusicMath.ToneToFreq(item.tone + pitch * 0.01);
             }
 
+            // The flags plus the curves (on the pitch bend's grid), each relative to its default.
             int flagG = GetFlag(item, "g", 0);
             int flagMt = GetFlag(item, "Mt", 0);
             int flagMb = GetFlag(item, "Mb", 0);
             int flagMv = GetFlag(item, "Mv", 100);
+            double[] Curve(float[]? curve, double defaultValue, Func<double, double> convert) {
+                var values = new double[total];
+                for (int i = 0; i < total; ++i) {
+                    double v = defaultValue;
+                    if (curve != null && curve.Length > 0) {
+                        double pos = Math.Clamp((i * frameMs - startMs) / stepMs, 0, curve.Length - 1);
+                        int index = (int)Math.Floor(pos);
+                        double t = pos - index;
+                        v = index + 1 < curve.Length ? curve[index] * (1 - t) + curve[index + 1] * t : curve[index];
+                    }
+                    values[i] = convert(v);
+                }
+                return values;
+            }
+
             double[] samples = WorldSynthesis(
                 f0, sp, false, spSize, ap, false, config.fft_size, frameMs, fs,
-                Enumerable.Repeat(0.5 + flagG / 200.0, total).ToArray(),
-                Enumerable.Repeat(0.5 + flagMt / 200.0, total).ToArray(),
-                Enumerable.Repeat(0.5 + flagMb * 0.005, total).ToArray(),
-                Enumerable.Repeat(flagMv * 0.01, total).ToArray());
+                Curve(item.gender, 0, x => 0.5 + 0.005 * Math.Clamp(flagG + x, -100, 100)),
+                Curve(item.tension, 0, x => 0.5 + 0.005 * Math.Clamp(flagMt + x, -100, 100)),
+                Curve(item.breathiness, 0, x => 0.5 + 0.005 * Math.Clamp(flagMb + x, -100, 100)),
+                Curve(item.voicing, 100, x => 0.01 * Math.Clamp(flagMv + x - 100, 0, 100)));
 
             int startSample = Math.Min(samples.Length, (int)(startMs * fs / 1000));
             int lengthSamples = Math.Min(samples.Length - startSample, (int)(item.durRequired * fs / 1000));
@@ -243,14 +389,10 @@ namespace OpenUtau.Core.Render {
                 output[i] = (float)samples[startSample + i];
             }
 
-            // Auto gain between the synthesized output and the whole source file,
-            // weighted by voiced ratio to avoid overamplifying consonants.
             double voicedRatio = f0.Count(f => f > ResamplerVoicedF0) / (double)f0.Length;
-            double weight = 1.0 / (1.0 + Math.Exp(5.0 - 10.0 * voicedRatio));
             double outMax = output.Length > 0 ? output.Max(s => Math.Abs(s)) : 0;
-            double max = outMax * weight + segment.wavMax * (1.0 - weight);
             double gain = (item.phone.direct ? 0 : item.volume) * 0.01;
-            double autoGain = max == 0 ? 1.0 : Math.Pow(0.5 / max, GetFlag(item, "P", 86) * 0.01);
+            double autoGain = ResamplerAutoGain(outMax, segment.wavMax, voicedRatio, GetFlag(item, "P", 86));
             if (autoGain * gain != 1) {
                 for (int i = 0; i < output.Length; ++i) {
                     output[i] = (float)(output[i] * autoGain * gain);
@@ -280,10 +422,26 @@ namespace OpenUtau.Core.Render {
             public int p3;
             public int p4;
 
+            /// <summary>
+            /// The phrase frames in [p0, p4) the segment has analysis for. A preutterance lengthened
+            /// past the oto's skips a negative amount, leaving frames before the analysis; those stay
+            /// silent, as the wavtool leaves them.
+            /// </summary>
+            public int FirstFrame => Math.Max(p0, p0 - skipFrames);
+            public int EndFrame => Math.Min(p4, p0 - skipFrames + f0.size);
+
+            // Worldline-R1.1 only (null / unset otherwise): the harmonic part's spectral
+            // envelope on the same frames as spEnv (ap then holds the separation's power
+            // ratio), and output ms per source ms for each frame.
+            public NDArray? spEnvHarmonic;
+            public double[] stretch = Array.Empty<double>();
+            // Worldline-R1.1: the source's Rd per frame, for tension.
+            public double[] rd = Array.Empty<double>();
+
             /// <summary>Segment of a phrase, with the input gain applied before analysis.</summary>
             public SynthSegment(AnalysisConfig cfg, ResamplerItem item,
                 double posMs, double skipMs, double lengthMs,
-                double fadeInMs, double fadeOutMs) : this(cfg, item, forResampler: false) {
+                double fadeInMs, double fadeOutMs, Hnsep? hnsep = null) : this(cfg, item, forResampler: false, hnsep) {
                 skipFrames = (int)Math.Round(skipMs / cfg.frame_ms);
                 p0 = (int)Math.Round(posMs / cfg.frame_ms);
                 p1 = (int)Math.Round((posMs + fadeInMs) / cfg.frame_ms);
@@ -298,9 +456,9 @@ namespace OpenUtau.Core.Render {
             /// Segment for the resampler: no input gain, since the resampler gains its
             /// output instead, and a cutoff past the end of the file is an error.
             /// </summary>
-            public SynthSegment(AnalysisConfig cfg, ResamplerItem item) : this(cfg, item, forResampler: true) { }
+            public SynthSegment(AnalysisConfig cfg, ResamplerItem item) : this(cfg, item, forResampler: true, null) { }
 
-            SynthSegment(AnalysisConfig cfg, ResamplerItem item, bool forResampler) {
+            SynthSegment(AnalysisConfig cfg, ResamplerItem item, bool forResampler, Hnsep? hnsep) {
                 const int fs = 44100;
                 config = cfg;
                 float[] samples = new float[0];
@@ -312,31 +470,7 @@ namespace OpenUtau.Core.Render {
                     throw new Exception($"Empty samples in {item.inputFile}.");
                 }
 
-                var frq = new Frq();
-                bool hasFrq = frq.Load(item.inputFile);
-                var f0Src = F0(samples, fs, cfg.frame_ms, hasFrq ? -1 : 2);
-                if (hasFrq) {
-                    for (int i = 0; i < f0Src.Length; ++i) {
-                        double ratio = (double)config.hop_size / frq.hopSize;
-                        int index0 = (int)Math.Floor(i * ratio);
-                        int index1 = (int)Math.Ceiling((i + 1) * ratio);
-                        index0 = Math.Min(frq.f0.Length - 1, index0);
-                        index1 = Math.Min(frq.f0.Length - 1, index1);
-                        double sumF0 = 0.0;
-                        int count = 0;
-                        for (int j = index0; j <= index1; ++j) {
-                            if (frq.f0[j] > config.f0_floor) {
-                                sumF0 += frq.f0[j];
-                                count += 1;
-                            }
-                        }
-                        if (count > 0) {
-                            f0Src[i] = sumF0 / count;
-                        } else {
-                            f0Src[i] = 0.0;
-                        }
-                    }
-                }
+                var f0Src = SourceF0(item.inputFile, samples, cfg);
 
                 int srcStartFrame = (int)(item.offset / cfg.frame_ms);
                 srcStartFrame = Math.Max(0, srcStartFrame);
@@ -367,20 +501,48 @@ namespace OpenUtau.Core.Render {
                 samples = new float[(trimEndFrame - trimStartFrame) * cfg.hop_size];
                 Array.Copy(untrimmedSamples, trimStartSample, samples, 0, trimEndSample - trimStartSample);
 
+                // Worldline-R1.1: the region of the whole file's harmonic part, cached next to the source.
+                float[]? harmonic = null;
+                if (hnsep != null) {
+                    if (hnsep.SampleRate != fs) {
+                        throw new NotSupportedException($"hnsep model sample rate {hnsep.SampleRate} Hz, expected {fs} Hz.");
+                    }
+                    var harmonicFile = HnsepCache.Harmonic(item.inputFile, untrimmedSamples, hnsep.Harmonic);
+                    harmonic = new float[samples.Length];
+                    Array.Copy(harmonicFile, trimStartSample, harmonic, 0, trimEndSample - trimStartSample);
+                }
+
                 if (!forResampler) {
                     float gain = item.volume * 0.01f * GetAutoGain(samples, f0Src, wavMax, GetFlag(item, "P", 86));
                     for (int i = 0; i < samples.Length; ++i) {
                         samples[i] = samples[i] * gain;
                     }
+                    if (harmonic != null) {
+                        for (int i = 0; i < harmonic.Length; ++i) {
+                            harmonic[i] *= gain;
+                        }
+                    }
                 }
 
-                WorldAnalysisF0In(ref cfg, samples, f0Src, out var spEnvSrc, out var apSrc);
+                NDArray spEnvSrc, apSrc;
+                NDArray? spEnvHarmonicSrc = null;
+                double[]? rdSrc = null;
+                if (harmonic != null) {
+                    // R1.1: ap from the separation's power ratio, and the harmonic half's own
+                    // envelope (the input's envelope also carries its noise energy).
+                    HnAnalysisF0In(ref cfg, samples, harmonic, f0Src, out spEnvSrc, out var spEnvHarmonicOut, out apSrc);
+                    spEnvHarmonicSrc = spEnvHarmonicOut;
+                    rdSrc = RdTrack(spEnvHarmonicOut, f0Src, cfg);
+                } else {
+                    WorldAnalysisF0In(ref cfg, samples, f0Src, out spEnvSrc, out apSrc);
+                }
 
                 double[] tSrc = new double[srcEndFrame - srcStartFrame];
                 for (int i = 0; i < tSrc.Length; ++i) {
                     tSrc[i] = i * cfg.frame_ms;
                 }
                 double[] tDst = new double[(int)Math.Ceiling(item.durRequired / cfg.frame_ms)];
+                stretch = new double[tDst.Length];
                 {
                     double srcLengthMs = tSrc.Length * cfg.frame_ms - offsetFracMs;
                     double consonantSpeed = Math.Pow(0.5, 1.0 - item.velocity / 100.0);
@@ -396,10 +558,12 @@ namespace OpenUtau.Core.Render {
                         if (dstMs < dstConsonantMs) {
                             double srcMs = dstMs * consonantSpeed;
                             tDst[i] = (srcMs + offsetFracMs) / cfg.frame_ms + srcStartFrame;
+                            stretch[i] = 1.0 / consonantSpeed;
                         } else {
                             double vowelMs = dstMs - dstConsonantMs;
                             double srcMs = srcConsonantMs + vowelMs * vowelSpeed;
                             tDst[i] = (srcMs + offsetFracMs) / cfg.frame_ms + srcStartFrame;
+                            stretch[i] = 1.0 / vowelSpeed;
                         }
                     }
                 }
@@ -407,6 +571,9 @@ namespace OpenUtau.Core.Render {
                 var f0Dst = np.ndarray(new Shape(tDst.Length), typeof(double));
                 var spEnvDst = np.ndarray(new Shape(tDst.Length, spEnvSrc.shape[1]), typeof(double));
                 var apDst = np.ndarray(new Shape(tDst.Length, apSrc.shape[1]), typeof(double));
+                NDArray? spEnvHarmonicDst = spEnvHarmonicSrc is null ? null
+                    : np.ndarray(new Shape(tDst.Length, spEnvHarmonicSrc.shape[1]), typeof(double));
+                var rdDst = rdSrc is null ? null : new double[tDst.Length];
                 for (int i = 0; i < tDst.Length; ++i) {
                     double pos = Math.Max(0, Math.Min(tDst[i], f0Src.Length - 1.0));
                     int index = (int)Math.Floor(pos);
@@ -415,16 +582,30 @@ namespace OpenUtau.Core.Render {
                         f0Dst[i] = f0Src[index] * (1.0 - frac) + f0Src[index + 1] * frac;
                         spEnvDst[i] = spEnvSrc[index] * (1.0 - frac) + spEnvSrc[index + 1] * frac;
                         apDst[i] = apSrc[index] * (1.0 - frac) + apSrc[index + 1] * frac;
+                        if (spEnvHarmonicDst is not null) {
+                            spEnvHarmonicDst[i] = spEnvHarmonicSrc![index] * (1.0 - frac) + spEnvHarmonicSrc[index + 1] * frac;
+                        }
+                        if (rdDst is not null) {
+                            rdDst[i] = rdSrc![Math.Min(index, rdSrc.Length - 1)] * (1.0 - frac) + rdSrc[Math.Min(index + 1, rdSrc.Length - 1)] * frac;
+                        }
                     } else {
                         f0Dst[i] = f0Src[index];
                         spEnvDst[i] = spEnvSrc[index];
                         apDst[i] = apSrc[index];
+                        if (spEnvHarmonicDst is not null) {
+                            spEnvHarmonicDst[i] = spEnvHarmonicSrc![index];
+                        }
+                        if (rdDst is not null) {
+                            rdDst[i] = rdSrc![Math.Min(index, rdSrc.Length - 1)];
+                        }
                     }
                 }
 
                 f0 = f0Dst;
                 spEnv = spEnvDst;
                 ap = apDst;
+                spEnvHarmonic = spEnvHarmonicDst;
+                rd = rdDst ?? Array.Empty<double>();
             }
 
             float GetAutoGain(float[] samples, double[] f0, float wavMax, int peakComp) {
@@ -440,6 +621,8 @@ namespace OpenUtau.Core.Render {
         public class PhraseSynthV2 {
             readonly AnalysisConfig config;
             readonly List<SynthSegment> segments = new List<SynthSegment>();
+            readonly List<(ResamplerItem item, Func<SynthSegment> analyze)> pendingRequests =
+                new List<(ResamplerItem, Func<SynthSegment>)>();
 
             double[]? f0Curve;
             double[]? genderCurve;
@@ -447,15 +630,56 @@ namespace OpenUtau.Core.Render {
             double[]? breathinessCurve;
             double[]? voicingCurve;
 
-            public PhraseSynthV2(int fs, int hopSize, int fftSize) {
+            // Worldline-R1.1: analyzes with the hnsep separation, for SynthContinuousNoise.
+            readonly Hnsep? hnsep;
+
+            public PhraseSynthV2(int fs, int hopSize, int fftSize, bool useHnsep = false) {
                 config = InitAnalysisConfig(fs, hopSize, fftSize);
+                hnsep = useHnsep ? Hnsep.Instance : null;
             }
 
+            /// <summary>Queues a request; the analysis runs in <see cref="AnalyzeRequests"/>.</summary>
             public void AddRequest(ResamplerItem item,
                 double posMs, double skipMs, double lengthMs,
                 double fadeInMs, double fadeOutMs) {
-                segments.Add(new SynthSegment(config, item,
-                    posMs, skipMs, lengthMs, fadeInMs, fadeOutMs));
+                var cfg = config;
+                var hnsep = this.hnsep;
+                pendingRequests.Add((item, () => new SynthSegment(cfg, item,
+                    posMs, skipMs, lengthMs, fadeInMs, fadeOutMs, hnsep)));
+            }
+
+            /// <summary>
+            /// Analyzes the queued requests in parallel, using up to NumRenderThreads threads.
+            /// Rethrows the failure of the earliest failing request; a <see cref="SynthRequestError"/>
+            /// carries that request as <see cref="SynthRequestError.Item"/>.
+            /// </summary>
+            public void AnalyzeRequests(CancellationToken cancellationToken = default) {
+                if (pendingRequests.Count == 0) {
+                    return;
+                }
+                var results = new SynthSegment[pendingRequests.Count];
+                var errors = new Exception?[pendingRequests.Count];
+                Parallel.For(0, pendingRequests.Count, new ParallelOptions {
+                    MaxDegreeOfParallelism = Math.Max(1, Preferences.Default.NumRenderThreads),
+                    CancellationToken = cancellationToken,
+                }, (i, state) => {
+                    try {
+                        results[i] = pendingRequests[i].analyze();
+                    } catch (Exception e) {
+                        if (e is SynthRequestError sre) {
+                            sre.Item = pendingRequests[i].item;
+                        }
+                        errors[i] = e;
+                        // Break still runs every lower index, so the earliest failure is found.
+                        state.Break();
+                    }
+                });
+                var error = errors.FirstOrDefault(e => e != null);
+                if (error != null) {
+                    ExceptionDispatchInfo.Capture(error).Throw();
+                }
+                segments.AddRange(results);
+                pendingRequests.Clear();
             }
 
             public void SetCurves(
@@ -470,6 +694,7 @@ namespace OpenUtau.Core.Render {
             }
 
             public (int, NDArray, NDArray, NDArray) SynthFeatures() {
+                AnalyzeRequests();
                 int spSize = config.fft_size / 2 + 1;
                 int totalFrames = segments.Max(s => s.p4) + 1;
                 NDArray f0Out = np.zeros<double>(totalFrames);
@@ -479,7 +704,7 @@ namespace OpenUtau.Core.Render {
 
                 for (int i = 0; i < segments.Count; ++i) {
                     var segment = segments[i];
-                    for (int j = segment.p0; j < segment.p4; ++j) {
+                    for (int j = segment.FirstFrame; j < segment.EndFrame; ++j) {
                         double weight = 1.0;
                         if (j < segment.p1) {
                             weight = (double)(j - segment.p0) / (segment.p1 - segment.p0);
@@ -518,6 +743,7 @@ namespace OpenUtau.Core.Render {
             }
 
             public float[] Synth() {
+                AnalyzeRequests();
                 if (segments.Count == 0) {
                     return new float[0];
                 }
@@ -536,6 +762,119 @@ namespace OpenUtau.Core.Render {
                     FitCurve(breathinessCurve, totalFrames, 0.5),
                     FitCurve(voicingCurve, totalFrames, 1.0));
                 return samples.Select(s => (float)s).ToArray();
+            }
+
+            /// <summary>
+            /// Worldline-R1.1: WORLD's periodic half plus continuous noise, synthesized by
+            /// <see cref="WorldSynthesisContinuousNoise"/>. Segments blend as in
+            /// <see cref="SynthFeatures"/>, with each frame's stretch blended like ap and the
+            /// harmonic envelope like sp. Needs the hnsep analysis (useHnsep).
+            /// </summary>
+            public float[] SynthContinuousNoise(ulong seed) {
+                if (hnsep == null) {
+                    throw new InvalidOperationException("SynthContinuousNoise needs the hnsep analysis.");
+                }
+                AnalyzeRequests();
+                if (segments.Count == 0) {
+                    return new float[0];
+                }
+                int spSize = config.fft_size / 2 + 1;
+                int totalFrames = segments.Max(s => s.p4) + 1;
+                var f0 = new double[totalFrames];
+                var sp = new double[totalFrames * spSize];
+                var spHarmonic = new double[totalFrames * spSize];
+                var ap = new double[totalFrames * spSize];
+                var stretch = new double[totalFrames];
+                var rd = new double[totalFrames];
+                var dirty = new bool[totalFrames];
+                Array.Fill(sp, 1e-12);
+                Array.Fill(spHarmonic, 1e-12);
+                Array.Fill(ap, 1.0);
+                Array.Fill(stretch, 1.0);
+                Array.Fill(rd, 1.0);
+
+                foreach (var segment in segments) {
+                    var segSp = segment.spEnv.ToArray<double>();
+                    var segSpHarmonic = segment.spEnvHarmonic!.ToArray<double>();
+                    var segAp = segment.ap.ToArray<double>();
+                    for (int j = segment.FirstFrame; j < segment.EndFrame; ++j) {
+                        double weight = 1.0;
+                        if (j < segment.p1) {
+                            weight = (double)(j - segment.p0) / (segment.p1 - segment.p0);
+                        } else if (j >= segment.p3) {
+                            weight = (double)(segment.p4 - j) / (segment.p4 - segment.p3);
+                        }
+                        int segIdx = segment.skipFrames + j - segment.p0;
+                        if (!dirty[j] || weight > 0.5) {
+                            f0[j] = segment.f0.GetAtIndex<double>(segIdx);
+                        }
+                        double wa = dirty[j] ? 1.0 - weight : 0.0;
+                        double wb = dirty[j] ? weight : 1.0;
+                        for (int k = 0; k < spSize; ++k) {
+                            sp[j * spSize + k] += segSp[segIdx * spSize + k] * weight;
+                            spHarmonic[j * spSize + k] += segSpHarmonic[segIdx * spSize + k] * weight;
+                            ap[j * spSize + k] = ap[j * spSize + k] * wa + segAp[segIdx * spSize + k] * wb;
+                        }
+                        stretch[j] = stretch[j] * wa + segment.stretch[segIdx] * wb;
+                        rd[j] = rd[j] * wa + segment.rd[segIdx] * wb;
+                        dirty[j] = true;
+                    }
+                }
+                if (totalFrames >= 2) {
+                    int last = totalFrames - 1;
+                    f0[last] = f0[last - 1];
+                    stretch[last] = stretch[last - 1];
+                    rd[last] = rd[last - 1];
+                    Array.Copy(sp, (last - 1) * spSize, sp, last * spSize, spSize);
+                    Array.Copy(spHarmonic, (last - 1) * spSize, spHarmonic, last * spSize, spSize);
+                    Array.Copy(ap, (last - 1) * spSize, ap, last * spSize, spSize);
+                }
+
+                if (f0Curve != null) {
+                    var f0Fit = FitCurve(f0Curve, totalFrames, 0);
+                    for (int i = 0; i < totalFrames; ++i) {
+                        if (f0[i] > config.f0_floor) {
+                            f0[i] = f0Fit[i];
+                        }
+                    }
+                }
+
+                var gender = FitCurve(genderCurve, totalFrames, 0.5);
+                ApplyRdTension(config, f0, spHarmonic, rd, FitCurve(tensionCurve, totalFrames, 0.5), gender);
+                double[] samples = WorldSynthesisContinuousNoise(
+                    f0, sp, spHarmonic, ap, stretch,
+                    config.fft_size, config.hop_size, config.fs, seed,
+                    gender,
+                    FitCurve(null, totalFrames, 0.5),  // tension is applied as Rd above
+                    FitCurve(breathinessCurve, totalFrames, 0.5),
+                    FitCurve(voicingCurve, totalFrames, 1.0));
+                return samples.Select(s => (float)s).ToArray();
+            }
+
+            /// <summary>
+            /// Tension (0.5 + 0.005 x, x in -100..100) as Rd: each voiced frame's harmonic
+            /// envelope gets the gains of moving the source's Rd to <see cref="GlottalRd.TenseRd"/>,
+            /// on the harmonics of the synthesized f0. The native synthesis then shifts the
+            /// envelope for gender, so the gains are placed where that shift brings them home.
+            /// </summary>
+            internal static void ApplyRdTension(AnalysisConfig config, double[] f0, double[] spHarmonic,
+                    double[] rd, double[] tension, double[] gender) {
+                int spSize = config.fft_size / 2 + 1;
+                double binHz = (double)config.fs / config.fft_size;
+                for (int j = 0; j < f0.Length; ++j) {
+                    double t = (tension[j] - 0.5) * 200;
+                    if (f0[j] <= config.f0_floor || Math.Abs(t) < 1e-9) {
+                        continue;
+                    }
+                    double rd2 = GlottalRd.TenseRd(rd[j], t);
+                    var gains = GlottalRd.Gains(rd[j], rd2, f0[j], (int)(config.fs / 2.0 / f0[j]));
+                    // As ShiftGender: bin b moves to b / ratio.
+                    double ratio = Math.Pow(2, Math.Round((gender[j] - 0.5) * 200, MidpointRounding.AwayFromZero) * 0.01);
+                    for (int b = 0; b < spSize; ++b) {
+                        double g = GlottalRd.GainAt(gains, f0[j], b * binHz / ratio);
+                        spHarmonic[j * spSize + b] *= g * g;
+                    }
+                }
             }
 
             /// <summary>Resizes a curve to length frames, padding with its last value.</summary>

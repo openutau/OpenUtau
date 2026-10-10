@@ -157,6 +157,7 @@ public class GameOnnxBackend : IGameBackend {
         if (disposed) return;
         disposed = true;
         runOptions?.Dispose();
+        using var dmlScope = Onnx.EnterDmlScope();
         encoderSession?.Dispose();
         segmenterSession?.Dispose();
         estimatorSession?.Dispose();
@@ -191,6 +192,7 @@ public class GameOnnxBackend : IGameBackend {
             NamedOnnxValue.CreateFromTensor("duration", duration),
         };
 
+        using var dmlScope = Onnx.EnterDmlScope();
         using var outputs = encoderSession!.Run(inputs, encoderSession.OutputNames, runOptions);
 
         var xSeg = outputs.First(o => o.Name == "x_seg").AsTensor<float>().ToDenseTensor();
@@ -227,6 +229,7 @@ public class GameOnnxBackend : IGameBackend {
         inputs.Add(NamedOnnxValue.CreateFromTensor("threshold", threshold));
         inputs.Add(NamedOnnxValue.CreateFromTensor("radius", radius));
 
+        using var dmlScope = Onnx.EnterDmlScope();
         using var outputs = segmenterSession!.Run(inputs, segmenterSession.OutputNames, runOptions);
         var boundaries = outputs.First(o => o.Name == "boundaries").AsTensor<bool>().ToDenseTensor();
         return boundaries;
@@ -239,6 +242,7 @@ public class GameOnnxBackend : IGameBackend {
             NamedOnnxValue.CreateFromTensor("maskT", maskT),
         };
 
+        using var dmlScope = Onnx.EnterDmlScope();
         using var outputs = bd2durSession!.Run(inputs, bd2durSession.OutputNames, runOptions);
         var durations = outputs.First(o => o.Name == "durations").AsTensor<float>().ToDenseTensor();
         var maskN = outputs.First(o => o.Name == "maskN").AsTensor<bool>().ToDenseTensor();
@@ -257,6 +261,7 @@ public class GameOnnxBackend : IGameBackend {
             NamedOnnxValue.CreateFromTensor("threshold", threshold),
         };
 
+        using var dmlScope = Onnx.EnterDmlScope();
         using var outputs = estimatorSession!.Run(inputs, estimatorSession.OutputNames, runOptions);
         var presence = outputs.First(o => o.Name == "presence").AsTensor<bool>().ToDenseTensor();
         var scores = outputs.First(o => o.Name == "scores").AsTensor<float>().ToDenseTensor();

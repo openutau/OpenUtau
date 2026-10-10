@@ -15,6 +15,10 @@ namespace OpenUtau.App.ViewModels {
     /// Backing view-model for the per-track Track Polish dialog.
     /// Operates on a single <see cref="UTrack"/>'s <see cref="UMixFx"/> instance.
     /// User presets (full-rack snapshots) live in <see cref="Preferences"/>.
+    ///
+    /// Every edit is pushed to the track immediately so it is heard during
+    /// playback; <see cref="Revert"/> restores the state from when the dialog
+    /// opened (Cancel), <see cref="Apply"/> keeps it (OK).
     /// </summary>
     public partial class MixFxViewModel : ViewModelBase {
         public class PresetOption {
@@ -27,7 +31,7 @@ namespace OpenUtau.App.ViewModels {
             public override string ToString() => Label;
         }
 
-        public string TrackName { get; }
+        [Reactive] public partial string TrackName { get; set; }
 
         public List<PresetOption> EqPresets { get; }
         public List<PresetOption> CompPresets { get; }
@@ -40,6 +44,9 @@ namespace OpenUtau.App.ViewModels {
         private readonly Preferences.MixFxUserPreset defaultPreset;
 
         [Reactive] public partial bool Enabled { get; set; }
+        [Reactive] public partial bool EqEnabled { get; set; }
+        [Reactive] public partial bool CompEnabled { get; set; }
+        [Reactive] public partial bool ReverbEnabled { get; set; }
         [Reactive] public partial PresetOption? SelectedEq { get; set; }
         [Reactive] public partial PresetOption? SelectedComp { get; set; }
         [Reactive] public partial PresetOption? SelectedReverb { get; set; }
@@ -73,6 +80,8 @@ namespace OpenUtau.App.ViewModels {
         public Func<Task<string?>>? AskForName;
 
         private readonly UTrack track;
+        // The track's MixFx when the dialog opened, restored on Cancel.
+        private readonly UMixFx? original;
         private bool suspendBindings;
 
         public MixFxViewModel() : this(null) { }
@@ -101,10 +110,14 @@ namespace OpenUtau.App.ViewModels {
             }
 
             // Seed dialog state from track's existing FX, or sensible defaults.
+            original = track?.MixFx;
             var fx = track?.MixFx ?? new UMixFx();
             suspendBindings = true;
             try {
                 Enabled = track?.MixFx?.Enabled ?? false;
+                EqEnabled = fx.EqEnabled;
+                CompEnabled = fx.CompEnabled;
+                ReverbEnabled = fx.ReverbEnabled;
                 SelectedEq = FindOrFirst(EqPresets, fx.EqPreset);
                 SelectedComp = FindOrFirst(CompPresets, fx.CompPreset);
                 SelectedReverb = FindOrFirst(ReverbPresets, fx.ReverbPreset);
@@ -124,15 +137,32 @@ namespace OpenUtau.App.ViewModels {
                 suspendBindings = false;
             }
 
-            // Picking a preset reloads its parameters into the sliders.
-            this.WhenAnyValue(x => x.SelectedEq).OfType<PresetOption>().Subscribe(opt => { if (opt != null) LoadEqPreset(opt.Key); });
-            this.WhenAnyValue(x => x.SelectedComp).OfType<PresetOption>().Subscribe(opt => { if (opt != null) LoadCompPreset(opt.Key); });
-            this.WhenAnyValue(x => x.SelectedReverb).OfType<PresetOption>().Subscribe(opt => { if (opt != null) LoadReverbPreset(opt.Key); });
-            this.WhenAnyValue(x => x.SelectedUserPreset).OfType<Preferences.MixFxUserPreset>().Subscribe(p => { if (p != null) LoadUserPreset(p); });
+            // Picking a preset reloads its parameters into the knobs.
+            // WhenAnyValue emits the current value on subscribe; suspend so
+            // that doesn't overwrite the track's saved values with the
+            // preset's.
+            suspendBindings = true;
+            try {
+                this.WhenAnyValue(x => x.SelectedEq).OfType<PresetOption>().Subscribe(opt => { if (opt != null) LoadEqPreset(opt.Key); });
+                this.WhenAnyValue(x => x.SelectedComp).OfType<PresetOption>().Subscribe(opt => { if (opt != null) LoadCompPreset(opt.Key); });
+                this.WhenAnyValue(x => x.SelectedReverb).OfType<PresetOption>().Subscribe(opt => { if (opt != null) LoadReverbPreset(opt.Key); });
+                this.WhenAnyValue(x => x.SelectedUserPreset).OfType<Preferences.MixFxUserPreset>().Subscribe(p => { if (p != null) LoadUserPreset(p); });
+            } finally {
+                suspendBindings = false;
+            }
 
             this.WhenAnyValue(x => x.SelectedUserPreset)
                 .Select(p => p != null && !ReferenceEquals(p, defaultPreset))
                 .ToProperty(this, x => x.CanDeleteSelectedPreset, out canDeleteSelectedPreset);
+
+            // Live preview: any edit replaces the track's MixFx with a fresh
+            // snapshot.  Swapping the reference (rather than mutating it)
+            // means the audio thread never sees a half-updated set.
+            Changed.Subscribe(_ => {
+                if (track != null) {
+                    track.MixFx = BuildUMixFx();
+                }
+            });
 
             ApplyRecommendedCommand = ReactiveCommand.Create(ApplyRecommended);
             SaveUserPresetCommand = ReactiveCommand.CreateFromTask(SaveUserPresetAsync);
@@ -213,6 +243,9 @@ namespace OpenUtau.App.ViewModels {
             suspendBindings = true;
             try {
                 Enabled = fx.Enabled || Enabled;
+                EqEnabled = fx.EqEnabled;
+                CompEnabled = fx.CompEnabled;
+                ReverbEnabled = fx.ReverbEnabled;
                 SelectedEq = FindOrFirst(EqPresets, fx.EqPreset);
                 SelectedComp = FindOrFirst(CompPresets, fx.CompPreset);
                 SelectedReverb = FindOrFirst(ReverbPresets, fx.ReverbPreset);
@@ -275,6 +308,9 @@ namespace OpenUtau.App.ViewModels {
         public UMixFx BuildUMixFx() {
             return new UMixFx {
                 Enabled = Enabled,
+                EqEnabled = EqEnabled,
+                CompEnabled = CompEnabled,
+                ReverbEnabled = ReverbEnabled,
                 EqPreset = SelectedEq?.Key ?? FxPresets.Off,
                 CompPreset = SelectedComp?.Key ?? FxPresets.Off,
                 ReverbPreset = SelectedReverb?.Key ?? FxPresets.Off,
@@ -283,6 +319,13 @@ namespace OpenUtau.App.ViewModels {
                 ReverbSize = ReverbSize, ReverbDamp = ReverbDamp, ReverbWet = ReverbWet,
                 ReverbPreDelayMs = ReverbPreDelayMs,
             };
+        }
+
+        /// <summary>Undo the live preview: put back the track's MixFx from when the dialog opened.</summary>
+        public void Revert() {
+            if (track != null) {
+                track.MixFx = original!;
+            }
         }
 
         /// <summary>Commit dialog state back to the track + Preferences.  Called on OK.</summary>

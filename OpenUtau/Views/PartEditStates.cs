@@ -267,6 +267,31 @@ namespace OpenUtau.App.Views {
         }
     }
 
+    /// <summary>
+    /// Dragging the handle of the piano roll viewport indicator on the open part
+    /// scrolls the piano roll.
+    /// </summary>
+    class PianoRollViewportDragState : PartEditState {
+        private readonly NotesViewModel notesVm;
+        private double startTickOffset;
+
+        public PianoRollViewportDragState(Control control, MainWindowViewModel vm, NotesViewModel notesVm) : base(control, vm) {
+            this.notesVm = notesVm;
+        }
+        public override void Begin(IPointer pointer, Point point) {
+            pointer.Capture(control);
+            startPoint = point;
+            startTickOffset = notesVm.TickOffset;
+        }
+        public override void End(IPointer pointer, Point point) {
+            pointer.Capture(null);
+        }
+        public override void Update(IPointer pointer, Point point) {
+            double deltaTicks = (point.X - startPoint.X) / vm.TracksViewModel.TickWidth;
+            notesVm.TickOffset = Math.Clamp(startTickOffset + deltaTicks, 0, notesVm.HScrollBarMax);
+        }
+    }
+
     class PartPanningState : PartEditState {
         public override MouseButton MouseButton => MouseButton.Middle;
         public PartPanningState(Control control, MainWindowViewModel vm) : base(control, vm) { }

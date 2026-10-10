@@ -19,15 +19,24 @@ namespace OpenUtau.Classic {
     public class WorldlineRenderer : IRenderer {
 
         readonly int version;
+        readonly int hopSize;
         readonly double frameMs;
         byte[]? vocoderBytes;
 
+        /// <param name="version">
+        /// 10 (Worldline-R): WORLD synthesis, 10 ms frames. 11 (Worldline-R1.1): hnsep
+        /// features, WORLD's periodic half and continuous noise, 5 ms frames. 20
+        /// (Worldline-R2): WORLD features into the vocoder package, at its hop of 512.
+        /// </param>
         public WorldlineRenderer(int version) {
-            if (version != 1 && version != 2) {
-                throw new ArgumentException($"Unsupported WorldlineRenderer version: {version}");
-            }
+            hopSize = version switch {
+                10 => 441,
+                11 => 220,
+                20 => 512,
+                _ => throw new ArgumentException($"Unsupported WorldlineRenderer version: {version}"),
+            };
             this.version = version;
-            frameMs = version == 1 ? 10 : 512.0 * 1000.0 / 44100.0;
+            frameMs = hopSize * 1000.0 / 44100.0;
         }
 
         static readonly HashSet<string> supportedExp = new HashSet<string>(){
@@ -85,34 +94,35 @@ namespace OpenUtau.Classic {
                     }
                 }
                 if (result.samples == null) {
-                    var phraseSynth = new Worldline.PhraseSynthV2(44100, version == 1 ? 441 : 512, 2048);
+                    var phraseSynth = new Worldline.PhraseSynthV2(44100, hopSize, 2048, useHnsep: version == 11);
                     double posOffsetMs = phrase.positionMs - phrase.leadingMs;
                     foreach (var item in resamplerItems) {
-                        if (cancellation.IsCancellationRequested) {
-                            return result;
-                        }
                         double posMs = item.phone.positionMs - item.phone.leadingMs - (phrase.positionMs - phrase.leadingMs);
                         double skipMs = item.skipOver;
                         double lengthMs = item.phone.envelope[4].X - item.phone.envelope[0].X;
                         double fadeInMs = item.phone.envelope[1].X - item.phone.envelope[0].X;
                         double fadeOutMs = item.phone.envelope[4].X - item.phone.envelope[3].X;
-                        try {
-                            phraseSynth.AddRequest(item, posMs, skipMs, lengthMs, fadeInMs, fadeOutMs);
-                        } catch (SynthRequestError e) {
-                            if (e is CutOffExceedDurationError cee) {
-                                throw new MessageCustomizableException(
-                                    $"Failed to render\n Oto error: cutoff exceeds audio duration \n{item.phone.phoneme}",
-                                    $"<translate:errors.failed.synth.cutoffexceedduration>\n{item.phone.phoneme}",
-                                    e);
-                            }
-                            if (e is CutOffBeforeOffsetError cbe) {
-                                throw new MessageCustomizableException(
-                                    $"Failed to render\n Oto error: cutoff before offset \n{item.phone.phoneme}",
-                                    $"<translate:errors.failed.synth.cutoffbeforeoffset>\n{item.phone.phoneme}",
-                                    e);
-                            }
-                            throw e;
+                        phraseSynth.AddRequest(item, posMs, skipMs, lengthMs, fadeInMs, fadeOutMs);
+                    }
+                    try {
+                        phraseSynth.AnalyzeRequests(cancellation.Token);
+                    } catch (OperationCanceledException) {
+                        return result;
+                    } catch (SynthRequestError e) {
+                        string phoneme = e.Item?.phone.phoneme ?? string.Empty;
+                        if (e is CutOffExceedDurationError cee) {
+                            throw new MessageCustomizableException(
+                                $"Failed to render\n Oto error: cutoff exceeds audio duration \n{phoneme}",
+                                $"<translate:errors.failed.synth.cutoffexceedduration>\n{phoneme}",
+                                e);
                         }
+                        if (e is CutOffBeforeOffsetError cbe) {
+                            throw new MessageCustomizableException(
+                                $"Failed to render\n Oto error: cutoff before offset \n{phoneme}",
+                                $"<translate:errors.failed.synth.cutoffbeforeoffset>\n{phoneme}",
+                                e);
+                        }
+                        throw;
                     }
                     int frames = (int)Math.Ceiling(result.estimatedLengthMs / frameMs);
                     var f0 = SampleCurve(phrase, phrase.pitches, 0, frames, x => MusicMath.ToneToFreq(x * 0.01));
@@ -121,7 +131,9 @@ namespace OpenUtau.Classic {
                     var breathiness = SampleCurve(phrase, phrase.breathiness, 0.5, frames, x => 0.5 + 0.005 * x);
                     var voicing = SampleCurve(phrase, phrase.voicing, 1.0, frames, x => 0.01 * x);
                     phraseSynth.SetCurves(f0, gender, tension, breathiness, voicing);
-                    if (version == 1) {
+                    if (version == 11) {
+                        result.samples = phraseSynth.SynthContinuousNoise(seed: phrase.hash);
+                    } else if (version == 10) {
                         result.samples = phraseSynth.Synth();
                     } else {
                         var (totalFrames, f0Out, spEnvOut, apOut) = phraseSynth.SynthFeatures();
@@ -144,17 +156,12 @@ namespace OpenUtau.Classic {
                         var session = Onnx.getInferenceSession(OpenUtau.Core.Classic.Data.Resources.mel, OnnxRunnerChoice.CPU);
                         using var results = session.Run(inputs);
                         var melOutput = results.First(r => r.Name == "mel").AsTensor<float>();
-                        const string vocoderPkg = "pc-nsf-hifigan";
+                        const string vocoderPkg = Hifisampler.HifiVocoder.PackageId;
                         string vocoderPath = PackageManager.Inst.GetInstalledPath(vocoderPkg) ?? "";
                         if (vocoderBytes == null) {
                             var configPath = Path.Combine(vocoderPath, "vocoder.yaml");
                             if (!File.Exists(configPath)) {
-                                throw new MessageCustomizableException(
-                                    $"Error loading package \"{vocoderPkg}\"",
-                                    $"<translate:packages.errors.missing>",
-                                    new Exception($"Error loading package \"{vocoderPkg}\""),
-                                true,
-                                    new string[] { vocoderPkg });
+                                throw new MissingPackageException(vocoderPkg);
                             }
                             var config = Yaml.DefaultDeserializer.Deserialize<Core.DiffSinger.DsVocoderConfig>(
                                 File.ReadAllText(configPath, System.Text.Encoding.UTF8));
@@ -165,6 +172,7 @@ namespace OpenUtau.Classic {
                             NamedOnnxValue.CreateFromTensor("mel", melOutput),
                             NamedOnnxValue.CreateFromTensor("f0", f0Tensor),
                         };
+                        using var dmlScope = Onnx.EnterDmlScope();
                         using var vocoderResults = vocoderSession.Run(vocoderInputs);
                         var audioOutput = vocoderResults.First().AsTensor<float>();
                         result.samples = audioOutput.ToArray();
@@ -231,8 +239,8 @@ namespace OpenUtau.Classic {
                         continue;
                     }
                     float[] samples = Wave.GetSamples(waveStream!.ToSampleProvider().ToMono(1, 0));
-                    int offset = (int)(item.phone.oto.Offset / 1000 * 44100);
-                    int cutoff = (int)(item.phone.oto.Cutoff / 1000 * 44100);
+                    int offset = (int)(item.offset / 1000 * 44100);
+                    int cutoff = (int)(item.cutoff / 1000 * 44100);
                     int length = cutoff >= 0 ? (samples.Length - offset - cutoff) : -cutoff;
                     samples = samples.Skip(offset).Take(length).ToArray();
                     item.ApplyEnvelope(samples);
@@ -251,7 +259,14 @@ namespace OpenUtau.Classic {
             return new UExpressionDescriptor[] { };
         }
 
-        public override string ToString() => version == 1 ? Renderers.WORLDLINE_R : Renderers.WORLDLINE_R2;
+        // The Worldline-R variants render the same expressions, so share Worldline-R's graphs.
+        public string ExpressionGraphSlot => Renderers.WORLDLINE_R;
+
+        public override string ToString() => version switch {
+            11 => Renderers.WORLDLINE_R11,
+            20 => Renderers.WORLDLINE_R2,
+            _ => Renderers.WORLDLINE_R,
+        };
     }
 }
 

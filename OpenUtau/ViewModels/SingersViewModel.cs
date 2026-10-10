@@ -409,13 +409,19 @@ namespace OpenUtau.App.ViewModels {
             Avatar = LoadAvatar(Singer);
             Otos.Clear();
             Otos.AddRange(Singer.Otos);
+            // Reload replaces the oto objects. Do not leave the editor bound to the old ones.
+            Search();
             LoadSubbanks();
 
             DocManager.Inst.ExecuteCmd(new SingersRefreshedNotification(Singer));
             DocManager.Inst.ExecuteCmd(new OtoChangedNotification());
-            if (Otos.Count > 0) {
-                index = Math.Clamp(index, 0, Otos.Count - 1);
+            if (DisplayedOtos.Count > 0) {
+                index = Math.Clamp(index, 0, DisplayedOtos.Count - 1);
                 SelectedIndex = index;
+                SelectedOto = DisplayedOtos[index];
+            } else {
+                SelectedIndex = -1;
+                SelectedOto = null;
             }
         }
 

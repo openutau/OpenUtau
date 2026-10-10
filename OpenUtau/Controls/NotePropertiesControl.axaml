@@ -8,7 +8,7 @@
              x:DataType="vm:NotePropertiesViewModel"
              KeyDown="OnKeyDown" Focusable="True">
   <UserControl.Styles>
-    <Style Selector="Button,CheckBox">
+    <Style Selector="Button,CheckBox,ComboBox">
       <Setter Property="Focusable" Value="False"/>
     </Style>
     <Style Selector="Label,TextBox,Slider,ComboBox,CheckBox">

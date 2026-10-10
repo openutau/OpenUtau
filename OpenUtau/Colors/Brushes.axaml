@@ -73,6 +73,34 @@
                    Color="{DynamicResource ForegroundColorPressed}" Opacity="0.25" />
   <SolidColorBrush x:Key="ButtonBackgroundDisabled"
                    Color="{DynamicResource BackgroundColorDisabled}" />
+  <SolidColorBrush x:Key="ButtonForeground"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                   Color="{DynamicResource ForegroundColorPointerOver}" />
+  <SolidColorBrush x:Key="ToggleButtonForeground"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ToggleButtonForegroundPointerOver"
+                   Color="{DynamicResource ForegroundColorPointerOver}" />
+  <SolidColorBrush x:Key="ComboBoxForeground"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ComboBoxBorderBrush"
+                   Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver"
+                   Color="{DynamicResource BorderColorPointerOver}" />
+  <SolidColorBrush x:Key="ComboBoxItemForeground"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ComboBoxItemForegroundPointerOver"
+                   Color="{DynamicResource ForegroundColorPointerOver}" />
+  <SolidColorBrush x:Key="ToggleSwitchContentForeground"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ToggleSwitchStrokeOff"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver"
+                   Color="{DynamicResource ForegroundColorPointerOver}" />
+  <SolidColorBrush x:Key="ToggleSwitchKnobFillOff"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver"
+                   Color="{DynamicResource ForegroundColorPointerOver}" />
   <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush"
                    Color="{DynamicResource BorderColor}" />
 

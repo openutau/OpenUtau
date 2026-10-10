@@ -97,6 +97,10 @@ namespace OpenUtau.Core.Ustx {
         public override string ToString() => $"{abbr.ToUpper()}: {name}";
 
         public bool Equals(UExpressionDescriptor other) {
+            if (other is null) {
+                return false;
+            }
+            // No options and an empty list of them mean the same.
             return this.name == other.name &&
                 this.abbr == other.abbr &&
                 this.type == other.type &&
@@ -106,8 +110,8 @@ namespace OpenUtau.Core.Ustx {
                 this.CustomDefaultValue == other.CustomDefaultValue &&
                 this.isFlag == other.isFlag &&
                 this.flag == other.flag &&
-                ((this.options == null && other.options == null) || this.options.SequenceEqual(other.options) &&
-                this.skipOutputIfDefault == other.skipOutputIfDefault);
+                (this.options ?? Array.Empty<string>()).SequenceEqual(other.options ?? Array.Empty<string>()) &&
+                this.skipOutputIfDefault == other.skipOutputIfDefault;
         }
     }
 

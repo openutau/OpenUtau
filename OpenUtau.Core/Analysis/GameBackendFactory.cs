@@ -57,8 +57,7 @@ public static class GameBackendFactory {
         if (choice == GgmlValue) {
             return GameGgmlBackend.LoadConfig();
         }
-        throw new InvalidOperationException(
-            "No GAME backend is installed. Install the GAME ONNX or GGML weights via the Package Manager.");
+        throw new MissingPackageException("game");
     }
 
     /// <summary>
@@ -76,7 +75,6 @@ public static class GameBackendFactory {
         if (choice == GgmlValue) {
             return GameGgmlBackend.Create();
         }
-        throw new InvalidOperationException(
-            "No GAME backend is installed. Install the GAME ONNX or GGML weights via the Package Manager.");
+        throw new MissingPackageException("game");
     }
 }

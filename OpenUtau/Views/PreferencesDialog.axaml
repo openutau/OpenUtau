@@ -32,14 +32,28 @@
       <Setter Property="TextWrapping" Value="Wrap"/>
       <Setter Property="Margin" Value="4,0"/>
     </Style>
+    <Style Selector="TextBox.no-input">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="IsReadOnly" Value="True"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="Height" Value="NaN"/>
+      <Setter Property="Foreground" Value="{DynamicResource ForegroundColor}"/>
+      <Style Selector="^ /template/ TextBlock#PART_Placeholder">
+        <Setter Property="FontSize" Value="{Binding $self.FontSize}"/>
+      </Style>
+      <Style Selector="^ /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="{DynamicResource BackgroundColor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+      </Style>
+    </Style>
     <Style Selector="ToggleSwitch">
       <Setter Property="OnContent" Value="{DynamicResource button.on}"/>
       <Setter Property="OffContent" Value="{DynamicResource button.off}"/>
       <Setter Property="HorizontalAlignment" Value="Right"/>
     </Style>
   </Window.Styles>
-
-  
   <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}" ColumnDefinitions="150,*">
     <ListBox Classes="NoScroll" Name="DrawerList">
       <ListBox.Styles>
@@ -178,13 +192,14 @@
         <!-- Paths -->
         <StackPanel>
           <TextBlock Text="{DynamicResource prefs.paths.singer}"/>
-          <Grid ColumnDefinitions="*,10,Auto" Margin="4,0,0,10" HorizontalAlignment="Stretch">
-            <TextBlock TextWrapping="Wrap" FontSize="11" Text="{Binding SingerPath}"/>
+          <Grid ColumnDefinitions="*,10,Auto" Margin="0,0,0,10" HorizontalAlignment="Stretch">
+            <TextBox Classes="no-input" TextWrapping="Wrap" FontSize="11" Text="{Binding SingerPath}"/>
             <Button Content="{DynamicResource button.open}" Grid.Column="2" Click="OpenSingersFolder"/>
           </Grid>
           <TextBlock Text="{DynamicResource prefs.paths.addlsinger}"/>
-          <Grid ColumnDefinitions="*,10,Auto" Margin="4,0,0,0" HorizontalAlignment="Stretch">
-            <TextBlock TextWrapping="Wrap" FontSize="11" Text="{Binding AdditionalSingersPath}"/>
+          <Grid ColumnDefinitions="*,10,Auto" HorizontalAlignment="Stretch">
+            <TextBox Classes="no-input" PlaceholderText="{DynamicResource prefs.placeholdertext.none}" TextWrapping="Wrap"
+                     FontSize="11" Text="{Binding AdditionalSingersPath}"/>
             <Button Content="{DynamicResource button.open}" Grid.Column="2" Click="OpenAddlSingersFolder"/>
           </Grid>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*,10,*">
@@ -253,6 +268,8 @@
           </StackPanel>
           <TextBlock Text="{DynamicResource prefs.rendering.gamebackend}" Margin="0,10,0,0"/>
           <ComboBox ItemsSource="{Binding GameBackendOptions}" SelectedItem="{Binding GameBackend}"/>
+          <TextBlock Text="{DynamicResource prefs.rendering.mergephrases}" Margin="0,10,0,0"/>
+          <ComboBox ItemsSource="{Binding MergePhrasesSecs}" SelectedIndex="{Binding MergePhrasesSecIndex}"/>
         </StackPanel>
 
         <!-- Appearance -->
@@ -324,6 +341,10 @@
             <ToggleSwitch IsChecked="{Binding ShowPlaybackNoteBounce}"/>
           </Grid>
           <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.appearance.reduceanimations}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding ReduceAnimations}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.detachpianoroll}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding DetachPianoRoll}"/>
           </Grid>
@@ -340,8 +361,8 @@
             <ComboBoxItem Content="setParam"/>
           </ComboBox>
           <TextBlock Text="{DynamicResource prefs.advanced.vlabelerpath}" Margin="0,10,0,0"/>
-          <TextBlock HorizontalAlignment="Stretch" Margin="4"
-                      TextWrapping="Wrap" FontSize="11" Text="{Binding VLabelerPath}"/>
+          <TextBox Classes="no-input" HorizontalAlignment="Stretch" Margin="0,4" TextWrapping="Wrap"
+                   PlaceholderText="{DynamicResource prefs.placeholdertext.none}" FontSize="11" Text="{Binding VLabelerPath}"/>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*">
             <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetVLabelerPath"/>
@@ -349,8 +370,8 @@
                     HorizontalAlignment="Stretch" Click="SelectVLabelerPath"/>
           </Grid>
           <TextBlock Text="{DynamicResource prefs.otoeditor.setparampath}" Margin="0,10,0,0"/>
-          <TextBlock HorizontalAlignment="Stretch" Margin="4"
-                      TextWrapping="Wrap" FontSize="11" Text="{Binding SetParamPath}"/>
+          <TextBox Classes="no-input" HorizontalAlignment="Stretch" Margin="0,4" TextWrapping="Wrap"
+                   PlaceholderText="{DynamicResource prefs.placeholdertext.none}" FontSize="11" Text="{Binding SetParamPath}"/>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*">
             <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetSetParamPath"/>
@@ -411,9 +432,9 @@
           <TextBlock Classes="restart" IsVisible="{OnPlatform Default=false, Linux=True}"/>
           <TextBlock Text="{DynamicResource prefs.advanced.winepath}" 
                       IsVisible="{OnPlatform Windows=False, Default=True}" Margin="0,10,0,0"/>
-          <TextBlock HorizontalAlignment="Stretch" Margin="4"
-                      TextWrapping="Wrap" FontSize="11" Text="{Binding WinePath}"
-                      IsVisible="{OnPlatform Windows=False, Default=True}" />
+          <TextBox Classes="no-input" HorizontalAlignment="Stretch" Margin="0,4" TextWrapping="Wrap"
+                    PlaceholderText="{DynamicResource prefs.placeholdertext.none}" FontSize="11"
+                    Text="{Binding WinePath}" IsVisible="{OnPlatform Windows=False, Default=True}" />
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*,10,*"
                 IsVisible="{OnPlatform Windows=False, Default=True}">
             <Button Grid.Column="0" Content="{DynamicResource button.reset}"

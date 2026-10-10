@@ -77,7 +77,30 @@ namespace OpenUtau.Core.SignalChain.Effects {
             preDelaySamples = (int)Math.Round(pdMs * sampleRate / 1000.0);
             if (preDelaySamples >= preDelayBuf.Length) preDelaySamples = preDelayBuf.Length - 1;
             // Reverb with non-zero wet is never truly bypassed; treat tiny wet as off.
+            bool wasBypassed = bypassed;
             bypassed = this.wet < 1e-4;
+            if (wasBypassed && !bypassed) {
+                // Don't replay a tail left over from before the bypass.
+                Reset();
+            }
+        }
+
+        /// <summary>
+        /// Approximate RT60 (seconds) of the comb network for the given
+        /// settings: (low-frequency decay, high-frequency decay after damping).
+        /// For UI curve display.
+        /// </summary>
+        public static (double low, double high) DecaySeconds(double roomsize, double damp) {
+            double fb = roomsize * ScaleRoom + OffsetRoom;
+            double d = damp * ScaleDamp;
+            double avgDelay = 0;
+            foreach (int t in CombTuning) avgDelay += t;
+            avgDelay /= CombTuning.Length * 44100.0;
+            // Amplitude after time t is g^(t / avgDelay); solve g^n = 10^-3.
+            // The one-pole damping filter in the loop scales loop gain at
+            // Nyquist by (1 - d) / (1 + d).
+            double fbHigh = fb * (1 - d) / (1 + d);
+            return (-3.0 * avgDelay / Math.Log10(fb), -3.0 * avgDelay / Math.Log10(fbHigh));
         }
 
         public void Reset() {

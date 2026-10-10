@@ -4,8 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using NWaves.Operations;
-using NWaves.Signals;
 using OpenUtau.Api;
 using OpenUtau.Core.Render;
 using Serilog;
@@ -430,11 +428,10 @@ namespace OpenUtau.Core.Ustx {
         }
         [YamlIgnore] bool Missing { get; set; }
         [YamlIgnore] public float[] Samples { get; private set; }
-        [YamlIgnore] public Task<DiscreteSignal[]> Peaks { get; set; }
+        [YamlIgnore] public Task<Format.WavePeaks> Peaks { get; set; }
 
         [YamlIgnore] public int channels;
         [YamlIgnore] public int sampleRate;
-        [YamlIgnore] public int peaksSampleRate;
 
         private int duration;
 
@@ -482,7 +479,7 @@ namespace OpenUtau.Core.Ustx {
             }
             lock (loadLockObj) {
                 if (Samples != null || Missing) {
-                    Peaks = Task.FromResult<DiscreteSignal[]>(null);
+                    Peaks = Task.FromResult<Format.WavePeaks>(null);
                     return;
                 }
             }
@@ -500,27 +497,7 @@ namespace OpenUtau.Core.Ustx {
                 Log.Information($"Loaded {FilePath} {stopwatch.Elapsed}");
 
                 stopwatch.Restart();
-                float[][] channelSamples = new float[channels][];
-                int length = Samples.Length / channels;
-                for (int i = 0; i < channels; ++i) {
-                    channelSamples[i] = new float[length];
-                }
-                int pos = 0;
-                for (int i = 0; i < length; ++i) {
-                    for (int j = 0; j < channels; ++j) {
-                        channelSamples[j][i] = Samples[pos++];
-                    }
-                }
-                DiscreteSignal[] peaks = new DiscreteSignal[channels];
-                var resampler = new Resampler();
-                for (int i = 0; i < channels; ++i) {
-                    peaks[i] = new DiscreteSignal(sampleRate, channelSamples[i], false);
-                    peaks[i] = resampler.Decimate(peaks[i], 10);
-                    for (int j = 0; j < peaks[i].Samples.Length; ++j) {
-                        peaks[i].Samples[j] = Math.Clamp(peaks[i].Samples[j], -1, 1);
-                    }
-                }
-                peaksSampleRate = sampleRate / 10;
+                var peaks = new Format.WavePeaks(Samples, channels, sampleRate);
                 stopwatch.Stop();
                 Log.Information($"Built peaks {FilePath} {stopwatch.Elapsed}");
                 return peaks;

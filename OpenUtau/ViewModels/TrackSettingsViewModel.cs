@@ -85,14 +85,18 @@ namespace OpenUtau.App.ViewModels {
 
                 var project = DocManager.Inst.Project;
                 var library = project.expressionGraphs ?? new System.Collections.Generic.List<Core.ExpressionGraph.UExpressionGraph>();
+                // The Worldline-R variants share Worldline-R's graphs.
+                string slot = Renderers.GetExpressionGraphSlot(renderer);
+                bool InSlot(Core.ExpressionGraph.UExpressionGraph g) =>
+                    g.renderer != null && Renderers.GetExpressionGraphSlot(g.renderer) == slot;
                 string? defaultId = null;
-                project.defaultExpressionGraphs?.TryGetValue(renderer, out defaultId);
-                var defaultGraph = library.FirstOrDefault(g => g.id == defaultId && g.renderer == renderer);
+                project.defaultExpressionGraphs?.TryGetValue(slot, out defaultId);
+                var defaultGraph = library.FirstOrDefault(g => g.id == defaultId && InSlot(g));
                 string defaultName = defaultGraph != null
                     ? defaultGraph.name ?? defaultGraph.id
                     : ThemeManager.GetString("tracks.expressiongraph.none");
                 graphs.Add(new GraphChoice(null, $"{ThemeManager.GetString("tracks.expressiongraph.default")} ({defaultName})"));
-                graphs.AddRange(library.Where(g => g.renderer == renderer).Select(g => new GraphChoice(g.id, g.name ?? g.id)));
+                graphs.AddRange(library.Where(InSlot).Select(g => new GraphChoice(g.id, g.name ?? g.id)));
                 Graph = graphs.FirstOrDefault(c => c.Id != null && c.Id == Track.ExpressionGraph) ?? graphs[0];
             }
             this.WhenAnyValue(x => x.Resampler)

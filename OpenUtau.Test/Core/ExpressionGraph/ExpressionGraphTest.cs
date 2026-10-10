@@ -11,6 +11,242 @@ namespace OpenUtau.Core.ExpressionGraph {
     public class ExpressionGraphTest {
         const string Renderer = "TEST";
 
+        [Fact]
+        public void PhraseIndexIsLazyAndShared() {
+            var (project, track, part) = Fixture(null);
+            var source = PhraseSource.FromPart(project, track, part, 0);
+            var contexts = source.PhraseGroups.Select(g => new GraphContext(source, phraseStart: g.Start)).ToArray();
+            Assert.False(source.PhraseNoteIndex.IsValueCreated);
+            Parallel.ForEach(contexts, context => context.PhraseNoteAt(0));
+            Assert.True(source.PhraseNoteIndex.IsValueCreated);
+            var index = source.PhraseNoteIndex.Value;
+            foreach (var context in contexts) {
+                context.PhraseNoteAt(1200);
+                Assert.Same(index, source.PhraseNoteIndex.Value);
+            }
+            var other = PhraseSource.FromPart(project, track, part, 0);
+            Assert.False(other.PhraseNoteIndex.IsValueCreated);
+            Assert.NotSame(index, other.PhraseNoteIndex.Value);
+        }
+
+        [Theory]
+        [InlineData("10")]
+        [InlineData("-10")]
+        public void CubicFollowsMovingTargets(string slope) {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.Time),
+                Node(2, GraphNodeTypes.Multiply, ("b", slope)),
+                Node(3, GraphNodeTypes.Slew, ("speed", "2"), ("easing", "cubic")),
+                Node(4, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+            }, Link(1, 2, "a"), Link(2, 3), Link(3, 4));
+            var (project, track, part) = Fixture(graph);
+            part.position = 0;
+            var context = new GraphContext(PhraseSource.FromPart(project, track, part, 0));
+            float[] Run(int step) {
+                var ticks = Enumerable.Range(0, 960 / step + 1).Select(i => i * step).ToArray();
+                var values = Evaluate(graph, project, track, part, ticks)["tenc"];
+                for (int i = 1; i < values.Length; i++) {
+                    double dt = (context.Axis.TickPosToMsPos(ticks[i]) - context.Axis.TickPosToMsPos(ticks[i - 1])) / 1000;
+                    Assert.InRange(Math.Abs(values[i] - values[i - 1]), 0, 2 * dt + 0.000001);
+                }
+                return values;
+            }
+            var coarse = Run(10);
+            var fine = Run(1);
+            double seconds = context.Axis.TickPosToMsPos(960) / 1000;
+            Assert.InRange(Math.Abs(fine.Last()), seconds, 2 * seconds + 0.00001);
+            // Retargeting is sampled, so trajectories need not match exactly, but a
+            // tenfold denser grid must stay within 10% of the maximum travel, not freeze.
+            Assert.InRange(Math.Abs(coarse.Last() - fine.Last()), 0, 0.1 * 2 * seconds);
+            Assert.Equal(fine, Run(1));
+        }
+
+        [Fact]
+        public void PhraseCounterResetsAndCountsExtensionNotes() {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.PhraseNotes),
+                Node(2, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+                Node(3, GraphNodeTypes.CurveOutput, ("abbr", "cstm")),
+                Node(4, GraphNodeTypes.PhonemeOutput, ("abbr", "gen")),
+            }, Link(1, 2), new UGraphLink { from = 1, fromPort = "count", to = 3, toPort = "value" }, Link(1, 4));
+            var (project, track, part) = Fixture(graph);
+            var source = PhraseSource.FromPart(project, track, part, 0);
+            Assert.Equal(2, source.PhraseGroups.Length);
+            var program = ExpressionGraphProgram.Compile(graph, out var error);
+            Assert.NotNull(program);
+            var context = new GraphContext(source);
+            var result = program.Evaluate(context, new[] { 0, 480, 1000, 1200, 1680 });
+            Assert.Equal(new float[] { 0, 1, -1, 0, 1 }, result["tenc"]);
+            Assert.Equal(new float[] { 2, 2, 0, 2, 2 }, result["cstm"]);
+            Assert.Equal(new float[] { 0, 1, 0, 1 }, program.EvaluatePhonemes(context)["gen"]);
+            // The active render phrase keeps its count through leading/trailing padding.
+            var active = new GraphContext(source, phraseStart: source.PhraseGroups[1].Start);
+            Assert.Equal((-1, 2), active.PhraseNoteAt(1000));
+            Assert.Equal((0, 2), active.PhraseNoteAt(1200));
+            // A phoneme before its note still uses the owning note's index.
+            Assert.Equal((0, 2), active.PhraseNoteAt(1100, source.PhraseGroups[1].Start));
+            Assert.Equal((1, 2), active.PhraseNoteAt(1680));
+            Assert.NotEmpty(source.BuildPhrases());
+        }
+
+        [Fact]
+        public void RateSpeedCanBeConnected() {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.Lfo, ("rate", "1"), ("unit", "beat"), ("shape", "square")),
+                Node(2, GraphNodeTypes.Slew, ("speed", "100")),
+                Node(3, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+                Node(4, GraphNodeTypes.Constant, ("value", "0")),
+            }, Link(1, 2), Link(2, 3), Link(4, 2, "speed"));
+            var (project, track, part) = Fixture(graph);
+            part.position = 0;
+            var ticks = new[] { 0, project.resolution / 2 };
+            Assert.Equal(new float[] { 1, 1 }, Evaluate(graph, project, track, part, ticks)["tenc"]);
+            graph.nodes[3].Set("value", "10000");
+            Assert.Equal(new float[] { 1, -1 }, Evaluate(graph, project, track, part, ticks)["tenc"]);
+        }
+
+        [Fact]
+        public void RandomRangeIsStableAndBounded() {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.RandomRange, ("min", "10"), ("max", "-5"),
+                    ("seed", "42"), ("rate", "1"), ("unit", "beat")),
+                Node(2, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+            }, Link(1, 2));
+            var (project, track, part) = Fixture(graph);
+            part.position = 0;
+            var ticks = new[] { -project.resolution, 0, 1, project.resolution, project.resolution * 2 };
+            var result = Evaluate(graph, project, track, part, ticks)["tenc"];
+            Assert.All(result, x => Assert.InRange(x, -5, 10));
+            Assert.Equal(result[1], result[2]);
+            Assert.NotEqual(result[0], result[1]);
+            Assert.Equal(result, Evaluate(graph, project, track, part, ticks)["tenc"]);
+            Assert.Equal(result.Skip(3), Evaluate(graph, project, track, part, ticks.Skip(3).ToArray())["tenc"]);
+            graph.nodes[0].Set("seed", "43");
+            Assert.NotEqual(result[1], Evaluate(graph, project, track, part, ticks)["tenc"][1]);
+            graph.nodes[0].Set("rate", "0");
+            Assert.Single(Evaluate(graph, project, track, part, ticks)["tenc"].Distinct());
+            graph.nodes[0].Set("min", "10");
+            graph.nodes[0].Set("max", "10");
+            Assert.All(Evaluate(graph, project, track, part, ticks)["tenc"], x => Assert.Equal(10, x));
+        }
+
+        [Theory]
+        [InlineData("linear")]
+        [InlineData("cubic")]
+        public void RateLimiterRespectsSpeed(string easing) {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.Lfo, ("rate", "0.25"), ("unit", "beat"), ("shape", "square")),
+                Node(2, GraphNodeTypes.Slew, ("speed", "4"), ("easing", easing)),
+                Node(3, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+            }, Link(1, 2), Link(2, 3));
+            var (project, track, part) = Fixture(graph);
+            part.position = 0;
+            var ticks = Enumerable.Range(0, 401).Select(i => i * 10).ToArray();
+            var result = Evaluate(graph, project, track, part, ticks)["tenc"];
+            var context = new GraphContext(PhraseSource.FromPart(project, track, part, 0));
+            for (int i = 1; i < ticks.Length; i++) {
+                double dt = (context.Axis.TickPosToMsPos(ticks[i]) - context.Axis.TickPosToMsPos(ticks[i - 1])) / 1000;
+                Assert.InRange(Math.Abs(result[i] - result[i - 1]), 0, 4 * dt + 0.000001);
+                Assert.InRange(result[i], -1, 1);
+            }
+            Assert.Contains(-1f, result);
+            Assert.Contains(result, x => x > -1 && x < 1);
+            Assert.Equal(result, Evaluate(graph, project, track, part, ticks)["tenc"]);
+            Assert.Empty(Evaluate(graph, project, track, part, Array.Empty<int>())["tenc"]);
+            graph.nodes[1].Set("speed", "0");
+            Assert.All(Evaluate(graph, project, track, part, ticks)["tenc"], x => Assert.Equal(1, x));
+        }
+
+        [Theory]
+        [InlineData("and", "-2", "3", 1)]
+        [InlineData("and", "0", "3", 0)]
+        [InlineData("or", "0", "-3", 1)]
+        [InlineData("or", "0", "0", 0)]
+        public void LogicUsesNonzeroAsTrue(string type, string a, string b, float expected) {
+            var graph = Graph(new[] {
+                Node(1, type, ("a", a), ("b", b)),
+                Node(2, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+            }, Link(1, 2));
+            var (project, track, part) = Fixture(graph);
+            Assert.Equal(new[] { expected, expected }, Evaluate(graph, project, track, part, new[] { 0, 10 })["tenc"]);
+        }
+
+        [Theory]
+        [InlineData("less", 0)]
+        [InlineData("less_equal", 1)]
+        [InlineData("greater", 0)]
+        [InlineData("greater_equal", 1)]
+        [InlineData("equal", 1)]
+        [InlineData("not_equal", 0)]
+        public void CompareSelectsBranches(string op, int expected) {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.Compare, ("a", "2"), ("b", "2"), ("operator", op)),
+                Node(2, GraphNodeTypes.IfElse, ("then", "60"), ("else", "-20")),
+                Node(3, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+                Node(4, GraphNodeTypes.Not),
+                Node(5, GraphNodeTypes.CurveOutput, ("abbr", "other")),
+            }, Link(1, 2, "condition"), Link(2, 3), Link(1, 4), Link(4, 5));
+            var (project, track, part) = Fixture(graph);
+            var result = Evaluate(graph, project, track, part, new[] { 0 });
+            Assert.Equal(expected == 1 ? 60 : -20, result["tenc"][0]);
+            Assert.Equal(1 - expected, result["other"][0]);
+        }
+
+        [Theory]
+        [InlineData("sine", 0, 1, 0, -1)]
+        [InlineData("triangle", -1, 0, 1, 0)]
+        [InlineData("square", 1, 1, -1, -1)]
+        [InlineData("saw", -1, -0.5f, 0, 0.5f)]
+        public void LfoShapesFollowProjectBeats(string shape, float p0, float p1, float p2, float p3) {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.Lfo, ("unit", "beat"), ("rate", "1"), ("shape", shape)),
+                Node(2, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+            }, Link(1, 2));
+            var (project, track, part) = Fixture(graph);
+            part.position = 0;
+            var ticks = new[] { 0, project.resolution / 4, project.resolution / 2, project.resolution * 3 / 4 };
+            var result = Evaluate(graph, project, track, part, ticks)["tenc"];
+            var expected = new[] { p0, p1, p2, p3 };
+            for (int i = 0; i < result.Length; i++) Assert.Equal(expected[i], result[i], 5);
+            Assert.Equal(result.Skip(2), Evaluate(graph, project, track, part, ticks.Skip(2).ToArray())["tenc"]);
+        }
+
+        [Fact]
+        public void SmoothingUsesElapsedTimeAndHasNoSharedState() {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.Lfo, ("unit", "beat"), ("rate", "1"), ("shape", "square")),
+                Node(2, GraphNodeTypes.Smooth, ("attack_ms", "100"), ("release_ms", "200")),
+                Node(3, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+            }, Link(1, 2), Link(2, 3));
+            var (project, track, part) = Fixture(graph);
+            part.position = 0;
+            var ticks = new[] { 0, project.resolution / 2, project.resolution };
+            var program = ExpressionGraphProgram.Compile(graph, out var error);
+            Assert.NotNull(program);
+            var context = new GraphContext(PhraseSource.FromPart(project, track, part, 0));
+            var result = program.Evaluate(context, ticks)["tenc"];
+            double dt = context.Axis.TickPosToMsPos(ticks[1]) - context.Axis.TickPosToMsPos(0);
+            Assert.Equal(1, result[0]);
+            Assert.Equal((float)(-1 + 2 * Math.Exp(-dt / 200)), result[1], 5);
+            Assert.Equal((float)(1 + (result[1] - 1) * Math.Exp(-dt / 100)), result[2], 5);
+            Assert.Equal(result, program.Evaluate(context, ticks)["tenc"]);
+            Assert.Empty(program.Evaluate(context, Array.Empty<int>())["tenc"]);
+            graph.nodes[1].Set("attack_ms", "0");
+            graph.nodes[1].Set("release_ms", "0");
+            Assert.Equal(new float[] { 1, -1, 1 }, Evaluate(graph, project, track, part, ticks)["tenc"]);
+        }
+
+        [Fact]
+        public void TimeIncludesPartPosition() {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.Time, ("unit", "beat")),
+                Node(2, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+            }, Link(1, 2));
+            var (project, track, part) = Fixture(graph);
+            part.position = project.resolution;
+            Assert.Equal(new float[] { 1, 2 }, Evaluate(graph, project, track, part, new[] { 0, project.resolution })["tenc"]);
+        }
+
         // Reads every expression of the phrase fixture.
         class CurveRenderer : IRenderer {
             public USingerType SingerType => USingerType.Classic;
@@ -249,6 +485,20 @@ namespace OpenUtau.Core.ExpressionGraph {
             Assert.Null(ExpressionGraphProgram.GetEffectiveGraph(project, track));
             track.ExpressionGraph = null;
             track.RendererSettings.renderer = "OTHER";
+            Assert.Null(ExpressionGraphProgram.GetEffectiveGraph(project, track));
+        }
+
+        [Fact]
+        public void WorldlineVariantsUseWorldlineRGraphs() {
+            var graph = Graph(new[] { Node(1, GraphNodeTypes.Constant) });
+            var (project, track, _) = Fixture(graph);
+            graph.renderer = Renderers.WORLDLINE_R;
+            project.defaultExpressionGraphs = new Dictionary<string, string> { [Renderers.WORLDLINE_R] = graph.id };
+            foreach (var renderer in new[] { Renderers.WORLDLINE_R, Renderers.WORLDLINE_R11, Renderers.WORLDLINE_R2 }) {
+                track.RendererSettings.renderer = renderer;
+                Assert.Equal(graph.id, ExpressionGraphProgram.GetEffectiveGraph(project, track)?.id);
+            }
+            track.RendererSettings.renderer = Renderers.CLASSIC;
             Assert.Null(ExpressionGraphProgram.GetEffectiveGraph(project, track));
         }
 
@@ -540,6 +790,44 @@ namespace OpenUtau.Core.ExpressionGraph {
             // Grid ticks between the first two frames, and between the fourth and fifth; nothing across the gap.
             Assert.Equal(new[] { 100, 105, 110, 135, 140 }, values.Select(v => v.x));
             Assert.Equal(new[] { 6000f, 6050f, 6100f, 6318.18f, 6363.64f }, values.Select(v => v.y), new ToleranceComparer(0.01f));
+        }
+
+        [Fact]
+        public void ClearedRangesAreLimitedToThePhrase() {
+            var ranges = new List<(int from, int to)> { (0, 50), (-30, 20), (60, 90), (120, 200), (100, 100) };
+            OpenUtau.Core.Editing.LoadRenderedPitch.ClampRanges(ranges, 0, 10, 100);
+            Assert.Equal(new[] { (10, 50), (10, 20), (60, 90) }, ranges);
+
+            // Ranges before the start index belong to other phrases and are left alone.
+            ranges = new List<(int from, int to)> { (0, 1000), (-500, 700) };
+            OpenUtau.Core.Editing.LoadRenderedPitch.ClampRanges(ranges, 1, 0, 480);
+            Assert.Equal(new[] { (0, 1000), (0, 480) }, ranges);
+        }
+
+        [Fact]
+        public void LongPaddingDoesNotClearTheNeighbouringPhrases() {
+            // A Voicevox-like result: 1 s of silent padding (about 960 ticks) on both sides of a 480 tick phrase.
+            var ticks = new List<float>();
+            var voiced = new List<bool>();
+            for (int t = -960; t <= 1440; t += 10) {
+                ticks.Add(t);
+                voiced.Add(t >= 0 && t <= 480);
+            }
+            var result = new RenderPitchResult {
+                ticks = ticks.ToArray(),
+                tones = ticks.Select(_ => 60f).ToArray(),
+                voiced = voiced.ToArray(),
+            };
+            var cleared = new List<(int from, int to)>();
+            var values = new List<(int x, float y)>();
+            OpenUtau.Core.Editing.LoadRenderedPitch.CollectRenderedPitch(result, 100, 480, cleared, values);
+            // The whole result is cleared, padding included: it reaches into the neighbouring phrases.
+            Assert.Equal(new[] { (100 - 960, 100 + 1440) }, cleared);
+
+            OpenUtau.Core.Editing.LoadRenderedPitch.ClampRanges(cleared, 0, 100, 100 + 480);
+
+            Assert.Equal(new[] { (100, 580) }, cleared);
+            Assert.All(values, v => Assert.InRange(v.x, 100, 580));
         }
 
         [Fact]

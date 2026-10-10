@@ -49,6 +49,8 @@ namespace OpenUtau.Core.ExpressionGraph {
         readonly IReadOnlyDictionary<string, UMaskedRun[]> maskedCurves;
         readonly Dictionary<string, int> defaults;
         readonly NoteSource[] notes;
+        readonly PhraseSource? phraseSource;
+        readonly int activePhrase = -1;
 
         public GraphContext(TimeAxis axis, int partPosition, int resolution,
                 IEnumerable<CurveSource> curves, IReadOnlyDictionary<string, int> defaults, IEnumerable<NoteSource> notes,
@@ -68,9 +70,36 @@ namespace OpenUtau.Core.ExpressionGraph {
             this.notes = notes.OrderBy(n => n.Position).ToArray();
         }
 
-        internal GraphContext(PhraseSource source, PhrasePitch? pitch = null)
+        internal GraphContext(PhraseSource source, PhrasePitch? pitch = null, int? phraseStart = null)
             : this(source.Axis, source.PartPosition, source.Resolution, source.Curves, source.CurveDefaults, source.Notes,
-                source.PhonemeAnchors, pitch, source.MaskedCurves) { }
+                source.PhonemeAnchors, pitch, source.MaskedCurves) {
+            phraseSource = source;
+            if (phraseStart.HasValue) {
+                int lo = 0, hi = source.PhraseGroups.Length - 1;
+                while (lo <= hi) {
+                    int mid = lo + (hi - lo) / 2;
+                    int start = source.PhraseGroups[mid].Start;
+                    if (start == phraseStart.Value) { activePhrase = mid; break; }
+                    if (start < phraseStart.Value) lo = mid + 1;
+                    else hi = mid - 1;
+                }
+            }
+        }
+
+        // Per-phoneme evaluation uses ownership rather than onset time (consonants can precede notes).
+        public (int index, int count) PhraseNoteAt(int tick, int? phonemeIndex = null) {
+            if (phraseSource == null) return (-1, 0);
+            var phraseNotes = phraseSource.PhraseNoteIndex.Value;
+            int group = activePhrase;
+            int note = NoteAt(tick)?.Index ?? -1;
+            if (phonemeIndex is int p && p >= 0 && p < phraseSource.Phonemes.Length) {
+                note = phraseSource.Phonemes[p].NoteIndex;
+                group = Array.FindIndex(phraseSource.PhraseGroups, g => p >= g.Start && p < g.End);
+            } else if (group < 0 && note >= 0) {
+                group = Array.FindIndex(phraseNotes, ns => Array.IndexOf(ns, note) >= 0);
+            }
+            return group < 0 ? (-1, 0) : (Array.IndexOf(phraseNotes[group], note), phraseNotes[group].Length);
+        }
 
         /// <summary>A curve's value at a part-relative tick, exactly as the renderer reads it without a graph.</summary>
         public float SampleCurve(string? abbr, int tick) {
@@ -337,12 +366,13 @@ namespace OpenUtau.Core.ExpressionGraph {
             if (project.expressionGraphs == null || project.expressionGraphs.Count == 0 || string.IsNullOrEmpty(renderer)) {
                 return null;
             }
+            string slot = Render.Renderers.GetExpressionGraphSlot(renderer);
             string? id = track.ExpressionGraph;
-            if (id == null && project.defaultExpressionGraphs != null) {
-                project.defaultExpressionGraphs.TryGetValue(renderer, out id);
+            if (id == null) {
+                project.defaultExpressionGraphs?.TryGetValue(slot, out id);
             }
             var graph = id == null ? null : project.expressionGraphs.FirstOrDefault(g => g.id == id);
-            return graph?.renderer == renderer ? graph : null;
+            return graph?.renderer != null && Render.Renderers.GetExpressionGraphSlot(graph.renderer) == slot ? graph : null;
         }
 
         /// <summary>

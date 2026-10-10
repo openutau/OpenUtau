@@ -13,6 +13,7 @@
     <PackageReference Include="Concentus.OggFile" Version="1.0.6" />
     <PackageReference Include="csharp-kana" Version="1.0.2" />
     <PackageReference Include="csharp-pinyin" Version="1.0.0" />
+    <PackageReference Include="FftFlat" Version="1.0.1" />
     <PackageReference Include="Ignore" Version="0.1.50" />
     <PackageReference Include="K4os.Hash.xxHash" Version="1.0.8" />
     <PackageReference Include="Melanchall.DryWetMidi.Nativeless" Version="7.2.0" />

@@ -52,6 +52,13 @@ namespace OpenUtau.App.Views {
         public IValueTip valueTip;
         protected virtual bool ShowValueTip => true;
         protected virtual string? commandNameKey => null;
+        /// <summary>
+        /// Whether Update should also see the pointer moves the system merged into
+        /// this one. Drawing states connect each point to the last, so a fast
+        /// stroke would otherwise turn into long straight segments whenever the
+        /// app falls behind the pointer.
+        /// </summary>
+        public virtual bool UsesIntermediatePoints => false;
         public bool ctrlShiftHeld = false;
         public bool altShiftHeld = false;
         public bool shiftHeld = false;
@@ -469,6 +476,15 @@ namespace OpenUtau.App.Views {
             if (note.duration <= snapUnit) {
                 return;
             }
+            // Nothing to split when no split point is valid (e.g. snapping is on and the
+            // note is shorter than two snap units): Update() would build an invalid range.
+            int minNoteTicks = notesVm.IsSnapOn ? snapUnit : 15;
+            int maxLeftNoteTicks = notesVm.IsSnapOn && snapUnit > 0
+                ? (note.duration - 1) / snapUnit * snapUnit
+                : note.duration - 15;
+            if (maxLeftNoteTicks < minNoteTicks) {
+                return;
+            }
             newNote = notesVm.MaybeAddNote(point, false);
             if (newNote == null) {
                 return;
@@ -502,6 +518,11 @@ namespace OpenUtau.App.Views {
                 ? (oldDur - 1) / snapUnit * snapUnit
                 : oldDur - 15;
             int maxDelta = maxNoteTicks - note.duration;
+            // maxNegDelta is rounded down to the grid, so the bounds can cross; fall back to
+            // maxNoteTicks, the only valid split point, instead of letting Math.Clamp throw.
+            if (maxDelta < -maxNegDelta) {
+                maxNegDelta = -maxDelta;
+            }
 
             deltaDuration = Math.Clamp(deltaDuration, -maxNegDelta, maxDelta);
 
@@ -688,6 +709,7 @@ namespace OpenUtau.App.Views {
     }
 
     class ExpSetValueState : NoteEditState {
+        public override bool UsesIntermediatePoints => true;
         private Point firstPoint;
         private Point lastPoint;
         private UExpressionDescriptor? descriptor;
@@ -848,6 +870,7 @@ namespace OpenUtau.App.Views {
     }
 
     class ExpResetValueState : NoteEditState {
+        public override bool UsesIntermediatePoints => true;
         private Point lastPoint;
         private UExpressionDescriptor? descriptor;
         private UTrack track;
@@ -1650,6 +1673,7 @@ namespace OpenUtau.App.Views {
     }
 
     class DrawPitchState : NoteEditState {
+        public override bool UsesIntermediatePoints => true;
         protected override bool ShowValueTip => false;
         protected override string? commandNameKey => "command.pitch.draw";
         private readonly bool overwrite;
@@ -2225,6 +2249,7 @@ namespace OpenUtau.App.Views {
     }
 
     class ResetPitchState : NoteEditState {
+        public override bool UsesIntermediatePoints => true;
         public override MouseButton MouseButton => MouseButton.Right;
         protected override bool ShowValueTip => false;
         protected override string? commandNameKey => "command.pitch.reset";
