@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Format;
-using OpenUtau.Core.DiffSinger;
 
 namespace OpenUtau.Core.Editing {
     public class AddTailNote : BatchEdit {
@@ -444,6 +443,12 @@ namespace OpenUtau.Core.Editing {
 
         private string name;
 
+        /// <summary>
+        /// Crossfade length at the edges of a partial write-back for renderers without partial retake,
+        /// so the new pitch joins the pitch kept on neighbouring notes without a step.
+        /// </summary>
+        const double WriteBackFadeMs = 50;
+
         public LoadRenderedPitch() {
             name = "pianoroll.menu.notes.loadrenderedpitch";
         }
@@ -465,21 +470,20 @@ namespace OpenUtau.Core.Editing {
         /// <summary>Live pitch only; must not replace <see cref="RunAsync"/> (BatchEdit interface).</summary>
         internal void RunLive(
             UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
-            CancellationToken cancellationToken, double pitchSteps, bool fastRealtime) {
+            CancellationToken cancellationToken, Render.PitchGenerationOptions options) {
             RunInternal(
                 project, part, selectedNotes, docManager,
                 (_, _) => { }, cancellationToken,
                 recordUndo: false,
                 showUnsupportedError: false,
-                pitchSteps: pitchSteps,
-                fastRealtime: fastRealtime);
+                options: options);
         }
 
         void RunInternal(
             UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
             Action<int, int> setProgressCallback, CancellationToken cancellationToken,
-            bool recordUndo = true, bool showUnsupportedError = true, double? pitchSteps = null,
-            bool fastRealtime = false) {
+            bool recordUndo = true, bool showUnsupportedError = true,
+            Render.PitchGenerationOptions? options = null) {
             var renderer = project.tracks[part.trackNo].RendererSettings.Renderer;
             if (renderer == null || !renderer.SupportsRenderPitch) {
                 if (showUnsupportedError) {
@@ -510,13 +514,9 @@ namespace OpenUtau.Core.Editing {
                 .PrefersPitchOverride(project, project.tracks[part.trackNo]);
             for (int ph_i = phrases.Count() - 1; ph_i >= 0; ph_i--) {
                 var phrase = phrases[ph_i];
-                Render.RenderPitchResult result;
-                if (pitchSteps.HasValue && renderer is DiffSingerRenderer diffSingerRenderer) {
-                    result = diffSingerRenderer.LoadRenderedPitchLive(
-                        phrase, positions, pitchSteps.Value, fastRealtime);
-                } else {
-                    result = renderer.LoadRenderedPitch(phrase, positions);
-                }
+                Render.RenderPitchResult result = options != null
+                    ? renderer.LoadRenderedPitch(phrase, positions, options)
+                    : renderer.LoadRenderedPitch(phrase, positions);
                 if (result == null) {
                     continue;
                 }
@@ -526,6 +526,22 @@ namespace OpenUtau.Core.Editing {
                 // The result's padding (1 s for Voicevox) overlaps the neighbouring phrases; only clear the
                 // phrase's own span, so their rendered pitch is not erased.
                 ClampRanges(cleared, clearedBefore, phraseStart - phrase.leading, phraseStart + phrase.duration);
+                // Renderers without partial retake regenerate the whole phrase;
+                // write back only the selected notes so other notes' pitch is kept.
+                var retakeMask = result.retakeMask;
+                float[]? fadeWeights = null;
+                if (retakeMask == null) {
+                    retakeMask = Render.PitchRetake.BuildWriteBackMask(
+                        phrase.position, phrase.notes.Select(n => n.position).ToArray(), positions, result.ticks);
+                    if (retakeMask != null) {
+                        var frameMs = result.ticks
+                            .Select(t => phrase.timeAxis.TickPosToMsPos(phrase.position + t))
+                            .ToArray();
+                        fadeWeights = Render.PitchRetake.BuildCrossfadeWeights(
+                            retakeMask, frameMs, result.voiced, WriteBackFadeMs);
+                    }
+                }
+                CollectRenderedPitch(result, phrase.position - part.position, phrase.duration, cleared, rendered, retakeMask);
                 // TODO: Optimize interpolation and command.
                 if (cancellationToken.IsCancellationRequested) break;
                 if (prefersOverride) {
@@ -535,8 +551,8 @@ namespace OpenUtau.Core.Editing {
                 }
                 // Take the first negative tick before start and the first tick after end for each segment;
                 // Reverse traversal, so that when the score slices are too close, priority is given to covering the consonant pitch of the next segment, reducing the impact on vowels.
-                foreach (var (start, end) in DiffSingerRetake.GetRetakeFrameRanges(
-                    result.retakeMask, result.tones.Length)) {
+                foreach (var (start, end) in Render.PitchRetake.GetRetakeFrameRanges(
+                    retakeMask, result.tones.Length)) {
                     int? lastX = null;
                     int? lastY = null;
                     for (int i = start; i < end; i++) {
@@ -560,6 +576,10 @@ namespace OpenUtau.Core.Editing {
                         int pitchIndex = Math.Clamp((x - (phrase.position - part.position - phrase.leading)) / 5, 0, phrase.pitches.Length - 1);
                         float basePitch = phrase.pitchesBeforeDeviation[pitchIndex];
                         int y = (int)(result.tones[i] * 100 - basePitch);
+                        if (fadeWeights != null && i < fadeWeights.Length && fadeWeights[i] < 1) {
+                            float existingPitD = phrase.pitches[pitchIndex] - basePitch;
+                            y = (int)(existingPitD + (y - existingPitD) * fadeWeights[i]);
+                        }
                         lastX ??= x;
                         lastY ??= y;
                         if (y > minPitD) {
@@ -600,7 +620,7 @@ namespace OpenUtau.Core.Editing {
                     all.ForEach(docManager.ExecuteCmd);
                     docManager.EndUndoGroup();
                 } else {
-                    docManager.ApplyTransient(all, validateOptions, preRender: !fastRealtime);
+                    docManager.ApplyTransient(all, validateOptions, preRender: options?.FastRealtime != true);
                 }
             });
         }
@@ -630,11 +650,14 @@ namespace OpenUtau.Core.Editing {
         /// </summary>
         /// <param name="offset">The part-relative tick of the result's tick 0, i.e. of the phrase.</param>
         /// <param name="limit">The last tick of the phrase, relative to it; frames after it are padding.</param>
+        /// <param name="retakeMask">The frames written back, if not the result's own mask (see
+        /// <see cref="Render.PitchRetake.BuildWriteBackMask"/>).</param>
         internal static void CollectRenderedPitch(Render.RenderPitchResult result, int offset, int limit,
-                List<(int from, int to)> cleared, List<(int x, float y)> values) {
+                List<(int from, int to)> cleared, List<(int x, float y)> values, bool[]? retakeMask = null) {
             bool Voiced(int i) => result.tones[i] >= 0 && result.ticks[i] <= limit
                 && (result.voiced == null || i >= result.voiced.Length || result.voiced[i]);
-            foreach (var (start, end) in DiffSingerRetake.GetRetakeFrameRanges(result.retakeMask, result.tones.Length)) {
+            foreach (var (start, end) in Render.PitchRetake.GetRetakeFrameRanges(
+                    retakeMask ?? result.retakeMask, result.tones.Length)) {
                 cleared.Add((offset + (int)Math.Floor(result.ticks[start]), offset + (int)Math.Ceiling(result.ticks[end - 1])));
                 int i = start;
                 while (i < end) {
