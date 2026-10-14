@@ -202,10 +202,9 @@ namespace OpenUtau.App.Views {
             }
             deltaTone = Math.Clamp(deltaTone, minDeltaTone, maxDeltaTone);
 
-            int snapUnit = project.resolution * 4 / notesVm.SnapDiv;
             int newPos = notesVm.PointToTick(point - new Point(xOffset, 0));
             if (notesVm.IsSnapOn) {
-                newPos = (int)Math.Floor((double)newPos / snapUnit) * snapUnit;
+                newPos = notesVm.GetSnappedTick(newPos);
             }
             int deltaTick = newPos - note.position;
             int minDeltaTick;
@@ -290,20 +289,16 @@ namespace OpenUtau.App.Views {
                 activeTone = tone;
             }
             int deltaTone = tone - note.tone;
-            int snapUnit = project.resolution * 4 / notesVm.SnapDiv;
             int newEnd = notesVm.PointToTick(point);
             if (notesVm.IsSnapOn) {
-                newEnd = (int)Math.Floor((double)newEnd / snapUnit + 1) * snapUnit;
+                newEnd = notesVm.GetSnappedTick(newEnd, 2);
             }
             int deltaDuration = newEnd - note.End;
-            int minNoteTicks = notesVm.IsSnapOn ? snapUnit : 15;
+            int minNoteTicks = notesVm.IsSnapOn ? notesVm.GetNextSnapUnit(note.position) : 15;
             if (deltaDuration < 0) {
                 int maxNegDelta = note.duration - minNoteTicks;
                 if (notesVm.Selection.Count > 0) {
                     maxNegDelta = notesVm.Selection.Min(n => n.duration - minNoteTicks);
-                }
-                if (notesVm.IsSnapOn && snapUnit > 0) {
-                    maxNegDelta = (int)Math.Floor((double)maxNegDelta / snapUnit) * snapUnit;
                 }
                 deltaDuration = Math.Max(deltaDuration, -maxNegDelta);
             }
@@ -357,25 +352,24 @@ namespace OpenUtau.App.Views {
             if (part == null) {
                 return;
             }
-            int snapUnit = project.resolution * 4 / notesVm.SnapDiv;
             int newTick = notesVm.PointToTick(point);
             if (notesVm.IsSnapOn) {
-                newTick = fromStart
-                    ? (int)Math.Floor((double)newTick / snapUnit) * snapUnit
-                    : (int)Math.Floor((double)newTick / snapUnit) * snapUnit + snapUnit;
+                newTick = notesVm.GetSnappedTick(newTick, 1);
             }
 
             int deltaDuration = fromStart
                 ? note.position - newTick
                 : newTick - note.End;
-            int minNoteTicks = notesVm.IsSnapOn ? snapUnit : 15;
+            int minNoteTicks = 15;
+            if (notesVm.IsSnapOn) {
+                minNoteTicks = fromStart
+                ? notesVm.GetNextSnapUnit(newTick)
+                : notesVm.GetNextSnapUnit(note.position);
+            }
             if (deltaDuration < 0) {
                 int maxNegDelta = note.duration - minNoteTicks;
                 if (notesVm.Selection.Count > 0) {
                     maxNegDelta = notesVm.Selection.Min(n => n.duration - minNoteTicks);
-                }
-                if (notesVm.IsSnapOn && snapUnit > 0) {
-                    maxNegDelta = (int)Math.Floor((double)maxNegDelta / snapUnit) * snapUnit;
                 }
                 deltaDuration = Math.Max(deltaDuration, -maxNegDelta);
             }
@@ -472,15 +466,16 @@ namespace OpenUtau.App.Views {
             if (project == null || part == null || note == null) {
                 return;
             }
-            int snapUnit = project.resolution * 4 / notesVm.SnapDiv;
-            if (note.duration <= snapUnit) {
-                return;
-            }
             // Nothing to split when no split point is valid (e.g. snapping is on and the
             // note is shorter than two snap units): Update() would build an invalid range.
-            int minNoteTicks = notesVm.IsSnapOn ? snapUnit : 15;
-            int maxLeftNoteTicks = notesVm.IsSnapOn && snapUnit > 0
-                ? (note.duration - 1) / snapUnit * snapUnit
+            int minNoteTicks = notesVm.IsSnapOn
+                ? notesVm.GetNextSnapUnit(note.position)
+                : 15;
+            if (note.duration <= minNoteTicks) {
+                return;
+            }
+            int maxLeftNoteTicks = notesVm.IsSnapOn
+                ? notesVm.GetSnappedTick(note.position + note.duration - 1) - note.position
                 : note.duration - 15;
             if (maxLeftNoteTicks < minNoteTicks) {
                 return;
@@ -501,21 +496,15 @@ namespace OpenUtau.App.Views {
             if (notesVm.Part == null || newNote == null) {
                 return;
             }
-            int snapUnit = project.resolution * 4 / notesVm.SnapDiv;
             int tick = notesVm.PointToTick(point);
-            int roundedSnappedTick = (int)Math.Round((double)tick / snapUnit) * snapUnit;
+            int roundedSnappedTick = notesVm.GetSnappedTick(tick, 1);
             int deltaDuration = notesVm.IsSnapOn
                 ? roundedSnappedTick - note.End
                 : tick - note.End;
-            int minNoteTicks = notesVm.IsSnapOn ? snapUnit : 15;
-
+            int minNoteTicks = notesVm.IsSnapOn ? notesVm.GetNextSnapUnit(note.position) : 15;
             int maxNegDelta = note.duration - minNoteTicks;
-            if (notesVm.IsSnapOn && snapUnit > 0) {
-                maxNegDelta = (int)Math.Floor((double)maxNegDelta / snapUnit) * snapUnit;
-            }
-
-            int maxNoteTicks = (notesVm.IsSnapOn && snapUnit > 0)
-                ? (oldDur - 1) / snapUnit * snapUnit
+            int maxNoteTicks = notesVm.IsSnapOn
+                ? notesVm.GetSnappedTick(note.position + oldDur - 1) - note.position
                 : oldDur - 15;
             int maxDelta = maxNoteTicks - note.duration;
             // maxNegDelta is rounded down to the grid, so the bounds can cross; fall back to
@@ -968,12 +957,9 @@ namespace OpenUtau.App.Views {
             pointer.Capture(control);
             startPoint = point;
             var notesVm = vm.NotesViewModel;
-            int snapUnit = notesVm.Project.resolution * 4 / notesVm.SnapDiv;
             int tick = notesVm.PointToTick(point);
-            if (Preferences.Default.DefaultSnapCurve) {
-            if (notesVm.IsSnapOn) {
-                tick = (int)Math.Floor((double)tick / snapUnit) * snapUnit;
-            }
+            if (Preferences.Default.DefaultSnapCurve && notesVm.IsSnapOn) {
+                tick = notesVm.GetSnappedTick(tick);
             }
             startTick = tick;
         }
@@ -985,10 +971,9 @@ namespace OpenUtau.App.Views {
             if (descriptor == null || notesVm.Part == null) {
                 return;
             }
-            int snapUnit = notesVm.Project.resolution * 4 / notesVm.SnapDiv;
             int tick = notesVm.PointToTick(point);
             if (notesVm.IsSnapOn) {
-                tick = (int)Math.Floor((double)tick / snapUnit) * snapUnit;
+                tick = notesVm.GetSnappedTick(tick, 2);
             }
             if (endTick == tick) return;
             endTick = tick;
@@ -1154,11 +1139,9 @@ namespace OpenUtau.App.Views {
 
         protected int PointToTick(Point point) {
             var notesVm = vm.NotesViewModel;
-
             int tick = notesVm.PointToTick(point);
             if (notesVm.IsSnapOn) {
-                int snapUnit = notesVm.Project.resolution * 4 / notesVm.SnapDiv;
-                tick = (int)Math.Floor((double)tick / snapUnit) * snapUnit;
+                tick = notesVm.GetSnappedTick(tick);
             }
 
             return tick;
