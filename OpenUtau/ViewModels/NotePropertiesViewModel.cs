@@ -17,6 +17,7 @@ namespace OpenUtau.App.ViewModels {
     public partial class NotePropertiesViewModel : ViewModelBase, ICmdSubscriber {
         public string Title { get => ThemeManager.GetString("noteproperty") + " (" + selectedNotes.Count + " notes)"; }
         [Reactive] public partial string Lyric { get; set; } = string.Empty;
+        [Reactive] public partial string CompletedLyric { get; set; } = string.Empty;
         [Reactive] public partial string Tone { get; set; } = string.Empty;
         [Reactive] public partial int Tuning { get; set; }
         [Reactive] public partial FontWeight TuningFontWeight { get; set; } = FontWeight.Normal;
@@ -176,6 +177,7 @@ namespace OpenUtau.App.ViewModels {
                 }
 
                 Lyric = note.lyric;
+                CompletedLyric = note.CompletedLyric;
                 Tone = MusicMath.GetToneName(note.tone);
                 Tuning = note.tuning;
                 SetTuningFontWeight();
@@ -198,6 +200,7 @@ namespace OpenUtau.App.ViewModels {
             } else {
                 IsNoteSelected = false;
                 Lyric = string.Empty;
+                CompletedLyric = string.Empty;
                 Tone = string.Empty;
                 Tuning = 0;
                 PhonemizerOverride = "";
@@ -361,7 +364,12 @@ namespace OpenUtau.App.ViewModels {
             if (cmd is NoteCommand) {
                 if (cmd is ChangeNoteLyricCommand) {
                     Lyric = note.lyric;
+                    if (string.IsNullOrWhiteSpace(Lyric) && Part != null) {
+                        var track = DocManager.Inst.Project.tracks[Part.trackNo];
+                        CompletedLyric = track.Phonemizer.CompleteLyrics(note.lyric, note.tone, DocManager.Inst.Project.key);
+                    }
                     this.RaisePropertyChanged(nameof(Lyric));
+                    this.RaisePropertyChanged(nameof(CompletedLyric));
                 } else if (cmd is MoveNoteCommand) {
                     Tone = MusicMath.GetToneName(note.tone);
                     this.RaisePropertyChanged(nameof(Tone));
@@ -458,14 +466,16 @@ namespace OpenUtau.App.ViewModels {
         public void SetNoteParams(string tag, object? obj) {
             if (AllowNoteEdit && Part != null && selectedNotes.Count > 0) {
                 if (tag == "Lyric") {
-                    if (obj is string s && !string.IsNullOrEmpty(s)) {
+                    if (obj is string s) {
                         foreach (UNote note in selectedNotes) {
                             DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(Part, note, s));
                         }
                     } else {
                         var note = selectedNotes.FirstOrDefault();
                         Lyric = note != null ? note.lyric : string.Empty;
+                        CompletedLyric = note != null ? note.CompletedLyric : string.Empty;
                         this.RaisePropertyChanged(nameof(Lyric));
+                        this.RaisePropertyChanged(nameof(CompletedLyric));
                     }
                 } else if (tag == "PhonemizerOverride") {
                     string? newOverride = obj as string;

@@ -27,7 +27,7 @@
           <StackPanel IsEnabled="{Binding IsNoteSelected}">
             <Grid ColumnDefinitions="143,*">
               <Label Content="{DynamicResource notedefaults.lyric}" Grid.Column="0"/>
-              <TextBox Text="{Binding Lyric, Mode=OneWay}" Grid.Column="1" Tag="Lyric"/>
+              <TextBox Text="{Binding Lyric, Mode=OneWay}" Watermark="{Binding CompletedLyric}" Grid.Column="1" Tag="Lyric"/>
             </Grid>
 
             <!-- to be updated later to use the same categ phonemizer -->

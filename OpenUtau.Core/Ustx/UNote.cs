@@ -47,6 +47,7 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public int ExtendedEnd => position + ExtendedDuration;
         [YamlIgnore] public int LeftBound => position;
         [YamlIgnore] public int RightBound => position + duration;
+        [YamlIgnore] public string CompletedLyric { get; set; } = NotePresets.Default.DefaultLyric;
         [YamlIgnore] public bool Error { get; set; } = false;
         [YamlIgnore] public bool OverlapError { get; set; } = false;
         [YamlIgnore] public List<UExpression> phonemizerExpressions = new List<UExpression>();
@@ -116,7 +117,8 @@ namespace OpenUtau.Core.Ustx {
 
         static List<Phonemizer.PhonemeAttributes> attributesBuffer = new List<Phonemizer.PhonemeAttributes>();
         internal Phonemizer.Note ToPhonemizerNote(UTrack track, UPart part) {
-            string lrc = lyric;
+            CompletedLyric = track.Phonemizer.CompleteLyrics(lyric, tone, DocManager.Inst.Project.key);
+            string lrc = CompletedLyric;
             string phoneticHint = null;
             lrc = phoneticHintPattern.Replace(lrc, match => {
                 phoneticHint = match.Groups[1].Value;
