@@ -190,6 +190,38 @@ namespace OpenUtau.Core {
         public override string ToString() => $"Set progress {Progress} {Info}";
     }
 
+    public class PhraseRenderStateNotification : UNotification{
+        public UVoicePart Part { get; }
+        public Range TickRange { get; }
+        public RenderPhrase? Phrase { get; }
+        public bool Rendered { get; }
+
+        public PhraseRenderStateNotification(UVoicePart part, int startTick, int endTick, bool rendered) {
+            Part = part;
+            TickRange = new Range(startTick, endTick);
+            Rendered = rendered;
+        }
+        
+        public PhraseRenderStateNotification(UVoicePart part, Range tickRange, bool rendered) {
+            Part = part;
+            TickRange = tickRange;
+            Rendered = rendered;
+        }
+
+        public PhraseRenderStateNotification(UVoicePart part, RenderPhrase phrase, bool rendered) {
+            Part = part;
+            Phrase = phrase;
+            TickRange = new Range(phrase.position, phrase.end);
+            Rendered = rendered;
+        }
+        
+        public string ToLogString() => Rendered
+            ? $"{Part.DisplayName} | Rendered {TickRange.Start}-{TickRange.End}"
+            : $"{Part.DisplayName} | Unrendered {TickRange.Start}-{TickRange.End}";
+        
+        public override string ToString() => "Phrase Render State";
+    }
+
     /// <summary>
     /// A warning that needs the user's attention. DocManager keeps it until a
     /// <see cref="ClearWarningsNotification"/>; the main window shows a warning sign

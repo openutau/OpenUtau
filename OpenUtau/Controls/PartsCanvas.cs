@@ -6,6 +6,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using OpenUtau.App.ViewModels;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
 using ReactiveUI.Primitives;
@@ -116,6 +117,7 @@ namespace OpenUtau.App.Controls {
                 .Subscribe(_ => {
                     foreach (var (part, control) in partControls) {
                         control.SetPosition();
+                        control.ResetRenderBlocks();
                     }
                 });
             MessageBus.Current.Listen<PartsSelectionEvent>()
@@ -131,6 +133,7 @@ namespace OpenUtau.App.Controls {
                         control.SetSize();
                         control.SetPosition();
                         control.Refersh();
+                        control.ResetRenderBlocks();
                     }
                 });
             MessageBus.Current.Listen<PartRedrawEvent>()
@@ -202,6 +205,24 @@ namespace OpenUtau.App.Controls {
             Children.Remove(control);
         }
 
+        public void HandlePhraseRenderStateEvent(UVoicePart part, Range tickRange, bool rendered) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(part)) {
+                    control.Value.UpdateRenderStatus(tickRange, rendered);
+                    return;
+                }
+            }
+        }
+        
+        public void HandlePhraseRenderStateEvent(UVoicePart part, RenderPhrase phrase, bool rendered) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(part)) {
+                    control.Value.UpdateRenderStatus(phrase, rendered);
+                    return;
+                }
+            }
+        }
+        
         void InvalidatePartViewport() {
             if (_pianoRollOpenPart != null && partControls.TryGetValue(_pianoRollOpenPart, out var control)) {
                 control.InvalidateVisual();
