@@ -682,6 +682,7 @@ Warning: this option removes custom presets.</system:String>
     Right click to reset</system:String>
   <system:String x:Key="pianoroll.tool.curve.line">Line Tool
     Left click to draw (draw straight line)
+    Hold Shift + Left click to draw (draw horizontal line)
     Right click to reset</system:String>
   <system:String x:Key="pianoroll.tool.curve.eraser">Eraser Tool
     Click to reset</system:String>
@@ -961,8 +962,8 @@ The voicebank may not work on another OS.</system:String>
     Right Button Draw: Reset expressions
 Curve Type
     Left Button Draw: Draw
-    Shift + Ctrl + Left Button Draw: Line Draw
-    Shift + Left Button Draw: Horizontal Line Draw
+    Line Tool Left Button Draw: Line Draw
+    Line Tool Shift + Left Button Draw: Horizontal Line Draw
     Right Button Draw: Reset Line</system:String>
   <system:String x:Key="tip.exps.notsupported">Expression not supported by renderer</system:String>
   <system:String x:Key="tip.lyricbox.next">Tab: Next Note</system:String>
