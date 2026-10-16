@@ -251,6 +251,8 @@
           <MenuItem Classes="context" Header="{DynamicResource tracks.duplicate}" Command="{Binding Duplicate}"/>
           <MenuItem Classes="context" Header="{DynamicResource tracks.duplicatesettings}" Command="{Binding DuplicateSettings}"/>
           <MenuItem Classes="context" Header="{DynamicResource dialogs.voicecolorremapping}" Command="{Binding VoiceColorRemapping}"/>
+          <MenuItem Classes="context" Header="{DynamicResource tracks.standardizesettings}" Command="{Binding StandardizeSettings}"/>
+          <MenuItem Classes="context" Header="{DynamicResource tracks.rotateselectedtracksingers}" Command="{Binding RotateSelectedTrackSingers}"/>
           <Separator/>
           <MenuItem Classes="context" Header="{DynamicResource tracks.mixfx}" Command="{Binding OpenMixFxDialog}"/>
         </ContextMenu>

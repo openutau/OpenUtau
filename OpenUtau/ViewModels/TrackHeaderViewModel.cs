@@ -66,14 +66,20 @@ namespace OpenUtau.App.ViewModels {
         public TrackHeaderViewModel(UTrack track) {
             this.track = track;
             SelectSingerCommand = ReactiveCommand.Create<USinger>(singer => {
-                if (track.Singer != singer) {
+                var targetTracks = GetBatchTargetTracks()
+                    .Where(t => t.Singer != singer)
+                    .ToList();
+                if (targetTracks.Count > 0) {
                     DocManager.Inst.StartUndoGroup("command.track.singer");
-                    ApplySingerToTrack(track, singer);
-                    DocManager.Inst.ExecuteCmd(new VoiceColorRemappingNotification(track.TrackNo, true));
+                    foreach (var targetTrack in targetTracks) {
+                        ApplySingerToTrack(targetTrack, singer);
+                        DocManager.Inst.ExecuteCmd(new VoiceColorRemappingNotification(targetTrack.TrackNo, true));
+                    }
                     DocManager.Inst.EndUndoGroup();
                     UpdateRecentSingers(singer);
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
+                    MessageBus.Current.SendMessage(new TracksRefreshEvent());
                 }
                 MessageBus.Current.SendMessage(new TracksRefreshEvent());
                 this.RaisePropertyChanged(nameof(Singer));
@@ -81,13 +87,19 @@ namespace OpenUtau.App.ViewModels {
                 RefreshAvatar();
             });
             SelectPhonemizerCommand = ReactiveCommand.Create<PhonemizerFactory>(factory => {
-                if (track.Phonemizer.GetType() != factory.type) {
+                var targetTracks = GetBatchTargetTracks()
+                    .Where(t => t.Phonemizer.GetType() != factory.type)
+                    .ToList();
+                if (targetTracks.Count > 0) {
                     DocManager.Inst.StartUndoGroup("command.track.setting");
-                    var phonemizer = factory.Create();
-                    Log.Information($"Loading Phonemizer: {phonemizer.ToString()}");
-                    DocManager.Inst.ExecuteCmd(new TrackChangePhonemizerCommand(DocManager.Inst.Project, track, phonemizer));
+                    Phonemizer? phonemizer = null;
+                    foreach (var targetTrack in targetTracks) {
+                        phonemizer = factory.Create();
+                        Log.Information($"Loading Phonemizer: {phonemizer.ToString()}");
+                        DocManager.Inst.ExecuteCmd(new TrackChangePhonemizerCommand(DocManager.Inst.Project, targetTrack, phonemizer));
+                    }
                     DocManager.Inst.EndUndoGroup();
-                    var name = phonemizer.GetType().FullName!;
+                    var name = phonemizer!.GetType().FullName!;
                     if (!string.IsNullOrEmpty(Singer?.Id) && phonemizer != null) {
                         Preferences.Default.SingerPhonemizers[Singer.Id] = name;
                     }
@@ -222,6 +234,19 @@ namespace OpenUtau.App.ViewModels {
                 Muted = false;
             }
             this.RaisePropertyChanged(nameof(Muted));
+        }
+
+        /// <summary>
+        /// The tracks a header action applies to: every selected track when this track is part of a
+        /// multi-track selection, otherwise just this track.
+        /// </summary>
+        private List<UTrack> GetBatchTargetTracks() {
+            var selected = ((Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+                ?.MainWindow?.DataContext as MainWindowViewModel)?.TracksViewModel.SelectedTracks;
+            if (selected != null && selected.Count > 1 && selected.Contains(track)) {
+                return selected.OrderBy(t => t.TrackNo).ToList();
+            }
+            return new List<UTrack> { track };
         }
 
         private void ApplySingerToTrack(UTrack targetTrack, USinger? singer) {
@@ -484,6 +509,72 @@ namespace OpenUtau.App.ViewModels {
                 TrackExpressions = track.TrackExpressions.Select(exp => exp.Clone()).ToList()
             }));
             DocManager.Inst.EndUndoGroup();
+        }
+
+        /// <summary>
+        /// Copies this track's singer, phonemizer, renderer, mixer settings, color and expressions
+        /// to the other selected tracks (all other tracks when fewer than two are selected).
+        /// </summary>
+        public void StandardizeSettings() {
+            var project = DocManager.Inst.Project;
+            var targetTracks = GetBatchTargetTracks();
+            if (targetTracks.Count <= 1) {
+                targetTracks = project.tracks.ToList();
+            }
+            var phonemizerFactory = PhonemizerFactory.Get(track.Phonemizer.GetType());
+            DocManager.Inst.StartUndoGroup("command.track.setting");
+            foreach (var targetTrack in targetTracks) {
+                if (targetTrack == track) {
+                    continue;
+                }
+                if (track.Singer != targetTrack.Singer) {
+                    ApplySingerToTrack(targetTrack, track.Singer);
+                }
+                if (targetTrack.Phonemizer.GetType() != track.Phonemizer.GetType()) {
+                    var phonemizer = phonemizerFactory?.Create();
+                    if (phonemizer != null) {
+                        DocManager.Inst.ExecuteCmd(new TrackChangePhonemizerCommand(project, targetTrack, phonemizer));
+                    }
+                }
+                DocManager.Inst.ExecuteCmd(new TrackChangeRenderSettingCommand(
+                    project, targetTrack, track.RendererSettings.Clone()));
+                DocManager.Inst.ExecuteCmd(new TrackChangeSettingsCommand(
+                    project, targetTrack, track.Mute, track.Volume, track.Pan));
+                DocManager.Inst.ExecuteCmd(new ChangeTrackColorCommand(project, targetTrack, track.TrackColor));
+                DocManager.Inst.ExecuteCmd(new ConfigureExpressionsCommand(
+                    project,
+                    project.expressions.Values.ToArray(),
+                    targetTrack,
+                    track.TrackExpressions.Select(exp => exp.Clone()).ToArray()));
+            }
+            DocManager.Inst.ExecuteCmd(new VoiceColorRemappingNotification(-1, true));
+            DocManager.Inst.EndUndoGroup();
+            MessageBus.Current.SendMessage(new TracksRefreshEvent());
+            MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
+            MessageBus.Current.SendMessage(new PianorollRefreshEvent("TrackColor"));
+        }
+
+        /// <summary>
+        /// Shifts singers one track along among the selected tracks (all tracks when fewer than two
+        /// are selected); the last track receives the first track's singer.
+        /// </summary>
+        public void RotateSelectedTrackSingers() {
+            var targetTracks = GetBatchTargetTracks();
+            if (targetTracks.Count <= 1) {
+                targetTracks = DocManager.Inst.Project.tracks.ToList();
+            }
+            if (targetTracks.Count <= 1) {
+                return;
+            }
+            var singers = targetTracks.Select(t => t.Singer).ToList();
+            DocManager.Inst.StartUndoGroup("command.track.singer");
+            for (int i = 0; i < targetTracks.Count; i++) {
+                ApplySingerToTrack(targetTracks[i], singers[(i + 1) % singers.Count]);
+            }
+            DocManager.Inst.ExecuteCmd(new VoiceColorRemappingNotification(-1, true));
+            DocManager.Inst.EndUndoGroup();
+            MessageBus.Current.SendMessage(new TracksRefreshEvent());
+            MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
         }
 
         public void VoiceColorRemapping() {
