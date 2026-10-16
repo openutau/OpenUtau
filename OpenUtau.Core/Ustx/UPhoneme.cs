@@ -32,7 +32,7 @@ namespace OpenUtau.Core.Ustx {
         public double? overlapDelta { get; set; }
         public double? attackTimeDelta { get; set; }
         public double? releaseTimeDelta { get; set; }
-        public bool crossfade { get; set; } = true; //Todo
+        public bool crossfade { get; set; } = true;
 
         public UNote Parent { get; set; }
         public int Duration { get; private set; }
@@ -219,7 +219,7 @@ namespace OpenUtau.Core.Ustx {
 
         /// <summary>
         /// If the phoneme does not have the corresponding expression, return the track's expression and false
-        /// <summary>
+        /// </summary>
         public Tuple<float, bool> GetExpression(UProject project, UTrack track, string abbr) {
             // Loops rather than LINQ: phrase snapshots call this for every phoneme and expression.
             var note = Parent.Extends ?? Parent;
@@ -306,17 +306,6 @@ namespace OpenUtau.Core.Ustx {
                 return null;
             }
             return track.VoiceColorExp.options[index];
-        }
-
-        public string GetVoiceColor2(UProject project, UTrack track) {
-            if (track.VoiceColor2Exp == null) {
-                return null;
-            }
-            int index = (int)GetExpression(project, track, Format.Ustx.CLRY).Item1;
-            if (index < 0 || index >= track.VoiceColor2Exp.options.Length) {
-                return null;
-            }
-            return track.VoiceColor2Exp.options[index];
         }
     }
 
