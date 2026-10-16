@@ -61,6 +61,8 @@ namespace OpenUtau.Core.Enunu {
 
         public bool SupportsPhonemeEnvelope => false;
 
+        public LivePitchCost LivePitchCost => LivePitchCost.Heavy;
+
         public bool SupportsExpression(UExpressionDescriptor descriptor) {
             return supportedExp.Contains(descriptor.abbr);
         }

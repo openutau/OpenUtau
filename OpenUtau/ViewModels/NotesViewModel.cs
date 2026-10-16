@@ -64,6 +64,8 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool LivePitchFast { get; set; }
         [Reactive] public partial bool MergeNearbyPhrases { get; set; }
         [Reactive] public partial bool IsDiffSinger { get; set; }
+        [Reactive] public partial bool SupportsLivePitch { get; set; }
+        [Reactive] public partial bool SupportsFastLivePitch { get; set; }
         bool livePitchSyncing;
         [Reactive] public partial bool ShowWaveform { get; set; }
         [Reactive] public partial bool ShowPhoneme { get; set; }
@@ -240,7 +242,8 @@ namespace OpenUtau.App.ViewModels {
                     }
                     if (checkedNormal) {
                         SetLivePitchMode(LivePitchMode.Normal);
-                    } else if (Preferences.Default.RealTimePitchMode == (int)LivePitchMode.Normal) {
+                    } else if (!LivePitchFast) {
+                        // Also covers Fast shown as Normal on renderers without Fast mode.
                         SetLivePitchMode(LivePitchMode.Off);
                     }
                 });
@@ -644,17 +647,24 @@ namespace OpenUtau.App.ViewModels {
                 return;
             }
             TickOrigin = Part.position;
-            UpdateIsDiffSinger();
+            UpdateRendererFlags();
             Notify();
         }
 
-        void UpdateIsDiffSinger() {
+        void UpdateRendererFlags() {
             if (Project == null || Part == null || Part.trackNo < 0 || Part.trackNo >= Project.tracks.Count) {
                 IsDiffSinger = false;
+                SupportsLivePitch = false;
+                SupportsFastLivePitch = false;
                 return;
             }
             var renderer = Project.tracks[Part.trackNo].RendererSettings.Renderer;
             IsDiffSinger = renderer != null && renderer.SingerType == USingerType.DiffSinger;
+            SupportsLivePitch = renderer != null
+                && renderer.SupportsRenderPitch
+                && renderer.LivePitchCost != Core.Render.LivePitchCost.Unsupported;
+            SupportsFastLivePitch = SupportsLivePitch && renderer!.SupportsFastLivePitch;
+            ApplyLivePitchModeFromPreferences();
         }
 
         private void DeselectNote(UNote note) {
@@ -1283,7 +1293,7 @@ namespace OpenUtau.App.ViewModels {
                         LoadPortrait(Part, Project);
                     }
                 }
-                UpdateIsDiffSinger();
+                UpdateRendererFlags();
                 PrimaryKeyNotSupported = !IsExpSupported(PrimaryKey);
             }
         }
@@ -1331,6 +1341,10 @@ namespace OpenUtau.App.ViewModels {
         void ApplyLivePitchModeFromPreferences() {
             livePitchSyncing = true;
             var mode = (LivePitchMode)Preferences.Default.RealTimePitchMode;
+            if (mode == LivePitchMode.Fast && !SupportsFastLivePitch) {
+                // Fast runs as Normal on this renderer (see RealTimePitchGenerationService).
+                mode = LivePitchMode.Normal;
+            }
             LivePitchNormal = mode == LivePitchMode.Normal;
             LivePitchFast = mode == LivePitchMode.Fast;
             livePitchSyncing = false;
