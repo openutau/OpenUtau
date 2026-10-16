@@ -105,7 +105,7 @@ namespace OpenUtau.Classic {
             logger.Information($" > [thread-{threadId}] {FilePath} {ArgParam}");
             string resamplerOutput;
             if (useWine) {
-                resamplerOutput = ProcessRunner.Run(winePath, $"{FilePath} {ArgParam}", logger);
+                resamplerOutput = WineRunner.Run(winePath, FilePath, ArgParam, logger);
             } else {
                 resamplerOutput = ProcessRunner.Run(FilePath, ArgParam, logger);
             }

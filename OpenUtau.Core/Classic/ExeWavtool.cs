@@ -58,7 +58,7 @@ namespace OpenUtau.Classic {
                 }
 
                 if (useWine) {
-                    ProcessRunner.Run(winePath, batPath, Log.Logger, workDir: PathManager.Inst.CachePath, timeoutMs: 5 * 60 * 1000);
+                    WineRunner.Run(winePath, batPath, "", Log.Logger, workDir: PathManager.Inst.CachePath, timeoutMs: 5 * 60 * 1000);
                 } else {
                     ProcessRunner.Run(batPath, "", Log.Logger, workDir: PathManager.Inst.CachePath, timeoutMs: 5 * 60 * 1000);
                 }
