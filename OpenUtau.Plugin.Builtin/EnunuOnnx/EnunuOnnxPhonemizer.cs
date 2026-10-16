@@ -9,9 +9,10 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 using OpenUtau.Api;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
+using OpenUtau.Core.Util.nnmnkwii.frontend;
+using OpenUtau.Core.Util.nnmnkwii.io.hts;
 using OpenUtau.Plugin.Builtin.EnunuOnnx;
-using OpenUtau.Plugin.Builtin.EnunuOnnx.nnmnkwii.frontend;
-using OpenUtau.Plugin.Builtin.EnunuOnnx.nnmnkwii.io.hts;
 using Serilog;
 
 //This phonemizer is a pure C# implemention of the ENUNU phonemizer,
@@ -281,9 +282,21 @@ namespace OpenUtau.Plugin.Builtin {
 
         //make a HTS Note from given symbols and UNotes
         protected HTSNote makeHtsNote(string[] symbols, IList<Note> group, int startTick) {
+            UTimeSignature sig = timeAxis.TimeSignatureAtTick(group[0].position);
+            timeAxis.TickPosToBarBeat(group[0].position, out int bar, out int beat, out int remainingTicks);
             return new HTSNote(
                 symbols: symbols,
                 tone: group[0].tone,
+                isSlur: IsSyllableVowelExtensionNote(group[0]),
+                isRest: symbols.Select(x => x.ToLowerInvariant()).Any(x => pauses.Contains(x) || silences.Contains(x) || breaks.Contains(x)),
+                beatPerBar: sig.beatPerBar,
+                beatUnit: sig.beatUnit,
+                positionBar: bar,
+                positionBeat: beat,
+                key: 0,
+                lang: string.Empty,
+                accent: string.Empty,
+                bpm: timeAxis.GetBpmAtTick(group[0].position),
                 startms: (int)timeAxis.MsBetweenTickPos(startTick, group[0].position) + paddingMs,
                 endms: (int)timeAxis.MsBetweenTickPos(startTick, group[^1].position + group[^1].duration) + paddingMs,
                 positionTicks: group[0].position,
@@ -440,26 +453,36 @@ namespace OpenUtau.Plugin.Builtin {
 
         HTSPhoneme[] HTSNoteToPhonemes(HTSNote htsNote) {
             var htsPhonemes = htsNote.symbols.Select(x => new HTSPhoneme(x, htsNote)).ToArray();
-            int prevVowelPos = -1;
-            foreach (int i in Enumerable.Range(0, htsPhonemes.Length)) {
+            foreach (var i in Enumerable.Range(0, htsPhonemes.Length)) {
+                htsPhonemes[i].type = GetPhonemeType(htsPhonemes[i].symbol);
                 htsPhonemes[i].position = i + 1;
                 htsPhonemes[i].position_backward = htsPhonemes.Length - i;
-                htsPhonemes[i].type = GetPhonemeType(htsPhonemes[i].symbol);
-                if (htsPhonemes[i].type == "v") {
-                    prevVowelPos = i;
-                } else {
-                    if (prevVowelPos > 0) {
-                        htsPhonemes[i].distance_from_previous_vowel = i - prevVowelPos;
+            }
+            foreach (var i in Enumerable.Range(0, htsPhonemes.Length)) {
+                if (htsPhonemes[i].type.Equals("c")) {
+                    var prev = i - 1;
+                    if (prev >= 0) {
+                        if (htsPhonemes[prev].type.Equals("v")) {
+                            htsPhonemes[i].prev_vowel_distance = 1;
+                        } else if (htsPhonemes[prev].prev_vowel_distance > 0) {
+                            htsPhonemes[i].prev_vowel_distance = htsPhonemes[prev].prev_vowel_distance + 1;
+                        } else {
+                            htsPhonemes[i].prev_vowel_distance = 0;
+                        }
                     }
                 }
             }
-            int nextVowelPos = -1;
-            for (int i = htsPhonemes.Length - 1; i > 0; --i) {
-                if (htsPhonemes[i].type == "v") {
-                    nextVowelPos = i;
-                } else {
-                    if (nextVowelPos > 0) {
-                        htsPhonemes[i].distance_to_next_vowel = nextVowelPos - i;
+            for (var i = htsPhonemes.Length - 1; i >= 0; --i) {
+                if (htsPhonemes[i].type.Equals("c")) {
+                    var next = i + 1;
+                    if (next < htsPhonemes.Length) {
+                        if (htsPhonemes[next].type.Equals("v")) {
+                            htsPhonemes[i].next_vowel_distance = 1;
+                        } else if (htsPhonemes[next].next_vowel_distance > 0) {
+                            htsPhonemes[i].next_vowel_distance = htsPhonemes[next].next_vowel_distance + 1;
+                        } else {
+                            htsPhonemes[i].next_vowel_distance = 0;
+                        }
                     }
                 }
             }
@@ -474,9 +497,21 @@ namespace OpenUtau.Plugin.Builtin {
             int paddingTicks = timeAxis.MsPosToTickPos(paddingMs);
             var notePhIndex = new List<int> { 1 };//每个音符的第一个音素在音素列表上对应的位置
             var phAlignPoints = new List<Tuple<int, double>>();//音素对齐的位置，Ms，绝对时间
+            UTimeSignature sig = timeAxis.TimeSignatureAtTick(phrase[0][0].position - paddingTicks);
+            timeAxis.TickPosToBarBeat(phrase[0][0].position - paddingTicks, out int bar, out int beat, out int remainingTicks);
             HTSNote PaddingNote = new HTSNote(
-                symbols: new string[] { "sil" },
+                symbols: new string[] { defaultPause },
+                beatPerBar: sig.beatPerBar,
+                beatUnit: sig.beatUnit,
+                positionBar: bar,
+                positionBeat: beat,
+                key: 0,
+                bpm: 0,
                 tone: 0,
+                isSlur: false,
+                isRest: true,
+                lang: string.Empty,
+                accent: string.Empty,
                 startms: 0,
                 endms: paddingMs,
                 positionTicks: phrase[0][0].position - paddingTicks,
@@ -516,11 +551,12 @@ namespace OpenUtau.Plugin.Builtin {
                 htsPhonemes.Count,
                 timeAxis.TickPosToMsPos(lastNote.positionTicks + lastNote.durationTicks)));
 
+            var htsPhrase = new HTSPhrase(htsNotes.ToArray());
+            htsPhrase.totalNotes = htsNotes.Count;
+            htsPhrase.totalPhonemes = htsPhonemes.Count;
             //make neighborhood links between htsNotes and between htsPhonemes
             foreach (int i in Enumerable.Range(0, htsNotes.Count)) {
-                htsNotes[i].index = i;
-                htsNotes[i].indexBackwards = htsNotes.Count - i;
-                htsNotes[i].sentenceDurMs = sentenceDurMs;
+                htsNotes[i].parent = htsPhrase;
                 if (i > 0) {
                     htsNotes[i].prev = htsNotes[i - 1];
                     htsNotes[i - 1].next = htsNotes[i];
