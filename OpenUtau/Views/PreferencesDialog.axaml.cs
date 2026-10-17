@@ -111,6 +111,17 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        async void SelectUiFont(object sender, RoutedEventArgs e) {
+            var path = await FilePicker.OpenFile(this, "prefs.appearance.customfont.select", FilePicker.FontFiles);
+            if (!string.IsNullOrEmpty(path) && UiFontManager.IsSupportedFontPath(path)) {
+                viewModel!.SetUiFontPath(path);
+            }
+        }
+
+        void ResetUiFont(object sender, RoutedEventArgs e) {
+            viewModel!.ResetUiFont();
+        }
+        
         void ResetWinePath(object sender, RoutedEventArgs e) {
             ((PreferencesViewModel)DataContext!).SetWinePath(string.Empty);
         }

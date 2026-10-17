@@ -36,7 +36,8 @@ namespace OpenUtau.App.Controls {
             }
             var x = viewModel.TickToneToPoint(phoneme.position, 0).X;
             var bold = phoneme.phoneme != phoneme.rawPhoneme;
-            var textLayout = TextLayoutCache.Get(phonemeText, ThemeManager.ForegroundBrush!, 12, bold);
+            var textLayout = TextLayoutCache.Get(phonemeText, ThemeManager.ForegroundBrush!, 12, bold,
+                useUiFont: Preferences.Default.UseUiFontForNotes);
             if (x < lastTextEndX) {
                 raiseText = !raiseText;
             } else {

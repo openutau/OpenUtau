@@ -174,6 +174,9 @@ namespace OpenUtau.Core.Util {
             public bool ShowPrefs = true;
             public bool ShowTips = true;
             public string ThemeName = "Light";
+            public string UiFontPath = string.Empty;
+            public string UiFontFamily = string.Empty;
+            public bool UseUiFontForNotes = false;
             public int DegreeStyle;
             public bool UseTrackColor = false;
             public bool ClearCacheOnQuit = false;
