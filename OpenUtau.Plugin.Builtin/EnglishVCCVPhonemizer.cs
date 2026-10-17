@@ -896,7 +896,8 @@ namespace OpenUtau.Plugin.Builtin {
                             if (!HasOto(parsingCC, syllable.vowelTone) && i != lastCPrevWord - 1) {
 
                                 parsingCC = $"{cc[i]}{cc[i + 1]}";
-                                if (HasOto($"{cc[i]} {cc[i + 1]}", syllable.vowelTone)) {
+                                if (!HasOto(parsingCC, syllable.vowelTone)
+                                    && HasOto($"{cc[i]} {cc[i + 1]}", syllable.vowelTone)) {
                                     parsingCC = $"{cc[i]} {cc[i + 1]}";
                                 }
 
