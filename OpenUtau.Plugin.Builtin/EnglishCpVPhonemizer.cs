@@ -645,30 +645,26 @@ namespace OpenUtau.Plugin.Builtin {
             return alias;
         }
 
-        protected override string ValidateAlias(string alias, int tone = 0) {
+        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
             if (string.IsNullOrEmpty(alias)) return alias;
-            // VALIDATE ALIAS DEPENDING ON METHOD
-            if (HasOto(alias, tone)) return alias;
-            // Prioritize contextual fb before yaml
+            string currentAlias = alias;
+            
             string contextual = ApplyContextualFallbacks(alias, tone);
             if (contextual != alias && HasOto(contextual, tone)) {
                 return contextual;
             }
 
-            string baseResolved = base.ValidateAlias(alias, tone);
-            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
-                if (HasOto(baseResolved, tone)) {
-                    return baseResolved;
-                }
-                alias = baseResolved;
-            }
-            if (isMissingCPhonemes) {
+            if (isMissingCPhonemes && missingCphonemes != null) {
                 foreach (var fb in missingCphonemes.OrderByDescending(f => f.Key.Length)) {
-                    alias = alias.Replace(fb.Key, fb.Value);
+                    if (suppressedTokens != null && suppressedTokens.Contains(fb.Key)) continue;
+                    currentAlias = currentAlias.Replace(fb.Key, fb.Value, StringComparison.Ordinal);
                 }
-                if (HasOto(alias, tone)) return alias;
+                if (!string.Equals(currentAlias, alias, StringComparison.Ordinal) && HasOto(currentAlias, tone)) {
+                    return currentAlias;
+                }
             }
-            return alias;
+
+            return !string.Equals(currentAlias, alias, StringComparison.Ordinal) ? currentAlias : null;
         }
 
         bool PhonemeIsPresent(string alias, string phoneme) {

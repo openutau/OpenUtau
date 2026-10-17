@@ -423,50 +423,46 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
-        protected override string ValidateAlias(string alias, int tone = 0) {
-            if (HasOto(alias, tone)) return alias;
+        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+            string candidate = alias;
 
-            string baseResolved = base.ValidateAlias(alias, tone);
-            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
-                if (HasOto(baseResolved, tone)) {
-                    return baseResolved;
+            // Helper to apply dictionary replacements with strict casing and YAML suppression checks
+            void ApplyDictionary(IEnumerable<KeyValuePair<string, string>> dict) {
+                if (dict == null) return;
+                foreach (var kvp in dict.OrderByDescending(f => f.Key.Length)) {
+                    if (suppressedTokens != null && suppressedTokens.Contains(kvp.Key)) continue;
+                    candidate = candidate.Replace(kvp.Key, kvp.Value, StringComparison.Ordinal);
                 }
-                alias = baseResolved;
             }
+
+            // Helper for individual replacements
+            void TryReplace(string fromToken, string toToken) {
+                if (suppressedTokens != null && suppressedTokens.Contains(fromToken)) return;
+                candidate = candidate.Replace(fromToken, toToken, StringComparison.Ordinal);
+            }
+
             // Validate alias depending on method
-            if (isSeseo) {
-                foreach (var syllable in seseo) {
-                    alias = alias.Replace(syllable.Key, syllable.Value);
-                }
+            if (isSeseo) ApplyDictionary(seseo);
+            if (isSemiVowelFallback) ApplyDictionary(semiVowelFallback);
+            if (isEñeFallback) ApplyDictionary(eñeFallback);
+
+            TryReplace("I", "i");
+            TryReplace("U", "u");
+            TryReplace("ks", "x");
+
+            // Exact match replacements
+            if (string.Equals(candidate, "r", StringComparison.Ordinal) && (suppressedTokens == null || !suppressedTokens.Contains("r"))) {
+                candidate = "rr";
             }
-            if (isSemiVowelFallback) {
-                foreach (var syllable in semiVowelFallback) {
-                    alias = alias.Replace(syllable.Key, syllable.Value);
-                }
-            }
-            if (isEñeFallback) {
-                foreach (var syllable in eñeFallback) {
-                    alias = alias.Replace(syllable.Key, syllable.Value);
-                }
+            if (string.Equals(candidate, "ch", StringComparison.Ordinal) && (suppressedTokens == null || !suppressedTokens.Contains("ch"))) {
+                candidate = "tch";
             }
 
-            // Other validations
-            if (alias.Contains("I")) {
-                alias = alias.Replace("I", "i");
+            if (!string.Equals(candidate, alias, StringComparison.Ordinal) && HasOto(candidate, tone)) {
+                return candidate;
             }
-            if (alias.Contains("U")) {
-                alias = alias.Replace("U", "u");
-            }
-            foreach (var cc in new[] { "ks" }) {
-                alias = alias.Replace("ks", "x");
-            }
-            if (alias == "r") {
-                alias = alias.Replace("r", "rr");
-            }
-            if (alias == "ch") {
-                alias = alias.Replace("ch", "tch");
-            }
-            return alias;
+
+            return null;
         }
 
         // Endings has 50 ticks gap
