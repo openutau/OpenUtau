@@ -25,6 +25,27 @@ namespace OpenUtau.Plugin.Builtin {
                     }
                 }
             }
+
+            // Fallback on previous symbol (handles foreign incoming vowels)
+            if (vowelFallback.TryGetValue(prevSymbol, out string[] prevFallbacks)) {
+                foreach (var pFallback in prevFallbacks) {
+                    if (singer.TryGetMappedOto($"{pFallback} {symbol}", tone, color, out var otoPrev)) {
+                        return otoPrev.Alias;
+                    }
+                }
+            }
+
+            // Bilateral fallback (both symbols fall back)
+            if (vowelFallback.TryGetValue(prevSymbol, out string[] pFbs) && vowelFallback.TryGetValue(symbol, out string[] sFbs)) {
+                foreach (var pFb in pFbs) {
+                    foreach (var sFb in sFbs) {
+                        if (singer.TryGetMappedOto($"{pFb} {sFb}", tone, color, out var otoBoth)) {
+                            return otoBoth.Alias;
+                        }
+                    }
+                }
+            }
+
             if (singer.TryGetMappedOto($"- {symbol}", tone, color, out var oto3)) {
                 return oto3.Alias;
             }

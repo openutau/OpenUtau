@@ -58,7 +58,7 @@ namespace OpenUtau.Plugin.Builtin
             }
 
             // Get the symbols of previous note.
-            var prevSymbols = prevNeighbour == null ? null : GetSymbols(prevNeighbour.Value);
+            var prevSymbols = prevNeighbour == null ? null : GetNeighborSymbols(prevNeighbour.Value);
             // The user is using a tail "-" note to produce a "<something> -" sound.
             if (note.lyric == "-" && prevSymbols != null) {
                 var attr = note.phonemeAttributes?.FirstOrDefault() ?? default;
@@ -180,6 +180,46 @@ namespace OpenUtau.Plugin.Builtin
             return note.phoneticHint.Split()
                 .Where(s => g2p.IsValidSymbol(s)) // skip the invalid symbols.
                 .ToArray();
+        }
+
+        /// <summary>
+        /// Queries phonetic symbols from the foreign note's own phonemizer.
+        /// </summary>
+        protected virtual string[] GetNeighborSymbols(Note note) {
+            if (note.phonemizer != null && note.phonemizer != this) {
+                if (note.phonemizer is IPhonemizerEnding endingPhonemizer) {
+                    var ending = endingPhonemizer.GetEnding(new[] { note });
+                    if (ending.HasValue && !string.IsNullOrEmpty(ending.Value.prevV)) {
+                        return new[] { ending.Value.prevV };
+                    }
+                }
+                if (note.phonemizer is IG2pSymbols foreignG2p) {
+                    return foreignG2p.GetSymbols(note);
+                }
+            }
+            return GetSymbols(note);
+        }
+
+        /// <summary>
+        /// Implements IPhonemizerEnding so SBP and Latin can extract this note's trailing vowel and coda consonants.
+        /// </summary>
+        public virtual (string prevV, string[] cc)? GetEnding(Note[] notes) {
+            if (notes == null || notes.Length == 0) return null;
+            var symbols = GetSymbols(notes[0]);
+            if (symbols == null || symbols.Length == 0) return null;
+
+            int lastVowelIdx = -1;
+            for (int i = symbols.Length - 1; i >= 0; i--) {
+                if (g2p.IsVowel(symbols[i])) {
+                    lastVowelIdx = i;
+                    break;
+                }
+            }
+
+            if (lastVowelIdx >= 0) {
+                return (symbols[lastVowelIdx], symbols.Skip(lastVowelIdx + 1).ToArray());
+            }
+            return ("", symbols);
         }
 
         protected abstract string GetPhonemeOrFallback(string prevSymbol, string symbol, int tone, string color, string alt);
