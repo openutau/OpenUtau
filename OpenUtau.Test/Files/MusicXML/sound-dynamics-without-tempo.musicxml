@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+ "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+	<identification>
+		<miscellaneous>
+			<miscellaneous-field name="description">Dynamics directions carry a sound
+				element with a dynamics attribute but no tempo attribute, as written by
+				MuseScore. Only the sound elements with a tempo attribute set the tempo:
+				100 bpm at the start, 80 bpm from measure 3.</miscellaneous-field>
+		</miscellaneous>
+	</identification>
+	<part-list>
+		<score-part id="P1"><part-name>Voice</part-name></score-part>
+	</part-list>
+	<part id="P1">
+		<measure number="1">
+			<attributes>
+				<divisions>1</divisions>
+				<key><fifths>0</fifths></key>
+				<time><beats>4</beats><beat-type>4</beat-type></time>
+				<clef><sign>G</sign><line>2</line></clef>
+			</attributes>
+			<direction placement="above">
+				<direction-type>
+					<metronome><beat-unit>quarter</beat-unit><per-minute>100</per-minute></metronome>
+				</direction-type>
+				<sound tempo="100"/>
+			</direction>
+			<direction placement="below">
+				<direction-type><dynamics><mf/></dynamics></direction-type>
+				<sound dynamics="88.89"/>
+			</direction>
+			<note>
+				<pitch><step>C</step><octave>4</octave></pitch>
+				<duration>4</duration>
+				<voice>1</voice>
+				<type>whole</type>
+			</note>
+		</measure>
+		<measure number="2">
+			<direction placement="below">
+				<direction-type><dynamics><f/></dynamics></direction-type>
+				<sound dynamics="106.67"/>
+			</direction>
+			<note>
+				<pitch><step>D</step><octave>4</octave></pitch>
+				<duration>4</duration>
+				<voice>1</voice>
+				<type>whole</type>
+			</note>
+		</measure>
+		<measure number="3">
+			<direction placement="below">
+				<direction-type><dynamics><p/></dynamics></direction-type>
+				<sound dynamics="54.44"/>
+			</direction>
+			<direction placement="above">
+				<direction-type>
+					<metronome><beat-unit>quarter</beat-unit><per-minute>80</per-minute></metronome>
+				</direction-type>
+				<sound tempo="80"/>
+			</direction>
+			<note>
+				<pitch><step>E</step><octave>4</octave></pitch>
+				<duration>4</duration>
+				<voice>1</voice>
+				<type>whole</type>
+			</note>
+		</measure>
+	</part>
+</score-partwise>
