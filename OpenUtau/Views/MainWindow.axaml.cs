@@ -803,6 +803,7 @@ namespace OpenUtau.App.Views {
                 PathManager.Inst.ClearCache();
                 DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, ThemeManager.GetString("progress.cachecleared")));
             });
+            partsCanvas.SetAllRenderPhrases(false);
         }
 
         void OnMenuDeveloperWindow(object sender, RoutedEventArgs args) {
@@ -2194,6 +2195,27 @@ namespace OpenUtau.App.Views {
                         VoiceColorRemapping(track, oldColors, newColors);
                     }
                     _ = RemapImportedVocalModesAsync(track);
+                }
+            } else if (cmd is PhraseRenderStateNotification phraseRenderNotif) {
+                if (phraseRenderNotif.Phrase != null) {
+                    partsCanvas.HandlePhraseRenderStateEvent(
+                        phraseRenderNotif.Part,
+                        phraseRenderNotif.Phrase,
+                        phraseRenderNotif.Rendered);
+                } else {
+                    partsCanvas.HandlePhraseRenderStateEvent(
+                        phraseRenderNotif.Part,
+                        phraseRenderNotif.StartTick,
+                        phraseRenderNotif.EndTick,
+                        phraseRenderNotif.Rendered);
+                }
+            } else if (cmd is RebuildPhraseBlocksNotification phraseBlocksNotif) {
+                partsCanvas.RebuildPhraseBlocksEvent(phraseBlocksNotif.Part);
+            } else if (cmd is TrackChangeSingerCommand changeSingerCommand) {
+                partsCanvas.SetAllRenderPhrases(changeSingerCommand.track, false);
+            } else if (cmd is MovePartCommand movePartCommand) {
+                if (movePartCommand.part is UVoicePart voicePart) {
+                    partsCanvas.SetAllRenderPhrases(voicePart, false);
                 }
             }
         }
