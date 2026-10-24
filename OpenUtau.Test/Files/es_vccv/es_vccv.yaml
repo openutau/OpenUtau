@@ -1,0 +1,60 @@
+%YAML 1.2
+---
+symbols:
+#nJokis Spanish symbols
+  - {symbol: a, type: vowel}
+  - {symbol: e, type: vowel}
+  - {symbol: i, type: vowel}
+  - {symbol: o, type: vowel}
+  - {symbol: u, type: vowel}
+  - {symbol: ai, type: vowel}
+  - {symbol: au, type: vowel}
+  - {symbol: ei, type: vowel}
+  - {symbol: eu, type: vowel}
+  - {symbol: oi, type: vowel}
+  - {symbol: ou, type: vowel}
+  - {symbol: aI, type: vowel}
+  - {symbol: aU, type: vowel}
+  - {symbol: eI, type: vowel}
+  - {symbol: oI, type: vowel}
+  - {symbol: BB, type: vowel}
+  - {symbol: DD, type: vowel}
+  - {symbol: ff, type: vowel}
+  - {symbol: GG, type: vowel}
+  - {symbol: ll, type: vowel}
+  - {symbol: mm, type: vowel}
+  - {symbol: nn, type: vowel}
+  - {symbol: rrr, type: vowel}
+  - {symbol: ss, type: vowel}
+  - {symbol: xx, type: vowel}
+  - {symbol: b, type: stop}
+  - {symbol: B, type: stop}
+  - {symbol: ch, type: affricate}
+  - {symbol: d, type: stop}
+  - {symbol: D, type: stop}
+  - {symbol: E, type: semivowel}
+  - {symbol: f, type: fricative}
+  - {symbol: g, type: stop}
+  - {symbol: G, type: stop}
+  - {symbol: h, type: aspirate}
+  - {symbol: I, type: semivowel}
+  - {symbol: j, type: semivowel}
+  - {symbol: jj, type: fricative}
+  - {symbol: k, type: stop}
+  - {symbol: l, type: lateral}
+  - {symbol: L, type: lateral}
+  - {symbol: m, type: nasal}
+  - {symbol: n, type: nasal}
+  - {symbol: nJ, type: nasal}
+  - {symbol: p, type: stop}
+  - {symbol: r, type: tap}
+  - {symbol: rr, type: trill}
+  - {symbol: s, type: fricative}
+  - {symbol: sh, type: fricative}
+  - {symbol: t, type: stop}
+  - {symbol: U, type: semivowel}
+  - {symbol: w, type: semivowel}
+  - {symbol: x, type: fricative}
+  - {symbol: y, type: semivowel}
+  - {symbol: z, type: fricative}
+entries: []
