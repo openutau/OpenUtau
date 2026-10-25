@@ -208,7 +208,6 @@ namespace OpenUtau.Core.Pipeline {
         public readonly string Resampler;
         public Tuple<string, int?, string>[] Flags { get; private set; }
         public readonly string Suffix;
-        public readonly string Suffix2;
         public float Volume { get; private set; }
         public readonly float Velocity;
         public float Modulation { get; private set; }
@@ -230,11 +229,10 @@ namespace OpenUtau.Core.Pipeline {
 
         // Voicebank resources, stable per singer.
         public readonly UOto Oto;
-        public readonly UOto Oto2;
 
         internal PhonemeSource(UPhoneme phoneme, int noteIndex, TimeAxis axis,
                 int partPosition, UTrack track, UProject project,
-                string trackResampler, bool xsyAvailable, IReadOnlyList<UExpressionDescriptor> flagExpressions,
+                string trackResampler, IReadOnlyList<UExpressionDescriptor> flagExpressions,
                 IReadOnlyList<UExpressionDescriptor>? graphExpressions) {
             Position = phoneme.position;
             Duration = phoneme.Duration;
@@ -281,11 +279,7 @@ namespace OpenUtau.Core.Pipeline {
             string voiceColor = phoneme.GetVoiceColor(project, track);
             Suffix = track.Singer.Subbanks
                 .FirstOrDefault(subbank => subbank.Color == voiceColor)?.Suffix ?? string.Empty;
-            string targetColor = xsyAvailable ? phoneme.GetVoiceColor2(project, track) : null;
-            if (!string.IsNullOrEmpty(targetColor)) {
-                Suffix2 = track.Singer.Subbanks
-                    .FirstOrDefault(subbank => subbank.Color == targetColor)?.Suffix ?? string.Empty;
-            }
+
             Volume = phoneme.GetExpression(project, track, Format.Ustx.VOL).Item1 * 0.01f;
             float vel = phoneme.GetExpression(project, track, Format.Ustx.VEL).Item1;
             VelRaw = vel;
@@ -294,9 +288,7 @@ namespace OpenUtau.Core.Pipeline {
             Direct = phoneme.GetExpression(project, track, Format.Ustx.DIR).Item1 == 1;
             ToneShift = (int)phoneme.GetExpression(project, track, Format.Ustx.SHFT).Item1;
             Envelope = phoneme.envelope.data.ToArray();
-            // mod+ is an optional descriptor; the original code only resolved
-            // the value when the descriptor existed, so an absent one means
-            // "off" (0) rather than an error.
+
             bool hasModp = track.TryGetExpDescriptor(project, Format.Ustx.MODP, out _);
             ModpRaw = hasModp ? phoneme.GetExpression(project, track, Format.Ustx.MODP).Item1 : 0f;
 
@@ -309,18 +301,8 @@ namespace OpenUtau.Core.Pipeline {
             }
 
             Oto = phoneme.oto;
-            if (Oto != null && !string.IsNullOrEmpty(targetColor)) {
-                string basePhoneme = Oto.Phonetic ?? phoneme.phoneme;
-                if (track.Singer.TryGetMappedOto(basePhoneme, note.tone, targetColor, out var secondaryOto)) {
-                    Oto2 = secondaryOto;
-                }
-            }
         }
 
-        /// <summary>
-        /// A copy with graph-driven values in place of the drawn ones, recomputing what they feed: volume, modulation,
-        /// MOD+, the envelope's levels and the resampler flags. Unchanged values are computed as the snapshot did.
-        /// </summary>
         internal PhonemeSource WithDriven(IReadOnlyDictionary<string, float> driven, PhraseSource source) {
             float Value(string abbr) => driven.TryGetValue(abbr, out var v) ? v : Values != null && Values.TryGetValue(abbr, out v) ? v : 0;
             var copy = (PhonemeSource)MemberwiseClone();
@@ -381,7 +363,6 @@ namespace OpenUtau.Core.Pipeline {
         public readonly CurveSource[] Curves;
         /// <summary>The supported curve descriptors in document order.</summary>
         public readonly UExpressionDescriptor[] CurveDescriptors;
-        public readonly bool XsyAvailable;
         public readonly int Resolution;
         /// <summary>The default value of every curve expression, for curves the part doesn't have.</summary>
         public readonly IReadOnlyDictionary<string, int> CurveDefaults;
@@ -421,7 +402,6 @@ namespace OpenUtau.Core.Pipeline {
             ClassicSinger = Singer as ClassicSinger;
             ModpSupported = track.TryGetExpDescriptor(project, Format.Ustx.MODP, out var modp)
                 && Renderer.SupportsExpression(modp);
-            XsyAvailable = part.curves.Any(c => c.abbr == Format.Ustx.XSY);
 
             var noteIndexByNote = new Dictionary<UNote, int>();
             var notes = part.notes.ToList();
@@ -439,14 +419,16 @@ namespace OpenUtau.Core.Pipeline {
             Curves = part.curves
                 .Select(c => new CurveSource(c, (int)(c.descriptor?.defaultValue ?? 0)))
                 .ToArray();
-            // The supported project curve descriptors, in document order.
+
+            // Include Curve and MorphingCurve expressions supported by the renderer
             CurveDescriptors = project.expressions.Values
-                .Where(d => d.type == UExpressionType.Curve && Renderer.SupportsExpression(d))
+                .Where(d => (d.type == UExpressionType.Curve || d.type == UExpressionType.MorphingCurve) && Renderer.SupportsExpression(d))
                 .ToArray();
             Resolution = project.resolution;
             CurveDefaults = project.expressions.Values
-                .Where(d => d.type == UExpressionType.Curve)
+                .Where(d => d.type == UExpressionType.Curve || d.type == UExpressionType.MorphingCurve)
                 .ToDictionary(d => d.abbr, d => (int)d.defaultValue);
+
             ExpressionGraph = OpenUtau.Core.ExpressionGraph.ExpressionGraphProgram.ForTrack(project, track);
             FlagExpressions = UPhoneme.GetExpressionDescriptors(project, track).ToArray();
             List<UExpressionDescriptor>? graphExpressions = null;
@@ -467,7 +449,7 @@ namespace OpenUtau.Core.Pipeline {
                 var p = phonemes[i];
                 Phonemes[i] = new PhonemeSource(p,
                     p.Parent != null ? noteIndexByNote[p.Parent] : -1,
-                    Axis, part.position, track, project, Resampler, XsyAvailable, FlagExpressions, graphExpressions);
+                    Axis, part.position, track, project, Resampler, FlagExpressions, graphExpressions);
             }
             PhraseGroups = groups;
             PhraseNoteIndex = new Lazy<int[][]>(() => PhraseGroups

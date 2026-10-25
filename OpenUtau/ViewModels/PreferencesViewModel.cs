@@ -128,6 +128,8 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial int OtoEditor { get; set; }
         public string VLabelerPath => Preferences.Default.VLabelerPath;
         public string SetParamPath => Preferences.Default.SetParamPath;
+        [Reactive] public partial bool AutoDeleteMorphCache { get; set; }
+        [Reactive] public partial bool PhaseLocked { get; set; }
 
         // Diffsinger
         public List<int> DiffSingerStepsOptions { get; } = new List<int> { 2, 5, 10, 20, 50, 100, 200, 500, 1000 };
@@ -252,6 +254,8 @@ namespace OpenUtau.App.ViewModels {
             RememberVsqx = Preferences.Default.RememberVsqx;
             DefaultSnapCurve = Preferences.Default.DefaultSnapCurve;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
+            AutoDeleteMorphCache = Preferences.Default.AutoDeleteMorphCache;
+            PhaseLocked = Preferences.Default.PhaseLocked;
             Wayland = Preferences.Default.UseWayland;
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
@@ -452,6 +456,10 @@ namespace OpenUtau.App.ViewModels {
                 value => Preferences.Default.DefaultSnapCurve = value);
             PersistOn(this.WhenAnyValue(vm => vm.ClearCacheOnQuit),
                 value => Preferences.Default.ClearCacheOnQuit = value);
+            PersistOn(this.WhenAnyValue(vm => vm.PhaseLocked),
+                value => Preferences.Default.PhaseLocked = value);
+            PersistOn(this.WhenAnyValue(vm => vm.AutoDeleteMorphCache),
+                value => Preferences.Default.AutoDeleteMorphCache = value);
             PersistOn(this.WhenAnyValue(vm => vm.DiffSingerSteps),
                 value => Preferences.Default.DiffSingerSteps = value);
             PersistOn(this.WhenAnyValue(vm => vm.DiffSingerStepsVariance),
