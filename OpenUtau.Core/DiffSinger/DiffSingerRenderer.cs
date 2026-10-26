@@ -49,6 +49,10 @@ namespace OpenUtau.Core.DiffSinger {
 
         public bool SupportsPhonemeEnvelope => false;
 
+        public LivePitchCost LivePitchCost => LivePitchCost.Light;
+
+        public bool SupportsFastLivePitch => true;
+
         public bool IsVoiceColorCurve(string abbr, out int subBankId) {
             subBankId = 0;
             if (abbr.StartsWith(VoiceColorHeader) && int.TryParse(abbr.Substring(2), out subBankId)) {;
@@ -551,10 +555,10 @@ namespace OpenUtau.Core.DiffSinger {
             return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false);
         }
 
-        /// <summary>Live pitch: partial retake for changed notes with fast sampling settings.</summary>
-        internal RenderPitchResult LoadRenderedPitchLive(
-            RenderPhrase phrase, HashSet<int> selectedNotePositions, double pitchSteps, bool fastRealtime) {
-            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps, fastRealtime);
+        /// <summary>Partial retake for the selected notes with the given sampling settings.</summary>
+        public RenderPitchResult LoadRenderedPitch(
+            RenderPhrase phrase, HashSet<int> selectedNotePositions, PitchGenerationOptions options) {
+            return LoadRenderedPitch(phrase, selectedNotePositions, options.Steps, options.FastRealtime);
         }
 
         RenderPitchResult LoadRenderedPitch(
@@ -571,7 +575,7 @@ namespace OpenUtau.Core.DiffSinger {
             for (int i = 0; i < phrase.notes.Length; i++) {
                 noteRelativePositions[i] = phrase.notes[i].position;
             }
-            var retakeNoteIndexes = DiffSingerRetake.MapSelectedPositionsToNoteIndexes(
+            var retakeNoteIndexes = PitchRetake.MapSelectedPositionsToNoteIndexes(
                 phrase.position, noteRelativePositions, selectedNotePositions);
             // Use the reference inside SessionLock so a concurrent FreeMemory cannot dispose it first.
             lock (singer.SessionLock) {
