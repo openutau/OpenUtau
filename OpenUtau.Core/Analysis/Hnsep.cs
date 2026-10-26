@@ -78,7 +78,7 @@ public sealed class Hnsep {
     /// <summary>
     /// The harmonic part of x (same length, at <see cref="SampleRate"/>); the noise part is x minus it.
     /// Callers run it from several threads, which a CPU session allows and a GPU session
-    /// (DirectML, CoreML, ...) doesn't, so a GPU run is locked.
+    /// (DirectML, WebGPU, ...) doesn't, so a GPU run is locked.
     /// </summary>
     public float[] Harmonic(float[] x) => Separate(x, config.n_fft, config.hop_length, window, input => {
         if (isCpuRunner) return Run(input);

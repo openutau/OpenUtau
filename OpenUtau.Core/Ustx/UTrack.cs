@@ -222,7 +222,7 @@ namespace OpenUtau.Core.Ustx {
 
         public void BeforeSave() {
             singer = Singer?.Id;
-            phonemizer = Phonemizer.GetType().FullName;
+            phonemizer = Phonemizer.Id;
             if (Singer != null && Singer.Found && VoiceColorExp != null && VoiceColorExp.options.Length > 0) {
                 VoiceColorNames = VoiceColorExp.options.ToArray();
             } else {

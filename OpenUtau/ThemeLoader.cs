@@ -26,6 +26,7 @@ public static class OudepLoaderRegistry {
 
     public static void EnsureRegistered() {
         Register("ThemeLoader", () => new ThemeLoader());
+        Register(Core.Js.JsPhonemizerFactory.LoaderName, () => new CoreLoader());
     }
 
     public static async Task LoadAllAsync() {
@@ -45,6 +46,13 @@ public static class OudepLoaderRegistry {
             }
         }
     }
+}
+
+/// <summary>
+/// For entry points that OpenUtau.Core loads itself at startup, such as JavaScript phonemizers.
+/// </summary>
+public class CoreLoader : IOudepLoader {
+    public void Load(string packagePath, OudepMetadata metadata, OudepEntrypoint entrypoint) { }
 }
 
 public class ThemeLoader : IOudepLoader {

@@ -500,6 +500,8 @@ namespace OpenUtau.App.ViewModels {
                 Preferences.AddRecentFileIfEnabled(loadProject.project.FilePath);
             } else if (cmd is SaveProjectNotification saveProject) {
                 Preferences.AddRecentFileIfEnabled(saveProject.Path);
+            } else if (cmd is PackagesChangedNotification) {
+                App.ReloadPackages();
             }
             SetUndoState();
             this.RaisePropertyChanged(nameof(Title));

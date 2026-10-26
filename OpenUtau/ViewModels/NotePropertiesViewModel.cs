@@ -45,11 +45,11 @@ namespace OpenUtau.App.ViewModels {
                 if (isDefault) {
                     if (Part == null || Part.trackNo < 0 || Part.trackNo >= DocManager.Inst.Project.tracks.Count) return "Default";
                     var track = DocManager.Inst.Project.tracks[Part.trackNo];
-                    string trackId = track.Phonemizer.GetType().FullName ?? string.Empty;
+                    string trackId = track.Phonemizer.Id ?? string.Empty;
                     return $"Default ({GetPhonemizerDisplayName(trackId)})";
                 }
                 var factory = OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f =>
-                    f.name == targetId || f.type.FullName == targetId || f.type.Name == targetId);
+                    f.name == targetId || f.Id == targetId || f.type.Name == targetId);
                 if (factory != null) {
                     string displayName = !string.IsNullOrEmpty(factory.tag) ? factory.tag : factory.language;
                     return !string.IsNullOrEmpty(displayName) ? displayName : factory.ToString();
@@ -243,7 +243,7 @@ namespace OpenUtau.App.ViewModels {
         private string GetPhonemizerDisplayName(string? targetId) {
             if (string.IsNullOrEmpty(targetId)) return "Default";
             var factory = OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f =>
-                f.name == targetId || f.type.FullName == targetId || f.type.Name == targetId);
+                f.name == targetId || f.Id == targetId || f.type.Name == targetId);
 
             if (factory == null) return targetId;
             string displayName = !string.IsNullOrEmpty(factory.tag) ? factory.tag : factory.language;
@@ -256,7 +256,7 @@ namespace OpenUtau.App.ViewModels {
             string defaultHeader = "Default";
             if (Part != null) {
                 var track = DocManager.Inst.Project.tracks[Part.trackNo];
-                string trackId = track.Phonemizer.GetType().FullName ?? "";
+                string trackId = track.Phonemizer.Id ?? "";
                 defaultHeader = $"Default ({GetPhonemizerDisplayName(trackId)})";
             }
             items.Add(new MenuItemViewModel() {

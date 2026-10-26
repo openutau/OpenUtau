@@ -154,6 +154,11 @@ namespace OpenUtau.Api {
         public string Language { get; set; }
         internal Exception? SetUpException { get; set; }
 
+        /// <summary>
+        /// Identifies the phonemizer in projects, singer configs and preferences. See <see cref="PhonemizerFactory.Id"/>.
+        /// </summary>
+        public virtual string Id => GetType().FullName;
+
         protected double bpm;
         protected TimeAxis timeAxis;
 

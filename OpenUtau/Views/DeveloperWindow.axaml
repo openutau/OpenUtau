@@ -1,0 +1,60 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="OpenUtau.App.Views.DeveloperWindow"
+        x:DataType="vm:DeveloperViewModel"
+        x:CompileBindings="True"
+        Icon="/Assets/open-utau.ico"
+        Title="Developer" Closed="OnClosed">
+  <Window.Resources>
+    <vm:LogEventConverter x:Key="logEventConverter"/>
+  </Window.Resources>
+  <Window.Styles>
+    <!-- The app's list rows are one line tall; an event with an error spans several. -->
+    <Style Selector="ListBoxItem">
+      <Setter Property="Height" Value="NaN"/>
+    </Style>
+  </Window.Styles>
+  <Design.DataContext>
+    <vm:DeveloperViewModel/>
+  </Design.DataContext>
+  <DockPanel>
+    <Menu DockPanel.Dock="Top" Height="24">
+      <MenuItem Header="{DynamicResource debug.packages}">
+        <MenuItem Header="{DynamicResource debug.livereload}" ToolTip.Tip="{DynamicResource debug.livereload.tooltip}"
+                  ToggleType="CheckBox" IsChecked="{Binding LiveReload}" Command="{Binding ToggleLiveReload}"/>
+        <MenuItem Header="{DynamicResource debug.packages.openlocation}" Click="OnMenuOpenPackagesLocation"/>
+        <MenuItem Header="{DynamicResource debug.packages.createphonemizer}" Click="OnMenuCreatePhonemizer"/>
+      </MenuItem>
+    </Menu>
+    <Grid Margin="10" RowDefinitions="*,10,Auto">
+      <ListBox Grid.Row="0" Focusable="False" ItemsSource="{Binding LogEvents}" Background="#404040">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <TextBlock Text="{Binding Converter={StaticResource logEventConverter}}" Foreground="White" TextWrapping="Wrap"/>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" Spacing="10">
+        <TextBox Name="FilterTextBox" Margin="0" Width="240" Text="{Binding Filter}" Watermark="{DynamicResource debug.filter}"/>
+        <ComboBox Margin="0" SelectedIndex="{Binding LogEventLevelIndex}" ToolTip.Tip="{DynamicResource debug.filter.level}">
+          <ComboBoxItem Content="Verbose"/>
+          <ComboBoxItem Content="Debug"/>
+          <ComboBoxItem Content="Information"/>
+          <ComboBoxItem Content="Warning"/>
+          <ComboBoxItem Content="Error"/>
+          <ComboBoxItem Content="Fatal"/>
+        </ComboBox>
+      </StackPanel>
+      <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+        <Button Margin="0" Command="{Binding CopyLogCommand}" Content="{DynamicResource debug.copylog}" />
+        <Button Margin="0" Command="{Binding ReverseLogOrderCommand}" Content="{DynamicResource debug.reverselogorder}" />
+        <Button Margin="0" Command="{Binding Clear}" Content="{DynamicResource debug.clear}"/>
+      </StackPanel>
+        <TextBox Name="CopyTextBox" IsVisible="False" IsReadOnly="True" AcceptsReturn="True" Height="0" Width="0"></TextBox>
+    </Grid>
+  </DockPanel>
+</Window>

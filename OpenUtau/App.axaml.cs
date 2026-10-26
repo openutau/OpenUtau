@@ -135,6 +135,18 @@ namespace OpenUtau.App {
             Log.Information("Initialized theme.");
         }
 
+        /// <summary>
+        /// Runs the package loaders again and re-applies the theme, after packages were installed, removed or edited.
+        /// </summary>
+        public static async void ReloadPackages() {
+            try {
+                await OudepLoaderRegistry.LoadAllAsync();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to load themes from packages.");
+            }
+            SetTheme();
+        }
+
         public static void SetTheme() {
             if (Current == null) {
                 return;

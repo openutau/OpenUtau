@@ -110,6 +110,18 @@ namespace OpenUtau.Core.Format {
         }
 
         [Fact]
+        public void RhythmDivisionChangeTest() {
+            var project = MusicXML.LoadProject(Path.Join(basePath, "03c-Rhythm-DivisionChange.musicxml"));
+            var part = project.parts.First() as UVoicePart;
+
+            Assert.Equal(0, part.notes.First().position);
+            AssertLegato(part);
+            var durations = new int[] { 480, 480, 480, 480, 960, 960 };
+            Assert.Equal(durations, part.notes.Select(n => n.duration).ToArray());
+            Assert.All(part.notes, n => Assert.Equal(72, n.tone));
+        }
+
+        [Fact]
         public void RhythmBackupTest() {
             var project = MusicXML.LoadProject(Path.Join(basePath, "03b-Rhythm-Backup.musicxml"));
             var part = project.parts.First() as UVoicePart;

@@ -168,6 +168,20 @@ jobs:
             OpenUtau
         if: ${{ matrix.arch.os == 'osx' }}
 
+      # The macOS runner is a plugin execution provider: without its library in the
+      # bundle the app silently falls back to CPU, so fail the build here instead.
+      - name: Verify WebGPU execution provider is bundled (macOS)
+        run: |
+          app="bin/${{ matrix.arch.name }}/publish/OpenUtau.app"
+          lib=$(find "$app" -name 'libonnxruntime_providers_webgpu.dylib' -print -quit)
+          if [ -z "$lib" ]; then
+            echo "::error::libonnxruntime_providers_webgpu.dylib is missing from $app"
+            find "$app" -name '*onnxruntime*' -print
+            exit 1
+          fi
+          echo "WebGPU plugin library: $lib"
+        if: ${{ matrix.arch.os == 'osx' }}
+
       - name: Write release channel info
         run: "@{Channel='${{ needs.next-version.outputs.channel }}'} | ConvertTo-Json > bin/${{ matrix.arch.name }}/prefs-default.json"
         shell: pwsh

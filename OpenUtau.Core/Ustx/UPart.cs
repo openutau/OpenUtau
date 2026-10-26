@@ -109,6 +109,13 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] internal long phraseAppliedGeneration;
         [YamlIgnore] internal readonly Pipeline.PhraseBuildGate phraseGate = new Pipeline.PhraseBuildGate();
 
+        /// <summary>
+        /// Drops the phonemizers made for notes' phonemizer overrides, so the next validate makes new ones.
+        /// </summary>
+        internal void ResetOverridePhonemizers() {
+            overridePhonemizers.Clear();
+        }
+
         public override void Validate(ValidateOptions options, UProject project, UTrack track) {
             UNote lastNote = null;
             foreach (UNote note in notes) {
@@ -202,6 +209,9 @@ namespace OpenUtau.Core.Ustx {
                             note.phonemizerExpressions.Clear();
                         }
 
+                        // Duplicate indexes only matter per note; a set keeps this linear
+                        // instead of rescanning every phoneme added so far.
+                        var seenIndexes = new HashSet<(UNote, int)>();
                         for (int i = 0; i < resp.phonemes.Length; ++i) {
                             var indexes = new List<int>();
                             var note = notes.ElementAtOrDefault(resp.noteIndexes[i]);
@@ -214,7 +224,7 @@ namespace OpenUtau.Core.Ustx {
                                     ErrorException = resp.phonemes[i][j].error
                                 };
                                 // Check for duplicate indexes
-                                if (phonemes.Any(p => p.Parent == phoneme.Parent && p.index == phoneme.index)) {
+                                if (!seenIndexes.Add((phoneme.Parent, phoneme.index))) {
                                     try {
                                         throw new ArgumentException("Duplicate phoneme index.");
                                     } catch (Exception e) {

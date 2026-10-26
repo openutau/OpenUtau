@@ -206,6 +206,13 @@ namespace OpenUtau.Core.Format
                                     prevPosTick = currPosTick;
                                 }
                                 break;
+                            case MusicXMLSchema.Attributes attributes: {
+                                    // Divisions may change in the middle of a part, even mid-measure.
+                                    if (attributes.DivisionsSpecified && attributes.Divisions > 0) {
+                                        divisions = (int)attributes.Divisions;
+                                    }
+                                }
+                                break;
                         }
                     }
                 }

@@ -80,6 +80,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial LyricsHelperOption? LyricsHelper { get; set; }
         [Reactive] public partial bool LyricsHelperBrackets { get; set; }
         [Reactive] public partial bool PenPlusDefault { get; set; }
+        [Reactive] public partial bool RenderStatusInTrackBar { get; set; }
 
         // Render
         [Reactive] public partial bool PreRender { get; set; }
@@ -246,6 +247,7 @@ namespace OpenUtau.App.ViewModels {
             };
             LyricsHelper = LyricsHelpers.FirstOrDefault(option => option.klass.Equals(ActiveLyricsHelper.Inst.GetPreferred()));
             LyricsHelperBrackets = Preferences.Default.LyricsHelperBrackets;
+            RenderStatusInTrackBar = Preferences.Default.RenderStatusInTrackBar;
             OtoEditor = Preferences.Default.OtoEditor;
             RememberMid = Preferences.Default.RememberMid;
             RememberUst = Preferences.Default.RememberUst;
@@ -266,7 +268,7 @@ namespace OpenUtau.App.ViewModels {
                 .Select(n => n > SafeMaxThreadCount)
                 .ToProperty(this, vm => vm.HighThreads, out highThreads);
             this.WhenAnyValue(vm => vm.OnnxRunner)
-                .Select(runner => runner == "DirectML" || runner == "CUDA")
+                .Select(runner => runner == "DirectML" || runner == "CUDA" || runner == "WebGPU")
                 .ToProperty(this, vm => vm.ShowOnnxGpu, out showOnnxGpu);
             this.WhenAnyValue(vm => vm.ThemeName)
                 .Select(themeName => themeName != "Light" && themeName != "Dark" && !Colors.CustomTheme.IsPackageTheme(themeName))
@@ -418,6 +420,11 @@ namespace OpenUtau.App.ViewModels {
                 });
             PersistOn(this.WhenAnyValue(vm => vm.LyricsHelperBrackets),
                 brackets => Preferences.Default.LyricsHelperBrackets = brackets);
+            PersistOn(this.WhenAnyValue(vm => vm.RenderStatusInTrackBar),
+                renderStatus => {
+                    Preferences.Default.RenderStatusInTrackBar = renderStatus;
+                    MessageBus.Current.SendMessage(new TracksRefreshEvent());
+                });
             PersistOn(this.WhenAnyValue(vm => vm.OtoEditor),
                 index => Preferences.Default.OtoEditor = index);
             PersistOn(this.WhenAnyValue(vm => vm.NumRenderThreads),

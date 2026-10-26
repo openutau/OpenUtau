@@ -1247,8 +1247,8 @@ namespace OpenUtau.App.Controls {
                 valueTipPointerPosition = args.GetCurrentPoint(ValueTipCanvas!).Position;
             }
             if (editState != null) {
-                editState.ctrlShiftHeld = ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool;
-                editState.shiftHeld = (args.KeyModifiers == KeyModifiers.Shift && (ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool || ViewModel.CurveViewModel.CurveTool == CurveTools.CurvePenTool));
+                editState.ctrlShiftHeld = args.KeyModifiers != KeyModifiers.Shift && ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool;
+                editState.shiftHeld = args.KeyModifiers == KeyModifiers.Shift  && (ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool  || (editState is ExpSetValueState expSetValueState && !expSetValueState.IsCurve));
                 UpdateEditState(args, control, point);
             } else {
                 Cursor = null;
