@@ -21,10 +21,21 @@ namespace OpenUtau.App.Views {
         }
 
         public static void InitializeLoadingWindow() {
-            loadingDialog = new LoadingWindow() {
+            if (loadingDialog != null) return;
+            var dialog = new LoadingWindow() {
                 Title = "Loading"
             };
-            loadingDialog.Text.Text = "Loading...";
+            dialog.Text.Text = "Loading...";
+            dialog.Closed += (_, _) => {
+                // The owner/window manager can close this without EndLoading.
+                // Avalonia windows cannot be shown again once closed.
+                if (ReferenceEquals(loadingDialog, dialog)) {
+                    loadingDialog = null;
+                    isCurrentlyLoading = false;
+                    globalLoadingCancellationTokenSource?.Cancel();
+                }
+            };
+            loadingDialog = dialog;
         }
 
         private static void ShowLoadingWindow(Window parent) {
@@ -40,13 +51,8 @@ namespace OpenUtau.App.Views {
         }
 
         private static void CloseLoadingWindow() {
-            if (loadingDialog != null) {
-                loadingDialog.Close();
-
-                //Recreate loading dialog to make sure it is initialized before being shown
-                loadingDialog = null;
-                InitializeLoadingWindow();
-            }
+            // Construct the next instance only when it is actually needed.
+            loadingDialog?.Close();
         }
 
         public static bool IsLoading() {

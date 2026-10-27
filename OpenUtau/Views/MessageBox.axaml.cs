@@ -30,11 +30,27 @@ namespace OpenUtau.App.Views {
             });
         }
 
+        // Key by the original owner, before notifications are reparented to the
+        // active modal window. Repeated failures must not build a chain of dialogs.
+        static readonly Dictionary<(Window, string, string), Task<MessageBoxResult>> errorDialogs = new();
+
         public static Task<MessageBoxResult> ShowError(Window parent, Exception? e, string message = "", bool fromNotif = false) {
+            Dispatcher.UIThread.VerifyAccess();
+            var key = (parent, message, e?.ToString() ?? string.Empty);
+            if (errorDialogs.TryGetValue(key, out var pending)) {
+                return pending;
+            }
+            var result = ShowErrorCore(parent, e, message, fromNotif, () => errorDialogs.Remove(key));
+            errorDialogs.Add(key, result);
+            return result;
+        }
+
+        static Task<MessageBoxResult> ShowErrorCore(Window parent, Exception? e, string message,
+                bool fromNotif, Action onClosed) {
             string text = message;
             string title = ThemeManager.GetString("errors.caption");
-            if (fromNotif) {
-                IReadOnlyList<Window> dialogs = ((IClassicDesktopStyleApplicationLifetime)Application.Current!.ApplicationLifetime!).Windows;
+            if (fromNotif && Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
+                IReadOnlyList<Window> dialogs = desktop.Windows;
                 foreach (var dialog in dialogs) {
                     if (dialog.IsActive) {
                         parent = dialog;
@@ -55,7 +71,7 @@ namespace OpenUtau.App.Views {
                     builder.AppendLine();
                     builder.Append(mce.SubstanceException.ToString());
                     if (!mce.ShowStackTrace) {
-                        return Show(parent, text, title, MessageBoxButtons.Ok);
+                        return ShowCore(parent, text, title, MessageBoxButtons.Ok, null, onClosed);
                     }
                 } else if (e is AggregateException nestedAe) {
                     foreach (var ie in nestedAe.Flatten().InnerExceptions) {
@@ -88,7 +104,7 @@ namespace OpenUtau.App.Views {
             builder.AppendLine();
             builder.AppendLine(System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "Unknown Version");
 
-            return Show(parent, text, title, MessageBoxButtons.OkCopy, builder.ToString());
+            return ShowCore(parent, text, title, MessageBoxButtons.OkCopy, builder.ToString(), onClosed);
 
             string Translate(MessageCustomizableException mce) {
                 string text;
@@ -120,6 +136,11 @@ namespace OpenUtau.App.Views {
         }
 
         public static Task<MessageBoxResult> Show(Window parent, string text, string title, MessageBoxButtons buttons, string? stackTrace = null) {
+            return ShowCore(parent, text, title, buttons, stackTrace, null);
+        }
+
+        static Task<MessageBoxResult> ShowCore(Window parent, string text, string title,
+                MessageBoxButtons buttons, string? stackTrace, Action? onClosed) {
             var msgbox = new MessageBox() {
                 Title = title
             };
@@ -165,7 +186,10 @@ namespace OpenUtau.App.Views {
             }
 
             var tcs = new TaskCompletionSource<MessageBoxResult>();
-            msgbox.Closed += delegate { tcs.TrySetResult(res); };
+            msgbox.Closed += delegate {
+                onClosed?.Invoke();
+                tcs.TrySetResult(res);
+            };
             if (parent != null)
                 msgbox.ShowDialog(parent);
             else msgbox.Show();
