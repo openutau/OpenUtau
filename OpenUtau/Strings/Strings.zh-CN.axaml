@@ -42,6 +42,7 @@
   <system:String x:Key="command.part.move">移动片段</system:String>
   <system:String x:Key="command.part.paste">粘贴片段</system:String>
   <system:String x:Key="command.part.transcribe">将音频识别为音符区段</system:String>
+  <system:String x:Key="command.phoneme.align">根据音频对齐音素时长</system:String>
   <system:String x:Key="command.phoneme.edit">编辑音素</system:String>
   <system:String x:Key="command.phoneme.reset">重置音素</system:String>
   <system:String x:Key="command.pitch.add">添加音高控制点</system:String>
@@ -211,6 +212,17 @@ OpenUtau 是一个开源项目, 旨在为 UTAU 用户社区提供现代的用户
   <system:String x:Key="dialogs.transcribe.game.segradius">边界半径</system:String>
   <system:String x:Key="dialogs.transcribe.game.segthreshold">边界阈值</system:String>
   <system:String x:Key="dialogs.transcribe.game.steps">采样步数</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.hint">从录音中提取音素时长，并将目标轨道的音素移动到对应位置。不会修改音符和歌词。</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.language">语言</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.language.auto">[跟随音素器]</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.notarget">目标轨道没有音符。请先填词。</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.notfound">未安装 TIFA 对齐器。请安装 tifa-ggml 扩展包以对齐音素时长。</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.options">音素时长对齐 (TIFA)</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.result.body">已对齐 {1} 个音素中的 {0} 个。未映射音符：{2}，不确定音符：{3}。</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.result.caption">音素时长对齐</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.result.lowagreement">对齐置信度较低：歌词可能与录音不匹配。</system:String>
+  <system:String x:Key="dialogs.transcribe.tifa.track">目标轨道</system:String>
+  <system:String x:Key="context.part.aligningphonemes">正在对齐音素</system:String>
   <system:String x:Key="dialogs.transcribe.longchunk.message">一个或多个音频片段非常长，在转录时可能会消耗大量内存。这通常发生在音频中包含伴奏时。是否仍然继续？</system:String>
   <system:String x:Key="dialogs.transcribe.midialgorithm">算法</system:String>
   <system:String x:Key="dialogs.transcribe.rmvpe">使用 RMVPE 提取音高</system:String>
