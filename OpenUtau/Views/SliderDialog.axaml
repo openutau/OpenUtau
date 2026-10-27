@@ -11,7 +11,7 @@
       <Slider Name="Slider" Width="150"
               Classes="fader" TickPlacement="BottomRight" IsSnapToTickEnabled="true"
               Value="50" Minimum="0" Maximum="100" TickFrequency="1"/>
-      <TextBlock Name="TextBlock" Width="20" />
+      <TextBlock Name="TextBlock" Width="25" />
     </StackPanel>
     <Button Name="OkButton" Content="OK" Click="OkButtonClick"
             Margin="10" HorizontalAlignment="Center" MinWidth="100" />
