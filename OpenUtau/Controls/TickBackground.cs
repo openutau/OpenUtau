@@ -5,10 +5,21 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using OpenUtau.App.ViewModels;
+using OpenUtau.Core.Ustx;
 using ReactiveUI;
 using ReactiveUI.Primitives;
 
 namespace OpenUtau.App.Controls {
+    class TempoMarkerHighlightEvent {
+        public object DataContext { get; }
+        public UTempo? Tempo { get; }
+
+        public TempoMarkerHighlightEvent(object dataContext, UTempo? tempo) {
+            DataContext = dataContext;
+            Tempo = tempo;
+        }
+    }
+
     class TickBackground : TemplatedControl {
         private static readonly IDashStyle DashStyle = new ImmutableDashStyle(new double[] { 2, 4 }, 0);
 
@@ -47,6 +58,11 @@ namespace OpenUtau.App.Controls {
                 nameof(ShowBar),
                 o => o.ShowBar,
                 (o, v) => o.ShowBar = v);
+        public static readonly DirectProperty<TickBackground, UTempo?> HighlightedTempoProperty =
+            AvaloniaProperty.RegisterDirect<TickBackground, UTempo?>(
+                nameof(HighlightedTempo),
+                o => o.HighlightedTempo,
+                (o, v) => o.HighlightedTempo = v);
 
         public int Resolution {
             get => _resolution;
@@ -77,6 +93,13 @@ namespace OpenUtau.App.Controls {
             get => _showBar;
             set => SetAndRaise(ShowBarProperty, ref _showBar, value);
         }
+        public UTempo? HighlightedTempo {
+            get => _highlightedTempo;
+            private set => SetAndRaise(
+                HighlightedTempoProperty,
+                ref _highlightedTempo,
+                value);
+        }
 
         private int _resolution = 480;
         private double _tickWidth;
@@ -85,6 +108,7 @@ namespace OpenUtau.App.Controls {
         private int _snapDiv;
         private ObservableCollection<int>? _snapTicks;
         private bool _showBar = true;
+        private UTempo? _highlightedTempo;
 
         private Pen penBar;
         private Pen penBeatUnit;
@@ -100,6 +124,12 @@ namespace OpenUtau.App.Controls {
                 .Subscribe(e => InvalidateVisual());
             MessageBus.Current.Listen<TimeAxisChangedEvent>()
                 .Subscribe(e => InvalidateVisual());
+            MessageBus.Current.Listen<TempoMarkerHighlightEvent>()
+                .Subscribe(e => {
+                    if (ReferenceEquals(e.DataContext, DataContext)) {
+                        HighlightedTempo = e.Tempo;
+                    }
+                });
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
@@ -118,7 +148,8 @@ namespace OpenUtau.App.Controls {
                 change.Property == TickWidthProperty ||
                 change.Property == TickOffsetProperty ||
                 change.Property == SnapDivProperty ||
-                change.Property == ShowBarProperty) {
+                change.Property == ShowBarProperty ||
+                change.Property == HighlightedTempoProperty) {
                 InvalidateVisual();
             }
         }
@@ -185,9 +216,16 @@ namespace OpenUtau.App.Controls {
 
             if (ShowBar) {
                 foreach (var tempo in project.tempos) {
+                    bool highlighted = ReferenceEquals(tempo, HighlightedTempo);
                     double x = Math.Round(tempo.position * TickWidth - pixelOffset) + 0.5;
-                    context.DrawLine(penDanshed, new Point(x, 0), new Point(x, 24));
-                    var textLayout = TextLayoutCache.Get(tempo.bpm.ToString("#0.00"), ThemeManager.BarNumberBrush, 10);
+                    var markerPen = highlighted
+                        ? ThemeManager.AccentPen2Thickness2
+                        : penDanshed;
+                    var textBrush = highlighted
+                        ? ThemeManager.AccentBrush2
+                        : ThemeManager.BarNumberBrush;
+                    context.DrawLine(markerPen, new Point(x, 0), new Point(x, 24));
+                    var textLayout = TextLayoutCache.Get(tempo.bpm.ToString("#0.00"), textBrush, 10);
                     using (var state = context.PushTransform(Matrix.CreateTranslation(x + 3, 0))) {
                         textLayout.Draw(context, new Point());
                     }
