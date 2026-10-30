@@ -347,17 +347,63 @@ namespace OpenUtau.Plugin.Builtin {
 
                 (string sustain, double offset) sustainData = default;
                 bool hasSustain = vowelSustains.TryGetValue(baseAlias, out sustainData)
-                            || (!string.IsNullOrEmpty(bucket.vowel) && vowelSustains.TryGetValue(bucket.vowel, out sustainData));
+                        || (!string.IsNullOrEmpty(bucket.vowel) && vowelSustains.TryGetValue(bucket.vowel, out sustainData));
 
                 if (hasSustain) {
-                    string mappedSustain = ValidateAliasIfNeeded(sustainData.sustain, bucket.tone);
-                    if (HasOto(mappedSustain, bucket.tone) || HasOto(sustainData.sustain, bucket.tone)) {
+                    int sustainIndex = globalPhonemeIndex + currentSyllablePhonemeCount;
+
+                    var baseAttr = workingAttributes.FirstOrDefault(a => a.index == basePhoneme.index);
+                    var directSustainAttr = workingAttributes.FirstOrDefault(a => a.index == sustainIndex);
+                    if (directSustainAttr.index != sustainIndex && mainNote.phonemeAttributes != null) {
+                        directSustainAttr = mainNote.phonemeAttributes.FirstOrDefault(a => a.index == sustainIndex);
+                    }
+
+                    string sustainColor = !string.IsNullOrEmpty(directSustainAttr.voiceColor)
+                        ? directSustainAttr.voiceColor
+                        : (!string.IsNullOrEmpty(baseAttr.voiceColor) 
+                            ? baseAttr.voiceColor 
+                            : (GetParentVoiceColor() ?? ""));
+
+                    int sustainToneShift = directSustainAttr.toneShift 
+                        ?? baseAttr.toneShift 
+                        ?? GetParentToneShift();
+
+                    int targetTone = bucket.tone + sustainToneShift;
+
+                    string mappedSustain = ValidateAliasIfNeeded(sustainData.sustain, targetTone, sustainColor);
+                    string targetSustain = null;
+
+                    if (HasOto(mappedSustain, targetTone, sustainColor)) {
+                        targetSustain = mappedSustain;
+                    } else if (mappedSustain != sustainData.sustain && HasOto(sustainData.sustain, targetTone, sustainColor)) {
+                        targetSustain = sustainData.sustain;
+                    } else if (HasOto(mappedSustain, targetTone)) {
+                        targetSustain = mappedSustain;
+                    } else if (mappedSustain != sustainData.sustain && HasOto(sustainData.sustain, targetTone)) {
+                        targetSustain = sustainData.sustain;
+                    }
+
+                    if (targetSustain != null) {
                         int offsetTicks = MsToTick(GetTransitionBasicLengthMsByConstant() * sustainData.offset);
                         madePhonemes.Add(new Phoneme {
-                            phoneme = sustainData.sustain,
+                            phoneme = targetSustain,
                             position = basePhoneme.position + offsetTicks,
-                            index = globalPhonemeIndex + currentSyllablePhonemeCount
+                            index = sustainIndex
                         });
+
+                        int existingIdx = workingAttributes.FindIndex(a => a.index == sustainIndex);
+                        var sustainAttr = existingIdx >= 0 ? workingAttributes[existingIdx] : new PhonemeAttributes { index = sustainIndex };
+                        sustainAttr.voiceColor = sustainColor;
+                        sustainAttr.toneShift = sustainToneShift;
+                        if (directSustainAttr.alternate.HasValue) {
+                            sustainAttr.alternate = directSustainAttr.alternate;
+                        } else if (baseAttr.alternate.HasValue) {
+                            sustainAttr.alternate = baseAttr.alternate;
+                        }
+
+                        if (existingIdx >= 0) workingAttributes[existingIdx] = sustainAttr;
+                        else workingAttributes.Add(sustainAttr);
+
                         currentSyllablePhonemeCount++;
                     }
                 }
@@ -422,12 +468,19 @@ namespace OpenUtau.Plugin.Builtin {
                 
                 var validatedAlias = phoneme.phoneme;
                 if (validatedAlias != null) {
-                    validatedAlias = ValidateAliasIfNeeded(validatedAlias, tone + toneShift);
+                    validatedAlias = ValidateAliasIfNeeded(validatedAlias, tone + toneShift, color);
                     string mapped = MapPhoneme(validatedAlias, tone + toneShift, color, alt, singer);
 
-                    if (!string.IsNullOrEmpty(alt) && alt != "0" && string.Equals(mapped, validatedAlias, StringComparison.Ordinal)) {
+                    // Voice color fallback: if the alias is not mapped in the requested voice color, fall back to default bank ("")
+                    if (mapped == validatedAlias && !string.IsNullOrEmpty(color)) {
+                        mapped = MapPhoneme(validatedAlias, tone + toneShift, "", alt, singer);
+                    }
+
+                    if (!string.IsNullOrEmpty(alt) && alt != "0" && mapped == validatedAlias) {
                         if (singer.TryGetMappedOto($"{validatedAlias}{alt}", tone + toneShift, color, out var altOto)) {
                             mapped = altOto.Alias;
+                        } else if (singer.TryGetMappedOto($"{validatedAlias}{alt}", tone + toneShift, "", out var defaultAltOto)) {
+                            mapped = defaultAltOto.Alias;
                         }
                     }
 
@@ -1450,9 +1503,35 @@ namespace OpenUtau.Plugin.Builtin {
         /// any child hardcoded fallbacks for that phoneme.
         /// </summary>
         protected virtual string ValidateAlias(string alias, int tone = 0) {
+            return ValidateAliasInternal(alias, tone, string.Empty);
+        }
+
+        /// <summary>
+        /// Validates formatted aliases for a specific voice color with fallback support.
+        /// If the alias is missing in the voice color, it checks YAML fallbacks inside that color.
+        /// If missing in that voice color entirely, it falls back to the default voice color ("").
+        /// </summary>
+        protected virtual string ValidateAlias(string alias, int tone, string color) {
+            if (string.IsNullOrEmpty(color)) {
+                return ValidateAlias(alias, tone);
+            }
+
+            string colorValidated = ValidateAliasInternal(alias, tone, color);
+            if (HasOto(colorValidated, tone, color)) {
+                return colorValidated;
+            }
+
+            return ValidateAlias(alias, tone);
+        }
+
+        private string ValidateAliasInternal(string alias, int tone, string color) {
             if (string.IsNullOrEmpty(alias)) return alias;
             if (singer == null || !singer.Loaded) return alias;
-            if (HasOto(alias, tone)) return alias;
+
+            bool HasOtoCheck(string a, int t) =>
+                string.IsNullOrEmpty(color) ? HasOto(a, t) : HasOto(a, t, color);
+
+            if (HasOtoCheck(alias, tone)) return alias;
 
             // Collect single-token YAML rules
             var singleRules = yamlFallbacks
@@ -1483,7 +1562,7 @@ namespace OpenUtau.Plugin.Builtin {
                 if (alias.Contains(fromStr, StringComparison.Ordinal)) {
                     foreach (var target in rule.ToList) {
                         string candidate = alias.Replace(fromStr, target, StringComparison.Ordinal);
-                        if (HasOto(candidate, tone)) {
+                        if (HasOtoCheck(candidate, tone)) {
                             return candidate;
                         }
                     }
@@ -1501,7 +1580,7 @@ namespace OpenUtau.Plugin.Builtin {
                 if (cascadedAlias.Contains(fromStr, StringComparison.Ordinal)) {
                     foreach (var target in rule.ToList) {
                         string candidate = cascadedAlias.Replace(fromStr, target, StringComparison.Ordinal);
-                        if (HasOto(candidate, tone)) {
+                        if (HasOtoCheck(candidate, tone)) {
                             return candidate;
                         }
                     }
@@ -1512,7 +1591,7 @@ namespace OpenUtau.Plugin.Builtin {
                 }
             }
 
-            if (changed && HasOto(cascadedAlias, tone)) {
+            if (changed && HasOtoCheck(cascadedAlias, tone)) {
                 return cascadedAlias;
             }
 
@@ -1526,7 +1605,7 @@ namespace OpenUtau.Plugin.Builtin {
             // Child phonemizer-specific hardcoded/contextual fallbacks
             string childFallback = GetHardcodedFallback(alias, tone, suppressedTokens);
             if (!string.IsNullOrEmpty(childFallback) && !string.Equals(childFallback, alias, StringComparison.Ordinal)) {
-                if (HasOto(childFallback, tone)) {
+                if (HasOtoCheck(childFallback, tone)) {
                     return childFallback;
                 }
             }
@@ -1535,7 +1614,7 @@ namespace OpenUtau.Plugin.Builtin {
             var legacyFallbacks = GetAliasesFallback();
             if (legacyFallbacks != null && legacyFallbacks.TryGetValue(alias, out var legacyTarget)) {
                 if (!suppressedTokens.Any(t => alias.Contains(t, StringComparison.Ordinal))) {
-                    if (HasOto(legacyTarget, tone)) return legacyTarget;
+                    if (HasOtoCheck(legacyTarget, tone)) return legacyTarget;
                 }
             }
 
@@ -1580,13 +1659,19 @@ namespace OpenUtau.Plugin.Builtin {
             string alt = attr.alternate?.ToString() ?? string.Empty;
             int toneShift = attr.toneShift ?? 0;
             
-            var validatedAlias = ValidateAliasIfNeeded(alias, tone + toneShift);
+            var validatedAlias = ValidateAliasIfNeeded(alias, tone + toneShift, color);
             var mappedAlias = MapPhoneme(validatedAlias, tone + toneShift, color, alt, singer);
+
+            if (mappedAlias == validatedAlias && !string.IsNullOrEmpty(color)) {
+                mappedAlias = MapPhoneme(validatedAlias, tone + toneShift, "", alt, singer);
+            }
 
             // Direct OTO lookup fallback for non-subbank numeric alternates
             if (!string.IsNullOrEmpty(alt) && alt != "0" && string.Equals(mappedAlias, validatedAlias, StringComparison.Ordinal)) {
                 if (singer.TryGetMappedOto($"{validatedAlias}{alt}", tone + toneShift, color, out var altOto)) {
                     mappedAlias = altOto.Alias;
+                } else if (singer.TryGetMappedOto($"{validatedAlias}{alt}", tone + toneShift, "", out var defaultAltOto)) {
+                    mappedAlias = defaultAltOto.Alias;
                 }
             }
 
@@ -1771,6 +1856,92 @@ namespace OpenUtau.Plugin.Builtin {
                 throw;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Checks if mapped and validated alias exists in oto for a specific voice color, respecting pitch map and subbanks.
+        /// </summary>
+        /// <param name="alias"></param>
+        /// <param name="tone"></param>
+        /// <param name="color"></param>
+        /// <returns></returns>
+        protected bool HasOto(string alias, int tone, string color) {
+            var currentSinger = singer;
+            if (currentSinger == null || !currentSinger.Loaded || string.IsNullOrEmpty(alias)) {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(color)) {
+                return HasOto(alias, tone);
+            }
+
+            try {
+                lock (currentSinger) {
+                    if (!currentSinger.Loaded) {
+                        return false;
+                    }
+
+                    // Direct subbank check if alias is already an exact oto entry
+                    if (currentSinger.TryGetOto(alias, out var directOto)) {
+                        if (currentSinger.Subbanks != null) {
+                            bool hasColorSubbank = false;
+                            bool matches = false;
+                            foreach (var subbank in currentSinger.Subbanks) {
+                                if (string.Equals(subbank.Color, color, StringComparison.OrdinalIgnoreCase)) {
+                                    hasColorSubbank = true;
+                                    bool hasPrefix = !string.IsNullOrEmpty(subbank.Prefix);
+                                    bool hasSuffix = !string.IsNullOrEmpty(subbank.Suffix);
+
+                                    bool prefixMatches = !hasPrefix || directOto.Alias.Contains(subbank.Prefix, StringComparison.Ordinal);
+                                    bool suffixMatches = !hasSuffix || directOto.Alias.Contains(subbank.Suffix, StringComparison.Ordinal);
+
+                                    if (prefixMatches && suffixMatches) {
+                                        matches = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (hasColorSubbank && matches) return true;
+                        }
+                    }
+
+                    if (!currentSinger.TryGetMappedOto(alias, tone, color, out var colorOto)) {
+                        return false;
+                    }
+
+                    if (currentSinger.Subbanks != null) {
+                        bool hasColorSubbank = false;
+                        bool matches = false;
+                        foreach (var subbank in currentSinger.Subbanks) {
+                            if (string.Equals(subbank.Color, color, StringComparison.OrdinalIgnoreCase)) {
+                                hasColorSubbank = true;
+                                bool hasPrefix = !string.IsNullOrEmpty(subbank.Prefix);
+                                bool hasSuffix = !string.IsNullOrEmpty(subbank.Suffix);
+
+                                bool prefixMatches = !hasPrefix || colorOto.Alias.Contains(subbank.Prefix, StringComparison.Ordinal);
+                                bool suffixMatches = !hasSuffix || colorOto.Alias.Contains(subbank.Suffix, StringComparison.Ordinal);
+
+                                if (prefixMatches && suffixMatches) {
+                                    matches = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!hasColorSubbank) {
+                            return false;
+                        }
+                        return matches;
+                    }
+
+                    return true;
+                }
+            } catch (InvalidOperationException ex) {
+                Log.Error(ex, $"Concurrency race detected in HasOto: singer '{currentSinger.Id}' was modified while querying alias '{alias}' at tone {tone} with color '{color}'.");
+                throw;
+            } catch (KeyNotFoundException ex) {
+                Log.Error(ex, $"Dictionary corruption detected in HasOto: key traversal failed for alias '{alias}' at tone {tone} with color '{color}'.");
+                throw;
+            }
         }
 
         /// <summary>
@@ -2454,8 +2625,8 @@ namespace OpenUtau.Plugin.Builtin {
             return ScalePhonemes(phonemes, position, isEnding ? phonemeSymbols.Count - 1 : phonemeSymbols.Count - 1, containerLength);
         }
 
-        private string ValidateAliasIfNeeded(string alias, int tone) {
-            return ValidateAlias(alias, tone);
+        private string ValidateAliasIfNeeded(string alias, int tone, string color = "") {
+            return string.IsNullOrEmpty(color) ? ValidateAlias(alias, tone) : ValidateAlias(alias, tone, color);
         }
 
         private Phoneme[] ScalePhonemes(Phoneme[] phonemes, int startPosition, int phonemesCount, int containerLengthTick = -1) {
