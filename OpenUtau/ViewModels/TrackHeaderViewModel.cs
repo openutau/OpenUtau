@@ -24,7 +24,9 @@ namespace OpenUtau.App.ViewModels {
         public USinger Singer => track.Singer;
         public Phonemizer Phonemizer => track.Phonemizer;
         public string PhonemizerTag => track.Phonemizer.Tag;
-        public Core.Render.IRenderer Renderer => track.RendererSettings.Renderer;
+        public Core.Render.IRenderer? Renderer => Core.Render.SineRenderer.IsFallbackActive(track)
+            ? Core.Render.SineRenderer.RendererFor(track)
+            : track.RendererSettings.Renderer;
         public ReactiveCommand<USinger, RxVoid> SelectSingerCommand { get; }
         public IReadOnlyList<MenuItemViewModel>? PhonemizerMenuItems { get; set; }
         public ReactiveCommand<PhonemizerFactory, RxVoid> SelectPhonemizerCommand { get; }
@@ -234,7 +236,7 @@ namespace OpenUtau.App.ViewModels {
                 } else if (!string.IsNullOrEmpty(selectedSinger.DefaultPhonemizer)) {
                     TryChangePhonemizer(targetTrack, selectedSinger.DefaultPhonemizer);
                 }
-                if (!selectedSinger.Found || selectedSinger.SingerType != targetTrack.RendererSettings.Renderer?.SingerType) {
+                if (!selectedSinger.Found || targetTrack.RendererSettings.Renderer is Core.Render.SineRenderer || selectedSinger.SingerType != targetTrack.RendererSettings.Renderer?.SingerType) {
                     var settings = new URenderSettings();
                     if (selectedSinger.Found) {
                         settings = new URenderSettings {

@@ -15,6 +15,7 @@ namespace OpenUtau.Core.SignalChain {
     /// phrase — shows up as two tags inside one phrase region. The read latency
     /// is checked against the 2 ms p99 budget.
     /// </summary>
+    [Collection(TimingSensitiveCollection.Name)]
     public class MixPlanHammerTest {
         const int Channels = 2;
         const int SampleCount = 512 * Channels; // one callback of 512 frames

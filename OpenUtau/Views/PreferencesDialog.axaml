@@ -103,6 +103,10 @@
             </ComboBox>
           </Grid>
           <TextBlock Classes="restart"/>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.general.sinewhenosinger}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding PlaySineWhenNoSinger}"/>
+          </Grid>
         </StackPanel>
         
         <!-- Playback -->

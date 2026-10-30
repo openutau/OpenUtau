@@ -224,14 +224,19 @@ namespace OpenUtau.Core.Render {
                 .Take(phraseEnd - phraseStart)
                 .ToList();
             var notesOf = source.Notes;
-            var uNotes = source.PhraseNotes(phraseStart, phraseEnd);
-            if (notesOf[uNotes.First()].Prev != -1
-                && notesOf[notesOf[uNotes.First()].Prev].End == notesOf[uNotes.First()].Position) {
-                uNotes.Insert(0, notesOf[uNotes.First()].Prev);
-            }
-            if (notesOf[uNotes.Last()].Next != -1
-                && notesOf[uNotes.Last()].End == notesOf[notesOf[uNotes.Last()].Next].Position) {
-                uNotes.Add(notesOf[uNotes.Last()].Next);
+            List<int> uNotes;
+            if (source.SineFallback) {
+                uNotes = phrasePhonemes.Select(phoneme => phoneme.NoteIndex).Distinct().ToList();
+            } else {
+                uNotes = source.PhraseNotes(phraseStart, phraseEnd);
+                if (notesOf[uNotes.First()].Prev != -1
+                    && notesOf[notesOf[uNotes.First()].Prev].End == notesOf[uNotes.First()].Position) {
+                    uNotes.Insert(0, notesOf[uNotes.First()].Prev);
+                }
+                if (notesOf[uNotes.Last()].Next != -1
+                    && notesOf[uNotes.Last()].End == notesOf[notesOf[uNotes.Last()].Next].Position) {
+                    uNotes.Add(notesOf[uNotes.Last()].Next);
+                }
             }
 
             singer = source.Singer;
@@ -559,8 +564,11 @@ namespace OpenUtau.Core.Render {
         private ulong Hash(bool postEffect) {
             using (var stream = new MemoryStream()) {
                 using (var writer = new BinaryWriter(stream)) {
-                    writer.Write(singer.Id);
+                    writer.Write(singer?.Id ?? string.Empty);
                     writer.Write(renderer?.ToString() ?? "");
+                    if (renderer is SineRenderer) {
+                        writer.Write(OpenUtau.Core.Util.Preferences.Default.PlaySineWhenNoSinger);
+                    }
                     writer.Write(wavtool ?? "");
                     writer.Write(timeAxis.Timestamp);
                     foreach (var phone in phones) {
