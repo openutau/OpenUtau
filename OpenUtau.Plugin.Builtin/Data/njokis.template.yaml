@@ -1,8 +1,13 @@
-version: 1.1
+version: 1.2
 symbols:
-#Con Pez
+  - {symbol: aI, type: diphthong}
+  - {symbol: eI, type: diphthong}
+  - {symbol: oI, type: diphthong}
+  - {symbol: uI, type: diphthong}
+  - {symbol: aU, type: diphthong}
+  - {symbol: eU, type: diphthong}
+  - {symbol: oU, type: diphthong}
   - {symbol: z, type: fricative}
-#nJokis
   - {symbol: a, type: vowel}
   - {symbol: e, type: vowel}
   - {symbol: i, type: vowel}
@@ -32,16 +37,19 @@ symbols:
   - {symbol: l, type: liquid}
   - {symbol: ch, type: affricate}
   - {symbol: jj, type: affricate}
-  - {symbol: --, type: end}
-#Combo
+  - {symbol: --, type: tail}
   - {symbol: ks, type: stop}
-
 replacements:
+  - {from: ['null', r], to: ['null', rr], where: all}
+  - {from: [r, r], to: [rr]}
+  - {from: [vowel, b, vowel], to: [vowel, B, vowel], where: all}
+  - {from: [vowel, g, vowel], to: [vowel, G, vowel], where: all}
+  - {from: [vowel, d, vowel], to: [vowel, D, vowel], where: all}
   - {from: [n, p], to: [m, p], where: all}
   - {from: [n, B], to: [m, b], where: all}
   - {from: [m, B], to: [m, b], where: all}
   - {from: [n, b], to: [m, b], where: all}
-  #- {from: [n, m], to: [m, m], where: all}
+  - {from: [n, m], to: [n, m], where: all}
   - {from: [n, D], to: [n, d], where: all}
   - {from: [l, D], to: [l, d], where: all}
   - {from: [n, G], to: [n, g], where: all}
@@ -52,26 +60,21 @@ replacements:
   - {from: [l, r], to: [l, rr], where: all}
   - {from: [ch, r], to: [ch, rr], where: all}
   - {from: [z, r], to: [z, rr], where: all}
-
-  - {from: ['vowel&semivowel', b], to: ['vowel&semivowel', B], where: all}
-  - {from: ['vowel&semivowel', g], to: ['vowel&semivowel', G], where: all}
-  - {from: ['vowel&semivowel', d], to: ['vowel&semivowel', D], where: all}
-
-  - {from: ["null", r], to: ["null", rr], where: all}
+  - {from: ["vowel&semivowel", b], to: ["vowel&semivowel", B], where: all}
+  - {from: ["vowel&semivowel", g], to: ["vowel&semivowel", G], where: all}
+  - {from: ["vowel&semivowel", d], to: ["vowel&semivowel", D], where: all}
   - {from: [r, r], to: [rr], where: all}
   - {from: [r, rr], to: [rr], where: all}
   - {from: [rr, r], to: [rr, rr], where: all}
-
   - {from: [B, B], to: [B], where: all}
   - {from: [D, D], to: [D], where: all}
   - {from: [G, G], to: [G], where: all}
   - {from: [B, b], to: [B], where: all}
   - {from: [D, d], to: [D], where: all}
   - {from: [G, g], to: [G], where: all}
-  - {from: [b, b], to: [B], where: inside}
-  - {from: [d, d], to: [D], where: inside}
-  - {from: [g, g], to: [G], where: inside}
-
+  - {from: [b, b], to: [B]}
+  - {from: [d, d], to: [D]}
+  - {from: [g, g], to: [G]}
   - {from: [s, s], to: [s], where: all}
   - {from: [f, f], to: [f], where: all}
   - {from: [z, z], to: [t, z], where: all}
@@ -80,8 +83,6 @@ replacements:
   - {from: [p, p], to: [p], where: all}
   - {from: [k, k], to: [k], where: all}
   - {from: [t, t], to: [t], where: all}
-
-
 fallbacks:
   - {from: k s, to: -ks}
   - {from: k z, to: -ks}
@@ -229,11 +230,10 @@ fallbacks:
   - {from: [jj x], to: [jj t]}
   - {from: [jj ch], to: [jj t]}
   - {from: [jj s], to: [jj t]}
-
 entries:
-  - {grapheme: <3, phonemes: [k, o, r, a, z, o, n]}  
-  - {grapheme: nJokis, phonemes: [nJ, o, k, i, s]}  
-  - {grapheme: njokis, phonemes: [nJ, o, k, i, s]}  
+  - {grapheme: <3, phonemes: [k, o, r, a, z, o, n]}
+  - {grapheme: nJokis, phonemes: [nJ, o, k, i, s]}
+  - {grapheme: njokis, phonemes: [nJ, o, k, i, s]}
   - {grapheme: VCCV, phonemes: [b, e, z, e, z, e, B, e]}
   - {grapheme: vccv, phonemes: [b, e, z, e, z, e, B, e]}
   - {grapheme: "--", phonemes: [--]}
