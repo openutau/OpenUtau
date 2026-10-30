@@ -1025,6 +1025,8 @@ General
 
   <system:String x:Key="tracks.duplicate">Duplicate Track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>
+  <system:String x:Key="tracks.rotateselectedtracksingers">Rotate singers across selected tracks</system:String>
+  <system:String x:Key="tracks.standardizesettings">Standardize Track Settings</system:String>
   <system:String x:Key="tracks.favorite">Favorites</system:String>
   <system:String x:Key="tracks.filtertype.all">All</system:String>
   <system:String x:Key="tracks.filtertype.all.tip">Show all singer types</system:String>
