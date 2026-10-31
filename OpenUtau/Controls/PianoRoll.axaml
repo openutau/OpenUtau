@@ -484,6 +484,14 @@
                 <Path Classes="stroked" Data="M 12 10 V 13.62"/>
               </Grid>
             </ToggleButton>
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20"
+                          IsChecked="{Binding NotesViewModel.IsProtectBrush}"
+                          IsVisible="{Binding NotesViewModel.IsDiffSinger}"
+                          ToolTip.Tip="{DynamicResource pianoroll.tool.takelock}">
+              <Grid Width="18" Height="18">
+                <Path Classes="stroked" Data="M 4 8 L 14 8 L 14 14 L 4 14 Z M 6 8 L 6 5 Q 6 2.5 9 2.5 Q 12 2.5 12 5 L 12 8"/>
+              </Grid>
+            </ToggleButton>
             <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding ShowPhonemizerTags}"
                           ToolTip.Tip="{DynamicResource pianoroll.toggle.phonemizer}">
               <Grid Width="18" Height="18">

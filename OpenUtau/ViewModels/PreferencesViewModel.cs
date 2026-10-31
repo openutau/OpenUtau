@@ -144,6 +144,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial double DiffSingerDepth { get; set; }
         [Reactive] public partial bool DiffSingerTensorCache { get; set; }
         [Reactive] public partial bool DiffSingerVarianceLocalPitchPatch { get; set; }
+        [Reactive] public partial bool DiffSingerTakeLock { get; set; }
         [Reactive] public partial bool DiffSingerLangCodeHide { get; set; }
 
         // Advanced
@@ -231,6 +232,7 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerStepsPitch = Preferences.Default.DiffSingerStepsPitch;
             DiffSingerTensorCache = Preferences.Default.DiffSingerTensorCache;
             DiffSingerVarianceLocalPitchPatch = Preferences.Default.DiffSingerVarianceLocalPitchPatch;
+            DiffSingerTakeLock = Preferences.Default.DiffSingerTakeLock;
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
@@ -502,6 +504,8 @@ namespace OpenUtau.App.ViewModels {
                 value => Preferences.Default.DiffSingerTensorCache = value);
             PersistOn(this.WhenAnyValue(vm => vm.DiffSingerVarianceLocalPitchPatch),
                 value => Preferences.Default.DiffSingerVarianceLocalPitchPatch = value);
+            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerTakeLock),
+                value => Preferences.Default.DiffSingerTakeLock = value);
             PersistOn(this.WhenAnyValue(vm => vm.DiffSingerLangCodeHide),
                 value => Preferences.Default.DiffSingerLangCodeHide = value);
             PersistOn(this.WhenAnyValue(vm => vm.SkipRenderingMutedTracks),

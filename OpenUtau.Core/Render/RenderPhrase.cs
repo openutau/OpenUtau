@@ -195,6 +195,14 @@ namespace OpenUtau.Core.Render {
         public readonly float[] xsy;
         public readonly Tuple<string, float[]>[] curves;//custom curves defined by renderer
         /// <summary>
+        /// Part-absolute tick ranges whose rendered audio should be kept. Updated in
+        /// place when the brush edits the part, so the next render sees them without
+        /// rebuilding the phrase.
+        /// </summary>
+        public IReadOnlyList<(int start, int end)> preservedRanges;
+        /// <summary>True for the secondary oto render of an xsy cross-synthesis phrase.</summary>
+        internal bool isXsyVariant;
+        /// <summary>
         /// The curves the expression graph drove, in the curves' own units on the pitch grid, for display.
         /// Not part of the hash.
         /// </summary>
@@ -532,6 +540,7 @@ namespace OpenUtau.Core.Render {
                 }
             }
             this.curves = curves.ToArray();
+            preservedRanges = source.PreservedRanges ?? Array.Empty<(int, int)>();
             drivenCurves = drivenCurveValues;
             preEffectHash = Hash(false);
             hash = Hash(true);
@@ -604,6 +613,7 @@ namespace OpenUtau.Core.Render {
             }
             variant.phones = phones;
             variant.hash = src.hash ^ RenderPhone.Oto2HashMask;
+            variant.isXsyVariant = true;
             return variant;
         }
 

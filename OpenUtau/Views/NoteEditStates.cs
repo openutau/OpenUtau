@@ -2322,4 +2322,82 @@ namespace OpenUtau.App.Views {
             lastPoint = point;
         }
     }
+
+    /// <summary>
+    /// Paints the part ranges whose acoustic take must be kept. Left drag locks,
+    /// right drag unlocks; the range is committed on release as one undoable step.
+    /// </summary>
+    class ProtectRangeEditState : NoteEditState {
+        readonly bool erase;
+        int startTick;
+        int currentTick;
+
+        public override MouseButton MouseButton => erase ? MouseButton.Right : MouseButton.Left;
+        protected override bool ShowValueTip => false;
+
+        public ProtectRangeEditState(Control control, PianoRollViewModel vm, IValueTip valueTip, bool erase)
+                : base(control, vm, valueTip) {
+            this.erase = erase;
+        }
+
+        public override void Begin(IPointer pointer, Point point) {
+            pointer.Capture(control);
+            startPoint = point;
+            startTick = currentTick = Clamp(point);
+            UpdatePreview();
+            DocManager.Inst.StartUndoGroup(null);
+        }
+
+        public override void Update(IPointer pointer, Point point) {
+            currentTick = Clamp(point);
+            UpdatePreview();
+        }
+
+        public override void End(IPointer pointer, Point point) {
+            var part = vm.NotesViewModel.Part;
+            int start = Math.Min(startTick, currentTick);
+            int end = Math.Max(startTick, currentTick);
+            if (part != null && end > start) {
+                var ranges = part.preservedRanges?.Select(r => r.Clone()).ToList() ?? new List<UTickRange>();
+                if (erase) {
+                    ranges = Subtract(ranges, start, end);
+                } else {
+                    ranges.Add(new UTickRange(start, end));
+                }
+                DocManager.Inst.ExecuteCmd(new SetPreservedRangesCommand(part, ranges));
+            }
+            DocManager.Inst.EndUndoGroup();
+            (control as NotesCanvas)?.SetBrushPreview(-1, -1);
+            pointer.Capture(null);
+        }
+
+        int Clamp(Point point) {
+            var part = vm.NotesViewModel.Part;
+            int tick = vm.NotesViewModel.PointToTick(point);
+            return part == null ? tick : Math.Clamp(tick, 0, part.Duration);
+        }
+
+        void UpdatePreview() {
+            int start = Math.Min(startTick, currentTick);
+            int end = Math.Max(startTick, currentTick);
+            (control as NotesCanvas)?.SetBrushPreview(start, end);
+        }
+
+        static List<UTickRange> Subtract(List<UTickRange> ranges, int start, int end) {
+            var result = new List<UTickRange>();
+            foreach (var range in ranges) {
+                if (range.end <= start || range.start >= end) {
+                    result.Add(range.Clone());
+                    continue;
+                }
+                if (range.start < start) {
+                    result.Add(new UTickRange(range.start, start));
+                }
+                if (range.end > end) {
+                    result.Add(new UTickRange(end, range.end));
+                }
+            }
+            return result;
+        }
+    }
 }
