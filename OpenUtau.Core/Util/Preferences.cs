@@ -198,6 +198,12 @@ namespace OpenUtau.Core.Util {
             public int DiffSingerStepsPitch = 10;
             public bool DiffSingerTensorCache = true;
             public bool DiffSingerVarianceLocalPitchPatch = false;
+            /// <summary>
+            /// Keep the last accepted acoustic take and re-sample only the frames a
+            /// change actually touched. Off by default: the global re-roll some users
+            /// rely on when A/B-ing a phrase is the existing behavior.
+            /// </summary>
+            public bool DiffSingerTakeLock = false;
             public bool DiffSingerLangCodeHide = false;
             /// <summary>
             /// Auto-merge nearby DiffSinger phrases (piano roll toggle). Off by

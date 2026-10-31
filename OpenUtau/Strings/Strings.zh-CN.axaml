@@ -67,6 +67,7 @@
   <system:String x:Key="command.vibrato.edit">编辑颤音</system:String>
 
   <system:String x:Key="context.note.clearcache">清除当前乐句的缓存</system:String>
+  <system:String x:Key="context.note.reroll">重绘（保留固定区）</system:String>
   <system:String x:Key="context.note.copy">复制音符</system:String>
   <system:String x:Key="context.note.delete">删除音符</system:String>
   <system:String x:Key="context.note.pasteparameters">粘贴表情</system:String>
@@ -725,6 +726,8 @@ OpenUtau 是一个开源项目, 旨在为 UTAU 用户社区提供现代的用户
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">针对于 Pitch 的 DiffSinger 渲染步骤</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">针对于 Variance 的 DiffSinger 渲染步骤</system:String>
   <system:String x:Key="prefs.rendering.diffsingervariancelocalpitchpatch">DiffSinger 编辑音高时保留未编辑区域演唱细节</system:String>
+  <system:String x:Key="prefs.rendering.diffsingertakelock">保留上一次渲染中未编辑的部分（固定笔刷）</system:String>
+  <system:String x:Key="pianoroll.tool.takelock">固定笔刷：拖动固定，右键取消固定</system:String>
   <!--<system:String x:Key="prefs.rendering.gamebackend">GAME Inference Backend</system:String>-->
   <!--<system:String x:Key="prefs.rendering.onnxgpu">GPU</system:String>-->
   <system:String x:Key="prefs.rendering.onnxrunner">机器学习运行器</system:String>

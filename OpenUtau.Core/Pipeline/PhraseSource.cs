@@ -401,6 +401,8 @@ namespace OpenUtau.Core.Pipeline {
         public readonly PhonemeSource[] Phonemes;
         /// <summary>Half-open [start, end) index ranges into <see cref="Phonemes"/>.</summary>
         public readonly (int Start, int End)[] PhraseGroups;
+        /// <summary>Part-absolute tick ranges whose rendered audio should be kept.</summary>
+        public readonly (int Start, int End)[] PreservedRanges;
         // Shared by graph contexts for this immutable snapshot; unused graphs pay no indexing cost.
         internal readonly Lazy<int[][]> PhraseNoteIndex;
 
@@ -422,6 +424,12 @@ namespace OpenUtau.Core.Pipeline {
             ModpSupported = track.TryGetExpDescriptor(project, Format.Ustx.MODP, out var modp)
                 && Renderer.SupportsExpression(modp);
             XsyAvailable = part.curves.Any(c => c.abbr == Format.Ustx.XSY);
+            PreservedRanges = part.preservedRanges == null
+                ? Array.Empty<(int, int)>()
+                : part.preservedRanges
+                    .Where(r => r != null && r.end > r.start)
+                    .Select(r => (part.position + r.start, part.position + r.end))
+                    .ToArray();
 
             var noteIndexByNote = new Dictionary<UNote, int>();
             var notes = part.notes.ToList();
