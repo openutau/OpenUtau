@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using K4os.Hash.xxHash;
@@ -152,9 +153,27 @@ namespace OpenUtau.Core.DiffSinger {
                 }
                 Remember(take);
             }
-            // The take now points at a new wav; the old one is unreachable.
-            if (!string.IsNullOrEmpty(previousWav) && previousWav != take.WavFile) {
+            // While the lock owns the render cache, the take points at a new wav and
+            // the old one is unreachable. Without the lock, leave it to
+            // DeleteCacheFiles: an undo can still ask for the previous phrase hash.
+            if (Preferences.Default.DiffSingerTakeLock &&
+                !string.IsNullOrEmpty(previousWav) && previousWav != take.WavFile) {
                 DeleteWav(previousWav!);
+            }
+        }
+
+        /// <summary>
+        /// Drops the in-memory copy when a cache cleanup removes the backing file, so
+        /// <see cref="TryLoad"/> cannot resurrect a take whose audio was cleared.
+        /// </summary>
+        public static void DeleteByFilename(string filenameOrPath) {
+            string name = Path.GetFileNameWithoutExtension(filenameOrPath);
+            if (!name.StartsWith(FilePrefix, StringComparison.Ordinal)) {
+                return;
+            }
+            if (ulong.TryParse(name.Substring(FilePrefix.Length), NumberStyles.HexNumber,
+                    CultureInfo.InvariantCulture, out ulong key)) {
+                Delete(key);
             }
         }
 

@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
 using K4os.Hash.xxHash;
 using OpenUtau.Classic;
+using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Ustx;
 using Serilog;
 
@@ -645,6 +646,8 @@ namespace OpenUtau.Core.Render {
                     } catch (Exception e) {
                         Log.Error(e, $"Failed to delete file {file}");
                     }
+                    // A DiffSinger take is also held in memory; drop it with its file.
+                    DiffSingerTakeStore.DeleteByFilename(file);
                 }
             }
             cacheFiles.Clear();
