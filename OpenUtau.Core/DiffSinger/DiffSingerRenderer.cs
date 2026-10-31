@@ -624,6 +624,30 @@ namespace OpenUtau.Core.DiffSinger {
                 signal = NWaves.Operations.Operation.Resample(signal, 44100);
                 samples = signal.Samples;
             }
+            if (previous != null && weights != null) {
+                // Frames with weight 0 (and, in the all-old shortcut, every frame) play
+                // the previous take's audio. Store the conditioning that actually produced
+                // each frame; otherwise a later render diffs against the edited values,
+                // sees no change, and pins the stale mel under them forever.
+                var composed = new List<DiffSingerTakeCondition>(takeConditions.Count);
+                for (int c = 0; c < takeConditions.Count; c++) {
+                    var current = takeConditions[c];
+                    var prior = previous.Conditions[c];
+                    int valuesPerFrame = current.ValuesPerFrame;
+                    var values = new float[current.Values.Length];
+                    for (int frame = 0; frame < totalFrames; frame++) {
+                        var source = weights[frame] > 0f ? current.Values : prior.Values;
+                        int offset = frame * valuesPerFrame;
+                        Array.Copy(source, offset, values, offset, valuesPerFrame);
+                    }
+                    composed.Add(new DiffSingerTakeCondition {
+                        Name = current.Name,
+                        Values = values,
+                        ValuesPerFrame = valuesPerFrame,
+                    });
+                }
+                takeConditions = composed;
+            }
             DiffSingerTake? take = null;
             if (takeKey != 0) {
                 take = new DiffSingerTake {

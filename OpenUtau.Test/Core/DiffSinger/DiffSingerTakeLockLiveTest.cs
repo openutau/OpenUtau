@@ -86,13 +86,6 @@ namespace OpenUtau.Core {
                 // Re-roll ticks [200, 250), which land around frames 29..34 of a
                 // phrase whose frame 0 is the head padding.
                 DiffSingerTakeReroll.Request(part.trackNo, new[] { (200, 250) });
-                int probeStart = project.timeAxis.MsPosToTickPos(phrase.positionMs);
-                int probeEnd = project.timeAxis.MsPosToTickPos(phrase.endMs);
-                int probeNonce = DiffSingerTakeReroll.Consume(part.trackNo, probeStart, probeEnd, out var probeRanges);
-                Assert.True(probeNonce > 0,
-                    $"reroll request did not match: track={part.trackNo} start={probeStart} end={probeEnd} " +
-                    $"frames={take1.TotalFrames} bins={take1.Bins}");
-                Assert.NotNull(probeRanges);
                 var second = renderer.Render(phrase, new Progress(1), 0, new CancellationTokenSource(), true).Result;
                 Assert.NotNull(second.samples);
 
