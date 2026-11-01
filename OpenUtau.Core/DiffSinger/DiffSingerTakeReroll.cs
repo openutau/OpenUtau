@@ -22,6 +22,9 @@ namespace OpenUtau.Core.DiffSinger {
 
         static readonly object gate = new object();
         static readonly List<RerollRequest> requests = new List<RerollRequest>();
+        // Bumped on every consume per track: a restore from an older render cycle
+        // must not resurrect a request that a newer render already took over.
+        static readonly Dictionary<int, int> trackEpoch = new Dictionary<int, int>();
         static int nextNonce;
 
         public static void Request(int trackNo, IEnumerable<(int start, int end)> ranges) {
@@ -52,13 +55,20 @@ namespace OpenUtau.Core.DiffSinger {
         /// </summary>
         public static int Consume(int trackNo, int phraseStartTick, int phraseEndTick,
                 out List<(int start, int end)>? ranges) {
-            return Consume(trackNo, phraseStartTick, phraseEndTick, out ranges, out _);
+            return Consume(trackNo, phraseStartTick, phraseEndTick, out ranges, out _, out _);
         }
 
         public static int Consume(int trackNo, int phraseStartTick, int phraseEndTick,
                 out List<(int start, int end)>? ranges, out DateTime createdUtc) {
+            return Consume(trackNo, phraseStartTick, phraseEndTick, out ranges, out createdUtc, out _);
+        }
+
+        public static int Consume(int trackNo, int phraseStartTick, int phraseEndTick,
+                out List<(int start, int end)>? ranges, out DateTime createdUtc, out int epoch) {
             lock (gate) {
                 Purge();
+                epoch = trackEpoch.TryGetValue(trackNo, out int current) ? current + 1 : 1;
+                trackEpoch[trackNo] = epoch;
                 ranges = null;
                 createdUtc = DateTime.UtcNow;
                 int nonce = 0;
@@ -109,19 +119,42 @@ namespace OpenUtau.Core.DiffSinger {
                 return;
             }
             lock (gate) {
-                Purge();
-                foreach (var (start, end) in ranges) {
-                    if (end <= start) {
-                        continue;
-                    }
-                    requests.Add(new RerollRequest {
-                        TrackNo = trackNo,
-                        StartTick = start,
-                        EndTick = end,
-                        Nonce = nonce,
-                        CreatedUtc = createdUtc,
-                    });
+                if (!trackEpoch.ContainsKey(trackNo)) {
+                    return;
                 }
+                RestoreLocked(trackNo, nonce, createdUtc, ranges);
+            }
+        }
+
+        public static void Restore(int trackNo, int nonce, DateTime createdUtc, int epoch,
+                IEnumerable<(int start, int end)>? ranges) {
+            if (nonce == 0 || ranges == null) {
+                return;
+            }
+            lock (gate) {
+                if (!trackEpoch.TryGetValue(trackNo, out int current) || current != epoch) {
+                    // A newer render cycle for this track already took over; putting the
+                    // old request back would re-sample frames the user did not ask for.
+                    return;
+                }
+                RestoreLocked(trackNo, nonce, createdUtc, ranges);
+            }
+        }
+
+        static void RestoreLocked(int trackNo, int nonce, DateTime createdUtc,
+                IEnumerable<(int start, int end)> ranges) {
+            Purge();
+            foreach (var (start, end) in ranges) {
+                if (end <= start) {
+                    continue;
+                }
+                requests.Add(new RerollRequest {
+                    TrackNo = trackNo,
+                    StartTick = start,
+                    EndTick = end,
+                    Nonce = nonce,
+                    CreatedUtc = createdUtc,
+                });
             }
         }
 
@@ -138,6 +171,7 @@ namespace OpenUtau.Core.DiffSinger {
         public static void Clear() {
             lock (gate) {
                 requests.Clear();
+                trackEpoch.Clear();
             }
         }
 

@@ -140,11 +140,13 @@ namespace OpenUtau.Core.DiffSinger {
                         singer.dsConfig.num_mel_bins, depth, steps, phrase.isXsyVariant);
                     phrase.AddCacheFile(DiffSingerTakeStore.GetFilename(takeKey));
                     int rerollNonce = 0;
+                    int rerollEpoch = 0;
                     List<(int start, int end)>? rerollRanges = null;
                     DateTime rerollCreatedUtc = default;
                     if (takeLock) {
                         rerollNonce = DiffSingerTakeReroll.Consume(
-                            trackNo, phraseStartTick, phraseEndTick, out rerollRanges, out rerollCreatedUtc);
+                            trackNo, phraseStartTick, phraseEndTick,
+                            out rerollRanges, out rerollCreatedUtc, out rerollEpoch);
                     }
                     // Snapshot the protection once: the brush may replace the live list
                     // while this render is in flight, and the wav name and the applied
@@ -181,7 +183,8 @@ namespace OpenUtau.Core.DiffSinger {
                             // cancelled while loading its wav must not drop the take.
                             var cachedTake = DiffSingerTakeStore.TryLoad(takeKey);
                             if (cachedTake != null && cachedTake.WavFile != wavName) {
-                                result.onAccepted = () => DiffSingerTakeStore.Delete(takeKey);
+                                result.onAccepted = () =>
+                                    DiffSingerTakeStore.DeleteIfMatches(takeKey, cachedTake.WavFile);
                             }
                         }
                     }
@@ -199,10 +202,10 @@ namespace OpenUtau.Core.DiffSinger {
                             } else {
                                 // Cancelled before the sample committed: keep the re-roll
                                 // request so the next render still honours it.
-                                DiffSingerTakeReroll.Restore(trackNo, rerollNonce, rerollCreatedUtc, rerollRanges);
+                                DiffSingerTakeReroll.Restore(trackNo, rerollNonce, rerollCreatedUtc, rerollEpoch, rerollRanges);
                             }
                         } catch {
-                            DiffSingerTakeReroll.Restore(trackNo, rerollNonce, rerollCreatedUtc, rerollRanges);
+                            DiffSingerTakeReroll.Restore(trackNo, rerollNonce, rerollCreatedUtc, rerollEpoch, rerollRanges);
                             throw;
                         }
                     }

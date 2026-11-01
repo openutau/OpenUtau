@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
@@ -2364,7 +2364,12 @@ namespace OpenUtau.App.Views {
                 } else {
                     ranges.Add(new UTickRange(start, end));
                 }
-                DocManager.Inst.ExecuteCmd(new SetPreservedRangesCommand(part, ranges));
+                var normalized = SetPreservedRangesCommand.Normalize(ranges);
+                // Erasing over empty space or painting inside an existing range is a
+                // no-op; do not push a command or trigger a re-render for it.
+                if (!SetPreservedRangesCommand.SameRanges(part.preservedRanges, normalized)) {
+                    DocManager.Inst.ExecuteCmd(new SetPreservedRangesCommand(part, normalized));
+                }
             }
             DocManager.Inst.EndUndoGroup();
             (control as NotesCanvas)?.SetBrushPreview(-1, -1);

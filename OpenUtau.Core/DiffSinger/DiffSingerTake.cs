@@ -226,6 +226,47 @@ namespace OpenUtau.Core.DiffSinger {
             }
         }
 
+        /// <summary>
+        /// Deletes the take only if the stored instance is still the one that produced
+        /// <paramref name="observedWavFile"/>. A newer take (a different wav) is kept.
+        /// The identity check and the file deletion share <see cref="Save"/>'s lock, so
+        /// a concurrent save cannot slip a fresh take under the deletion.
+        /// </summary>
+        public static void DeleteIfMatches(ulong key, string? observedWavFile) {
+            lock (gate) {
+                DiffSingerTake? take;
+                LinkedListNode<(ulong key, DiffSingerTake take)>? node = null;
+                if (memory.TryGetValue(key, out node)) {
+                    take = node.Value.take;
+                } else {
+                    try {
+                        take = LoadFromDisk(key);
+                    } catch (Exception e) {
+                        Log.Warning(e, "Failed to read DiffSinger take for deletion");
+                        return;
+                    }
+                    if (take == null) {
+                        return;
+                    }
+                }
+                if (take.WavFile != observedWavFile) {
+                    return;
+                }
+                if (node != null) {
+                    memory.Remove(key);
+                    recency.Remove(node);
+                }
+                try {
+                    string path = GetPath(key);
+                    if (File.Exists(path)) {
+                        File.Delete(path);
+                    }
+                } catch (Exception e) {
+                    Log.Warning(e, "Failed to delete DiffSinger take file");
+                }
+            }
+        }
+
         static void Remember(DiffSingerTake take) {
             if (memory.TryGetValue(take.Key, out var existing)) {
                 existing.Value = (take.Key, take);

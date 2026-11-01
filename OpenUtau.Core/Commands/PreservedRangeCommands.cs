@@ -21,7 +21,7 @@ namespace OpenUtau.Core {
             after = Normalize(ranges);
         }
 
-        static List<UTickRange>? Normalize(IEnumerable<UTickRange>? ranges) {
+        public static List<UTickRange>? Normalize(IEnumerable<UTickRange>? ranges) {
             if (ranges == null) {
                 return null;
             }
@@ -36,6 +36,21 @@ namespace OpenUtau.Core {
                 }
             }
             return merged.Count == 0 ? null : merged;
+        }
+
+        public static bool SameRanges(IReadOnlyList<UTickRange>? a, IReadOnlyList<UTickRange>? b) {
+            if (a == null || a.Count == 0) {
+                return b == null || b.Count == 0;
+            }
+            if (b == null || b.Count != a.Count) {
+                return false;
+            }
+            for (int i = 0; i < a.Count; i++) {
+                if (a[i].start != b[i].start || a[i].end != b[i].end) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public override void Execute() => Apply(after);

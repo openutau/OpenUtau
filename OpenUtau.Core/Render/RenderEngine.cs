@@ -430,6 +430,9 @@ namespace OpenUtau.Core.Render {
                         }
                         XsyBlendCache[xsyKey] = blended;
                     }
+                    if (cancellation.IsCancellationRequested) {
+                        break;
+                    }
                     planner.RegisterPcm(request.part, phrase.hash, tuple.offsetMs, tuple.estimatedLengthMs, 1, blended);
                     originalResult?.onAccepted?.Invoke();
                     variantResult?.onAccepted?.Invoke();

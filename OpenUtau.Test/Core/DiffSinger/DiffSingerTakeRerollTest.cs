@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using OpenUtau.Core.DiffSinger;
 using Xunit;
@@ -46,6 +47,22 @@ namespace OpenUtau.Core {
 
             Assert.Equal(nonce, DiffSingerTakeReroll.Consume(0, 0, 100, out var retryRanges));
             Assert.Equal(new[] { (0, 100) }, retryRanges);
+        }
+
+        [Fact]
+        public void RestoreIsIgnoredWhenANewerRenderConsumed() {
+            DiffSingerTakeReroll.Clear();
+            DiffSingerTakeReroll.Request(0, new[] { (0, 100) });
+            int nonce = DiffSingerTakeReroll.Consume(
+                0, 0, 100, out var ranges, out _, out int epoch);
+            Assert.True(nonce > 0);
+
+            // A newer render cycle for the same track takes over.
+            DiffSingerTakeReroll.Consume(0, 0, 100, out _, out _, out _);
+
+            DiffSingerTakeReroll.Restore(0, nonce, DateTime.UtcNow, epoch, ranges);
+
+            Assert.Equal(0, DiffSingerTakeReroll.Consume(0, 0, 100, out _));
         }
 
         [Fact]
