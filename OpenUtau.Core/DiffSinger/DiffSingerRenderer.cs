@@ -209,6 +209,10 @@ namespace OpenUtau.Core.DiffSinger {
                             throw;
                         }
                     }
+                    // Once InvokeDiffsinger returns samples, the wav and take are already
+                    // persisted. If the engine cancels after that, it only discards the
+                    // in-memory RenderResult; the consumed re-roll must NOT be restored,
+                    // or the same range would be sampled again on the next render.
                     if (result.samples != null) {
                         Renderers.ApplyDynamics(phrase, result);
                     }
