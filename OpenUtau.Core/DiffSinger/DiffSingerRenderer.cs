@@ -176,10 +176,12 @@ namespace OpenUtau.Core.DiffSinger {
                         if (result.samples != null) {
                             // The take may belong to a later edit (lock toggled, undo).
                             // Discard it rather than let a later lock-on render compose
-                            // from a take that did not produce this audio.
+                            // from a take that did not produce this audio. The deletion
+                            // is deferred until the engine accepts the result: a render
+                            // cancelled while loading its wav must not drop the take.
                             var cachedTake = DiffSingerTakeStore.TryLoad(takeKey);
                             if (cachedTake != null && cachedTake.WavFile != wavName) {
-                                DiffSingerTakeStore.Delete(takeKey);
+                                result.onAccepted = () => DiffSingerTakeStore.Delete(takeKey);
                             }
                         }
                     }
