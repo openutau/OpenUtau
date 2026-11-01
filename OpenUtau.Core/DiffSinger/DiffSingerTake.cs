@@ -120,6 +120,24 @@ namespace OpenUtau.Core.DiffSinger {
             return XXH64.DigestOf(stream.ToArray());
         }
 
+        /// <summary>
+        /// Stable hash of the protected time ranges. It goes into the take-locked wav
+        /// name, so painting or erasing a range cannot be served from audio that was
+        /// rendered under the previous protection.
+        /// </summary>
+        public static ulong ComputePreserveHash(IReadOnlyList<(int start, int end)>? ranges) {
+            if (ranges == null || ranges.Count == 0) {
+                return 0;
+            }
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            foreach (var (start, end) in ranges.OrderBy(r => r.start).ThenBy(r => r.end)) {
+                writer.Write(start);
+                writer.Write(end);
+            }
+            return XXH64.DigestOf(stream.ToArray());
+        }
+
         public static string GetFilename(ulong key) => $"{FilePrefix}{key:x16}{FileSuffix}";
 
         static string GetPath(ulong key) => Path.Join(PathManager.Inst.CachePath, GetFilename(key));

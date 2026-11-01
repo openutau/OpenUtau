@@ -21,6 +21,8 @@ namespace OpenUtau.Core.DiffSinger {
         const string ENE = DiffSingerUtils.ENE;
         const string PEXP = DiffSingerUtils.PEXP;
         const string VoiceColorHeader = DiffSingerUtils.VoiceColorHeader;
+        // Distinguishes re-roll wav names across process starts, where the nonce resets.
+        static readonly string sessionTag = Guid.NewGuid().ToString("N").Substring(0, 8);
 
         static readonly HashSet<string> supportedExp = new HashSet<string>(){
             Format.Ustx.DYN,
@@ -144,8 +146,15 @@ namespace OpenUtau.Core.DiffSinger {
                         rerollNonce = DiffSingerTakeReroll.Consume(
                             trackNo, phraseStartTick, phraseEndTick, out rerollRanges, out rerollCreatedUtc);
                     }
-                    string generation = rerollNonce > 0 ? $"-g{rerollNonce}" : string.Empty;
-                    var wavName = $"ds-{phrase.hash:x16}{generation}-depth{depth:f2}-steps{steps}.wav";
+                    // The take-locked wav is a function of everything that shapes it:
+                    // the phrase (hash), the take identity (track/start/singer/sampler)
+                    // and the protection. Without these, two identical phrases or a
+                    // removed protection would be served from the wrong cached audio.
+                    string takeTag = takeLock
+                        ? $"-t{takeKey:x16}-p{DiffSingerTakeStore.ComputePreserveHash(phrase.preservedRanges):x16}"
+                        : string.Empty;
+                    string generation = rerollNonce > 0 ? $"-g{rerollNonce}-s{sessionTag}" : string.Empty;
+                    var wavName = $"ds-{phrase.hash:x16}{takeTag}{generation}-depth{depth:f2}-steps{steps}.wav";
                     var wavPath = Path.Join(PathManager.Inst.CachePath, wavName);
                     phrase.AddCacheFile(wavPath);
                     string progressInfo = $"Track {trackNo + 1}: {this} depth={depth:f2} steps={steps} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";

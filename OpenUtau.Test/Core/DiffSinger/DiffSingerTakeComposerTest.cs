@@ -180,6 +180,15 @@ namespace OpenUtau.Core {
             Assert.False(take.IsCompatible(4, 2, 20, conditions, 1, 2));
         }
 
+        [Fact]
+        public void PreserveHashIsStableAndOrderIndependent() {
+            ulong a = DiffSingerTakeStore.ComputePreserveHash(new[] { (10, 20), (30, 40) });
+            ulong b = DiffSingerTakeStore.ComputePreserveHash(new[] { (30, 40), (10, 20) });
+            Assert.Equal(a, b);
+            Assert.NotEqual(a, DiffSingerTakeStore.ComputePreserveHash(new[] { (10, 21) }));
+            Assert.Equal(0UL, DiffSingerTakeStore.ComputePreserveHash(null));
+        }
+
         static DiffSingerTakeCondition Condition(string name, params float[] values) {
             return new DiffSingerTakeCondition {
                 Name = name,
