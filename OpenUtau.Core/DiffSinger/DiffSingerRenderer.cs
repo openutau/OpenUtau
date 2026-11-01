@@ -173,6 +173,15 @@ namespace OpenUtau.Core.DiffSinger {
                         } catch (Exception e) {
                             Log.Error(e, "Failed to read cached render, re-rendering.");
                         }
+                        if (result.samples != null) {
+                            // The take may belong to a later edit (lock toggled, undo).
+                            // Discard it rather than let a later lock-on render compose
+                            // from a take that did not produce this audio.
+                            var cachedTake = DiffSingerTakeStore.TryLoad(takeKey);
+                            if (cachedTake != null && cachedTake.WavFile != wavName) {
+                                DiffSingerTakeStore.Delete(takeKey);
+                            }
+                        }
                     }
                     if (result.samples == null) {
                         try {
