@@ -187,6 +187,8 @@ namespace OpenUtau.Core {
             Assert.Equal(a, b);
             Assert.NotEqual(a, DiffSingerTakeStore.ComputePreserveHash(new[] { (10, 21) }));
             Assert.Equal(0UL, DiffSingerTakeStore.ComputePreserveHash(null));
+            Assert.Equal(0UL, DiffSingerTakeStore.ComputePreserveHash(new[] { (100, 200) }, 0, 50));
+            Assert.Equal(a, DiffSingerTakeStore.ComputePreserveHash(new[] { (100, 200), (10, 20), (30, 40) }, 0, 50));
         }
 
         static DiffSingerTakeCondition Condition(string name, params float[] values) {

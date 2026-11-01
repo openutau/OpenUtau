@@ -146,19 +146,26 @@ namespace OpenUtau.Core.DiffSinger {
                         rerollNonce = DiffSingerTakeReroll.Consume(
                             trackNo, phraseStartTick, phraseEndTick, out rerollRanges, out rerollCreatedUtc);
                     }
+                    // Snapshot the protection once: the brush may replace the live list
+                    // while this render is in flight, and the wav name and the applied
+                    // protection must describe the same state.
+                    var preservedRanges = phrase.preservedRanges;
                     // The take-locked wav is a function of everything that shapes it:
                     // the phrase (hash), the take identity (track/start/singer/sampler)
                     // and the protection. Without these, two identical phrases or a
                     // removed protection would be served from the wrong cached audio.
                     string takeTag = takeLock
-                        ? $"-t{takeKey:x16}-p{DiffSingerTakeStore.ComputePreserveHash(phrase.preservedRanges):x16}"
+                        ? $"-t{takeKey:x16}-p{DiffSingerTakeStore.ComputePreserveHash(preservedRanges, phraseStartTick, phraseEndTick):x16}"
                         : string.Empty;
                     string generation = rerollNonce > 0 ? $"-g{rerollNonce}-s{sessionTag}" : string.Empty;
                     var wavName = $"ds-{phrase.hash:x16}{takeTag}{generation}-depth{depth:f2}-steps{steps}.wav";
                     var wavPath = Path.Join(PathManager.Inst.CachePath, wavName);
                     phrase.AddCacheFile(wavPath);
                     string progressInfo = $"Track {trackNo + 1}: {this} depth={depth:f2} steps={steps} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
-                    if (File.Exists(wavPath)) {
+                    // With the take lock on, the take is the source of truth. A cached
+                    // wav can predate the current take (lock toggled, edit undone), so
+                    // it must not short-circuit the take composition.
+                    if (!takeLock && File.Exists(wavPath)) {
                         try {
                             using (var waveStream = Wave.OpenFile(wavPath)) {
                                 result.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
@@ -169,7 +176,8 @@ namespace OpenUtau.Core.DiffSinger {
                     }
                     if (result.samples == null) {
                         try {
-                            var outcome = InvokeDiffsinger(phrase, depth, steps, cancellation, renderEvents, takeKey, rerollRanges, takeLock);
+                            var outcome = InvokeDiffsinger(phrase, depth, steps, cancellation, renderEvents,
+                                takeKey, rerollRanges, preservedRanges, takeLock);
                             result.samples = outcome.Samples;
                             if (result.samples != null) {
                                 Wave.WriteMono16Wav(wavPath, result.samples);
@@ -204,7 +212,7 @@ namespace OpenUtau.Core.DiffSinger {
         (float[]? Samples, DiffSingerTake? Take) InvokeDiffsinger(
                 RenderPhrase phrase, double depth, int steps, CancellationTokenSource cancellation,
                 RenderPhraseEvents? renderEvents, ulong takeKey, IReadOnlyList<(int start, int end)>? rerollRanges,
-                bool takeLock) {
+                IReadOnlyList<(int start, int end)>? preservedRanges, bool takeLock) {
             var singer = phrase.singer as DiffSingerSinger;
             //Check if dsconfig.yaml is correct
             if(String.IsNullOrEmpty(singer.dsConfig.vocoder) ||
@@ -551,9 +559,9 @@ namespace OpenUtau.Core.DiffSinger {
                         }
                     }
                     weights = DiffSingerTakeComposer.BuildWeights(changed, fadeFrames, totalFrames);
-                    if (phrase.preservedRanges.Count > 0) {
+                    if (preservedRanges != null && preservedRanges.Count > 0) {
                         var protect = DiffSingerTakeComposer.ToFrameRanges(
-                            phrase.preservedRanges, phrase.timeAxis, phraseStartMs, frameMs, totalFrames);
+                            preservedRanges, phrase.timeAxis, phraseStartMs, frameMs, totalFrames);
                         DiffSingerTakeComposer.ApplyProtect(weights, protect, fadeFrames);
                     }
                 }

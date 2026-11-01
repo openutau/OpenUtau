@@ -125,17 +125,25 @@ namespace OpenUtau.Core.DiffSinger {
         /// name, so painting or erasing a range cannot be served from audio that was
         /// rendered under the previous protection.
         /// </summary>
-        public static ulong ComputePreserveHash(IReadOnlyList<(int start, int end)>? ranges) {
+        public static ulong ComputePreserveHash(IReadOnlyList<(int start, int end)>? ranges,
+                int startTick = int.MinValue, int endTick = int.MaxValue) {
             if (ranges == null || ranges.Count == 0) {
                 return 0;
             }
             using var stream = new MemoryStream();
             using var writer = new BinaryWriter(stream);
+            bool any = false;
             foreach (var (start, end) in ranges.OrderBy(r => r.start).ThenBy(r => r.end)) {
-                writer.Write(start);
-                writer.Write(end);
+                int clippedStart = Math.Max(start, startTick);
+                int clippedEnd = Math.Min(end, endTick);
+                if (clippedEnd <= clippedStart) {
+                    continue;
+                }
+                writer.Write(clippedStart);
+                writer.Write(clippedEnd);
+                any = true;
             }
-            return XXH64.DigestOf(stream.ToArray());
+            return any ? XXH64.DigestOf(stream.ToArray()) : 0;
         }
 
         public static string GetFilename(ulong key) => $"{FilePrefix}{key:x16}{FileSuffix}";
