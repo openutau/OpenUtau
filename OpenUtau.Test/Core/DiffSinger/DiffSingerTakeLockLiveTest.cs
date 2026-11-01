@@ -78,7 +78,8 @@ namespace OpenUtau.Core {
                     ? Math.Min(Preferences.Default.DiffSingerDepth, singer.dsConfig.maxDepth)
                     : 1.0;
                 ulong key = DiffSingerTakeStore.ComputeKey(
-                    phrase, singer.Id, singer.dsConfig.frameMs(), singer.dsConfig.num_mel_bins,
+                    phrase, singer.Id, part.trackNo, project.timeAxis.MsPosToTickPos(phrase.positionMs),
+                    singer.dsConfig.frameMs(), singer.dsConfig.num_mel_bins,
                     depth, steps, phrase.isXsyVariant);
                 var take1 = DiffSingerTakeStore.TryLoad(key);
                 Assert.NotNull(take1);

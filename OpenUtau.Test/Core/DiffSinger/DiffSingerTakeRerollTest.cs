@@ -36,6 +36,19 @@ namespace OpenUtau.Core {
         }
 
         [Fact]
+        public void RestorePutsTheRequestBackForRetry() {
+            DiffSingerTakeReroll.Clear();
+            DiffSingerTakeReroll.Request(0, new[] { (0, 100) });
+            int nonce = DiffSingerTakeReroll.Consume(0, 0, 100, out var ranges);
+            Assert.True(nonce > 0);
+
+            DiffSingerTakeReroll.Restore(0, nonce, ranges);
+
+            Assert.Equal(nonce, DiffSingerTakeReroll.Consume(0, 0, 100, out var retryRanges));
+            Assert.Equal(new[] { (0, 100) }, retryRanges);
+        }
+
+        [Fact]
         public void RequestOnlyMatchesItsTrack() {
             DiffSingerTakeReroll.Clear();
             DiffSingerTakeReroll.Request(3, new[] { (0, 100) });

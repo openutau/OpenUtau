@@ -52,9 +52,15 @@ namespace OpenUtau.Core.DiffSinger {
         /// </summary>
         public static int Consume(int trackNo, int phraseStartTick, int phraseEndTick,
                 out List<(int start, int end)>? ranges) {
+            return Consume(trackNo, phraseStartTick, phraseEndTick, out ranges, out _);
+        }
+
+        public static int Consume(int trackNo, int phraseStartTick, int phraseEndTick,
+                out List<(int start, int end)>? ranges, out DateTime createdUtc) {
             lock (gate) {
                 Purge();
                 ranges = null;
+                createdUtc = DateTime.UtcNow;
                 int nonce = 0;
                 for (int i = requests.Count - 1; i >= 0; i--) {
                     var request = requests[i];
@@ -71,6 +77,9 @@ namespace OpenUtau.Core.DiffSinger {
                     ranges ??= new List<(int, int)>();
                     ranges.Add((start, end));
                     nonce = Math.Max(nonce, request.Nonce);
+                    if (request.CreatedUtc < createdUtc) {
+                        createdUtc = request.CreatedUtc;
+                    }
 
                     // Consume only this phrase's slice. The remainders still apply to
                     // other phrases covered by the same request.
@@ -83,6 +92,36 @@ namespace OpenUtau.Core.DiffSinger {
                     }
                 }
                 return nonce;
+            }
+        }
+
+        /// <summary>
+        /// Puts a consumed request back when the render that took it was cancelled or
+        /// failed, so a re-roll is never silently lost.
+        /// </summary>
+        public static void Restore(int trackNo, int nonce, IEnumerable<(int start, int end)>? ranges) {
+            Restore(trackNo, nonce, DateTime.UtcNow, ranges);
+        }
+
+        public static void Restore(int trackNo, int nonce, DateTime createdUtc,
+                IEnumerable<(int start, int end)>? ranges) {
+            if (nonce == 0 || ranges == null) {
+                return;
+            }
+            lock (gate) {
+                Purge();
+                foreach (var (start, end) in ranges) {
+                    if (end <= start) {
+                        continue;
+                    }
+                    requests.Add(new RerollRequest {
+                        TrackNo = trackNo,
+                        StartTick = start,
+                        EndTick = end,
+                        Nonce = nonce,
+                        CreatedUtc = createdUtc,
+                    });
+                }
             }
         }
 

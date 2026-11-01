@@ -131,16 +131,18 @@ namespace OpenUtau.Core.DiffSinger {
                     // The take is stored on every render, even while the lock is off, so
                     // switching the lock on later can still keep the audio that was already
                     // rendered. Only using it (and rerolling) is gated by the preference.
+                    int phraseStartTick = phrase.timeAxis.MsPosToTickPos(phrase.positionMs);
+                    int phraseEndTick = phrase.timeAxis.MsPosToTickPos(phrase.endMs);
                     ulong takeKey = DiffSingerTakeStore.ComputeKey(
-                        phrase, singer.Id, singer.dsConfig.frameMs(), singer.dsConfig.num_mel_bins,
-                        depth, steps, phrase.isXsyVariant);
+                        phrase, singer.Id, trackNo, phraseStartTick, singer.dsConfig.frameMs(),
+                        singer.dsConfig.num_mel_bins, depth, steps, phrase.isXsyVariant);
                     phrase.AddCacheFile(DiffSingerTakeStore.GetFilename(takeKey));
                     int rerollNonce = 0;
                     List<(int start, int end)>? rerollRanges = null;
+                    DateTime rerollCreatedUtc = default;
                     if (takeLock) {
-                        int phraseStartTick = phrase.timeAxis.MsPosToTickPos(phrase.positionMs);
-                        int phraseEndTick = phrase.timeAxis.MsPosToTickPos(phrase.endMs);
-                        rerollNonce = DiffSingerTakeReroll.Consume(trackNo, phraseStartTick, phraseEndTick, out rerollRanges);
+                        rerollNonce = DiffSingerTakeReroll.Consume(
+                            trackNo, phraseStartTick, phraseEndTick, out rerollRanges, out rerollCreatedUtc);
                     }
                     string generation = rerollNonce > 0 ? $"-g{rerollNonce}" : string.Empty;
                     var wavName = $"ds-{phrase.hash:x16}{generation}-depth{depth:f2}-steps{steps}.wav";
@@ -157,14 +159,23 @@ namespace OpenUtau.Core.DiffSinger {
                         }
                     }
                     if (result.samples == null) {
-                        var outcome = InvokeDiffsinger(phrase, depth, steps, cancellation, renderEvents, takeKey, rerollRanges, takeLock);
-                        result.samples = outcome.Samples;
-                        if (result.samples != null) {
-                            Wave.WriteMono16Wav(wavPath, result.samples);
-                            if (outcome.Take != null) {
-                                outcome.Take.WavFile = wavName;
-                                DiffSingerTakeStore.Save(outcome.Take);
+                        try {
+                            var outcome = InvokeDiffsinger(phrase, depth, steps, cancellation, renderEvents, takeKey, rerollRanges, takeLock);
+                            result.samples = outcome.Samples;
+                            if (result.samples != null) {
+                                Wave.WriteMono16Wav(wavPath, result.samples);
+                                if (outcome.Take != null) {
+                                    outcome.Take.WavFile = wavName;
+                                    DiffSingerTakeStore.Save(outcome.Take);
+                                }
+                            } else {
+                                // Cancelled before the sample committed: keep the re-roll
+                                // request so the next render still honours it.
+                                DiffSingerTakeReroll.Restore(trackNo, rerollNonce, rerollCreatedUtc, rerollRanges);
                             }
+                        } catch {
+                            DiffSingerTakeReroll.Restore(trackNo, rerollNonce, rerollCreatedUtc, rerollRanges);
+                            throw;
                         }
                     }
                     if (result.samples != null) {

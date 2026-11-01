@@ -75,7 +75,9 @@ namespace OpenUtau.Core.DiffSinger {
     /// </summary>
     internal static class DiffSingerTakeStore {
         const string Magic = "DSTAKE2";
-        const int Version = 1;
+        // Bumped when the key layout changes. Old take files are unreachable anyway
+        // (their keys differ) and are swept by the age cleanup.
+        const int Version = 2;
         const int MemoryCapacity = 8;
         const string FilePrefix = "ds-take-";
         const string FileSuffix = ".take";
@@ -86,26 +88,30 @@ namespace OpenUtau.Core.DiffSinger {
         static bool cleanedUp;
 
         /// <summary>
-        /// Structural identity of a phrase: who sings it, with which sampler, and
-        /// exactly which phones at which times. Curves, expression values and the
-        /// session timestamp are deliberately absent, so a take survives edits and
-        /// reloads. Model files are hashed into the take and checked on load, so a
-        /// swapped voicebank still invalidates it.
+        /// Structural identity of a phrase: who sings it, where it starts, with which
+        /// sampler, and exactly which phones at which times. The track and absolute
+        /// start tick keep two identical phrases (same lyrics and timing, e.g. a
+        /// repeated chorus) from sharing one take and deleting each other's audio.
+        /// Curves, expression values and the session timestamp are deliberately absent,
+        /// so a take survives edits and reloads. Model files are hashed into the take
+        /// and checked on load, so a swapped voicebank still invalidates it.
         /// </summary>
         public static ulong ComputeKey(
-                RenderPhrase phrase, string singerId,
+                RenderPhrase phrase, string singerId, int trackNo, int phraseStartTick,
                 float frameMs, int bins, double depth, int steps, bool xsyVariant) {
             using var stream = new MemoryStream();
             using var writer = new BinaryWriter(stream);
             writer.Write(Version);
             writer.Write(singerId ?? string.Empty);
+            writer.Write(trackNo);
+            writer.Write(phraseStartTick);
             writer.Write(frameMs);
             writer.Write(bins);
             writer.Write(depth);
             writer.Write(steps);
             writer.Write(xsyVariant);
             writer.Write(phrase.phones.Length);
-            // Relative to the phrase so moving a part does not throw the take away.
+            // Phones are relative to the phrase; track + start tick pin the phrase.
             foreach (var phone in phrase.phones) {
                 writer.Write(phone.phoneme ?? string.Empty);
                 writer.Write(phone.positionMs - phrase.positionMs);
