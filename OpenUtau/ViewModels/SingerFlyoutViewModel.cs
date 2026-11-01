@@ -146,11 +146,14 @@ namespace OpenUtau.App.ViewModels {
         private IReadOnlyList<USingerType> availableTypes = Array.Empty<USingerType>();
 
         public SingerFlyoutViewModel(Func<USinger?> getCurrentSinger, ICommand selectSingerCommand) {
+            
             this.getCurrentSinger = getCurrentSinger;
             this.selectSingerCommand = selectSingerCommand;
             Rebuild();
             this.WhenAnyValue(x => x.SearchText).Subscribe(_ => ApplyFilters());
-            this.WhenAnyValue(x => x.TypeFilter).Subscribe(_ => ApplyTypeFilter());
+            this.WhenAnyValue(x => x.TypeFilter, t => t.HasValue ? (int)t.Value : -1)
+                .Subscribe(_ => ApplyTypeFilter());
+            
         }
 
         public void Rebuild() {
