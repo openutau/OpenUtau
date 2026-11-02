@@ -1900,6 +1900,16 @@ namespace OpenUtau.App.Views {
         async Task SplitPart(UPart part) {
             int tick = DocManager.Inst.playPosTick;
             if (part.position >= tick || part.End <= tick) return;
+            if (part is UWavePart wavePart) {
+                var project = DocManager.Inst.Project;
+                var (first, second) = wavePart.Split(project, tick);
+                DocManager.Inst.StartUndoGroup("command.part.edit");
+                DocManager.Inst.ExecuteCmd(new RemovePartCommand(project, wavePart));
+                DocManager.Inst.ExecuteCmd(new AddPartCommand(project, first));
+                DocManager.Inst.ExecuteCmd(new AddPartCommand(project, second));
+                DocManager.Inst.EndUndoGroup();
+                return;
+            }
             if (part is not UVoicePart vp) return;
             var notesInTheWay = vp.notes.Where(n => (n.position < tick - vp.position) && (n.End > tick - vp.position));
             if (notesInTheWay.Any()) {

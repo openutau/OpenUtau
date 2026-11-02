@@ -103,11 +103,11 @@ namespace OpenUtau.App.Controls {
             set { SetAndRaise(SelectedProperty, ref selected, value); }
         }
         public double FadeIn {
-            get { return fadeIn * TickWidth; }
+            get { return Math.Clamp(fadeIn * TickWidth, 0, Math.Max(0, Bounds.Width - 6)); }
             set { SetAndRaise(FadeInProperty, ref fadeIn, value); }
         }
         public double FadeOut {
-            get { return Width - (fadeOut * TickWidth); }
+            get { return Math.Clamp(Bounds.Width - fadeOut * TickWidth, Math.Min(6, Bounds.Width), Bounds.Width); }
             set { SetAndRaise(FadeOutProperty, ref fadeOut, value); }
         }
         public double PianoRollViewTickOffset {
@@ -224,8 +224,8 @@ namespace OpenUtau.App.Controls {
         public void Refersh() {
             Text = part.DisplayName;
             if (part is UWavePart wavePart) {
-                FadeIn = wavePart.fadein;
-                FadeOut = wavePart.fadeout;
+                FadeIn = Math.Clamp(wavePart.fadein - wavePart.fadeinOffset, 0, Math.Max(0, part.Duration));
+                FadeOut = Math.Clamp(wavePart.fadeout - wavePart.fadeoutOffset, 0, Math.Max(0, part.Duration));
             }
             InvalidateWaveform();
         }
@@ -318,21 +318,7 @@ namespace OpenUtau.App.Controls {
                 } catch (Exception e) {
                     Log.Error(e, "failed to draw waveform");
                 }
-                // Fade
-                var brush = Brushes.White;
-                var pen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
-                using (var state = context.PushTransform(Matrix.CreateTranslation(FadeIn, 0))) {
-                    context.DrawGeometry(brush, pen, pointGeometry);
-                }
-                if (wavePart.fadein > 0) {
-                    context.DrawLine(fadePen, new Point(2, Height - 2), new Point(FadeIn + 1, 2));
-                }
-                using (var state = context.PushTransform(Matrix.CreateTranslation(FadeOut - 6, 0))) {
-                    context.DrawGeometry(brush, pen, pointGeometry);
-                }
-                if (wavePart.fadeout > 0) {
-                    context.DrawLine(fadePen, new Point(Width - 1, Height - 2), new Point(FadeOut, 2));
-                }
+                DrawWaveFades(context, wavePart);
             }
 
             // Text
@@ -340,6 +326,42 @@ namespace OpenUtau.App.Controls {
             using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
                 context.DrawRectangle(Brushes.Transparent, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
                 textLayout.Draw(context, new Point());
+            }
+        }
+
+        private void DrawWaveFades(DrawingContext context, UWavePart wavePart) {
+            var pen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
+            using var clip = context.PushClip(new Rect(Bounds.Size));
+            using (context.PushTransform(Matrix.CreateTranslation(FadeIn, 0))) {
+                context.DrawGeometry(Brushes.White, pen, pointGeometry);
+            }
+            using (context.PushTransform(Matrix.CreateTranslation(FadeOut - 6, 0))) {
+                context.DrawGeometry(Brushes.White, pen, pointGeometry);
+            }
+            DrawFade(-wavePart.fadeinOffset, wavePart.fadein - wavePart.fadeinOffset, true);
+            DrawFade(wavePart.Duration + wavePart.fadeoutOffset - wavePart.fadeout,
+                wavePart.Duration + wavePart.fadeoutOffset, false);
+
+            void DrawFade(int start, int end, bool fadeIn) {
+                int left = Math.Max(0, start);
+                int right = Math.Min(wavePart.Duration, end);
+                if (right <= left) {
+                    return;
+                }
+                var timeAxis = Core.DocManager.Inst.Project.timeAxis;
+                double startMs = timeAxis.TickPosToMsPos(wavePart.position + start);
+                double lengthMs = timeAxis.MsBetweenTickPos(wavePart.position + start, wavePart.position + end);
+                if (lengthMs <= 0) {
+                    return;
+                }
+                Point PointAt(int tick) {
+                    double gain = Math.Clamp((timeAxis.TickPosToMsPos(wavePart.position + tick) - startMs) / lengthMs, 0, 1);
+                    if (!fadeIn) {
+                        gain = 1 - gain;
+                    }
+                    return new Point(tick * TickWidth, 2 + (1 - gain) * Math.Max(0, Height - 4));
+                }
+                context.DrawLine(fadePen, PointAt(left), PointAt(right));
             }
         }
 

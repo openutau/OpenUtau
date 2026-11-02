@@ -428,6 +428,10 @@ namespace OpenUtau.Core.Ustx {
         [YamlMember(Order = 103)] public int trim;
         [YamlMember(Order = 104)] public int fadein;
         [YamlMember(Order = 105)] public int fadeout;
+        // Tick distances to the original fade-in start / fade-out end outside
+        // this part. Splitting keeps the complete envelope, including its slope.
+        [YamlMember(Order = 106, DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)] public int fadeinOffset;
+        [YamlMember(Order = 107, DefaultValuesHandling = DefaultValuesHandling.OmitDefaults)] public int fadeoutOffset;
 
         [YamlIgnore]
         public override string DisplayName => Missing ? $"[Missing] {name}" : name;
@@ -462,15 +466,72 @@ namespace OpenUtau.Core.Ustx {
         }
 
         public override UPart Clone() {
-            var part = new UWavePart() {
-                Id = Id,
+            var part = CopyWithAudio();
+            part.Id = Id;
+            return part;
+        }
+
+        /// <summary>
+        /// Splits at an absolute project tick without changing the source part or
+        /// decoding the file again. Both parts retain the same source-file origin.
+        /// </summary>
+        public (UWavePart first, UWavePart second) Split(UProject project, int tick) {
+            if (tick <= position || tick >= End) {
+                throw new ArgumentOutOfRangeException(nameof(tick));
+            }
+            var first = CopyWithAudio();
+            var second = CopyWithAudio();
+            first.trim += End - tick;
+            first.fadeoutOffset += End - tick;
+            second.position = tick;
+            second.skip += tick - position;
+            second.fadeinOffset += tick - position;
+            first.UpdateDuration(project);
+            second.UpdateDuration(project);
+            return (first, second);
+        }
+
+        UWavePart CopyWithAudio() {
+            var part = new UWavePart {
+                name = name,
+                comment = comment,
+                trackNo = trackNo,
+                position = position,
                 _filePath = _filePath,
                 relativePath = relativePath,
+                fileDurationMs = fileDurationMs,
+                Missing = Missing,
+                duration = duration,
                 skip = skip,
                 trim = trim,
+                fadein = fadein,
+                fadeout = fadeout,
+                fadeinOffset = fadeinOffset,
+                fadeoutOffset = fadeoutOffset,
+                channels = channels,
             };
-            part.Load(DocManager.Inst.Project);
+            lock (loadLockObj) {
+                part.sampleRate = sampleRate;
+                part.Samples = Samples;
+                part.Peaks = CopyAudioWhenReady(part, Peaks);
+            }
             return part;
+        }
+
+        async Task<Format.WavePeaks> CopyAudioWhenReady(UWavePart part, Task<Format.WavePeaks> peaksTask) {
+            var peaks = peaksTask == null ? null : await peaksTask.ConfigureAwait(false);
+            float[] samples;
+            int rate;
+            lock (loadLockObj) {
+                samples = Samples;
+                rate = sampleRate;
+            }
+            lock (part.loadLockObj) {
+                // Playback treats a non-null Samples buffer as ready.
+                part.sampleRate = rate;
+                part.Samples = samples;
+            }
+            return peaks!; // Missing parts have no waveform.
         }
 
         private readonly object loadLockObj = new object();
@@ -539,6 +600,25 @@ namespace OpenUtau.Core.Ustx {
             Load(project);
         }
 
+        int GetSourceFrameAtTick(UProject project, int tick) {
+            if (tick == End + trim) {
+                return Samples.Length / channels;
+            }
+            int fileStartFrame = (int)(project.timeAxis.TickPosToMsPos(position - skip) * sampleRate / 1000);
+            return (int)(project.timeAxis.TickPosToMsPos(tick) * sampleRate / 1000) - fileStartFrame;
+        }
+
+        /// <summary>The current part's source frames, before applying fades.</summary>
+        internal (int startFrame, int endFrame) GetSampleRange(UProject project) {
+            int totalFrames = Samples.Length / channels;
+            // Quantize on the playback timeline before converting to source frames.
+            // Both sides of a split then meet at the same SampleSlot boundary.
+            // Subtracting a rounded tail length can overlap or omit samples.
+            int firstFrame = Math.Clamp(GetSourceFrameAtTick(project, position), 0, totalFrames);
+            int endFrame = trim == 0 ? totalFrames : Math.Clamp(GetSourceFrameAtTick(project, End), firstFrame, totalFrames);
+            return (firstFrame, endFrame);
+        }
+
         /// <summary>
         /// The wave part's placement and trimmed pcm (fades applied to a copy; the
         /// document's <see cref="Samples"/> is never mutated). Used by the slot-based
@@ -547,29 +627,33 @@ namespace OpenUtau.Core.Ustx {
         public (double offsetMs, double estimatedLengthMs, int channels, float[] pcm) GetTrimmedSamples(UProject project) {
             double offsetMs = project.timeAxis.TickPosToMsPos(position);
             double estimatedLengthMs = project.timeAxis.TickPosToMsPos(End) - offsetMs;
-            int skipCount = (int)(GetSkipMs(project) * sampleRate / 1000) * channels;
-            int trimCount = (int)(GetTrimMs(project) * sampleRate / 1000) * channels;
-            int remainingCount = Samples.Length - skipCount - trimCount;
+            var (firstFrame, endFrame) = GetSampleRange(project);
+            int remainingCount = (endFrame - firstFrame) * channels;
             if (remainingCount <= 0) {
-                return (offsetMs, estimatedLengthMs, channels, new float[0]);
+                return (offsetMs, estimatedLengthMs, channels, Array.Empty<float>());
             }
             float[] trimmedSamples = new float[remainingCount];
-            Array.Copy(Samples, skipCount, trimmedSamples, 0, remainingCount);
+            Array.Copy(Samples, firstFrame * channels, trimmedSamples, 0, remainingCount);
 
-            int fadeinFrames = (int)(project.timeAxis.MsBetweenTickPos(position, position + fadein) * sampleRate / 1000);
-            for (int i = 0; i < fadeinFrames && i * channels < remainingCount; i++) {
-                float gain = (float)i / fadeinFrames;
-                for (int j = 0; j < channels; j++) {
-                    trimmedSamples[i * channels + j] *= gain;
+            int fadeinStart = GetSourceFrameAtTick(project, position - fadeinOffset);
+            int fadeinEnd = GetSourceFrameAtTick(project, position - fadeinOffset + fadein);
+            int fadeoutEnd = GetSourceFrameAtTick(project, End + fadeoutOffset);
+            int fadeoutStart = GetSourceFrameAtTick(project, End + fadeoutOffset - fadeout);
+            if (fadein > 0 && fadeinEnd > fadeinStart) {
+                for (int frame = firstFrame; frame < Math.Min(endFrame, fadeinEnd); frame++) {
+                    float gain = Math.Clamp((float)(frame - fadeinStart) / (fadeinEnd - fadeinStart), 0, 1);
+                    int index = (frame - firstFrame) * channels;
+                    for (int channel = 0; channel < channels; channel++) {
+                        trimmedSamples[index + channel] *= gain;
+                    }
                 }
             }
-            int fadeoutFrames = (int)(project.timeAxis.MsBetweenTickPos(End - fadeout, End) * sampleRate / 1000);
-            for (int i = 0; i < fadeoutFrames && i * channels < remainingCount; i++) {
-                float gain = (float)i / fadeoutFrames;
-                for (int j = 0; j < channels; j++) {
-                    int targetIdx = remainingCount - 1 - (i * channels + (channels - 1 - j));
-                    if (targetIdx >= 0) {
-                        trimmedSamples[targetIdx] *= gain;
+            if (fadeout > 0 && fadeoutEnd > fadeoutStart) {
+                for (int frame = Math.Max(firstFrame, fadeoutStart); frame < endFrame; frame++) {
+                    float gain = Math.Clamp((float)(fadeoutEnd - 1 - frame) / (fadeoutEnd - fadeoutStart), 0, 1);
+                    int index = (frame - firstFrame) * channels;
+                    for (int channel = 0; channel < channels; channel++) {
+                        trimmedSamples[index + channel] *= gain;
                     }
                 }
             }
