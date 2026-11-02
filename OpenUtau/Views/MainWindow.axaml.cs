@@ -1759,6 +1759,8 @@ namespace OpenUtau.App.Views {
         /// <summary>Runs one transcription pass. Throws on cancellation or a missing GAME/RMVPE package.</summary>
         async Task RunTranscribe(UWavePart wavePart, TranscribeViewModel transcribeVm, CancellationTokenSource cts,
                 Func<bool> confirmLongChunk, string midiText, string pitchText, string partName, MessageBox? msgbox) {
+            var project = DocManager.Inst.Project;
+            await wavePart.Peaks.WaitAsync(cts.Token);
             UVoicePart? voicePart;
             if (transcribeVm.SelectedAlgorithm == TranscribeAlgorithm.SOME) {
                 voicePart = await Task.Run(() => {
@@ -1767,7 +1769,7 @@ namespace OpenUtau.App.Views {
                             if (cts.Token.IsCancellationRequested) {
                                 return null;
                             }
-                            return some.Transcribe(DocManager.Inst.Project, wavePart,
+                            return some.Transcribe(project, wavePart,
                                 null, null,
                                 confirmLongChunk,
                                 (processedS, totalS) => {
@@ -1785,7 +1787,7 @@ namespace OpenUtau.App.Views {
                             if (cts.Token.IsCancellationRequested) {
                                 return null;
                             }
-                            return game.Transcribe(DocManager.Inst.Project, wavePart,
+                            return game.Transcribe(project, wavePart,
                                 gameOptions, batchingStrategy,
                                 confirmLongChunk,
                                 (processedS, totalS) => {
@@ -1804,12 +1806,11 @@ namespace OpenUtau.App.Views {
                         if (cts.Token.IsCancellationRequested) {
                             return null;
                         }
-                        return rmvpe.Infer(wavePart);
+                        return rmvpe.Infer(project, wavePart);
                     }
                 });
             }
             if (voicePart != null) {
-                var project = DocManager.Inst.Project;
                 var track = new UTrack(project);
                 track.TrackNo = project.tracks.Count;
                 voicePart.trackNo = track.TrackNo;
@@ -1819,8 +1820,7 @@ namespace OpenUtau.App.Views {
                 if (rmvpeResult != null) {
                     var wavePosMs = project.timeAxis.TickPosToMsPos(wavePart.position);
                     var voicePosMs = project.timeAxis.TickPosToMsPos(voicePart.position);
-                    var skipMs = wavePart.GetSkipMs(project);
-                    rmvpeResult.ApplyToPart(project, voicePart, wavePosMs - voicePosMs - skipMs);
+                    rmvpeResult.ApplyToPart(project, voicePart, wavePosMs - voicePosMs);
                 }
                 DocManager.Inst.EndUndoGroup();
             }
