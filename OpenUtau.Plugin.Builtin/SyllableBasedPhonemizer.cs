@@ -471,16 +471,9 @@ namespace OpenUtau.Plugin.Builtin {
                     validatedAlias = ValidateAliasIfNeeded(validatedAlias, tone + toneShift, color);
                     string mapped = MapPhoneme(validatedAlias, tone + toneShift, color, alt, singer);
 
-                    // Voice color fallback: if the alias is not mapped in the requested voice color, fall back to default bank ("")
-                    if (mapped == validatedAlias && !string.IsNullOrEmpty(color)) {
-                        mapped = MapPhoneme(validatedAlias, tone + toneShift, "", alt, singer);
-                    }
-
                     if (!string.IsNullOrEmpty(alt) && alt != "0" && mapped == validatedAlias) {
                         if (singer.TryGetMappedOto($"{validatedAlias}{alt}", tone + toneShift, color, out var altOto)) {
                             mapped = altOto.Alias;
-                        } else if (singer.TryGetMappedOto($"{validatedAlias}{alt}", tone + toneShift, "", out var defaultAltOto)) {
-                            mapped = defaultAltOto.Alias;
                         }
                     }
 
@@ -1516,12 +1509,19 @@ namespace OpenUtau.Plugin.Builtin {
                 return ValidateAlias(alias, tone);
             }
 
-            string colorValidated = ValidateAliasInternal(alias, tone, color);
+            // Apply child phonemizer's ValidateAlias override first so custom substitutions (e.g. 6r -> 3) take effect
+            string childValidated = ValidateAlias(alias, tone);
+            if (HasOto(childValidated, tone, color)) {
+                return childValidated;
+            }
+
+            // Try color-scoped fallbacks on the child-validated alias
+            string colorValidated = ValidateAliasInternal(childValidated, tone, color);
             if (HasOto(colorValidated, tone, color)) {
                 return colorValidated;
             }
 
-            return ValidateAlias(alias, tone);
+            return childValidated;
         }
 
         private string ValidateAliasInternal(string alias, int tone, string color) {
@@ -1662,16 +1662,10 @@ namespace OpenUtau.Plugin.Builtin {
             var validatedAlias = ValidateAliasIfNeeded(alias, tone + toneShift, color);
             var mappedAlias = MapPhoneme(validatedAlias, tone + toneShift, color, alt, singer);
 
-            if (mappedAlias == validatedAlias && !string.IsNullOrEmpty(color)) {
-                mappedAlias = MapPhoneme(validatedAlias, tone + toneShift, "", alt, singer);
-            }
-
             // Direct OTO lookup fallback for non-subbank numeric alternates
             if (!string.IsNullOrEmpty(alt) && alt != "0" && string.Equals(mappedAlias, validatedAlias, StringComparison.Ordinal)) {
                 if (singer.TryGetMappedOto($"{validatedAlias}{alt}", tone + toneShift, color, out var altOto)) {
                     mappedAlias = altOto.Alias;
-                } else if (singer.TryGetMappedOto($"{validatedAlias}{alt}", tone + toneShift, "", out var defaultAltOto)) {
-                    mappedAlias = defaultAltOto.Alias;
                 }
             }
 
@@ -1877,63 +1871,19 @@ namespace OpenUtau.Plugin.Builtin {
 
             try {
                 lock (currentSinger) {
-                    if (!currentSinger.Loaded) {
+                    if (!currentSinger.Loaded || currentSinger.Subbanks == null) {
                         return false;
                     }
 
-                    // Direct subbank check if alias is already an exact oto entry
-                    if (currentSinger.TryGetOto(alias, out var directOto)) {
-                        if (currentSinger.Subbanks != null) {
-                            bool hasColorSubbank = false;
-                            bool matches = false;
-                            foreach (var subbank in currentSinger.Subbanks) {
-                                if (string.Equals(subbank.Color, color, StringComparison.OrdinalIgnoreCase)) {
-                                    hasColorSubbank = true;
-                                    bool hasPrefix = !string.IsNullOrEmpty(subbank.Prefix);
-                                    bool hasSuffix = !string.IsNullOrEmpty(subbank.Suffix);
-
-                                    bool prefixMatches = !hasPrefix || directOto.Alias.Contains(subbank.Prefix, StringComparison.Ordinal);
-                                    bool suffixMatches = !hasSuffix || directOto.Alias.Contains(subbank.Suffix, StringComparison.Ordinal);
-
-                                    if (prefixMatches && suffixMatches) {
-                                        matches = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (hasColorSubbank && matches) return true;
-                        }
-                    }
-
-                    if (!currentSinger.TryGetMappedOto(alias, tone, color, out var colorOto)) {
-                        return false;
-                    }
-
-                    if (currentSinger.Subbanks != null) {
-                        bool hasColorSubbank = false;
-                        bool matches = false;
-                        foreach (var subbank in currentSinger.Subbanks) {
-                            if (string.Equals(subbank.Color, color, StringComparison.OrdinalIgnoreCase)) {
-                                hasColorSubbank = true;
-                                bool hasPrefix = !string.IsNullOrEmpty(subbank.Prefix);
-                                bool hasSuffix = !string.IsNullOrEmpty(subbank.Suffix);
-
-                                bool prefixMatches = !hasPrefix || colorOto.Alias.Contains(subbank.Prefix, StringComparison.Ordinal);
-                                bool suffixMatches = !hasSuffix || colorOto.Alias.Contains(subbank.Suffix, StringComparison.Ordinal);
-
-                                if (prefixMatches && suffixMatches) {
-                                    matches = true;
-                                    break;
-                                }
+                    foreach (var subbank in currentSinger.Subbanks) {
+                        if (subbank.Color == color && (subbank.toneSet == null || subbank.toneSet.Contains(tone))) {
+                            string fullAlias = $"{subbank.Prefix}{alias}{subbank.Suffix}";
+                            if (currentSinger.TryGetOto(fullAlias, out _)) {
+                                return true;
                             }
                         }
-                        if (!hasColorSubbank) {
-                            return false;
-                        }
-                        return matches;
                     }
-
-                    return true;
+                    return false;
                 }
             } catch (InvalidOperationException ex) {
                 Log.Error(ex, $"Concurrency race detected in HasOto: singer '{currentSinger.Id}' was modified while querying alias '{alias}' at tone {tone} with color '{color}'.");
