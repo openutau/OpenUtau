@@ -579,7 +579,7 @@ namespace OpenUtau.Core.Ustx {
             UpdateDuration(project);
         }
 
-        private void UpdateDuration(UProject project) {
+        internal void UpdateDuration(UProject project) {
             double fileStartMs = project.timeAxis.TickPosToMsPos(position - skip);
             int fileEnd = project.timeAxis.MsPosToTickPos(fileStartMs + fileDurationMs);
             duration = fileEnd - trim - position;

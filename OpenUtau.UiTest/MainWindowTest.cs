@@ -419,5 +419,122 @@ namespace OpenUtau.UiTest {
                 Assert.Contains(window.FindResource("tracks.removefromrecent"), MenuHeaders(singers[5]));
             }));
         }
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void CroppedAudioRightEdgeBurstKeepsGeometryValid(bool changingTempo) {
+            string audioPath = Path.Combine(Path.GetTempPath(), $"OpenUtau-wave-resize-{Guid.NewGuid():N}.wav");
+            try {
+                Core.Format.Wave.WriteMono16Wav(audioPath, new float[44100 * 6]);
+                WithMainWindow($"{nameof(CroppedAudioRightEdgeBurstKeepsGeometryValid)}-{changingTempo}", window => {
+                    var document = DocManager.Inst;
+                    // The headless app shares DocManager across test cases.
+                    document.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
+                    Click(window, FindButtonWithText(window, "welcome.new"));
+                    var viewModel = ViewModelOf(window);
+                    var tracks = viewModel.TracksViewModel;
+                    var project = document.Project;
+                    if (changingTempo) {
+                        project.tempos[0].bpm = 137;
+                        project.tempos.Add(new UTempo(960, 71));
+                        project.tempos.Add(new UTempo(2200, 190));
+                        project.timeAxis.BuildSegments(project);
+                    }
+                    viewModel.ImportAudio(audioPath);
+                    var original = Assert.Single(project.parts.OfType<UWavePart>());
+                    original.Peaks.GetAwaiter().GetResult();
+                    int cut = original.position + original.Duration / 2;
+                    var first = new UWavePart {
+                        FilePath = original.FilePath,
+                        position = original.position,
+                        trackNo = original.trackNo,
+                        skip = original.skip,
+                        trim = original.trim + original.End - cut,
+                    };
+                    var second = new UWavePart {
+                        FilePath = original.FilePath,
+                        position = cut,
+                        trackNo = original.trackNo,
+                        skip = original.skip + cut - original.position,
+                        trim = original.trim,
+                    };
+                    first.Load(project);
+                    second.Load(project);
+                    first.Peaks.GetAwaiter().GetResult();
+                    second.Peaks.GetAwaiter().GetResult();
+                    document.StartUndoGroup();
+                    document.ExecuteCmd(new RemovePartCommand(project, original));
+                    document.ExecuteCmd(new AddPartCommand(project, first));
+                    document.ExecuteCmd(new AddPartCommand(project, second));
+                    document.EndUndoGroup();
+                    tracks.TickWidth = 0.2;
+                    HeadlessUi.Flush();
+
+                    var canvas = Assert.IsAssignableFrom<Canvas>(window.FindControl<Canvas>("partsCanvas"));
+                    int originalEnd = first.End;
+                    int targetEnd = first.position + first.Duration / 2;
+                    Assert.True(targetEnd - first.position >= project.resolution);
+                    var firstControl = PartControls().OrderBy(Canvas.GetLeft).First();
+                    var from = firstControl.TranslatePoint(
+                        new Point(firstControl.Bounds.Width - 1, firstControl.Bounds.Height / 2), window)!.Value;
+                    var targetInCanvas = tracks.TickTrackToPoint(targetEnd, first.trackNo)
+                        + new Point(tracks.TickWidth / 4, tracks.TrackHeight / 2);
+                    var to = canvas.TranslatePoint(targetInCanvas, window)!.Value;
+                    var requestFrame = document.RequestFrame;
+                    // Multiple pointer events can arrive before the next validation frame.
+                    // Hold that frame to make the stale-duration regression deterministic.
+                    document.RequestFrame = _ => { };
+                    try {
+                        window.MouseDown(from, MouseButton.Left);
+                        for (int i = 0; i < 6; i++) {
+                            window.MouseMove(to, RawInputModifiers.LeftMouseButton);
+                            AssertValidGeometry();
+                            Assert.Equal(targetEnd, first.End);
+                        }
+                    } finally {
+                        try {
+                            window.MouseUp(to, MouseButton.Left);
+                        } finally {
+                            document.RequestFrame = requestFrame;
+                            document.FlushValidation();
+                        }
+                    }
+                    HeadlessUi.Flush();
+                    AssertValidGeometry();
+                    Assert.Equal(originalEnd, second.position);
+
+                    document.Undo();
+                    HeadlessUi.Flush();
+                    Assert.Equal(originalEnd, first.End);
+                    AssertValidGeometry();
+                    document.Redo();
+                    HeadlessUi.Flush();
+                    Assert.Equal(targetEnd, first.End);
+                    AssertValidGeometry();
+
+                    IEnumerable<Control> PartControls() => canvas.GetVisualDescendants().OfType<Control>()
+                        .Where(control => control.GetType().Name == "PartControl");
+                    void AssertValidGeometry() {
+                        var parts = project.parts.OrderBy(part => part.position).ToArray();
+                        var controls = PartControls().OrderBy(Canvas.GetLeft).ToArray();
+                        Assert.Equal(parts.Length, controls.Length);
+                        for (int i = 0; i < parts.Length; i++) {
+                            var wave = Assert.IsType<UWavePart>(parts[i]);
+                            int sourceEnd = project.timeAxis.MsPosToTickPos(
+                                project.timeAxis.TickPosToMsPos(wave.position - wave.skip) + wave.fileDurationMs);
+                            int expectedDuration = sourceEnd - wave.trim - wave.position;
+                            Assert.True(expectedDuration > 0);
+                            Assert.True(wave.skip >= 0 && wave.trim >= 0);
+                            Assert.Equal(expectedDuration, wave.Duration);
+                            Assert.Equal(wave.Duration * tracks.TickWidth, controls[i].Width, 6);
+                            Assert.Equal(tracks.TickTrackToPoint(wave.position, wave.trackNo).X, Canvas.GetLeft(controls[i]), 6);
+                        }
+                    }
+                });
+            } finally {
+                File.Delete(audioPath);
+            }
+        }
+
     }
 }

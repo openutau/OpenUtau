@@ -111,6 +111,9 @@ namespace OpenUtau.Core {
             } else {
                 part.trim -= deltaDur;
             }
+            // Commands are published before the deferred project validation.
+            // The next pointer event must see the updated resize boundaries.
+            part.UpdateDuration(project);
         }
         public override void Unexecute() {
             if (fromStart) {
@@ -119,6 +122,7 @@ namespace OpenUtau.Core {
             } else {
                 part.trim += deltaDur;
             }
+            part.UpdateDuration(project);
         }
     }
 
