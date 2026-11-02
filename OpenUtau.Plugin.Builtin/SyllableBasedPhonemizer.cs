@@ -512,23 +512,23 @@ namespace OpenUtau.Plugin.Builtin {
             }
         }
 
-        protected void CheckAndUpdateYamls(string globalFile, string singerFile, bool overwrite = false) {
+        protected void CheckAndUpdateYamls(string globalFile, string singerFile) {
             if (YamlTemplate == null) return;
 
-            string targetVersion = ReadVersionFast(YamlTemplate);
-            if (string.IsNullOrEmpty(targetVersion)) {
-                targetVersion = YamlVersion ?? "1.0"; 
-            }
+            // Prioritize child YamlVersion override, then template header version
+            string targetVersion = YamlVersion ?? ReadVersionFast(YamlTemplate);
+            // If child phonemizer doesn't specify YamlVersion and template has no version, skip auto-update
+            if (string.IsNullOrEmpty(targetVersion)) return;
 
             // Global Plugin YAML
-            UpdateYamlIfNeeded(globalFile, targetVersion, isGlobal: true, overwrite: overwrite);
+            UpdateYamlIfNeeded(globalFile, targetVersion, isGlobal: true);
             // Singer Local YAML
             if (!string.IsNullOrEmpty(singerFile)) {
-                UpdateYamlIfNeeded(singerFile, targetVersion, isGlobal: false, overwrite: overwrite);
+                UpdateYamlIfNeeded(singerFile, targetVersion, isGlobal: false);
             }
         }
 
-        private void UpdateYamlIfNeeded(string filePath, string targetVersion, bool isGlobal, bool overwrite = false) {
+        private void UpdateYamlIfNeeded(string filePath, string targetVersion, bool isGlobal) {
             if (string.IsNullOrEmpty(filePath)) return;
 
             bool isOutdated = false;
@@ -536,21 +536,17 @@ namespace OpenUtau.Plugin.Builtin {
 
             if (File.Exists(filePath)) {
                 try {
-                    if (overwrite) {
+                    if (YamlUpdateOverride) {
                         isOutdated = true;
                     } else {
                         currentVersion = ReadVersionFast(filePath);
 
-                        // If file on disk is unversioned (empty), update it to target version
                         if (string.IsNullOrEmpty(currentVersion)) {
-                            if (!string.IsNullOrEmpty(targetVersion)) {
-                                isOutdated = true;
-                            }
+                            // Outdated because targetVersion was explicitly set/bumped
+                            isOutdated = true;
                         } else if (System.Version.TryParse(currentVersion, out System.Version currV) &&
                                 System.Version.TryParse(targetVersion, out System.Version targetV)) {
-                            if (currV < targetV) {
-                                isOutdated = true;
-                            }
+                            isOutdated = currV < targetV;
                         } else if (!string.Equals(currentVersion, targetVersion, StringComparison.OrdinalIgnoreCase)) {
                             isOutdated = true;
                         }
@@ -575,7 +571,7 @@ namespace OpenUtau.Plugin.Builtin {
                 return;
             }
 
-            if (!isOutdated) return; // Exits untouched if unversioned and targetVersion == initial baseline
+            if (!isOutdated) return;
 
             bool migrated = MigrateAndWriteYaml(filePath, currentVersion, targetVersion);
             if (migrated) return;
@@ -1998,6 +1994,13 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         /// <summary>
+        /// When true, forces Yaml migration and rewrite on load regardless of targetVersion comparison (similar
+        /// behavior to the old yaml update, good for total yaml wipe so prevent errors/unnecessary entries from 
+        /// old default template when merging)
+        /// </summary>
+        protected virtual bool YamlUpdateOverride => false;
+
+        /// <summary>
         /// When true, lyrics and phonetic hints are greedily tokenized using known vowels and consonants.
         /// When false, lyrics are split strictly by spaces.
         /// </summary>
@@ -2171,10 +2174,10 @@ namespace OpenUtau.Plugin.Builtin {
                             shouldEvaluate = true;
                         }
                     } else {
-                        if (rule.where == "boundary" && isBoundary) {
-                            shouldEvaluate = true;
-                        } else if (rule.where == "all" && idx == 0) {
-                            shouldEvaluate = true;
+                        if (isBoundary && rule.FromList.Count > 1) {
+                            if (rule.where == "boundary" || rule.where == "all") {
+                                shouldEvaluate = true;
+                            }
                         }
                     }
 
