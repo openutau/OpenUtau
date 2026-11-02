@@ -14,7 +14,7 @@ namespace OpenUtau.Api {
             public string[] symbols;
         }
 
-        public bool CaseSensitive { get; set; } = true;
+        public bool CaseSensitive { get; } = true;
         
         TrieNode root;
         Dictionary<string, bool> phonemeSymbols; // (phoneme, isVowel)
