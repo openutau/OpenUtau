@@ -63,6 +63,30 @@
     <Style Selector="Border.singerTile:pointerover Border.favStar">
       <Setter Property="Opacity" Value="1"/>
     </Style>
+    <!-- Singer type filter: all chips lit while showing every type, one chip lit while filtered.
+         Plain buttons, since their lit state comes from the filter rather than from a click. -->
+    <Style Selector="Button.typeChip">
+      <Setter Property="Height" Value="20"/>
+      <Setter Property="Padding" Value="6,0"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource NeutralAccentBrushSemi}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="9"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi2}"/>
+      </Style>
+      <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
+      </Style>
+      <Style Selector="^.on /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi}"/>
+      </Style>
+      <Style Selector="^.on:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
+      </Style>
+    </Style>
     <!-- Edge grabbers lie over the grid. Shown only when there is more content on that side:
          a fade with a chevron marks the edge; hovering it scrolls that way. -->
     <Style Selector="Border.grabber">
@@ -169,6 +193,21 @@
     <TextBox Name="SearchBox" DockPanel.Dock="Top" Height="24" Padding="4,3" Margin="0,0,0,4"
              Text="{Binding SearchText}" PlaceholderText="{DynamicResource tracks.searchsinger}"
              KeyDown="SearchBoxKeyDown"/>
+    <!-- Docked above the grid, which grows to fit it, so the row never wraps however many singers there are. -->
+    <ItemsControl Name="TypeChips" DockPanel.Dock="Top" Margin="0,0,0,4" HorizontalAlignment="Left"
+                  ItemsSource="{Binding TypeChips}" IsVisible="{Binding ShowTypeFilter}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Orientation="Horizontal" Spacing="4"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:SingerTypeChipViewModel">
+          <Button Classes="typeChip" Classes.on="{Binding IsOn}" Content="{Binding Label}"
+                  ToolTip.Tip="{Binding ToolTipText}" Click="TypeChipClicked"/>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
     <Panel>
       <TextBlock IsVisible="{Binding IsEmpty}" Margin="8" HorizontalAlignment="Center" VerticalAlignment="Center"
                  Text="{DynamicResource tracks.nosinger}"/>
