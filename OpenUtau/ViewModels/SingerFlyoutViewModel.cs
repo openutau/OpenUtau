@@ -131,6 +131,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial int GridTileCount { get; set; }
 
         [Reactive] public partial bool IsEmpty { get; set; }
+        [Reactive] public partial bool CanClearSinger { get; set; }
         [Reactive] public partial bool NoMatch { get; set; }
         [Reactive] public partial string SearchText { get; set; } = string.Empty;
         public bool HasAdditionalSingersFolder =>
@@ -180,6 +181,7 @@ namespace OpenUtau.App.ViewModels {
                 TypeFilter = null;
             }
             IsEmpty = sections.Sum(section => section.Length) == 0;
+            CanClearSinger = current != null && (current.Found || !string.IsNullOrEmpty(current.Name));
             ApplyTypeFilter();
             this.RaisePropertyChanged(nameof(HasAdditionalSingersFolder));
         }
@@ -289,6 +291,11 @@ namespace OpenUtau.App.ViewModels {
         public void Select(SingerTileViewModel tile) {
             CloseRequested?.Invoke();
             selectSingerCommand.Execute(tile.Singer);
+        }
+
+        public void ClearSinger() {
+            CloseRequested?.Invoke();
+            selectSingerCommand.Execute(null);
         }
 
         public bool IsRecent(SingerTileViewModel tile) {
