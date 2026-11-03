@@ -4,6 +4,14 @@ using System.ComponentModel;
 using YamlDotNet.Serialization;
 
 namespace OpenUtau.Core.DiffSinger {
+    /// <summary>Values of DsConfig.dur_type, suggested while editing dsconfig.yaml.</summary>
+    public class DurTypeValues : IYamlValueSource {
+        public IEnumerable<YamlValue> GetValues() => new[] {
+            new YamlValue("abs", "The duration model predicts absolute phoneme durations."),
+            new YamlValue("rel", "The duration model splits each word's frame budget, so it takes word_div and word_dur."),
+        };
+    }
+
     [Serializable]
     public class RandomPitchShifting {
         [Description("Key shift range in semitones the acoustic model was trained with, as [lowest, highest]. Limits the key shift OpenUtau sends to the model.")]
@@ -70,6 +78,9 @@ namespace OpenUtau.Core.DiffSinger {
         [YamlIgnore] public double maxDepth => useContinuousAcceleration ? _maxDepth : _maxDepth / 1000.0;
         [Description("Duration model (ONNX), relative to this folder.")]
         public string dur;
+        [Description("How the duration model predicts durations: \"abs\" for absolute durations, or \"rel\" for group-aware models, which take the word divisions and word durations. If unspecified, OpenUtau probes the duration model for the word inputs.")]
+        [YamlValues(typeof(DurTypeValues))]
+        public string dur_type;
         [Description("Linguistic encoder (ONNX) of the duration, pitch or variance model, relative to this folder.")]
         public string linguistic;
         [Description("Pitch model (ONNX), relative to this folder.")]

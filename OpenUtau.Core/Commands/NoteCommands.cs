@@ -529,7 +529,7 @@ namespace OpenUtau.Core {
             var o = this.note.GetPhonemeOverride(index);
             oldDelta = o.preutterDelta ?? 0;
 
-            double max = phoneme.maxOtoPreutter - phoneme.autoPreutter;
+            double max = phoneme.maxFilePreutter - phoneme.autoPreutter;
             if (phoneme.Prev != null) {
                 if (phoneme.adjacent) {
                     if (phoneme.Prev.preutter < 5) {

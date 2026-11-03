@@ -46,7 +46,8 @@ namespace OpenUtau.Plugin.Builtin {
             public List<string> FromList {
                 get {
                     if (roma is string s) return new List<string> { s };
-                    if (roma is IEnumerable<object> list) return list.Select(x => x.ToString()).ToList();
+                    if (roma is IEnumerable<object> list) return list.Select(x => x?.ToString() ?? "").Where(x => !string.IsNullOrEmpty(x)).ToList();
+                    if (roma != null) return new List<string> { roma.ToString() };
                     return new List<string>();
                 }
             }
@@ -54,7 +55,8 @@ namespace OpenUtau.Plugin.Builtin {
             public List<string> ToList {
                 get {
                     if (kana is string s) return new List<string> { s };
-                    if (kana is IEnumerable<object> list) return list.Select(x => x.ToString()).ToList();
+                    if (kana is IEnumerable<object> list) return list.Select(x => x?.ToString() ?? "").Where(x => !string.IsNullOrEmpty(x)).ToList();
+                    if (kana != null) return new List<string> { kana.ToString() };
                     return new List<string>();
                 }
             }
@@ -88,6 +90,8 @@ namespace OpenUtau.Plugin.Builtin {
                             foreach (var entry in data.wanakana.Reverse()) {
                                 string key = string.Join("", entry.FromList);
                                 string value = string.Join(" ", entry.ToList);
+
+                                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value)) continue;
 
                                 if (!WanaKanaDictionary.ContainsKey(key)) {
                                     WanaKanaDictionary.Add(key, new List<string>());
@@ -238,7 +242,7 @@ namespace OpenUtau.Plugin.Builtin {
                             $"-{merged}", ValidateAlias($"-{merged}", syllable.tone)
                         )) {
                             hasStartAlias = true;
-                            step = i - 1;
+                            step = i; // Consumed i consonants from cluster
                             break;
                         }
                     }
@@ -251,7 +255,14 @@ namespace OpenUtau.Plugin.Builtin {
                             $"-{cc[0]}", ValidateAlias($"-{cc[0]}", syllable.tone)
                         )) {
                             hasStartAlias = true;
-                            step = 0;
+                            step = 1; // Consumed 1 consonant
+                        }
+                        // If no starting - c exists, use singular c before the hiragana one in clusters
+                        else if (cc.Length > 1 && TryAddPhoneme(phonemes, syllable.tone,
+                            cc[0], ValidateAlias(cc[0], syllable.tone)
+                        )) {
+                            hasStartAlias = true;
+                            step = 1; // Consumed 1 consonant
                         }
                     }
                 }
@@ -724,6 +735,11 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
             if (ending.IsEndingV) {
+                // If there is no previous vowel (e.g. "-" on a pure tail note), do not generate a vowel tail
+                if (string.IsNullOrEmpty(prevV) || prevV == "-") {
+                    return phonemes;
+                }
+
                 TryAddPhoneme(phonemes, ending.tone, $"{prevV} {t}", $"{prevV} R", $"{prevV}{t}",
                 $"{ValidateAlias(prevV)} {t}", $"{ValidateAlias(prevV)} R", $"{ValidateAlias(prevV)}{t}");
                 
@@ -1101,18 +1117,20 @@ namespace OpenUtau.Plugin.Builtin {
             string fallbackAlias = alias;
             var singleRules = yamlFallbacks.Where(r => r.FromList.Count == 1).ToList();
             
-            // Romaji Fallbacks
-            foreach (var rule in singleRules) {
-                string fromKey = rule.FromList[0];
-                string toValue = rule.ToList.Count > 0 ? rule.ToList[0] : fromKey;
+            // Romaji Fallbacks (do not strip if WanaKanaDictionary already defines an exact match for alias)
+            if (!WanaKanaDictionary.ContainsKey(fallbackAlias)) {
+                foreach (var rule in singleRules) {
+                    string fromKey = rule.FromList[0];
+                    string toValue = rule.ToList.Count > 0 ? rule.ToList[0] : fromKey;
 
-                if (fallbackAlias == fromKey) {
-                    fallbackAlias = toValue;
-                    break;
-                } 
-                else if (fallbackAlias.EndsWith(fromKey) && fromKey != toValue) {
-                    fallbackAlias = fallbackAlias.Substring(0, fallbackAlias.Length - fromKey.Length) + toValue;
-                    break;
+                    if (fallbackAlias == fromKey) {
+                        fallbackAlias = toValue;
+                        break;
+                    } 
+                    else if (fallbackAlias.EndsWith(fromKey) && fromKey != toValue && !WanaKanaDictionary.ContainsKey(fromKey)) {
+                        fallbackAlias = fallbackAlias.Substring(0, fallbackAlias.Length - fromKey.Length) + toValue;
+                        break;
+                    }
                 }
             }
 
@@ -1123,11 +1141,21 @@ namespace OpenUtau.Plugin.Builtin {
             while (i < fallbackAlias.Length) {
                 bool foundMatch = false;
 
+                // Priority 1: Exact case match (Ordinal) so capital letters (N, J, C, S, T, Z) are distinct from lowercase
                 var potentialRomajiKeys = WanaKanaDictionary.Keys
                     .Where(key => fallbackAlias.Length >= i + key.Length &&
                                 fallbackAlias.Substring(i, key.Length).Equals(key, StringComparison.Ordinal))
                     .OrderByDescending(key => key.Length)
                     .ToList();
+
+                // Priority 2: Case-insensitive fallback only if no exact case key exists
+                if (potentialRomajiKeys.Count == 0) {
+                    potentialRomajiKeys = WanaKanaDictionary.Keys
+                        .Where(key => fallbackAlias.Length >= i + key.Length &&
+                                    fallbackAlias.Substring(i, key.Length).Equals(key, StringComparison.OrdinalIgnoreCase))
+                        .OrderByDescending(key => key.Length)
+                        .ToList();
+                }
 
                 foreach (var romajiKey in potentialRomajiKeys) {
                     var kanaValues = WanaKanaDictionary[romajiKey];

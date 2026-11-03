@@ -45,14 +45,6 @@ namespace OpenUtau.Plugin.Builtin {
         protected override string[] GetConsonants() => consonants;
         protected override string GetDictionaryName() => "";
 
-        // For banks with missing vowels
-        private readonly Dictionary<string, string> missingVphonemes = "ax=ah,aa=ah,ae=ah,iy=ih,uh=uw,ix=ih,ux=uh,oh=ao,eu=uh,oe=ax,uy=uw,yw=uw,yx=iy,wx=uw,ea=eh,ia=iy,oa=ao,ua=uw,R=-,N=n,mm=m,ll=l".Split(',')
-                .Select(entry => entry.Split('='))
-                .Where(parts => parts.Length == 2)
-                .Where(parts => parts[0] != parts[1])
-                .ToDictionary(parts => parts[0], parts => parts[1]);
-        private bool isMissingVPhonemes = false;
-
         // For banks with missing custom consonants
         private readonly Dictionary<string, string> missingCphonemes = "nx=n,tx=t,dx=d,zh=sh,z=s,ng=n,cl=q,vf=q,dd=d,lx=l".Split(',')
                 .Select(entry => entry.Split('='))
@@ -60,14 +52,6 @@ namespace OpenUtau.Plugin.Builtin {
                 .Where(parts => parts[0] != parts[1])
                 .ToDictionary(parts => parts[0], parts => parts[1]);
         private bool isMissingCPhonemes = false;
-
-        // TIMIT symbols
-        private readonly Dictionary<string, string> timitphonemes = "axh=ax,bcl=b,dcl=d,eng=ng,gcl=g,hv=hh,kcl=k,pcl=p,tcl=t".Split(',')
-                .Select(entry => entry.Split('='))
-                .Where(parts => parts.Length == 2)
-                .Where(parts => parts[0] != parts[1])
-                .ToDictionary(parts => parts[0], parts => parts[1]);
-        private bool isTimitPhonemes = false;
 
         private readonly string[] ccvException = { "ch", "dh", "dx", "fh", "gh", "hh", "jh", "kh", "ph", "ng", "sh", "th", "vh", "wh", "zh" };
         private readonly string[] RomajiException = { "a", "e", "i", "o", "u" };
@@ -127,26 +111,10 @@ namespace OpenUtau.Plugin.Builtin {
             string[] PreviousWordCc = syllable.PreviousWordCc.Select(c => ReplacePhoneme(c, syllable.tone)).ToArray();
             int prevWordConsonantsCount = syllable.prevWordConsonantsCount;
 
-            // Check for missing vowel phonemes
-            foreach (var entry in missingVphonemes) {
-                if (!HasOto(entry.Key, syllable.tone) && !HasOto(entry.Key, syllable.tone)) {
-                    isMissingVPhonemes = true;
-                    break;
-                }
-            }
-
             // Check for missing consonant phonemes
             foreach (var entry in missingCphonemes) {
                 if (!HasOto(entry.Key, syllable.tone) && !HasOto(entry.Value, syllable.tone)) {
                     isMissingCPhonemes = true;
-                    break;
-                }
-            }
-
-            // Check for missing TIMIT phonemes
-            foreach (var entry in timitphonemes) {
-                if (!HasOto(entry.Key, syllable.tone) && !HasOto(entry.Value, syllable.tone)) {
-                    isTimitPhonemes = true;
                     break;
                 }
             }
@@ -243,6 +211,11 @@ namespace OpenUtau.Plugin.Builtin {
                     if (i == 0 && !HasOto(vc, syllable.tone)) {
                         TryAddPhoneme(phonemes, syllable.tone, AliasFormat($"{cc[0]}", "cc", syllable.tone, ""));
                         break;
+                    /// prioritize vc aliases
+                    } else if (HasOto(vc, syllable.tone) || HasOto(ValidateAlias(vc), syllable.tone)) {
+                        TryAddPhoneme(phonemes, syllable.tone, vc, ValidateAlias(vc));
+                        //TryAddPhoneme(phonemes, syllable.tone, AliasFormat($"{cc[0]}", "cc", syllable.tone, ""));
+                        break;
                         /// use vowel ending
                     } else if (diphthongTails.ContainsKey(prevV) && ((HasOto(vr, syllable.tone) || HasOto(ValidateAlias(vr), syllable.tone) || (HasOto(vr1, syllable.tone) || HasOto(ValidateAlias(vr1), syllable.tone)) && !HasOto(vc, syllable.tone)))) {
                         TryAddPhoneme(phonemes, syllable.vowelTone, AliasFormat($"{diphthongTails[prevV]}", "diph_mix", syllable.vowelTone, ""));
@@ -254,11 +227,6 @@ namespace OpenUtau.Plugin.Builtin {
                         TryAddPhoneme(phonemes, syllable.tone, AliasFormat($"{cc[0]}", "cc", syllable.tone, ""));
 
                         break;
-                    } else if (HasOto(vc, syllable.tone) || HasOto(ValidateAlias(vc), syllable.tone)) {
-                        TryAddPhoneme(phonemes, syllable.tone, vc, ValidateAlias(vc));
-                        TryAddPhoneme(phonemes, syllable.tone, AliasFormat($"{cc[0]}", "cc", syllable.tone, ""));
-                        break;
-                        /// CC+V
                     } else if (CCV) {
                         TryAddPhoneme(phonemes, syllable.tone, vc, ValidateAlias(vc));
                         TryAddPhoneme(phonemes, syllable.tone, AliasFormat($"{string.Join("", cc)}", "cc", syllable.tone, ""));
@@ -425,10 +393,10 @@ namespace OpenUtau.Plugin.Builtin {
                     } else {
                         bool vcAdded = false;
 
-                        if (diphthongTails.ContainsKey(prevV)) {
-                            TryAddPhoneme(phonemes, ending.tone, AliasFormat($"{diphthongTails[prevV]}", "diph_mix", ending.tone, "", t));
-                        } else if (HasOto(vc, ending.tone) || HasOto(ValidateAlias(vc), ending.tone)) {
+                        if (HasOto(vc, ending.tone) || HasOto(ValidateAlias(vc), ending.tone)) {
                             vcAdded = TryAddPhoneme(phonemes, ending.tone, vc, ValidateAlias(vc));
+                        } else if (diphthongTails.ContainsKey(prevV)) {
+                            TryAddPhoneme(phonemes, ending.tone, AliasFormat($"{diphthongTails[prevV]}", "diph_mix", ending.tone, "", t));
                         }
 
                         string c = cc[0];
@@ -632,36 +600,71 @@ namespace OpenUtau.Plugin.Builtin {
             }
             return alias;
         }
+        // Fallbacks for vowel phonemes (especially to those vb's with only 5 romaji vowels)
+        private readonly Dictionary<string, string[]> VowelFallbacks = new Dictionary<string, string[]> {
+            { "aa", new[] { "a", "ah" } },
+            { "ae", new[] { "a", "eh" } },
+            { "ah", new[] { "a", "aa" } },
+            { "ao", new[] { "o", "ow" } },
+            { "aw", new[] { "ae", "a" } },
+            { "ax", new[] { "ah", "a" } },
+            { "ay", new[] { "ai", "a" } },
+            { "eh", new[] { "e", "ae" } },
+            { "er", new[] { "r", "e" } },
+            { "ey", new[] { "eh", "e" } },
+            { "ih", new[] { "i", "iy" } },
+            { "iy", new[] { "i", "ih" } },
+            { "ow", new[] { "ao", "o" } },
+            { "oy", new[] { "ow", "ao", "o" } },
+            { "uh", new[] { "u", "uw" } },
+            { "uw", new[] { "u", "uh" } },
+            // Romaji cross-fallbacks
+            { "a", new[] { "aa", "ah" } },
+            { "e", new[] { "eh" } },
+            { "i", new[] { "iy", "ih" } },
+            { "o", new[] { "ao", "ow" } },
+            { "u", new[] { "uw", "uh" } },
+            // Diphthong splits
+            { "ay-", new[] { "iy-", "y" ,"iy", "i" } },
+            { "ey-", new[] { "iy-", "y" , "iy", "i"  } },
+            { "oy-", new[] { "iy-", "y" , "iy", "i"  } },
+            { "aw-", new[] { "uw-", "w" , "uw", "uh",  "u"  } },
+            { "ow-", new[] { "uw-", "w" , "uw", "uh",  "u"  } },
+        };
 
-        protected override string ValidateAlias(string alias, int tone = 0) {
-
-            // VALIDATE ALIAS DEPENDING ON METHOD
+        private string ApplyContextualFallbacks(string alias, int tone) {
+            if (string.IsNullOrEmpty(alias)) return alias;
             if (HasOto(alias, tone)) return alias;
-
-            string baseResolved = base.ValidateAlias(alias, tone);
-            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
-                if (HasOto(baseResolved, tone)) {
-                    return baseResolved;
-                }
-                alias = baseResolved;
-            }
-            if (isTimitPhonemes) {
-                foreach (var fb in timitphonemes.OrderByDescending(f => f.Key.Length)) {
-                    alias =  alias.Replace(fb.Key, fb.Value);
-                }
-            }
-            if (isMissingVPhonemes) {
-                foreach (var fb in missingVphonemes.OrderByDescending(f => f.Key.Length)) {
-                    alias = alias.Replace(fb.Key, fb.Value);
-                }
-            }
-            if (isMissingCPhonemes) {
-                foreach (var fb in missingCphonemes.OrderByDescending(f => f.Key.Length)) {
-                    alias = alias.Replace(fb.Key, fb.Value);
+            if (VowelFallbacks.TryGetValue(alias, out var fallbacks)) {
+                foreach (var fb in fallbacks) {
+                    if (HasOto(fb, tone)) {
+                        return fb;
+                    }
                 }
             }
             return alias;
+        }
 
+        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+            if (string.IsNullOrEmpty(alias)) return alias;
+            string currentAlias = alias;
+            
+            string contextual = ApplyContextualFallbacks(alias, tone);
+            if (contextual != alias && HasOto(contextual, tone)) {
+                return contextual;
+            }
+
+            if (isMissingCPhonemes && missingCphonemes != null) {
+                foreach (var fb in missingCphonemes.OrderByDescending(f => f.Key.Length)) {
+                    if (suppressedTokens != null && suppressedTokens.Contains(fb.Key)) continue;
+                    currentAlias = currentAlias.Replace(fb.Key, fb.Value, StringComparison.Ordinal);
+                }
+                if (!string.Equals(currentAlias, alias, StringComparison.Ordinal) && HasOto(currentAlias, tone)) {
+                    return currentAlias;
+                }
+            }
+
+            return !string.Equals(currentAlias, alias, StringComparison.Ordinal) ? currentAlias : null;
         }
 
         bool PhonemeIsPresent(string alias, string phoneme) {

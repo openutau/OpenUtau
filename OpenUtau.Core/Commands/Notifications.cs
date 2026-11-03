@@ -190,6 +190,77 @@ namespace OpenUtau.Core {
         public override string ToString() => $"Set progress {Progress} {Info}";
     }
 
+    // Notification to update the phrase blocks in PartControl, optional RenderPhrase for exact update.
+    public class PhraseRenderStateNotification : UNotification {
+        public UVoicePart Part { get; }
+        public RenderPhrase? Phrase { get; }
+        public int StartTick { get; }
+        public int EndTick { get; }
+        public bool Rendered { get; }
+        public override bool Silent => true;
+
+        public PhraseRenderStateNotification(UVoicePart part, int startTick, int endTick, bool rendered) {
+            Part = part;
+            StartTick = startTick;
+            EndTick = endTick;
+            Rendered = rendered;
+        }
+
+        public PhraseRenderStateNotification(UVoicePart part, RenderPhrase phrase, bool rendered) {
+            Part = part;
+            Phrase = phrase;
+            StartTick = phrase.position;
+            EndTick = phrase.end;
+            Rendered = rendered;
+        }
+
+        public override string ToString() => Rendered
+            ? $"Phrase Status | {Part.DisplayName} {StartTick}-{EndTick} Rendered"
+            : $"Phrase Status | {Part.DisplayName} {StartTick}-{EndTick} Unrendered";
+    }
+
+    public class RebuildPhraseBlocksNotification : UNotification {
+        public UVoicePart Part { get; }
+        public override bool Silent => true;
+
+        public RebuildPhraseBlocksNotification(UVoicePart part) {
+            Part = part;
+        }
+
+        public override string ToString() => $"Rebuild phrase blocks | {Part.DisplayName}";
+    }
+
+    /// <summary>
+    /// A warning that needs the user's attention. DocManager keeps it until a
+    /// <see cref="ClearWarningsNotification"/>; the main window shows a warning sign
+    /// next to the main menu while any are kept. A warning replaces an earlier one
+    /// with the same key, so a check that runs repeatedly doesn't pile up copies.
+    /// Title and detail are string resource keys, formatted with <see cref="Args"/>
+    /// ({0}, {1}, ...) in the UI language.
+    /// </summary>
+    public class WarningNotification : UNotification {
+        public string Key { get; }
+        public string TitleKey { get; }
+        public string? DetailKey { get; }
+        public object[] Args { get; }
+        public WarningNotification(string key, string titleKey, string? detailKey = null, params object[] args) {
+            Key = key;
+            TitleKey = titleKey;
+            DetailKey = detailKey;
+            Args = args;
+        }
+        public override string ToString() => $"Warning: {TitleKey} {string.Join(", ", Args)}";
+    }
+
+    /// <summary>Clears the warning with <paramref name="key"/>, or all warnings when null.</summary>
+    public class ClearWarningsNotification : UNotification {
+        public readonly string? key;
+        public ClearWarningsNotification(string? key = null) {
+            this.key = key;
+        }
+        public override string ToString() => key == null ? "Clear warnings" : $"Clear warning {key}";
+    }
+
     public class VolumeChangeNotification : UNotification {
         public double Volume;
         public int TrackNo;
@@ -225,6 +296,13 @@ namespace OpenUtau.Core {
     public class SingersChangedNotification : UNotification {
         public SingersChangedNotification() { }
         public override string ToString() => "Singers changed.";
+    }
+
+    /// <summary>
+    /// Packages in the Dependencies folder were installed, removed or edited.
+    /// </summary>
+    public class PackagesChangedNotification : UNotification {
+        public override string ToString() => "Packages changed.";
     }
 
     public class SingersRefreshedNotification : UNotification {

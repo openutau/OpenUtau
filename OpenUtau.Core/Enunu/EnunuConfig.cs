@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Core.Enunu {
@@ -13,6 +14,12 @@ namespace OpenUtau.Core.Enunu {
         public double framePeriod;
         public bool unLoadSubBanks = false;
         public EnunuExtensions extensions;
+
+        /// <summary>
+        /// Whether the server synthesizes the wav (synthe) instead of OpenUtau running WORLD on spectrogram.npy / aperiodicity.npy.
+        /// The server skips those files when this is true (ENUNU.client_reads_world_params is its negation); change both together.
+        /// </summary>
+        public bool UsesSynthe => extensions.wav_synthesizer.Contains("synthe") || feature_type.Equals("melf0");
 
         public static EnunuConfig Load(USinger singer) {
             var configPath = Path.Join(singer.Location, "enuconfig.yaml");
@@ -28,26 +35,39 @@ namespace OpenUtau.Core.Enunu {
             return config.Convert();
         }
 
+        /// <summary>
+        /// Reads config.yaml of an NNSVS model placed in the voicebank folder or its "model" folder.
+        /// tablePath and questionPath are made relative to the voicebank folder, as EnunuSinger joins them with its Location.
+        /// </summary>
         public static RawEnunuConfig SetSimpleENUNUConfig(string location) {
-            string[] modelPaths = new string[] { location, location + @"\model" };
+            string[] modelPaths = new string[] { location, Path.Join(location, "model") };
             string configYaml = "config.yaml";
             var config = new RawEnunuConfig();
             foreach (string modelPath in modelPaths) {
                 if (File.Exists(Path.Join(modelPath, configYaml))) {
                     var configTxt = File.ReadAllText(Path.Join(modelPath, configYaml));
                     config = Yaml.DefaultDeserializer.Deserialize<RawEnunuConfig>(configTxt);
-                    IEnumerable<string> files = Directory.EnumerateFiles(location, "*", SearchOption.TopDirectoryOnly);
-                    foreach (string f in files) {
-                        if (f.EndsWith(".table")) {
-                            config.tablePath = Path.GetRelativePath(modelPath, f);
-                        }
-                        if (f.EndsWith(".hed")) {
-                            config.questionPath = Path.GetRelativePath(modelPath, f);
-                        }
+                    // table_path in config.yaml is relative to the model folder.
+                    string? table = string.IsNullOrEmpty(config.tablePath) ? null : Path.GetFullPath(Path.Join(modelPath, config.tablePath));
+                    if (table == null || !File.Exists(table)) {
+                        table = FindFile(new[] { modelPath, location }, "*.table");
                     }
+                    string? question = FindFile(new[] { modelPath, location }, "*.hed");
+                    config.tablePath = table == null ? string.Empty : Path.GetRelativePath(location, table);
+                    config.questionPath = question == null ? string.Empty : Path.GetRelativePath(location, question);
                 }
             }
             return config;
+        }
+
+        static string? FindFile(string[] directories, string pattern) {
+            foreach (string directory in directories) {
+                string? file = Directory.EnumerateFiles(directory, pattern, SearchOption.TopDirectoryOnly).FirstOrDefault();
+                if (file != null) {
+                    return file;
+                }
+            }
+            return null;
         }
     }
 

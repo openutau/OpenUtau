@@ -56,6 +56,7 @@ public class Some : MidiExtractor<SomeOptions> {
             new DenseTensor<float>(samples, new int[] { samples.Length }, false)
                 .Reshape(new int[] { 1, samples.Length })));
         try {
+            using var dmlScope = Onnx.EnterDmlScope();
             using var outputs = session.Run(inputs, session.OutputNames, runOptions);
             float[] note_midi = outputs
                 .Where(o => o.Name == "note_midi")
@@ -96,6 +97,7 @@ public class Some : MidiExtractor<SomeOptions> {
         if (disposed) return;
         disposed = true;
         runOptions?.Dispose();
+        using var dmlScope = Onnx.EnterDmlScope();
         session.Dispose();
     }
 }

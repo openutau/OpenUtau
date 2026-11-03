@@ -57,9 +57,10 @@ namespace OpenUtau.App.Views {
             Task.Run(() => {
                 Log.Information("Initializing OpenUtau.");
                 ToolsManager.Inst.Initialize();
-                SingerManager.Inst.Initialize();
+                // Before the singer search, so the warnings it raises can be published.
                 DocManager.Inst.Initialize(mainThread, mainScheduler);
                 DocManager.Inst.PostOnUIThread = action => Avalonia.Threading.Dispatcher.UIThread.Post(action);
+                SingerManager.Inst.Initialize();
                 Log.Information("Initialized OpenUtau.");
                 InitAudio();
             }).ContinueWith(t => {

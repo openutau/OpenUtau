@@ -13,7 +13,7 @@
   <Color x:Key="ForegroundColorPressed">#202020</Color>
   <Color x:Key="ForegroundColorDisabled">#808080</Color>
 
-  <Color x:Key="BorderColor">#707070</Color>
+  <Color x:Key="BorderColor">#C4C4C4</Color>
   <Color x:Key="BorderColorPointerOver">#B0B0B0</Color>
 
   <Color x:Key="SystemAccentColor">#4EA6EA</Color>

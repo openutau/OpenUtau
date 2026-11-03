@@ -389,6 +389,27 @@ namespace OpenUtau.Core.ExpressionGraph {
         }
 
         [Fact]
+        public void PastesCopiedNodesWithTheLinksAmongThem() {
+            var graph = Graph(
+                new[] { Node(1, GraphNodeTypes.Abs), Node(2, GraphNodeTypes.Abs), Node(3, GraphNodeTypes.Abs) },
+                Link(1, 2), Link(2, 3));
+            graph.nodes[1].x = 100;
+            var copied = ExpressionGraphEdits.CopyNodes(graph, new[] { 2, 3 });
+            // The link from node 1 stays behind: it isn't among the copied nodes.
+            Assert.Equal((2, 3), (copied.links.Single().from, copied.links.Single().to));
+
+            var ids = ExpressionGraphEdits.PasteNodes(graph, copied, 20, 30);
+            Assert.Equal(new[] { 4, 5 }, ids);
+            Assert.Equal(120, graph.nodes.Single(n => n.id == 4).x);
+            Assert.Equal(30, graph.nodes.Single(n => n.id == 4).y);
+            Assert.Contains(graph.links, l => l.from == 4 && l.to == 5);
+            Assert.Equal(3, graph.links.Count);
+            // Pasting again doesn't reuse ids, and leaves the copy untouched.
+            Assert.Equal(new[] { 6, 7 }, ExpressionGraphEdits.PasteNodes(graph, copied, 0, 0));
+            Assert.Equal(new[] { 2, 3 }, copied.nodes.Select(n => n.id));
+        }
+
+        [Fact]
         public void MapsACurveToAnother() {
             // tenc = dyn mapped from [-12, 0] dB to [0, 100], clamped.
             var graph = Graph(new[] {
@@ -790,6 +811,44 @@ namespace OpenUtau.Core.ExpressionGraph {
             // Grid ticks between the first two frames, and between the fourth and fifth; nothing across the gap.
             Assert.Equal(new[] { 100, 105, 110, 135, 140 }, values.Select(v => v.x));
             Assert.Equal(new[] { 6000f, 6050f, 6100f, 6318.18f, 6363.64f }, values.Select(v => v.y), new ToleranceComparer(0.01f));
+        }
+
+        [Fact]
+        public void ClearedRangesAreLimitedToThePhrase() {
+            var ranges = new List<(int from, int to)> { (0, 50), (-30, 20), (60, 90), (120, 200), (100, 100) };
+            OpenUtau.Core.Editing.LoadRenderedPitch.ClampRanges(ranges, 0, 10, 100);
+            Assert.Equal(new[] { (10, 50), (10, 20), (60, 90) }, ranges);
+
+            // Ranges before the start index belong to other phrases and are left alone.
+            ranges = new List<(int from, int to)> { (0, 1000), (-500, 700) };
+            OpenUtau.Core.Editing.LoadRenderedPitch.ClampRanges(ranges, 1, 0, 480);
+            Assert.Equal(new[] { (0, 1000), (0, 480) }, ranges);
+        }
+
+        [Fact]
+        public void LongPaddingDoesNotClearTheNeighbouringPhrases() {
+            // A Voicevox-like result: 1 s of silent padding (about 960 ticks) on both sides of a 480 tick phrase.
+            var ticks = new List<float>();
+            var voiced = new List<bool>();
+            for (int t = -960; t <= 1440; t += 10) {
+                ticks.Add(t);
+                voiced.Add(t >= 0 && t <= 480);
+            }
+            var result = new RenderPitchResult {
+                ticks = ticks.ToArray(),
+                tones = ticks.Select(_ => 60f).ToArray(),
+                voiced = voiced.ToArray(),
+            };
+            var cleared = new List<(int from, int to)>();
+            var values = new List<(int x, float y)>();
+            OpenUtau.Core.Editing.LoadRenderedPitch.CollectRenderedPitch(result, 100, 480, cleared, values);
+            // The whole result is cleared, padding included: it reaches into the neighbouring phrases.
+            Assert.Equal(new[] { (100 - 960, 100 + 1440) }, cleared);
+
+            OpenUtau.Core.Editing.LoadRenderedPitch.ClampRanges(cleared, 0, 100, 100 + 480);
+
+            Assert.Equal(new[] { (100, 580) }, cleared);
+            Assert.All(values, v => Assert.InRange(v.x, 100, 580));
         }
 
         [Fact]

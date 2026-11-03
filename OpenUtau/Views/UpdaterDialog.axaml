@@ -6,10 +6,10 @@
         xmlns:vm="using:OpenUtau.App.ViewModels"
         x:DataType="vm:UpdaterViewModel"
         x:Class="OpenUtau.App.Views.UpdaterDialog"
-        Width="400" Height="300" CanResize="False" WindowStartupLocation="CenterScreen"
+        Width="400" Height="340" CanResize="False" WindowStartupLocation="CenterScreen"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource updater.caption}" Closing="OnClosing">
-    <Grid RowDefinitions="Auto, Auto, Auto, *, Auto">
+    <Grid RowDefinitions="Auto, Auto, Auto, Auto, *, Auto">
         <StackPanel Grid.Row="0" Orientation="Vertical" HorizontalAlignment="Center" Margin="20,20,20,4">
             <Image Width="96" Height="96" Source="/Assets/open-utau.ico"/>
             <Image Height="16" Margin="0,8,0,0"
@@ -21,9 +21,18 @@
                    Text="{Binding AppVersion}"/>
         <TextBlock Grid.Row="2" Margin="40,4" TextAlignment="Center"
                    Text="{DynamicResource updater.description}"/>
-        <TextBlock Grid.Row="3" Margin="40,0" TextAlignment="Center" VerticalAlignment="Bottom"
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="40,8,40,0"
+                    HorizontalAlignment="Center" Spacing="10">
+            <TextBlock Text="{DynamicResource prefs.channel}" VerticalAlignment="Center"/>
+            <ComboBox SelectedIndex="{Binding Channel}" Width="120" IsEnabled="{Binding !UpdateAccepted}">
+                <ComboBoxItem Content="{DynamicResource prefs.channel.stable}"/>
+                <ComboBoxItem Content="{DynamicResource prefs.channel.beta}"/>
+                <ComboBoxItem Content="{DynamicResource prefs.channel.alpha}"/>
+            </ComboBox>
+        </StackPanel>
+        <TextBlock Grid.Row="4" Margin="40,0" TextAlignment="Center" VerticalAlignment="Bottom"
                    Text="{Binding UpdaterStatus}" FontWeight="Bold"/>
-        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,20,0,20"
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,20,0,20"
                     HorizontalAlignment="Center" Spacing="20">
             <Button Width="120" Content="{DynamicResource updater.github}" Command="{Binding OnGithub}"/>
             <Button Width="120" Content="{DynamicResource updater.update}" Command="{Binding OnUpdate}"

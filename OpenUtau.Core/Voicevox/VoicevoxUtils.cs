@@ -235,6 +235,48 @@ namespace OpenUtau.Core.Voicevox {
             return plosives.Any(p => lyric.StartsWith(p));
         }
 
+        //Converts an absolute position in ms to the nearest frame on the absolute frame grid.
+        public static int ToFrame(double ms) {
+            return (int)Math.Round((ms / 1000.0) * fps, MidpointRounding.AwayFromZero);
+        }
+
+        //Snaps an absolute position in ms to the frame grid.
+        public static double SnapMs(double ms) {
+            return ToFrame(ms) * 1000.0 / fps;
+        }
+
+        public static bool IsPhonemeNoteCountMatch(RenderPhrase phrase) {
+            return phrase.phones.Length == phrase.notes.Where(note => !IsSyllableVowelExtensionNote(note.lyric)).Count() && phrase.phones.All(p => phoneme_List.kanas.ContainsKey(p.phoneme));
+        }
+
+        //Returns the absolute range (ms) that the synthesized frames cover, excluding the head and tail pau.
+        //Synthesis and Layout both go through this, so the audio and its layout cannot diverge.
+        public static (double startMs, double endMs) GetSynthSpan(RenderPhrase phrase) {
+            if (phrase.notes.Length > 0 && IsPhonemeNoteCountMatch(phrase)) {
+                var last = phrase.notes[^1];
+                return (phrase.notes[0].positionMs, last.positionMs + last.durationMs);
+            }
+            return (phrase.positionMs, phrase.endMs);
+        }
+
+        //Builds the layout of a phrase whose synthesized frames start at startMs and end at endMs.
+        public static RenderResult ComputeLayout(double startMs, double endMs, double leadingMs) {
+            double frameMs = 1000.0 / fps;
+            int headFrames = (int)Math.Round(headS * fps);
+            int tailFrames = (int)Math.Round(tailS * fps);
+            const int AlignmentFrames = 1;
+
+            double correctionMs = (headFrames + AlignmentFrames) * frameMs;
+            double snappedStartMs = SnapMs(startMs);
+
+            return new RenderResult() {
+                leadingMs = leadingMs,
+                positionMs = snappedStartMs - correctionMs,
+                // Head pau + leading + synthesized frames + tail pau.
+                estimatedLengthMs = correctionMs + leadingMs + (endMs - snappedStartMs) + tailFrames * frameMs,
+            };
+        }
+
         //Returns the end frame of a segment starting at startFrame.
         //Segments are chained through startFrame so rounding never accumulates,
         //and minLength keeps a segment long enough for the engine to synthesize it.
@@ -262,7 +304,7 @@ namespace OpenUtau.Core.Voicevox {
                 VoicevoxNote lastNote = new VoicevoxNote();
                 //Holds the end frame of the previous note so that notes stay contiguous.
                 int cursor = vNotes.Length > 0
-                    ? (int)Math.Round((vNotes[0].positionMs / 1000.0) * fps, MidpointRounding.AwayFromZero)
+                    ? ToFrame(vNotes[0].positionMs)
                     : 0;
                 for (int index = 0; index < vNotes.Length;) {
                     string lyric = dic.Notetodic(vNotes, index);
@@ -418,9 +460,11 @@ namespace OpenUtau.Core.Voicevox {
                     Array.Fill(result, defaultValue);
                     return result;
                 }
+                double synthStartMs = SnapMs(GetSynthSpan(phrase).startMs);
 
                 for (int i = 0; i < length - headFrames - tailFrames; i++) {
-                    double posMs = phrase.positionMs - phrase.leadingMs + (i * frameMs) + offset;
+                    //Frame i is synthesized at snapped start frame + i, so sample at that time.
+                    double posMs = synthStartMs - phrase.leadingMs + (i * frameMs) + offset;
                     int ticks = phrase.timeAxis.MsPosToTickPos(posMs) - (phrase.position - phrase.leading);
                     int index = Math.Max(0, (int)((double)ticks / interval));
                     if (index < curve.Length) {

@@ -20,6 +20,9 @@
                    Color="{DynamicResource ForegroundColorDisabled}" />
   <SolidColorBrush x:Key="SystemControlForegroundBaseMediumBrush"
                    Color="{DynamicResource BorderColor}" />
+  <!--secondary text, e.g. hints and details; SystemControlForegroundBaseMediumBrush is a border colour here-->
+  <SolidColorBrush x:Key="ForegroundBrushSecondary"
+                   Color="{DynamicResource ForegroundColor}" Opacity="0.65" />
   <SolidColorBrush x:Key="SystemControlHighlightBaseMediumHighBrush"
                    Color="{DynamicResource BorderColorPointerOver}" />
   <SolidColorBrush x:Key="SystemControlDisabledBaseMediumLowBrush"
@@ -94,15 +97,23 @@
   <SolidColorBrush x:Key="ToggleSwitchContentForeground"
                    Color="{DynamicResource ForegroundColor}" />
   <SolidColorBrush x:Key="ToggleSwitchStrokeOff"
-                   Color="{DynamicResource ForegroundColor}" />
+                   Color="{DynamicResource BorderColor}" />
   <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver"
-                   Color="{DynamicResource ForegroundColorPointerOver}" />
+                   Color="{DynamicResource BorderColorPointerOver}" />
   <SolidColorBrush x:Key="ToggleSwitchKnobFillOff"
-                   Color="{DynamicResource ForegroundColor}" />
+                   Color="{DynamicResource BorderColorPointerOver}" />
   <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver"
                    Color="{DynamicResource ForegroundColorPointerOver}" />
   <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush"
                    Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUnchecked"
+                   Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver"
+                   Color="{DynamicResource BorderColorPointerOver}" />
+  <SolidColorBrush x:Key="TextControlBorderBrush"
+                   Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                   Color="{DynamicResource BorderColorPointerOver}" />
 
   <SolidColorBrush x:Key="TickLineBrush"
                    Color="{DynamicResource TickLineColor}" />

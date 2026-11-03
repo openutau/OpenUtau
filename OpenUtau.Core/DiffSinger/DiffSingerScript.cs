@@ -140,10 +140,11 @@ namespace OpenUtau.Core.DiffSinger {
 
                 //variance curves
                 if (options.exportVariance && singer.HasVariancePredictor) {
-                    var variancePredictor = singer.getVariancePredictor();
                     VarianceResult varianceResult;
+                    using var dmlScope = Onnx.EnterDmlScope();
+                    // Take the reference inside SessionLock so a concurrent FreeMemory cannot dispose it first.
                     lock (singer.SessionLock) {
-                        varianceResult = variancePredictor.Process(phrase);
+                        varianceResult = singer.getVariancePredictor().Process(phrase);
                     }
                     if (varianceResult.energy != null) {
                         energy = ComputeVarianceCurve(
@@ -191,8 +192,8 @@ namespace OpenUtau.Core.DiffSinger {
             var userSampled = DiffSingerUtils.SampleCurve(
                 phrase, userCurve, 0, frameMs, totalFrames, headFrames, tailFrames,
                 x => x).Select(x => (float)x).ToArray();
-            var deltaFunc = DiffSingerUtils.VarianceDeltaFunctions[abbr];
-            return resampled.Zip(userSampled, deltaFunc)
+            return resampled.Zip(userSampled,
+                    (p, u) => DiffSingerUtils.ApplyVarianceDelta(abbr, p, u))
                 .Select(x => (double)x).ToArray();
         }
 

@@ -631,7 +631,8 @@ namespace OpenUtau.App.Controls {
                             }
                         }
                         if (!string.IsNullOrEmpty(displayLang)) {
-                            var langLayout = TextLayoutCache.Get(displayLang, Avalonia.Media.Brushes.White, 10);
+                            var langLayout = TextLayoutCache.Get(displayLang, Avalonia.Media.Brushes.White, 10,
+                                useUiFont: Preferences.Default.UseUiFontForNotes);
                             double paddingX = 3;
                             double paddingY = 1.5;
                             Avalonia.Rect badgeRect = new Avalonia.Rect(
@@ -651,17 +652,19 @@ namespace OpenUtau.App.Controls {
             }
             string displayLyric = note.lyric;
             int txtsize = 12;
-            var textLayout = TextLayoutCache.Get(displayLyric, Brushes.White, txtsize);
+            var textLayout = TextLayoutCache.Get(displayLyric, Brushes.White, txtsize,
+                useUiFont: Preferences.Default.UseUiFontForNotes);
             if (txtsize > size.Height) {
                 return;
             }
             if (textLayout.Height + 5 < size.Height) {
                 txtsize = (int)(12 * (size.Height / textLayout.Height));
-                textLayout = TextLayoutCache.Get(displayLyric, Brushes.White, txtsize);
-            }
+                textLayout = TextLayoutCache.Get(displayLyric, Brushes.White, txtsize,
+                    useUiFont: Preferences.Default.UseUiFontForNotes);            }
             if (textLayout.Width + 5 > size.Width) {
                 displayLyric = displayLyric[0] + "..";
-                textLayout = TextLayoutCache.Get(displayLyric, Brushes.White, txtsize);
+                textLayout = TextLayoutCache.Get(displayLyric, Brushes.White, txtsize,
+                    useUiFont: Preferences.Default.UseUiFontForNotes);
                 if (textLayout.Width + 5 > size.Width) {
                     return;
                 }

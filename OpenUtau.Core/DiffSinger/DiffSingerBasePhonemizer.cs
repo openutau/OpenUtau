@@ -303,11 +303,6 @@ namespace OpenUtau.Core.DiffSinger
             return wordPhonemes;
         }
 
-        int framesBetweenTickPos(double tickPos1, double tickPos2) {
-            return (int)(timeAxis.TickPosToMsPos(tickPos2)/frameMs) 
-                - (int)(timeAxis.TickPosToMsPos(tickPos1)/frameMs);
-        }
-
         public static IEnumerable<double> CumulativeSum(IEnumerable<double> sequence, double start = 0) {
             double sum = start;
             foreach (var item in sequence) {
@@ -350,6 +345,10 @@ namespace OpenUtau.Core.DiffSinger
             return token;
         }
         
+        /// <summary>
+        /// Runs the linguistic encoder and the duration predictor for one part,
+        /// then aligns the predicted durations to the note grid.
+        /// </summary>
         protected override void ProcessPart(Note[][] phrase) {
             float padding = 500f;//Padding time for consonants at the beginning of a sentence, ms
             float frameMs = dsConfig.frameMs();
@@ -399,21 +398,26 @@ namespace OpenUtau.Core.DiffSinger
             var word_div = phrasePhonemes.Take(phrasePhonemes.Count-1)
                 .Select(n => (Int64)n.Phonemes.Count)
                 .ToArray();
-            //Pairwise(phrasePhonemes)
-            var word_dur = phrasePhonemes
-                .Zip(phrasePhonemes.Skip(1), (a, b) => (long)framesBetweenTickPos(a.Position, b.Position))
+            // Frame budgets must use the same cumulative rounding as the training data
+            // (round(cumsum(ms) / frame + 0.5)), not floor(end) - floor(start).
+            var wordDurMs = phrasePhonemes
+                .Zip(phrasePhonemes.Skip(1),
+                    (a, b) => timeAxis.TickPosToMsPos(b.Position) - timeAxis.TickPosToMsPos(a.Position))
+                .ToArray();
+            var word_dur = DiffSingerUtils.DurationsMsToFrames(wordDurMs, frameMs)
+                .Select(x => (long)x)
                 .ToArray();
             //Call Diffsinger Linguistic Encoder model
             var linguisticInputs = new List<NamedOnnxValue>();
             linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("tokens",
                 new DenseTensor<Int64>(tokens, new int[] { tokens.Length }, false)
                 .Reshape(new int[] { 1, tokens.Length })));
-            linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_div",
-                new DenseTensor<Int64>(word_div, new int[] { word_div.Length }, false)
-                .Reshape(new int[] { 1, word_div.Length })));
-            linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_dur",
-                new DenseTensor<Int64>(word_dur, new int[] { word_dur.Length }, false)
-                .Reshape(new int[] { 1, word_dur.Length })));
+            var wordDivTensor = new DenseTensor<Int64>(word_div, new int[] { word_div.Length }, false)
+                .Reshape(new int[] { 1, word_div.Length });
+            var wordDurTensor = new DenseTensor<Int64>(word_dur, new int[] { word_dur.Length }, false)
+                .Reshape(new int[] { 1, word_dur.Length });
+            linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_div", wordDivTensor));
+            linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_dur", wordDurTensor));
             //Language id
             if(dsConfig.use_lang_id){
                 var langIdByPhone = phrasePhonemes
@@ -452,6 +456,16 @@ namespace OpenUtau.Core.DiffSinger
             durationInputs.Add(NamedOnnxValue.CreateFromTensor("ph_midi",
                 new DenseTensor<Int64>(ph_midi, new int[] { ph_midi.Length }, false)
                 .Reshape(new int[] { 1, ph_midi.Length })));
+            //Group-aware ("rel") duration models need word_div/word_dur; absolute ("abs") ones don't.
+            //When dsconfig leaves dur_type unspecified, probe the graph, so voicebanks that
+            //predate the key still work (interim attn voicebanks).
+            bool feedWordInputs = dsConfig.dur_type == "rel"
+                || (string.IsNullOrEmpty(dsConfig.dur_type)
+                    && durationModel.InputMetadata.ContainsKey("word_div"));
+            if (feedWordInputs) {
+                durationInputs.Add(NamedOnnxValue.CreateFromTensor("word_div", wordDivTensor));
+                durationInputs.Add(NamedOnnxValue.CreateFromTensor("word_dur", wordDurTensor));
+            }
             //Speaker
             if(dsConfig.speakers != null){
                 var speakerEmbedManager = getSpeakerEmbedManager();

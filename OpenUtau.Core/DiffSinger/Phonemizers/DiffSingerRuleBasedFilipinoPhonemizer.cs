@@ -79,7 +79,7 @@ namespace OpenUtau.Core.G2p {
                                 phonemes[^1] = "ty";
                                 break;
                             case "s":
-                                phonemes[^1] = "sh";
+                                phonemes[^1] = "sy";
                                 break;
                             default:
                                 phonemes.Add("h");

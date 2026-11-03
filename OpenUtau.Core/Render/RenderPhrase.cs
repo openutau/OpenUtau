@@ -559,7 +559,7 @@ namespace OpenUtau.Core.Render {
         private ulong Hash(bool postEffect) {
             using (var stream = new MemoryStream()) {
                 using (var writer = new BinaryWriter(stream)) {
-                    writer.Write(singer.Id);
+                    writer.Write(singer?.Id ?? string.Empty);
                     writer.Write(renderer?.ToString() ?? "");
                     writer.Write(wavtool ?? "");
                     writer.Write(timeAxis.Timestamp);

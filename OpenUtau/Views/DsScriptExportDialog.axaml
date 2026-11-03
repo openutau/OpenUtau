@@ -35,7 +35,7 @@
       </Grid>
       <TextBlock Text="{DynamicResource dialogs.exportds.variance.hint}"
                  FontSize="12"
-                 Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                 Foreground="{DynamicResource ForegroundBrushSecondary}"
                  TextWrapping="Wrap"
                  IsVisible="{Binding !TensorCacheEnabled}"/>
 

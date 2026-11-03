@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using OpenUtau.App.ViewModels;
+using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.App.Controls {
@@ -18,6 +19,7 @@ namespace OpenUtau.App.Controls {
         }
 
         public void Show(NotesViewModel notesViewModel) {
+            Unsubscribe();
             viewModel = new SearchNoteViewModel(notesViewModel);
             DataContext = viewModel;
             viewModel.NoteMode = noteMode;
@@ -50,9 +52,22 @@ namespace OpenUtau.App.Controls {
         }
 
         public void OnClose(object sender, RoutedEventArgs args) {
+            Hide();
+        }
+
+        void Hide() {
             IsVisible = false;
             if (viewModel != null) {
                 noteMode = viewModel.NoteMode;
+            }
+            Unsubscribe();
+        }
+
+        // Each Show() creates a new view model that subscribes to DocManager;
+        // a hidden one must stop reacting to part loads.
+        void Unsubscribe() {
+            if (viewModel != null) {
+                DocManager.Inst.RemoveSubscriber(viewModel);
             }
         }
 
@@ -77,7 +92,7 @@ namespace OpenUtau.App.Controls {
                     e.Handled = true;
                     break;
                 case Key.Escape:
-                    IsVisible = false;
+                    Hide();
                     e.Handled = true;
                     break;
                 default:

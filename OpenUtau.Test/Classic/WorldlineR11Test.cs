@@ -18,6 +18,20 @@ namespace OpenUtau.Classic {
         }
 
         [Fact]
+        public void DefaultRendererPreference() {
+            var previous = Core.Util.Preferences.Default.DefaultRenderer;
+            try {
+                Assert.Contains(Renderers.WORLDLINE_R11, Renderers.getRendererOptions());
+                Core.Util.Preferences.Default.DefaultRenderer = Renderers.WORLDLINE_R11;
+                Assert.Equal(Renderers.WORLDLINE_R11, Renderers.GetDefaultRenderer(Core.Ustx.USingerType.Classic));
+                // Only classic singers take it.
+                Assert.Equal(Renderers.DIFFSINGER, Renderers.GetDefaultRenderer(Core.Ustx.USingerType.DiffSinger));
+            } finally {
+                Core.Util.Preferences.Default.DefaultRenderer = previous;
+            }
+        }
+
+        [Fact]
         public void TensionReshapesTheHarmonicEnvelopeByRd() {
             var cfg = Worldline.InitAnalysisConfig(44100, 220, 2048);
             int spSize = cfg.fft_size / 2 + 1;

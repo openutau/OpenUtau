@@ -32,14 +32,28 @@
       <Setter Property="TextWrapping" Value="Wrap"/>
       <Setter Property="Margin" Value="4,0"/>
     </Style>
+    <Style Selector="TextBox.no-input">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="IsReadOnly" Value="True"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="Height" Value="NaN"/>
+      <Setter Property="Foreground" Value="{DynamicResource ForegroundColor}"/>
+      <Style Selector="^ /template/ TextBlock#PART_Placeholder">
+        <Setter Property="FontSize" Value="{Binding $self.FontSize}"/>
+      </Style>
+      <Style Selector="^ /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="{DynamicResource BackgroundColor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+      </Style>
+    </Style>
     <Style Selector="ToggleSwitch">
       <Setter Property="OnContent" Value="{DynamicResource button.on}"/>
       <Setter Property="OffContent" Value="{DynamicResource button.off}"/>
       <Setter Property="HorizontalAlignment" Value="Right"/>
     </Style>
   </Window.Styles>
-
-  
   <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}" ColumnDefinitions="150,*">
     <ListBox Classes="NoScroll" Name="DrawerList">
       <ListBox.Styles>
@@ -89,6 +103,10 @@
             </ComboBox>
           </Grid>
           <TextBlock Classes="restart"/>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.general.sinewhennosinger}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding PlaySineWhenNoSinger}"/>
+          </Grid>
         </StackPanel>
         
         <!-- Playback -->
@@ -178,13 +196,14 @@
         <!-- Paths -->
         <StackPanel>
           <TextBlock Text="{DynamicResource prefs.paths.singer}"/>
-          <Grid ColumnDefinitions="*,10,Auto" Margin="4,0,0,10" HorizontalAlignment="Stretch">
-            <TextBlock TextWrapping="Wrap" FontSize="11" Text="{Binding SingerPath}"/>
+          <Grid ColumnDefinitions="*,10,Auto" Margin="0,0,0,10" HorizontalAlignment="Stretch">
+            <TextBox Classes="no-input" TextWrapping="Wrap" FontSize="11" Text="{Binding SingerPath}"/>
             <Button Content="{DynamicResource button.open}" Grid.Column="2" Click="OpenSingersFolder"/>
           </Grid>
           <TextBlock Text="{DynamicResource prefs.paths.addlsinger}"/>
-          <Grid ColumnDefinitions="*,10,Auto" Margin="4,0,0,0" HorizontalAlignment="Stretch">
-            <TextBlock TextWrapping="Wrap" FontSize="11" Text="{Binding AdditionalSingersPath}"/>
+          <Grid ColumnDefinitions="*,10,Auto" HorizontalAlignment="Stretch">
+            <TextBox Classes="no-input" PlaceholderText="{DynamicResource prefs.placeholdertext.none}" TextWrapping="Wrap"
+                     FontSize="11" Text="{Binding AdditionalSingersPath}"/>
             <Button Content="{DynamicResource button.open}" Grid.Column="2" Click="OpenAddlSingersFolder"/>
           </Grid>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*,10,*">
@@ -291,6 +310,22 @@
               </Grid>
             </Button>
           </Grid>
+          <TextBlock Text="{DynamicResource prefs.appearance.customfont}" Margin="0,10,0,0"/>
+          <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2,0,0">
+              <TextBlock Grid.Column="0" Text="{Binding UiFontPath}" TextWrapping="Wrap" VerticalAlignment="Center"
+                         Margin="4,0,6,0" IsVisible="{Binding UiFontPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+              <TextBlock Grid.Column="0" Text="{DynamicResource prefs.appearance.customfont.none}" VerticalAlignment="Center"
+                         Margin="4,0,6,0" IsVisible="{Binding UiFontPath, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+              <Button Grid.Column="1" Content="{DynamicResource button.select}" Click="SelectUiFont" Margin="0,0,5,0"/>
+              <Button Grid.Column="2" Content="{DynamicResource button.reset}" Click="ResetUiFont"/>
+          </Grid>
+          <TextBlock Text="{DynamicResource prefs.appearance.customfont.family}" Margin="0,4,0,0"/>
+          <ComboBox ItemsSource="{Binding UiFontFamilies}" SelectedItem="{Binding UiFontFamily}"
+                    Margin="0,2,0,0" MaxDropDownHeight="320"/>
+          <Grid Margin="0,5,0,0">
+              <TextBlock Text="{DynamicResource prefs.appearance.customfont.notes}" HorizontalAlignment="Left"/>
+              <ToggleSwitch IsChecked="{Binding UseUiFontForNotes}"/>
+          </Grid>
           <TextBlock Text="{DynamicResource prefs.appearance.degree}" Margin="0,10,0,0"/>
           <ComboBox SelectedIndex="{Binding DegreeStyle}">
             <ComboBoxItem Content="{DynamicResource prefs.appearance.degree.off}"/>
@@ -312,6 +347,10 @@
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.showghostnotes}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding ShowGhostNotes}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0">
+              <TextBlock Text="{DynamicResource prefs.appearance.renderbackground}" HorizontalAlignment="Left"/>
+              <ToggleSwitch IsChecked="{Binding RenderStatusInTrackBar}"/>
           </Grid>
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.notehoverglow}" HorizontalAlignment="Left"/>
@@ -346,8 +385,8 @@
             <ComboBoxItem Content="setParam"/>
           </ComboBox>
           <TextBlock Text="{DynamicResource prefs.advanced.vlabelerpath}" Margin="0,10,0,0"/>
-          <TextBlock HorizontalAlignment="Stretch" Margin="4"
-                      TextWrapping="Wrap" FontSize="11" Text="{Binding VLabelerPath}"/>
+          <TextBox Classes="no-input" HorizontalAlignment="Stretch" Margin="0,4" TextWrapping="Wrap"
+                   PlaceholderText="{DynamicResource prefs.placeholdertext.none}" FontSize="11" Text="{Binding VLabelerPath}"/>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*">
             <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetVLabelerPath"/>
@@ -355,8 +394,8 @@
                     HorizontalAlignment="Stretch" Click="SelectVLabelerPath"/>
           </Grid>
           <TextBlock Text="{DynamicResource prefs.otoeditor.setparampath}" Margin="0,10,0,0"/>
-          <TextBlock HorizontalAlignment="Stretch" Margin="4"
-                      TextWrapping="Wrap" FontSize="11" Text="{Binding SetParamPath}"/>
+          <TextBox Classes="no-input" HorizontalAlignment="Stretch" Margin="0,4" TextWrapping="Wrap"
+                   PlaceholderText="{DynamicResource prefs.placeholdertext.none}" FontSize="11" Text="{Binding SetParamPath}"/>
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*">
             <Button Grid.Column="0" Content="{DynamicResource button.reset}"
                     HorizontalAlignment="Stretch" Click="ResetSetParamPath"/>
@@ -417,9 +456,9 @@
           <TextBlock Classes="restart" IsVisible="{OnPlatform Default=false, Linux=True}"/>
           <TextBlock Text="{DynamicResource prefs.advanced.winepath}" 
                       IsVisible="{OnPlatform Windows=False, Default=True}" Margin="0,10,0,0"/>
-          <TextBlock HorizontalAlignment="Stretch" Margin="4"
-                      TextWrapping="Wrap" FontSize="11" Text="{Binding WinePath}"
-                      IsVisible="{OnPlatform Windows=False, Default=True}" />
+          <TextBox Classes="no-input" HorizontalAlignment="Stretch" Margin="0,4" TextWrapping="Wrap"
+                    PlaceholderText="{DynamicResource prefs.placeholdertext.none}" FontSize="11"
+                    Text="{Binding WinePath}" IsVisible="{OnPlatform Windows=False, Default=True}" />
           <Grid HorizontalAlignment="Stretch" ColumnDefinitions="*,10,*,10,*"
                 IsVisible="{OnPlatform Windows=False, Default=True}">
             <Button Grid.Column="0" Content="{DynamicResource button.reset}"

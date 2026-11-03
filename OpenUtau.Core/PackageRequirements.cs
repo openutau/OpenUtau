@@ -11,6 +11,8 @@ namespace OpenUtau.Core {
         public static readonly IReadOnlySet<string> Installable = new HashSet<string> {
             Hnsep.PackageId,
             HifiVocoder.PackageId,
+            "game",
+            "rmvpe",
         };
 
         /// <summary>The packages a track's renderer (and resampler) needs. hifisampler needs hnsep only for its curves.</summary>

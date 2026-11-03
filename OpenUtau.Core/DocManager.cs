@@ -36,6 +36,9 @@ namespace OpenUtau.Core {
         public int rangeStartTick = 0;
         public int rangeEndTick = 0;
 
+        private readonly List<WarningNotification> warnings = new List<WarningNotification>();
+        public IReadOnlyList<WarningNotification> Warnings => warnings;
+
         public TaskScheduler MainScheduler => mainScheduler;
         public Action<Action> PostOnUIThread { get; set; }
         /// <summary>
@@ -159,10 +162,38 @@ namespace OpenUtau.Core {
                     PhonemizerFactory.Get(type);
                 }
             }
+            try {
+                Js.JsPhonemizerFactory.RegisterInstalled();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to search JavaScript phonemizers.");
+            }
             PhonemizerFactory.BuildList();
             stopWatch.Stop();
             Log.Information($"Search all plugins: {stopWatch.Elapsed}");
         }
+
+        /// <summary>
+        /// Loads the JavaScript phonemizers of the installed packages again, and gives the tracks
+        /// using one a new instance, so edits to a script take effect without a restart.
+        /// A track whose phonemizer no longer loads keeps its old instance.
+        /// </summary>
+        private void ReloadJsPhonemizers() {
+            try {
+                Js.JsPhonemizerFactory.RegisterInstalled();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to search JavaScript phonemizers.");
+            }
+            PhonemizerFactory.BuildList();
+            foreach (var track in Project.tracks) {
+                if (track.Phonemizer is Js.JsPhonemizer && PhonemizerFactory.Get(track.Phonemizer.Id) is PhonemizerFactory factory) {
+                    track.Phonemizer = factory.Create();
+                }
+            }
+            foreach (var part in Project.parts.OfType<UVoicePart>()) {
+                part.ResetOverridePhonemizers();
+            }
+        }
+
         private void SearchPluginInternal(string path, List<string> result) {
             if (Directory.EnumerateFiles(path, "plugin.txt", SearchOption.TopDirectoryOnly).Any()) {
                 return;
@@ -265,7 +296,7 @@ namespace OpenUtau.Core {
                 return;
             }
             if (mainThread != Thread.CurrentThread) {
-                if (!(cmd is ProgressBarNotification)) {
+                if (!(cmd is ProgressBarNotification or PhraseRenderStateNotification)) {
                     Log.Warning($"{cmd} not on main thread");
                 }
                 PostOnUIThread(() => ExecuteCmd(cmd));
@@ -307,6 +338,11 @@ namespace OpenUtau.Core {
                 } else if (cmd is SetRangeSelectionNotification setRange) {
                     rangeStartTick = setRange.startTick;
                     rangeEndTick = setRange.endTick;
+                } else if (cmd is WarningNotification warning) {
+                    warnings.RemoveAll(w => w.Key == warning.Key);
+                    warnings.Add(warning);
+                } else if (cmd is ClearWarningsNotification clearWarnings) {
+                    warnings.RemoveAll(w => clearWarnings.key == null || w.Key == clearWarnings.key);
                 } else if (cmd is RealCurvesUpdatedNotification realCurvesNotif) {
                     if (realCurvesNotif.part is UVoicePart voicePart) {
                         RealCurveUpdater.Apply(Project, voicePart, realCurvesNotif.updates);
@@ -318,6 +354,9 @@ namespace OpenUtau.Core {
                 } else if (cmd is SingersChangedNotification) {
                     SingerManager.Inst.SearchAllSingers();
                     SingerManager.Inst.ReleaseSingersNotInUse(Project);
+                } else if (cmd is PackagesChangedNotification) {
+                    ReloadJsPhonemizers();
+                    ValidateAndRefresh();
                 } else if (cmd is ValidateProjectNotification) {
                     ValidateAndRefresh();
                 } else if (cmd is SingersRefreshedNotification || cmd is OtoChangedNotification) {

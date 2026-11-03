@@ -36,6 +36,7 @@ namespace OpenUtau.App {
             }
 
             base.OnFrameworkInitializationCompleted();
+            UiFontManager.Apply();
         }
 
         // Program.InitLogging() only hooks AppDomain.UnhandledException, which can log but can not
@@ -89,6 +90,7 @@ namespace OpenUtau.App {
             // Force using InvariantCulture to prevent issues caused by culture dependent string conversion, especially for floating point numbers.
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+            UiFontManager.Apply();
             Log.Information("Initialized culture.");
         }
 
@@ -121,6 +123,7 @@ namespace OpenUtau.App {
             if (languages.TryGetValue(language, out var res1)) {
                 Current.Resources.MergedDictionaries.Add(res1);
             }
+            UiFontManager.Apply();
         }
 
         static async void InitializeTheme() {
@@ -133,6 +136,18 @@ namespace OpenUtau.App {
             }
             SetTheme();
             Log.Information("Initialized theme.");
+        }
+
+        /// <summary>
+        /// Runs the package loaders again and re-applies the theme, after packages were installed, removed or edited.
+        /// </summary>
+        public static async void ReloadPackages() {
+            try {
+                await OudepLoaderRegistry.LoadAllAsync();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to load themes from packages.");
+            }
+            SetTheme();
         }
 
         public static void SetTheme() {

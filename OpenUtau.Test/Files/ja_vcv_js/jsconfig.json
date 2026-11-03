@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "checkJs": true,
+        "module": "es2022",
+        "target": "es2022",
+        "lib": ["es2022"]
+    },
+    "include": ["**/*.js", "../../../OpenUtau.Core/Js/Template/openutau.d.ts"]
+}

@@ -36,8 +36,13 @@ namespace OpenUtau.Classic {
             }
             //The builtin worldline and Linux/MacOS resamplers can't be
             //called from bat script, so we need to call it directly from C#
+            //The wavtool cuts the phrase short at a phone with no wav, and the result is cached,
+            //so leave rather than cat an ending that plays silent until the note is edited.
             foreach(var item in resamplerItems){
-                if(item.resampler.NoWrapperScript && !cancellation.IsCancellationRequested && !File.Exists(item.outputFile)){
+                if(cancellation.IsCancellationRequested){
+                    return null;
+                }
+                if(item.resampler.NoWrapperScript && !File.Exists(item.outputFile)){
                     lock (Renderers.GetCacheLock(item.outputFile)) {
                         item.resampler.DoResamplerReturnsFile(item, Log.Logger);
                     }
@@ -58,7 +63,7 @@ namespace OpenUtau.Classic {
                 }
 
                 if (useWine) {
-                    ProcessRunner.Run(winePath, batPath, Log.Logger, workDir: PathManager.Inst.CachePath, timeoutMs: 5 * 60 * 1000);
+                    WineRunner.Run(winePath, batPath, "", Log.Logger, workDir: PathManager.Inst.CachePath, timeoutMs: 5 * 60 * 1000);
                 } else {
                     ProcessRunner.Run(batPath, "", Log.Logger, workDir: PathManager.Inst.CachePath, timeoutMs: 5 * 60 * 1000);
                 }

@@ -45,11 +45,11 @@ namespace OpenUtau.App.ViewModels {
                 if (isDefault) {
                     if (Part == null || Part.trackNo < 0 || Part.trackNo >= DocManager.Inst.Project.tracks.Count) return "Default";
                     var track = DocManager.Inst.Project.tracks[Part.trackNo];
-                    string trackId = track.Phonemizer.GetType().FullName ?? string.Empty;
+                    string trackId = track.Phonemizer.Id ?? string.Empty;
                     return $"Default ({GetPhonemizerDisplayName(trackId)})";
                 }
                 var factory = OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f =>
-                    f.name == targetId || f.type.FullName == targetId || f.type.Name == targetId);
+                    f.name == targetId || f.Id == targetId || f.type.Name == targetId);
                 if (factory != null) {
                     string displayName = !string.IsNullOrEmpty(factory.tag) ? factory.tag : factory.language;
                     return !string.IsNullOrEmpty(displayName) ? displayName : factory.ToString();
@@ -93,14 +93,9 @@ namespace OpenUtau.App.ViewModels {
             SubscribeExtensions.Subscribe(this.WhenAnyValue(vm => vm.ApplyPortamentoPreset)
                     .OfType<NotePresets.PortamentoPreset>(), portamentoPreset => {
                         if (portamentoPreset != null) {
-                            PortamentoLength = portamentoPreset.PortamentoLength;
-                            PortamentoStart = portamentoPreset.PortamentoStart;
-
                             DocManager.Inst.StartUndoGroup("command.pitch.editpoint");
                             PanelControlPressed = true;
-                            SetNoteParams("PortamentoLength", portamentoPreset.PortamentoLength);
-                            SetNoteParams("PortamentoStart", portamentoPreset.PortamentoStart);
-                            SetNoteParams("PortamentoPoints", portamentoPreset.PitchPoints);
+                            SetNoteParams("PortamentoPreset", portamentoPreset);
                             PanelControlPressed = false;
                             DocManager.Inst.EndUndoGroup();
                         }
@@ -248,7 +243,7 @@ namespace OpenUtau.App.ViewModels {
         private string GetPhonemizerDisplayName(string? targetId) {
             if (string.IsNullOrEmpty(targetId)) return "Default";
             var factory = OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f =>
-                f.name == targetId || f.type.FullName == targetId || f.type.Name == targetId);
+                f.name == targetId || f.Id == targetId || f.type.Name == targetId);
 
             if (factory == null) return targetId;
             string displayName = !string.IsNullOrEmpty(factory.tag) ? factory.tag : factory.language;
@@ -261,7 +256,7 @@ namespace OpenUtau.App.ViewModels {
             string defaultHeader = "Default";
             if (Part != null) {
                 var track = DocManager.Inst.Project.tracks[Part.trackNo];
-                string trackId = track.Phonemizer.GetType().FullName ?? "";
+                string trackId = track.Phonemizer.Id ?? "";
                 defaultHeader = $"Default ({GetPhonemizerDisplayName(trackId)})";
             }
             items.Add(new MenuItemViewModel() {
@@ -546,13 +541,12 @@ namespace OpenUtau.App.ViewModels {
                             }
                         }
                     }
-                } else if (tag == "PortamentoPoints") {
-                    foreach (var note in selectedNotes) {
-                        if (obj is List<PitchPoint> list) {
-                            if (list.Count < 2) {
-                                return;
-                            }
-                            DocManager.Inst.ExecuteCmd(new SetPitchPointsCommand(Part, note, new UPitch() { data = list }));
+                } else if (tag == "PortamentoPreset") {
+                    if (obj is NotePresets.PortamentoPreset preset) {
+                        PortamentoStart = preset.PortamentoStart;
+                        PortamentoLength = preset.PortamentoLength;
+                        foreach (var note in selectedNotes) {
+                            DocManager.Inst.ExecuteCmd(new SetPitchPointsCommand(Part, note, CreatePitchFromPreset(preset)));
                         }
                     }
                 } else if (tag == "PitchCurveShape") {
@@ -702,6 +696,20 @@ namespace OpenUtau.App.ViewModels {
         }
 
         // presets
+        public static UPitch CreatePitchFromPreset(NotePresets.PortamentoPreset preset) {
+            var pitch = new UPitch();
+            if (preset.PitchPoints.Count >= 2) {
+                foreach (var point in preset.PitchPoints) {
+                    pitch.AddPoint(point.Clone());
+                }
+            } else {
+                var shape = NotePresets.Default.DefaultPitchShape;
+                pitch.AddPoint(new PitchPoint(preset.PortamentoStart, 0, shape));
+                pitch.AddPoint(new PitchPoint(preset.PortamentoStart + preset.PortamentoLength, 0, shape));
+            }
+            return pitch;
+        }
+
         public void SavePortamentoPreset(string name) {
             if (string.IsNullOrEmpty(name)) {
                 return;
@@ -709,7 +717,7 @@ namespace OpenUtau.App.ViewModels {
             var note = selectedNotes.FirstOrDefault();
             if (note != null) {
                 if (note.pitch.data.Count > 2) {
-                    NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, note.pitch.data));
+                    NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, note.pitch.data.Select(p => p.Clone()).ToList()));
                 } else {
                     NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, (int)PortamentoLength, (int)PortamentoStart));
                 }

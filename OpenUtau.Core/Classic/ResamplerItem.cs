@@ -59,16 +59,21 @@ namespace OpenUtau.Classic {
 
             preutter = (float)phone.preutterMs;
             overlap = (float)phone.overlapMs;
-            offset = phone.oto.Offset;
             var stretchRatio = Math.Pow(2, 1.0 - velocity * 0.01);
-            double pitchLeadingMs = phone.oto.Preutter * stretchRatio;
-            skipOver = phone.oto.Preutter * stretchRatio - phone.leadingMs;
+            // A preutter past the oto's pulls in the audio before its offset, down to the start of the
+            // file, as if the offset were moved earlier: the consonant's end and a negative cutoff keep
+            // their place in the file. Rounded so that float noise does not change the hash.
+            double pulledMs = Math.Round(phone.leadingMs / stretchRatio - phone.oto.Preutter, 3);
+            pulledMs = Math.Clamp(pulledMs, 0, Math.Max(0, phone.oto.Offset));
+            offset = phone.oto.Offset - pulledMs;
+            double pitchLeadingMs = (phone.oto.Preutter + pulledMs) * stretchRatio;
+            skipOver = pitchLeadingMs - phone.leadingMs;
+            consonant = phone.oto.Consonant + pulledMs;
+            cutoff = phone.oto.Cutoff < 0 ? phone.oto.Cutoff - pulledMs : phone.oto.Cutoff;
             durRequired = phone.endMs - phone.positionMs + phone.durCorrectionMs + skipOver;
-            durRequired = Math.Max(durRequired, phone.oto.Consonant);
+            durRequired = Math.Max(durRequired, consonant);
             durRequired = Math.Ceiling(durRequired / 50.0 + 0.5) * 50.0;
             durCorrection = phone.durCorrectionMs;
-            consonant = phone.oto.Consonant;
-            cutoff = phone.oto.Cutoff;
 
             tempo = phone.adjustedTempo;
 

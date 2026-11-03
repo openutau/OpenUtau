@@ -367,58 +367,44 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
-        protected override string ValidateAlias(string alias, int tone = 0) {
-            if (HasOto(alias, tone)) return alias;
+        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+            string candidate = alias;
 
-            string baseResolved = base.ValidateAlias(alias, tone);
-            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
-                if (HasOto(baseResolved, tone)) {
-                    return baseResolved;
-                }
-                alias = baseResolved;
-            }
-            foreach (var VV in new[] { "a 6", "a6" }) {
-                alias = alias.Replace(VV, "a a");
-            }
-            foreach (var CC in new[] { "n S" }) {
-                alias = alias.Replace(CC, "n tS");
-            }
-            foreach (var CC in new[] { "l S" }) {
-                alias = alias.Replace(CC, "l tS");
-            }
-            foreach (var CC in new[] { "nS" }) {
-                alias = alias.Replace(CC, "ntS");
-            }
-            foreach (var CC in new[] { "lS" }) {
-                alias = alias.Replace(CC, "ltS");
-            }
-            foreach (var CC in new[] { "n s" }) {
-                alias = alias.Replace(CC, "n ts");
-            }
-            foreach (var CC in new[] { "l s" }) {
-                alias = alias.Replace(CC, "l ts");
-            }
-            foreach (var CC in new[] { "ns" }) {
-                alias = alias.Replace(CC, "nts");
-            }
-            foreach (var CC in new[] { "ls" }) {
-                alias = alias.Replace(CC, "lts");
-            }
-            foreach (var CC in new[] { "st" }) {
-                alias = alias.Replace(CC, "tst");
-            }
-            // Split diphthongs adjuster
-            if (alias.Contains("U^")) {
-                alias = alias.Replace("U^", "U");
-            }
-            if (alias.Contains("I^")) {
-                alias = alias.Replace("I^", "I");
-            }
-            if (alias.Contains("Y^")) {
-                alias = alias.Replace("Y^", "Y");
+            // Helper to apply string replacements safely with strict casing and YAML suppression checks
+            void TryReplace(string fromPattern, string toPattern, params string[] sourceTokens) {
+                if (suppressedTokens != null && sourceTokens.Any(t => suppressedTokens.Contains(t))) return;
+                candidate = candidate.Replace(fromPattern, toPattern, StringComparison.Ordinal);
             }
 
-            return alias;
+            // Vowel fallback (a 6 / a6 -> a a)
+            TryReplace("a 6", "a a", "6");
+            TryReplace("a6", "a a", "6");
+
+            // Affricate epenthesis fallbacks (with uppercase S)
+            TryReplace("n S", "n tS", "S");
+            TryReplace("l S", "l tS", "S");
+            TryReplace("nS", "ntS", "S");
+            TryReplace("lS", "ltS", "S");
+
+            // Affricate epenthesis fallbacks (with lowercase s)
+            TryReplace("n s", "n ts", "s");
+            TryReplace("l s", "l ts", "s");
+            TryReplace("ns", "nts", "s");
+            TryReplace("ls", "lts", "s");
+
+            // Cluster adjustment
+            TryReplace("st", "tst", "s", "t");
+
+            // Split diphthong adjusters
+            TryReplace("U^", "U", "U^");
+            TryReplace("I^", "I", "I^");
+            TryReplace("Y^", "Y", "Y^");
+
+            if (!string.Equals(candidate, alias, StringComparison.Ordinal) && HasOto(candidate, tone)) {
+                return candidate;
+            }
+
+            return null;
         }
         protected override bool NoGap => true;
 

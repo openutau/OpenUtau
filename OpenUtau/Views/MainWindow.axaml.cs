@@ -341,6 +341,20 @@ namespace OpenUtau.App.Views {
             Focus(); // Force unfocus menu for key down events.
         }
 
+        void OnClearWarnings(object sender, RoutedEventArgs args) {
+            WarningsButton.Flyout?.Hide();
+            viewModel.ClearWarnings();
+        }
+
+        void OnDismissWarning(object sender, RoutedEventArgs args) {
+            if (sender is Button { DataContext: WarningItem warning }) {
+                viewModel.ClearWarnings(warning.Key);
+                if (!viewModel.HasWarnings) {
+                    WarningsButton.Flyout?.Hide();
+                }
+            }
+        }
+
         void OnMenuOpenProjectLocation(object sender, RoutedEventArgs args) {
             var project = DocManager.Inst.Project;
             if (string.IsNullOrEmpty(project.FilePath) || !project.Saved || !System.IO.File.Exists(project.FilePath) || !Path.IsPathRooted(project.FilePath)) {
@@ -789,16 +803,17 @@ namespace OpenUtau.App.Views {
                 PathManager.Inst.ClearCache();
                 DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, ThemeManager.GetString("progress.cachecleared")));
             });
+            partsCanvas.SetAllRenderPhrases(false);
         }
 
-        void OnMenuDebugWindow(object sender, RoutedEventArgs args) {
+        void OnMenuDeveloperWindow(object sender, RoutedEventArgs args) {
             var desktop = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
             if (desktop == null) {
                 return;
             }
-            var window = desktop.Windows.FirstOrDefault(w => w is DebugWindow);
+            var window = desktop.Windows.FirstOrDefault(w => w is DeveloperWindow);
             if (window == null) {
-                window = new DebugWindow();
+                window = new DeveloperWindow();
             }
             ShowToolWindow(window);
         }
@@ -1684,7 +1699,6 @@ namespace OpenUtau.App.Views {
                     return;
                 }
 
-                bool cancelled = false;
                 using var cts = new CancellationTokenSource();
                 MessageBox? msgbox = null;
                 EventHandler? closedHandler = null;
@@ -1693,7 +1707,6 @@ namespace OpenUtau.App.Views {
                     string pitchText =  ThemeManager.GetString("context.part.extractingpitch");
                     msgbox = MessageBox.ShowModal(this, $"{midiText} {part.name}", midiText);
                     closedHandler = (_, __) => {
-                        cancelled = true;
                         cts.Cancel();
                     };
                     msgbox.Closed += closedHandler;
@@ -1707,77 +1720,31 @@ namespace OpenUtau.App.Views {
                             return result == MessageBox.MessageBoxResult.Yes;
                         }).GetAwaiter().GetResult();
                     };
-                    UVoicePart? voicePart;
-                    if (transcribeVm.SelectedAlgorithm == TranscribeAlgorithm.SOME) {
-                        voicePart = await Task.Run(() => {
-                            using (var some = new Some()) {
-                                using (cts.Token.Register(() => some.Interrupt())) {
-                                    if (cts.Token.IsCancellationRequested) {
-                                        return null;
-                                    }
-                                    return some.Transcribe(DocManager.Inst.Project, wavePart,
-                                        null, null,
-                                        confirmLongChunk,
-                                        (processedS, totalS) => {
-                                            msgbox.SetText(string.Format("{0} {1}\n{2}s / {3}s", midiText, part.name, processedS, totalS));
-                                        });
-                                }
+                    // Run the transcription once. If it fails because GAME or RMVPE is not
+                    // installed, offer to install it and run once more; never loop further.
+                    Exception? lastError = null;
+                    for (int attempt = 0; attempt < 2; ++attempt) {
+                        try {
+                            await RunTranscribe(wavePart, transcribeVm, cts, confirmLongChunk, midiText, pitchText, part.name, msgbox);
+                            lastError = null;
+                            break;
+                        } catch (Exception e) {
+                            if (cts.Token.IsCancellationRequested) {
+                                return;
                             }
-                        });
-                    } else {
-                        var gameOptions = transcribeVm.BuildGameOptions();
-                        var batchingStrategy = transcribeVm.BuildBatchingStrategy();
-                        voicePart = await Task.Run(() => {
-                            using (var game = new Game()) {
-                                using (cts.Token.Register(() => game.Interrupt())) {
-                                    if (cts.Token.IsCancellationRequested) {
-                                        return null;
-                                    }
-                                    return game.Transcribe(DocManager.Inst.Project, wavePart,
-                                        gameOptions, batchingStrategy,
-                                        confirmLongChunk,
-                                        (processedS, totalS) => {
-                                            msgbox.SetText(string.Format("{0} {1}\n{2}s / {3}s", midiText, part.name, processedS, totalS));
-                                        });
-                                }
+                            var missing = MissingPackageException.Collect(e);
+                            if (attempt == 0 && missing.Count > 0) {
+                                await PackageInstallPrompt.EnsureInstalledAsync(this, missing, afterFailure: true);
+                                continue;
                             }
-                        });
-                    }
-                    RmvpeResult? rmvpeResult = null;
-                    if (voicePart != null && transcribeVm.PredictPitd && !cancelled) {
-                        msgbox.SetText($"{pitchText} {part.name}");
-                        rmvpeResult = await Task.Run(() => {
-                            using var rmvpe = new RmvpeTranscriber();
-                            using (cts.Token.Register(() => rmvpe.Interrupt())) {
-                                if (cts.Token.IsCancellationRequested) {
-                                    return null;
-                                }
-                                return rmvpe.Infer(wavePart);
-                            }
-                        });
-                    }
-                    if (voicePart != null && !cancelled) {
-                        var project = DocManager.Inst.Project;
-                        var track = new UTrack(project);
-                        track.TrackNo = project.tracks.Count;
-                        voicePart.trackNo = track.TrackNo;
-                        DocManager.Inst.StartUndoGroup("command.part.transcribe");
-                        DocManager.Inst.ExecuteCmd(new AddTrackCommand(project, track));
-                        DocManager.Inst.ExecuteCmd(new AddPartCommand(project, voicePart));
-                        if (rmvpeResult != null) {
-                            var wavePosMs = project.timeAxis.TickPosToMsPos(wavePart.position);
-                            var voicePosMs = project.timeAxis.TickPosToMsPos(voicePart.position);
-                            var skipMs = wavePart.GetSkipMs(project);
-                            rmvpeResult.ApplyToPart(project, voicePart, wavePosMs - voicePosMs - skipMs);
+                            lastError = e;
+                            break;
                         }
-                        DocManager.Inst.EndUndoGroup();
                     }
-                } catch (Exception e) {
-                    if (cancelled) {
-                        return;
+                    if (lastError != null) {
+                        Log.Error(lastError, $"Failed to transcribe part {part.name}");
+                        _ = MessageBox.ShowError(this, lastError);
                     }
-                    Log.Error(e, $"Failed to transcribe part {part.name}");
-                    _ = MessageBox.ShowError(this, e);
                 } finally {
                     if (msgbox != null) {
                         if (closedHandler != null) {
@@ -1786,6 +1753,76 @@ namespace OpenUtau.App.Views {
                         msgbox.Close();
                     }
                 }
+            }
+        }
+
+        /// <summary>Runs one transcription pass. Throws on cancellation or a missing GAME/RMVPE package.</summary>
+        async Task RunTranscribe(UWavePart wavePart, TranscribeViewModel transcribeVm, CancellationTokenSource cts,
+                Func<bool> confirmLongChunk, string midiText, string pitchText, string partName, MessageBox? msgbox) {
+            UVoicePart? voicePart;
+            if (transcribeVm.SelectedAlgorithm == TranscribeAlgorithm.SOME) {
+                voicePart = await Task.Run(() => {
+                    using (var some = new Some()) {
+                        using (cts.Token.Register(() => some.Interrupt())) {
+                            if (cts.Token.IsCancellationRequested) {
+                                return null;
+                            }
+                            return some.Transcribe(DocManager.Inst.Project, wavePart,
+                                null, null,
+                                confirmLongChunk,
+                                (processedS, totalS) => {
+                                    msgbox?.SetText(string.Format("{0} {1}\n{2}s / {3}s", midiText, partName, processedS, totalS));
+                                });
+                        }
+                    }
+                });
+            } else {
+                var gameOptions = transcribeVm.BuildGameOptions();
+                var batchingStrategy = transcribeVm.BuildBatchingStrategy();
+                voicePart = await Task.Run(() => {
+                    using (var game = new Game()) {
+                        using (cts.Token.Register(() => game.Interrupt())) {
+                            if (cts.Token.IsCancellationRequested) {
+                                return null;
+                            }
+                            return game.Transcribe(DocManager.Inst.Project, wavePart,
+                                gameOptions, batchingStrategy,
+                                confirmLongChunk,
+                                (processedS, totalS) => {
+                                    msgbox?.SetText(string.Format("{0} {1}\n{2}s / {3}s", midiText, partName, processedS, totalS));
+                                });
+                        }
+                    }
+                });
+            }
+            RmvpeResult? rmvpeResult = null;
+            if (voicePart != null && transcribeVm.PredictPitd) {
+                msgbox?.SetText($"{pitchText} {partName}");
+                rmvpeResult = await Task.Run(() => {
+                    using var rmvpe = new RmvpeTranscriber();
+                    using (cts.Token.Register(() => rmvpe.Interrupt())) {
+                        if (cts.Token.IsCancellationRequested) {
+                            return null;
+                        }
+                        return rmvpe.Infer(wavePart);
+                    }
+                });
+            }
+            if (voicePart != null) {
+                var project = DocManager.Inst.Project;
+                var track = new UTrack(project);
+                track.TrackNo = project.tracks.Count;
+                voicePart.trackNo = track.TrackNo;
+                DocManager.Inst.StartUndoGroup("command.part.transcribe");
+                DocManager.Inst.ExecuteCmd(new AddTrackCommand(project, track));
+                DocManager.Inst.ExecuteCmd(new AddPartCommand(project, voicePart));
+                if (rmvpeResult != null) {
+                    var wavePosMs = project.timeAxis.TickPosToMsPos(wavePart.position);
+                    var voicePosMs = project.timeAxis.TickPosToMsPos(voicePart.position);
+                    var skipMs = wavePart.GetSkipMs(project);
+                    rmvpeResult.ApplyToPart(project, voicePart, wavePosMs - voicePosMs - skipMs);
+                }
+                DocManager.Inst.EndUndoGroup();
             }
         }
 
@@ -1943,21 +1980,38 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        /// <summary>
+        /// Remaps voice colors, and imported DiffSinger vocal modes, of every track after an import
+        /// or after a singer change.
+        /// </summary>
         async void ValidateTracksVoiceColor() {
             DocManager.Inst.StartUndoGroup("command.track.remapvc");
-            foreach (var track in DocManager.Inst.Project.tracks) {
-                if (track.ValidateVoiceColor(out var oldColors, out var newColors)) {
-                    await VoiceColorRemappingAsync(track, oldColors, newColors);
+            try {
+                foreach (var track in DocManager.Inst.Project.tracks) {
+                    if (track.ValidateVoiceColor(out var oldColors, out var newColors)) {
+                        await VoiceColorRemappingAsync(track, oldColors, newColors);
+                    }
+                    await RemapImportedVocalModesAsync(track);
                 }
-                await RemapImportedVocalModesAsync(track);
+            } finally {
+                // Must close the group even if a remapping dialog or an import threw, otherwise
+                // the undo stack stays inside a group nobody ends.
+                DocManager.Inst.EndUndoGroup();
             }
-            DocManager.Inst.EndUndoGroup();
         }
 
+        /// <summary>
+        /// Offers to copy the curves of vocal modes that came in with an imported project onto
+        /// DiffSinger voice color curves, so the modes keep working on the current singer.
+        /// </summary>
         async Task RemapImportedVocalModesAsync(UTrack track) {
             if (track.Singer?.SingerType != USingerType.DiffSinger) return;
             track.Singer.EnsureLoaded();
             if (!track.Singer.Loaded) return;
+            // A DiffSinger voicebank that declares no subbanks has no voice color to remap onto,
+            // so there is nothing to ask the user about.
+            var colors = track.Singer.Subbanks.Select(s => s.Color).ToArray();
+            if (colors.Length == 0) return;
             var parts = DocManager.Inst.Project.parts.Where(p => p.trackNo == track.TrackNo && p is UVoicePart).Cast<UVoicePart>().ToArray();
             var modes = parts.SelectMany(p => p.curves)
                 .Where(c => c.descriptor != null && IsImportedVocalModeCurve(c.abbr))
@@ -1968,16 +2022,19 @@ namespace OpenUtau.App.Views {
             if (modes.Length == 0) return;
 
             var oldModes = new[] { "" }.Concat(modes).ToArray();
-            var colors = track.Singer.Subbanks.Select(s => s.Color).ToArray();
             var dialog = new VoiceColorMappingDialog { DataContext = new VoiceColorMappingViewModel(oldModes, colors, track.TrackName) };
             await dialog.ShowDialog(this);
             if (!dialog.Apply) return;
 
+            // SelectedIndex 0 is "(Default)", which leaves the imported curve untouched, so only rows
+            // mapped to an actual voice color are copied.
             foreach (var mapping in ((VoiceColorMappingViewModel)dialog.DataContext).ColorMappings.Where(m => m.OldIndex > 0 && m.SelectedIndex > 0)) {
                 var sourceName = modes[mapping.OldIndex - 1];
                 var sourceDescriptor = DocManager.Inst.Project.expressions.Values.FirstOrDefault(d => d.name.Equals(sourceName, StringComparison.OrdinalIgnoreCase));
                 if (sourceDescriptor == null) continue;
-                string targetAbbr = $"cl{mapping.SelectedIndex:D2}";
+                // SelectedIndex is the subbank index chosen in the dialog, while DiffSinger exposes
+                // subbank k as curve cl(k+1) (see DiffSingerRenderer.GetExpressions).
+                string targetAbbr = $"cl{mapping.SelectedIndex + 1:D2}";
                 if (!DocManager.Inst.Project.expressions.TryGetValue(targetAbbr, out var targetDescriptor)) {
                     targetDescriptor = new UExpressionDescriptor($"voice color {colors[mapping.SelectedIndex]}", targetAbbr, 0, 100, 0) { type = UExpressionType.Curve };
                     DocManager.Inst.Project.RegisterExpression(targetDescriptor);
@@ -2138,6 +2195,27 @@ namespace OpenUtau.App.Views {
                         VoiceColorRemapping(track, oldColors, newColors);
                     }
                     _ = RemapImportedVocalModesAsync(track);
+                }
+            } else if (cmd is PhraseRenderStateNotification phraseRenderNotif) {
+                if (phraseRenderNotif.Phrase != null) {
+                    partsCanvas.HandlePhraseRenderStateEvent(
+                        phraseRenderNotif.Part,
+                        phraseRenderNotif.Phrase,
+                        phraseRenderNotif.Rendered);
+                } else {
+                    partsCanvas.HandlePhraseRenderStateEvent(
+                        phraseRenderNotif.Part,
+                        phraseRenderNotif.StartTick,
+                        phraseRenderNotif.EndTick,
+                        phraseRenderNotif.Rendered);
+                }
+            } else if (cmd is RebuildPhraseBlocksNotification phraseBlocksNotif) {
+                partsCanvas.HandleRebuildPhraseBlocksEvent(phraseBlocksNotif.Part);
+            } else if (cmd is TrackChangeSingerCommand changeSingerCommand) {
+                partsCanvas.SetAllRenderPhrases(changeSingerCommand.track, false);
+            } else if (cmd is MovePartCommand movePartCommand) {
+                if (movePartCommand.part is UVoicePart voicePart) {
+                    partsCanvas.SetAllRenderPhrases(voicePart, false);
                 }
             }
         }

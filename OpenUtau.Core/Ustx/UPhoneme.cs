@@ -21,6 +21,9 @@ namespace OpenUtau.Core.Ustx {
         public double autoPreutter { get; private set; }
         public double autoOverlap { get; private set; }
         public double maxOtoPreutter { get; private set; }
+        /// <summary>The preutter that reaches back to the start of the file: past the oto's preutter,
+        /// rendering pulls in the audio before the oto's offset (<see cref="Classic.ResamplerItem"/>).</summary>
+        public double maxFilePreutter { get; private set; }
         public bool adjacent { get; private set; }
         public bool overlapped { get; private set; }
         public double tailIntrude { get; private set; }
@@ -123,6 +126,7 @@ namespace OpenUtau.Core.Ustx {
             double consonantStretch = Math.Pow(2f, 1.0f - GetExpression(project, track, Format.Ustx.VEL).Item1 / 100f);
             autoOverlap = oto.Overlap * consonantStretch;
             autoPreutter = maxOtoPreutter = oto.Preutter * consonantStretch;
+            maxFilePreutter = (oto.Preutter + Math.Max(0, oto.Offset)) * consonantStretch;
             adjacent = false;
             tailIntrude = 0;
             tailOverlap = 0;

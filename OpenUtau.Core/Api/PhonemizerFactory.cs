@@ -13,7 +13,13 @@ namespace OpenUtau.Api {
         public string author;
         public string language;
 
-        public Phonemizer Create() {
+        /// <summary>
+        /// Identifies the phonemizer in projects, singer configs and preferences.
+        /// Must equal <see cref="Phonemizer.Id"/> of the phonemizers it creates.
+        /// </summary>
+        public virtual string Id => type.FullName!;
+
+        public virtual Phonemizer Create() {
             var phonemizer = Activator.CreateInstance(type) as Phonemizer;
             phonemizer.Name = name;
             phonemizer.Tag = tag;
@@ -26,6 +32,7 @@ namespace OpenUtau.Api {
             : $"[{tag}] {name} (Contributed by {author})";
 
         private static readonly ConcurrentDictionary<Type, PhonemizerFactory> factories = new();
+        private static readonly ConcurrentDictionary<string, PhonemizerFactory> registeredFactories = new();
         private static PhonemizerFactory[] orderedFactories = [];
         public static PhonemizerFactory Get(Type type) {
             if (factories.TryGetValue(type, out var factory)) {
@@ -45,25 +52,43 @@ namespace OpenUtau.Api {
             return factories.GetOrAdd(type, factory);
         }
 
-        public static PhonemizerFactory? Get(string typeFullName) {
+        public static PhonemizerFactory? Get(string id) {
+            if (id == null) {
+                return null;
+            }
             foreach (var factory in factories.Values) {
-                if (factory.type.FullName == typeFullName) {
+                if (factory.Id == id) {
                     return factory;
                 }
             }
-            return null;
+            return registeredFactories.TryGetValue(id, out var registered) ? registered : null;
+        }
+
+        /// <summary>
+        /// Adds a factory that is not a phonemizer type, such as a script phonemizer from a package.
+        /// Call <see cref="BuildList"/> afterwards.
+        /// </summary>
+        public static void Register(PhonemizerFactory factory) {
+            registeredFactories[factory.Id] = factory;
+        }
+
+        /// <summary>
+        /// Removes a factory added with <see cref="Register"/>. Call <see cref="BuildList"/> afterwards.
+        /// </summary>
+        public static void Unregister(string id) {
+            registeredFactories.TryRemove(id, out _);
         }
 
         public static void BuildList() {
-            orderedFactories = factories.Values.OrderBy(f => f.tag).ToArray();
+            orderedFactories = factories.Values.Concat(registeredFactories.Values).OrderBy(f => f.tag).ToArray();
         }
 
         public static PhonemizerFactory[] GetAll() => orderedFactories;
     }
 
-    /// <summary>The installed phonemizers, by the type name a default_phonemizer key takes.</summary>
+    /// <summary>The installed phonemizers, by the id a default_phonemizer key takes.</summary>
     public class PhonemizerTypeValues : IYamlValueSource {
         public IEnumerable<YamlValue> GetValues() => (PhonemizerFactory.GetAll() ?? Array.Empty<PhonemizerFactory>())
-            .Select(factory => new YamlValue(factory.type.FullName ?? factory.type.Name, factory.ToString()));
+            .Select(factory => new YamlValue(factory.Id, factory.ToString()));
     }
 }

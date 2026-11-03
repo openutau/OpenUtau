@@ -125,13 +125,15 @@ namespace OpenUtau.UiTest {
 
         class FakeSinger : USinger {
             readonly string name;
-            public FakeSinger(string name) {
+            readonly USingerType type;
+            public FakeSinger(string name, USingerType type = USingerType.Classic) {
                 this.name = name;
+                this.type = type;
                 found = true;
             }
             public override string Id => name;
             public override string Name => name;
-            public override USingerType SingerType => USingerType.Classic;
+            public override USingerType SingerType => type;
             public override IList<string> SearchTerms { get; } = new List<string>();
         }
 
@@ -156,6 +158,101 @@ namespace OpenUtau.UiTest {
                     manager.SingerGroups[USingerType.Classic] = oldGroup;
                 }
                 (prefs.FavoriteSingers, prefs.RecentSingers) = (oldFavorites, oldRecents);
+            }
+        }
+
+        [Fact]
+        public void SingerFlyoutFiltersByType() {
+            WithMainWindow(nameof(SingerFlyoutFiltersByType), window => WithSingersOfTypes(
+                    new[] { USingerType.Classic, USingerType.DiffSinger, USingerType.DiffSinger }, singers => {
+                Click(window, FindButtonWithText(window, "welcome.new"));
+                var header = window.GetVisualDescendants().OfType<TrackHeader>().First();
+                Click(window, header.FindControl<Button>("SingerButton")!);
+
+                var flyout = window.GetVisualDescendants().OfType<SingerFlyout>().SingleOrDefault();
+                AssertHasSize(flyout);
+                var viewModel = Assert.IsType<SingerFlyoutViewModel>(flyout.DataContext);
+                var chipsRow = flyout.FindControl<ItemsControl>("TypeChips");
+                var grid = flyout.FindControl<ScrollViewer>("TileScroller");
+                AssertHasSize(chipsRow);
+                AssertHasSize(grid);
+                // The chips are rebuilt on every click, so look them up again rather than keeping them.
+                List<Button> Chips() => flyout.GetVisualDescendants().OfType<Button>()
+                    .Where(button => button.Classes.Contains("typeChip")).ToList();
+                USingerType? TypeOf(Button button) => ((SingerTypeChipViewModel) button.DataContext!).Type;
+                bool Lit(Button button) => button.Classes.Contains("on");
+
+                // All-hot: the All chip and every type chip are lit.
+                Assert.True(viewModel.ShowTypeFilter);
+                var types = Chips().Select(TypeOf).ToList();
+                Assert.Contains(null, types);
+                Assert.Contains(USingerType.Classic, types);
+                Assert.Contains(USingerType.DiffSinger, types);
+                Assert.All(Chips(), chip => Assert.True(Lit(chip)));
+                var allCount = viewModel.GridTileCount;
+                var allTiles = viewModel.Tiles.Select(tile => tile.Singer).ToList();
+
+                // One-hot: a picked type leaves only its chip lit and only its singers in the grid.
+                var diffsinger = Chips().Single(chip => TypeOf(chip) == USingerType.DiffSinger);
+                Click(window, diffsinger);
+                Assert.Equal(USingerType.DiffSinger, viewModel.TypeFilter);
+                Assert.Equal(new[] { singers[1], singers[2] },
+                    viewModel.Tiles.Select(tile => tile.Singer).Where(allTiles.Contains));
+                Assert.All(viewModel.Tiles, tile => Assert.Equal(USingerType.DiffSinger, tile.Singer.SingerType));
+                Assert.All(Chips(), chip => Assert.Equal(TypeOf(chip) == USingerType.DiffSinger, Lit(chip)));
+                // The grid shrinks to the filtered singers, while the chips row still fits beside it.
+                Assert.True(viewModel.GridTileCount < allCount);
+                Assert.True(chipsRow.Bounds.Width <= grid.Bounds.Width, "The filter row is cut off");
+                AssertRendered(window);
+
+                // Clicking the lit type goes back to all-hot.
+                Click(window, Chips().Single(chip => TypeOf(chip) == USingerType.DiffSinger));
+                Assert.Null(viewModel.TypeFilter);
+                Assert.Equal(allCount, viewModel.GridTileCount);
+                Assert.Equal(allTiles, viewModel.Tiles.Select(tile => tile.Singer));
+                Assert.All(Chips(), chip => Assert.True(Lit(chip)));
+
+                // The search narrows within the filter, and the All chip is a way back from a one-hot filter.
+                var classic = Chips().Single(chip => TypeOf(chip) == USingerType.Classic);
+                Click(window, classic);
+                viewModel.SearchText = "diffsinger";
+                HeadlessUi.Flush();
+                Assert.DoesNotContain(singers[0], viewModel.Tiles.Select(tile => tile.Singer));
+                Assert.All(viewModel.Tiles, tile => Assert.Equal(USingerType.DiffSinger, tile.Singer.SingerType));
+                Click(window, Chips().Single(chip => TypeOf(chip) == null));
+                Assert.Null(viewModel.TypeFilter);
+                Assert.Contains(singers[1], viewModel.Tiles.Select(tile => tile.Singer));
+                Assert.Contains(singers[2], viewModel.Tiles.Select(tile => tile.Singer));
+                Assert.DoesNotContain(singers[0], viewModel.Tiles.Select(tile => tile.Singer));
+                Assert.False(viewModel.NoMatch);
+                AssertRendered(window);
+            }));
+        }
+
+        // Adds singers of the given types, one per entry, so the flyout has types to filter by.
+        static void WithSingersOfTypes(IEnumerable<USingerType> types, Action<List<FakeSinger>> test) {
+            var singers = types.Select((type, i) => new FakeSinger($"Fake Singer {type} {i}", type)).ToList();
+            var manager = SingerManager.Inst;
+            var oldGroups = types.Distinct().Select(type => {
+                manager.SingerGroups.TryGetValue(type, out var group);
+                return (type, group);
+            }).ToList();
+            try {
+                singers.ForEach(singer => manager.Singers[singer.Id] = singer);
+                foreach (var (type, group) in oldGroups) {
+                    manager.SingerGroups[type] = (group ?? new List<USinger>())
+                        .Concat(singers.Where(singer => singer.SingerType == type)).ToList();
+                }
+                test(singers);
+            } finally {
+                singers.ForEach(singer => manager.Singers.Remove(singer.Id));
+                foreach (var (type, group) in oldGroups) {
+                    if (group == null) {
+                        manager.SingerGroups.Remove(type);
+                    } else {
+                        manager.SingerGroups[type] = group;
+                    }
+                }
             }
         }
 
@@ -212,7 +309,7 @@ namespace OpenUtau.UiTest {
                 window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
                 HeadlessUi.Flush();
                 Assert.Equal(string.Empty, viewModel.SearchText);
-                Assert.Equal(viewModel.AllTileCount, viewModel.Tiles.Count);
+                Assert.Equal(viewModel.GridTileCount, viewModel.Tiles.Count);
                 Assert.True(flyout.IsEffectivelyVisible);
                 AssertRendered(window);
 

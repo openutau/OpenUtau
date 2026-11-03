@@ -45,6 +45,8 @@ namespace OpenUtau.Core.Enunu {
         HashSet<string> phonemes = new HashSet<string>();
         HashSet<string> timbres = new HashSet<string>();
         Dictionary<string, string[]> table = new Dictionary<string, string[]>();
+        /// <summary>Phonemes on the right side of the table.</summary>
+        HashSet<string> tablePhonemes = new HashSet<string>();
 
         public byte[] avatarData;
         public ulong voicebankNameHash;
@@ -80,6 +82,7 @@ namespace OpenUtau.Core.Enunu {
             phonemes.Clear();
             timbres.Clear();
             table.Clear();
+            tablePhonemes.Clear();
             otos.Clear();
             try {
                 var hedPath = Path.Join(Location, enuconfig.questionPath);
@@ -145,9 +148,7 @@ namespace OpenUtau.Core.Enunu {
                     }
                     var parts = line.Trim().Split();
                     table[parts[0]] = parts.Skip(1).ToArray();
-                    foreach (var phoneme in table[parts[0]]) {
-                        //phonemes.Add(phoneme);
-                    }
+                    tablePhonemes.UnionWith(table[parts[0]]);
                 }
             } catch (Exception e) {
                 Log.Error(e, $"Failed to load table for {Name}");
@@ -169,6 +170,22 @@ namespace OpenUtau.Core.Enunu {
                 avatarData = null;
                 Log.Error("Avatar can't be found");
             }
+        }
+
+        /// <summary>
+        /// Whether the server can turn the lyric into phonemes: every space-separated part is a table key
+        /// (kana, R) or a phoneme in the table. The server passes other parts on as phoneme names the model does not know.
+        /// True when the table could not be loaded, since then nothing can be checked.
+        /// </summary>
+        internal bool IsKnownLyric(string lyric) => IsKnownLyric(lyric, table, tablePhonemes);
+
+        internal static bool IsKnownLyric(string lyric, IReadOnlyDictionary<string, string[]> table, IReadOnlySet<string> tablePhonemes) {
+            if (table.Count == 0) {
+                return true;
+            }
+            // Split as utaupy does when it converts the UST (ustnote2htsnote).
+            var parts = lyric.Replace("っ", " っ ").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length > 0 && parts.All(p => table.ContainsKey(p) || tablePhonemes.Contains(p));
         }
 
         public override bool TryGetOto(string phoneme, out UOto oto) {

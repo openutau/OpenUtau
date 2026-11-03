@@ -8,16 +8,9 @@ using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.App.Controls {
     /// <summary>
-    /// The rendered audio of the open part, drawn behind the notes as a min/max
-    /// envelope with one column per device pixel.
-    ///
-    /// Columns sit on a fixed grid in song time (column k covers ticks
-    /// [TickOrigin + k / p, TickOrigin + (k + 1) / p] for p device pixels per
-    /// tick), so scrolling by a fraction of a pixel does not re-bin the samples
-    /// and make the peaks shimmer. The envelope is built for a range wider than
-    /// the view and kept as geometry; scrolling only moves it, by whole device
-    /// pixels so it stays as crisp as the bitmap it replaces, and it is rebuilt on
-    /// zoom, on newly rendered audio, or when the view leaves the range.
+    /// The rendered audio of the open part, drawn behind the notes as a
+    /// <see cref="WaveformEnvelope"/> on a grid from TickOrigin, rebuilt on newly
+    /// rendered audio.
     /// </summary>
     class WaveformImage : Control {
         public static readonly DirectProperty<WaveformImage, double> TickWidthProperty =
@@ -57,23 +50,13 @@ namespace OpenUtau.App.Controls {
         private double tickOffset;
         private bool showWaveform;
 
-        // The cached envelope covers columns [cacheStart, cacheEnd) and was built
-        // for these inputs. It is in device pixels; x = 0 is column cacheStart.
-        private StreamGeometry? geometry;
-        private int cacheStart;
-        private int cacheEnd;
-        private UPart? cachePart;
-        private int cacheTickOrigin;
-        private double cacheTickWidth;
-        private double cacheHeight;
-        private double cacheScale;
-        private bool cacheValid;
+        private readonly WaveformEnvelope envelope = new WaveformEnvelope();
         private float[] sampleData = new float[0];
 
         public WaveformImage() {
             // The projection payload is not read here; deliveries mean new audio.
             OpenUtau.Core.Render.RenderView.Inst.Observe(_ => {
-                cacheValid = false;
+                envelope.Invalidate();
                 InvalidateVisual();
             });
         }
@@ -106,49 +89,19 @@ namespace OpenUtau.App.Controls {
             }
             double offsetPx = viewModel.TickOffset * viewModel.TickWidth * scale;
             int firstColumn = (int)Math.Floor(offsetPx);
-            if (viewModel.TickWidth != cacheTickWidth || scale != cacheScale) {
-                // Zooming rebuilds every frame, so build only what is visible; the
-                // first scroll afterwards builds the margins.
-                Build(viewModel, project, part, scale, firstColumn, firstColumn + width + 1, height);
-            } else if (!cacheValid || geometry == null || part != cachePart ||
-                viewModel.TickOrigin != cacheTickOrigin || height != cacheHeight ||
-                firstColumn < cacheStart || firstColumn + width + 1 > cacheEnd) {
-                // Half a view of margin on each side, so scrolling rarely rebuilds.
-                Build(viewModel, project, part, scale, firstColumn - width / 2, firstColumn + width + width / 2 + 1, height);
-            }
-            if (geometry != null) {
-                // Shift by whole device pixels, then map device pixels to the control's units.
-                // The cached margins lie outside the control, so clip them.
-                var transform = Matrix.CreateTranslation(Math.Round(cacheStart - offsetPx), 0) * Matrix.CreateScale(1 / scale, 1 / scale);
-                using (context.PushClip(new Rect(Bounds.Size)))
-                using (context.PushTransform(transform)) {
-                    context.DrawGeometry(Fill, null, geometry);
-                }
-            }
+            envelope.Update(project.timeAxis, part, viewModel.TickOrigin, viewModel.TickWidth * scale,
+                new[] { (0.0, height) }, firstColumn, firstColumn + width + 1, int.MinValue, int.MaxValue,
+                (edges, min, max) => FillColumns(part, edges, min[0], max[0]));
+            envelope.Draw(context, Bounds.Size, scale, Math.Round(-offsetPx), Fill);
         }
 
-        private void Build(NotesViewModel viewModel, UProject project, UPart part, double scale, int start, int end, double height) {
-            cachePart = part;
-            cacheTickOrigin = viewModel.TickOrigin;
-            cacheTickWidth = viewModel.TickWidth;
-            cacheScale = scale;
-            cacheHeight = height;
-            cacheStart = start;
-            cacheEnd = end;
-            cacheValid = true;
-            geometry = null;
-
-            int columns = end - start;
-            // Song time of each column's left edge; edges[columns] is the right edge of the last one.
-            double pixelsPerTick = viewModel.TickWidth * scale;
-            var edges = new double[columns + 1];
-            for (int i = 0; i <= columns; ++i) {
-                edges[i] = project.timeAxis.TickPosToMsPos(viewModel.TickOrigin + (start + i) / pixelsPerTick);
-            }
+        // The mixed audio of both channels, as one lane.
+        private bool FillColumns(UPart part, double[] edges, float[] columnMin, float[] columnMax) {
+            int columns = edges.Length - 1;
             int firstSample = Math.Max(0, SampleIndex(edges[0]));
             int sampleCount = Math.Max(0, SampleIndex(edges[columns]) - firstSample);
             if (sampleCount == 0) {
-                return;
+                return false;
             }
             if (sampleData.Length < sampleCount) {
                 sampleData = new float[sampleCount];
@@ -165,7 +118,7 @@ namespace OpenUtau.App.Controls {
             // rendering draws only what has finished.
             var planner = OpenUtau.Core.PlaybackManager.Inst.MixPlanner;
             if (!MixPlanner.TryGetPartPlacements(planner, part, phraseView, out var pcmList)) {
-                return;
+                return false;
             }
             var slots = new OpenUtau.Core.SignalChain.SampleSlot[pcmList.Count];
             for (int i = 0; i < pcmList.Count; ++i) {
@@ -178,11 +131,7 @@ namespace OpenUtau.App.Controls {
             source.SetSlots(slots);
             source.Mix(firstSample, sampleData, 0, sampleCount);
 
-            // Top and bottom of each column in pixels, NaN where no phrase has
-            // audio, so those ranges are left blank instead of drawing a
-            // zero-volume line. Silence inside a phrase still draws.
-            var top = new double[columns];
-            var bottom = new double[columns];
+            // NaN where no phrase has audio. Silence inside a phrase still draws.
             float lastValue = 0;
             for (int i = 0; i < columns; ++i) {
                 double fromMs = edges[i], toMs = edges[i + 1];
@@ -196,7 +145,7 @@ namespace OpenUtau.App.Controls {
                 int s0 = Math.Clamp(SampleIndex(fromMs) - firstSample, 0, sampleCount);
                 int s1 = Math.Clamp(SampleIndex(toMs) - firstSample, 0, sampleCount);
                 if (!covered || fromMs < 0) {
-                    top[i] = bottom[i] = double.NaN;
+                    columnMin[i] = columnMax[i] = float.NaN;
                     if (s1 > 0) {
                         lastValue = sampleData[s1 - 1];
                     }
@@ -216,41 +165,10 @@ namespace OpenUtau.App.Controls {
                     // Zoomed in past one sample per column: hold the last sample.
                     min = max = lastValue;
                 }
-                // Whole pixel rows, at least one, so edges stay sharp and quiet
-                // audio still shows a line.
-                double yTop = Math.Clamp(Math.Round((0.5 - max * 0.5) * height), 0, height - 1);
-                double yBottom = Math.Clamp(Math.Round((0.5 - min * 0.5) * height), yTop + 1, height);
-                top[i] = yTop;
-                bottom[i] = yBottom;
+                columnMin[i] = min;
+                columnMax[i] = max;
             }
-
-            // One filled figure per run of covered columns: along the tops, then
-            // back along the bottoms. Each column spans [i, i + 1).
-            var g = new StreamGeometry();
-            using (var ctx = g.Open()) {
-                int i = 0;
-                while (i < columns) {
-                    if (double.IsNaN(top[i])) {
-                        ++i;
-                        continue;
-                    }
-                    int runStart = i;
-                    while (i < columns && !double.IsNaN(top[i])) {
-                        ++i;
-                    }
-                    ctx.BeginFigure(new Point(runStart, top[runStart]), true);
-                    for (int k = runStart; k < i; ++k) {
-                        ctx.LineTo(new Point(k, top[k]));
-                        ctx.LineTo(new Point(k + 1, top[k]));
-                    }
-                    for (int k = i - 1; k >= runStart; --k) {
-                        ctx.LineTo(new Point(k + 1, bottom[k]));
-                        ctx.LineTo(new Point(k, bottom[k]));
-                    }
-                    ctx.EndFigure(true);
-                }
-            }
-            geometry = g;
+            return true;
         }
 
         // Index of the interleaved sample at a song time, as the mix lays them out.

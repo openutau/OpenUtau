@@ -67,6 +67,10 @@
       <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
     </Style>
+    <!-- Workaround for cut tooltips https://github.com/AvaloniaUI/Avalonia/issues/21240 -->
+    <Style Selector="ToolTip /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="UseLayoutRounding" Value="True"/>
+    </Style>
   </UserControl.Styles>
   <UserControl.Resources>
     <ContextMenu x:Key="RenderersMenuRes" Classes="context" Name="RenderersMenu" Placement="BottomEdgeAlignedLeft" 
@@ -93,7 +97,7 @@
     </ContextMenu>
   </UserControl.Resources>
   <Border Margin="1,1,1,1" BorderThickness="1" BorderBrush="{Binding HeaderBorderBrush}"
-           CornerRadius="2" PointerPressed="HeaderPointerPressed">
+           CornerRadius="2" PointerPressed="HeaderPointerPressed" UseLayoutRounding="False">
     <Grid ColumnDefinitions="auto,*" Background="Transparent">
       <Panel Grid.Column="0" VerticalAlignment="Stretch" Background="Transparent" PointerWheelChanged="MoveHandleScrolled"
              PointerMoved="MoveHandleMoved" PointerPressed="MoveHandlePressed" PointerReleased="MoveHandleReleased">
@@ -111,18 +115,18 @@
            settings with the renderer and fx with the faders. Rows hidden at small track heights
            fold into the more menu; settings goes along with the renderer. -->
       <Grid Grid.Column="1" ColumnDefinitions="*,auto,auto,auto" RowDefinitions="auto,auto,auto,auto,auto,*">
-        <Button Classes="clear" Grid.Row="0" Margin="1" Padding="2,1,0,0" Height="18"
+        <Button Classes="clear" Grid.Row="0" Margin="1" Padding="2,0,0,0" Height="18"
                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                 Content="{Binding TrackName}" Click="TrackNameButtonClicked"/>
-        <Button Name="SingerButton" Grid.Row="1" Grid.ColumnSpan="4" Classes="clear" Margin="1" Padding="2,1,0,0" Height="18" IsVisible="{Binding IsSingerVisible}"
+        <Button Name="SingerButton" Grid.Row="1" Grid.ColumnSpan="4" Classes="clear" Margin="1" Padding="2,0,0,0" Height="18" IsVisible="{Binding IsSingerVisible}"
                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                 Content="{Binding Singer, TargetNullValue={StaticResource tracks.selectsinger}}" Click="SingerButtonClicked"
                 ContextRequested="SingerButtonContextRequested" ToolTip.Tip="{Binding Singer}"/>
-        <Button Grid.Row="2" Grid.ColumnSpan="4" Classes="clear" Margin="1" Padding="2,1,0,0" Height="18" IsVisible="{Binding IsPhonemizerVisible}"
+        <Button Grid.Row="2" Grid.ColumnSpan="4" Classes="clear" Margin="1" Padding="2,0,0,0" Height="18" IsVisible="{Binding IsPhonemizerVisible}"
                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                 Content="{Binding PhonemizerTag}" Click="PhonemizerButtonClicked" ContextRequested="PhonemizerButtonContextRequested"
                 ToolTip.Tip="{Binding Phonemizer}" ContextMenu="{StaticResource PhonemizerMenuRes}"/>
-        <Button Grid.Row="3" Grid.ColumnSpan="3" Classes="clear" Margin="1" Padding="2,1,0,0" Height="18" IsVisible="{Binding IsRendererVisible}"
+        <Button Grid.Row="3" Grid.ColumnSpan="3" Classes="clear" Margin="1" Padding="2,0,0,0" Height="18" IsVisible="{Binding IsRendererVisible}"
                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Focusable="False"
                 Content="{Binding Renderer}" Click="RendererButtonClicked" ContextRequested="RendererButtonContextRequested"
                 ToolTip.Tip="{DynamicResource tracks.selectrenderer}" ContextMenu="{StaticResource RendererMenuRes}"/>
@@ -201,33 +205,40 @@
           <Slider Grid.Column="1" Name="VolumeSlider" HorizontalAlignment="Stretch" Classes="fader" Minimum="-24" Maximum="12" Value="{Binding Volume}"
                   PointerPressed="VolumeFaderPointerPressed" ValueChanged="VolumeOrPanSliderValueChanged"
                   ContextRequested="VolumeFaderContextRequested" IsEnabled="{Binding !Muted}"/>
-          <TextBlock Grid.Column="3" HorizontalAlignment="Left" Background="Transparent"
-                    TextAlignment="Center" FontSize="9" FontFamily="monospace" PointerPressed="VolumePointerPressed">
+          <TextBlock Grid.Column="3" HorizontalAlignment="Stretch" Background="Transparent"
+                    TextAlignment="Left" FontSize="9" FontFamily="monospace" PointerPressed="VolumePointerPressed">
             <TextBlock.Text>
               <MultiBinding StringFormat="{}{0:+#00.0;-#00.0}">
                 <Binding Path="Volume"/>
               </MultiBinding>
             </TextBlock.Text>
           </TextBlock>
-          <TextBox Grid.Column="3" Name="VolumeTextBox" MinWidth="28"
-                  HorizontalAlignment="Left" BorderThickness="0" IsVisible="False" IsEnabled="False"
-                  TextAlignment="Right" FontSize="9" FontFamily="monospace"
+          <!-- The app TextBox style does not fit in these 18px cells: its padding, bottom margin
+               and 64 minimum push the digits off the value's place. Left alignment throughout,
+               because the caret is drawn without any text alignment. -->
+          <TextBox Grid.Column="3" Name="VolumeTextBox" MinWidth="0"
+                  HorizontalAlignment="Stretch" VerticalContentAlignment="Center"
+                  BorderThickness="0" IsVisible="False" IsEnabled="False"
+                  Padding="0" Margin="0"
+                  TextAlignment="Left" FontSize="9" FontFamily="monospace"
                   KeyDown="VolumeOrPanTextBoxKeyDown" LostFocus="VolumeOrPanTextBoxLostFocus"/>
           <Slider Grid.Column="5" Name="PanSlider" HorizontalAlignment="Stretch"
                   Classes="fader" Minimum="-100" Maximum="100" Value="{Binding Pan}"
                   PointerPressed="PanFaderPointerPressed" ValueChanged="VolumeOrPanSliderValueChanged"
                   ContextRequested="PanFaderContextRequested" IsEnabled="{Binding !Muted}"/>
           <TextBlock Grid.Column="7" HorizontalAlignment="Stretch" Background="Transparent"
-                    TextAlignment="Center" FontSize="9" FontFamily="monospace" PointerPressed="PanPointerPressed">
+                    TextAlignment="Left" FontSize="9" FontFamily="monospace" PointerPressed="PanPointerPressed">
             <TextBlock.Text>
               <MultiBinding StringFormat="{}{0:00R;00L;C}">
                 <Binding Path="Pan"/>
               </MultiBinding>
             </TextBlock.Text>
           </TextBlock>
-          <TextBox Grid.Column="7" Name="PanTextBox" MinWidth="26" HorizontalAlignment="Center"
-                  BorderThickness="0" IsVisible="False" IsEnabled="False" TextAlignment="Center" FontSize="9"
-                  FontFamily="monospace" KeyDown="VolumeOrPanTextBoxKeyDown" LostFocus="VolumeOrPanTextBoxLostFocus"/>
+          <TextBox Grid.Column="7" Name="PanTextBox" MinWidth="0" HorizontalAlignment="Stretch"
+                  VerticalContentAlignment="Center" BorderThickness="0" IsVisible="False" IsEnabled="False"
+                  Padding="0" Margin="0"
+                  TextAlignment="Left" FontSize="9" FontFamily="monospace"
+                  KeyDown="VolumeOrPanTextBoxKeyDown" LostFocus="VolumeOrPanTextBoxLostFocus"/>
         </Grid>
         <Button Grid.Row="4" Grid.Column="3" VerticalAlignment="Center" Classes="toolbar fxButton" Margin="1" Width="18" Height="18"
                       ToolTip.Tip="{DynamicResource tracks.mixfx}"

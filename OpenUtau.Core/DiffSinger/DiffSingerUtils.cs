@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,6 +22,22 @@ namespace OpenUtau.Core.DiffSinger {
                 {Format.Ustx.VOIC, (x, y) => x + (y - 100) * 12 / 100},
                 {Format.Ustx.TENC, (x, y) => x + y / 20},
             };
+
+        /// <summary>
+        /// Applies the user delta to a predicted variance curve and clamps it to the
+        /// range the acoustic model expects. Shared by the renderer and the .ds export
+        /// so the exported conditioning matches what is actually fed to the model.
+        /// </summary>
+        public static float ApplyVarianceDelta(string abbr, float predicted, float user) {
+            float value = VarianceDeltaFunctions[abbr](predicted, user);
+            if (abbr == ENE || abbr == Format.Ustx.BREC || abbr == Format.Ustx.VOIC) {
+                return Math.Clamp(value, -96f, 0f);
+            }
+            if (abbr == Format.Ustx.TENC) {
+                return Math.Clamp(value, -10f, 10f);
+            }
+            return value;
+        }
 
         public static float GetHeadMs(double frameMs) {
             return (float)(frameMs * headFrames);
@@ -90,30 +106,6 @@ namespace OpenUtau.Core.DiffSinger {
                 frameMs);
         }
 
-        /// <summary>
-        /// Per-frame voiced flag for the padded frame layout. Segments that are
-        /// not real phonemes (head "SP", inter-phoneme gap "SP", tail "SP") are
-        /// unvoiced: the pitch model has no ground truth there, and any value it
-        /// returns for those frames is an artifact rather than a curve to follow.
-        /// </summary>
-        public static bool[] PaddedVoicedMask(
-            IReadOnlyList<(string Phoneme, double DurationMs, int PhoneIndex)> segments,
-            IReadOnlyList<int> durations) {
-            int totalFrames = 0;
-            for (int i = 0; i < durations.Count; ++i) {
-                totalFrames += durations[i];
-            }
-            var mask = new bool[totalFrames];
-            int frame = 0;
-            for (int i = 0; i < segments.Count && i < durations.Count; ++i) {
-                bool voiced = segments[i].PhoneIndex >= 0;
-                for (int f = 0; f < durations[i] && frame < mask.Length; ++f) {
-                    mask[frame++] = voiced;
-                }
-            }
-            return mask;
-        }
-
         public static long[] PaddedLanguageIds(
             RenderPhrase phrase, double frameMs, int headFrames, int tailFrames, Func<string, long> langIdByPhoneme) {
             return PaddedSegments(phrase, frameMs, headFrames, tailFrames)
@@ -123,7 +115,13 @@ namespace OpenUtau.Core.DiffSinger {
 
         public static (Int64[] wordDiv, Int64[] wordDur) PaddedWordDivAndDur(
             RenderPhrase phrase, int[] phDur, Func<string, bool> isVowel, double frameMs, int headFrames, int tailFrames) {
-            var segments = PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            return WordDivAndDur(
+                PaddedSegments(phrase, frameMs, headFrames, tailFrames), phDur, isVowel);
+        }
+
+        internal static (Int64[] wordDiv, Int64[] wordDur) WordDivAndDur(
+            IReadOnlyList<(string Phoneme, double DurationMs, int PhoneIndex)> segments,
+            int[] phDur, Func<string, bool> isVowel) {
             if (segments.Count == 0) {
                 throw new InvalidDataException("DiffSinger word mode requires at least one phoneme.");
             }
@@ -140,11 +138,14 @@ namespace OpenUtau.Core.DiffSinger {
                 vowelIds = new int[] { segments.Count - 2 };
             }
 
-            // Vowel indexes are in segment space (phones shifted by +1 for
-            // the head "SP"), hence no +1 on the first word.
+            // Vowel indexes are in segment space (phones shifted by +1 for the
+            // head "SP"), hence no +1 on the first word. The tail SP is its own
+            // word in the .ds format, so do not merge it into the last vowel group.
+            int tailIndex = segments.Count - 1;
             var wordDiv = vowelIds.Zip(vowelIds.Skip(1), (a, b) => (Int64)(b - a))
                 .Prepend((Int64)vowelIds[0])
-                .Append((Int64)segments.Count - vowelIds[^1])
+                .Append((Int64)(tailIndex - vowelIds[^1]))
+                .Append(1L)
                 .ToArray();
 
             if (wordDiv.Any(d => d <= 0)) {

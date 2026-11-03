@@ -164,6 +164,40 @@ namespace OpenUtau.Core.ExpressionGraph {
             graph.links.RemoveAll(l => l.from == id || l.to == id);
         }
 
+        /// <summary>A copy of some nodes and the links among them, to paste with <see cref="PasteNodes"/>.</summary>
+        public static UExpressionGraph CopyNodes(UExpressionGraph graph, IEnumerable<int> ids) {
+            var copied = new HashSet<int>(ids);
+            return new UExpressionGraph {
+                renderer = graph.renderer,
+                nodes = graph.nodes.Where(n => copied.Contains(n.id)).Select(n => n.Clone()).ToList(),
+                links = graph.links.Where(l => copied.Contains(l.from) && copied.Contains(l.to)).Select(l => l.Clone()).ToList(),
+            };
+        }
+
+        /// <summary>
+        /// Adds copied nodes under new ids, moved by (dx, dy), with the links among them. Returns the new ids.
+        /// </summary>
+        public static List<int> PasteNodes(UExpressionGraph graph, UExpressionGraph copied, float dx, float dy) {
+            int next = graph.nodes.Count == 0 ? 1 : graph.nodes.Max(n => n.id) + 1;
+            var ids = new Dictionary<int, int>();
+            foreach (var node in copied.nodes) {
+                var copy = node.Clone();
+                copy.id = ids[node.id] = next++;
+                copy.x += dx;
+                copy.y += dy;
+                graph.nodes.Add(copy);
+            }
+            foreach (var link in copied.links) {
+                if (ids.TryGetValue(link.from, out int from) && ids.TryGetValue(link.to, out int to)) {
+                    var copy = link.Clone();
+                    copy.from = from;
+                    copy.to = to;
+                    graph.links.Add(copy);
+                }
+            }
+            return ids.Values.ToList();
+        }
+
         /// <summary>
         /// A new graph for a renderer, drawing and loading pitch into the pitch override (PITO), which replaces the
         /// pitch wherever it has a value. Underneath it: for a renderer that renders pitch, the rendered pitch

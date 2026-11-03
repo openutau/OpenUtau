@@ -16,12 +16,20 @@
     <Style Selector="Button,ToggleButton">
       <Setter Property="Focusable" Value="False"/>
     </Style>
+    <Style Selector="FlyoutPresenter.warnings">
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
+      <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+    </Style>
   </Window.Styles>
   <Grid>
     <Grid Name="MainGrid" Margin="{Binding $parent[Window].WindowDecorationMargin}">
-      <Menu Grid.Row="0" Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Left" Height="24"
-                Opened="OnMainMenuOpened" Closed="OnMainMenuClosed" PointerExited="OnMainMenuPointerLeave"
-                ZIndex="1">
+      <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Left"
+                  Height="24" ZIndex="1">
+        <Menu Height="24" Opened="OnMainMenuOpened" Closed="OnMainMenuClosed" PointerExited="OnMainMenuPointerLeave">
           <MenuItem Header="{DynamicResource menu.file}" IsEnabled="{Binding Page}">
             <MenuItem Header="{DynamicResource menu.file.new}" InputGesture="Ctrl+N" Click="OnMenuNew"/>
             <MenuItem Header="{DynamicResource menu.file.newfromtemplate}" ItemsSource="{Binding OpenTemplatesMenuItems}" Classes="MenuItemWithSubMenu"/>
@@ -71,7 +79,7 @@
             <MenuItem Header="{DynamicResource menu.tools.fullscreen}" InputGesture="F11" Click="OnMenuFullScreen"/>
             <MenuItem Header="{DynamicResource menu.tools.dawintegration}" Click="OnMenuDawIntegration"/>
             <MenuItem Header="{Binding ClearCacheHeader}" Click="OnMenuClearCache"/>
-            <MenuItem Header="{DynamicResource menu.tools.debugwindow}" Click="OnMenuDebugWindow"/>
+            <MenuItem Header="{DynamicResource menu.tools.debugwindow}" Click="OnMenuDeveloperWindow"/>
             <MenuItem Header="{DynamicResource phoneticassistant.caption}" Click="OnMenuPhoneticAssistant"/>
             <MenuItem Header="{DynamicResource menu.tools.singers}" Click="OnMenuSingers"/>
             <MenuItem Header="{DynamicResource menu.tools.singer.install}" Click="OnMenuInstallSinger"/>
@@ -86,6 +94,49 @@
             <MenuItem Header="{DynamicResource menu.help.logslocation}" Click="OnMenuLogsLocation"/>
           </MenuItem>
         </Menu>
+        <Button Name="WarningsButton" Classes="clear" Width="24" Height="24" Margin="0" Padding="0"
+                IsVisible="{Binding HasWarnings}" ToolTip.Tip="{DynamicResource warnings}">
+          <Path Width="14" Height="14" Stretch="Uniform" Fill="#E8A317"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Data="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+          <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedLeft" FlyoutPresenterClasses="warnings">
+              <StackPanel Width="380">
+                <Grid ColumnDefinitions="*,Auto" Margin="14,6,6,6">
+                  <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{DynamicResource warnings}"/>
+                  <Button Grid.Column="1" Classes="clear" Margin="0" Height="24" Padding="8,0"
+                          Content="{DynamicResource warnings.clear}" Click="OnClearWarnings"/>
+                </Grid>
+                <Border Height="1" Background="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
+                <ScrollViewer MaxHeight="360" HorizontalScrollBarVisibility="Disabled">
+                  <ItemsControl ItemsSource="{Binding Warnings}" Margin="0,4">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:WarningItem">
+                        <Grid ColumnDefinitions="Auto,*,Auto" Margin="14,8,6,8">
+                          <Path Width="14" Height="14" Margin="0,2,10,0" VerticalAlignment="Top" Stretch="Uniform" Fill="#E8A317"
+                                Data="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+                          <StackPanel Grid.Column="1" Spacing="4">
+                            <SelectableTextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <SelectableTextBlock Text="{Binding Detail}" FontSize="12" TextWrapping="Wrap"
+                                                 Foreground="{DynamicResource ForegroundBrushSecondary}"
+                                                 IsVisible="{Binding Detail, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                          </StackPanel>
+                          <Button Grid.Column="2" Classes="clear" Width="24" Height="24" Margin="6,-3,0,0" Padding="0"
+                                  VerticalAlignment="Top" ToolTip.Tip="{DynamicResource warnings.dismiss}" Click="OnDismissWarning">
+                            <Path Width="8" Height="8" Stretch="Uniform" StrokeThickness="1.5"
+                                  Stroke="{DynamicResource ForegroundBrushSecondary}"
+                                  Data="M0,0 L8,8 M8,0 L0,8"/>
+                          </Button>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </StackPanel>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+      </StackPanel>
       <Carousel SelectedIndex="{Binding Page}" >
         <!--Welcome page-->
         <Grid Margin="60,50,60,40" RowDefinitions="Auto,Auto,Auto,*" ColumnDefinitions="*,*" KeyDown="OnCarouselPageKeyDown">

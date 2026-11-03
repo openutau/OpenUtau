@@ -426,6 +426,7 @@ namespace OpenUtau.Classic.Hifisampler {
         }
 
         float[] Run(List<NamedOnnxValue> inputs) {
+            using var dmlScope = Onnx.EnterDmlScope();
             using var results = session.Run(inputs);
             return results.First().AsTensor<float>().ToArray();
         }

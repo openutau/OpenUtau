@@ -2,11 +2,11 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <system:Boolean x:Key="IsDarkMode">true</system:Boolean>
-  
-  <Color x:Key="BackgroundColor">#201D26</Color>
-  <Color x:Key="BackgroundColorPointerOver">#312C3A</Color>
-  <Color x:Key="BackgroundColorPressed">#433D4F</Color>
-  <Color x:Key="BackgroundColorDisabled">#27242E</Color>
+
+  <Color x:Key="BackgroundColor">#26232C</Color>
+  <Color x:Key="BackgroundColorPointerOver">#36313F</Color>
+  <Color x:Key="BackgroundColorPressed">#484255</Color>
+  <Color x:Key="BackgroundColorDisabled">#2C2933</Color>
 
   <Color x:Key="ForegroundColor">#CDCAD4</Color>
   <Color x:Key="ForegroundColorPointerOver">#E9E6F0</Color>
@@ -26,23 +26,23 @@
   <Color x:Key="NeutralAccentColorPointerOver">#B0ABBC</Color>
   <Color x:Key="AccentColor1">#4EA6EA</Color>
   <Color x:Key="AccentColor2">#FF679D</Color>
-  <Color x:Key="AccentColor3">#FF679D</Color>
+  <Color x:Key="AccentColor3">#E62E6E</Color>
 
-  <Color x:Key="TickLineColor">#504A5C</Color>
+  <Color x:Key="TickLineColor">#615B73</Color>
   <Color x:Key="BarNumberColor">#B0ABBC</Color>
   <Color x:Key="FinalPitchColor">#C0BACD</Color>
-  <Color x:Key="TrackBackgroundAltColor">#282431</Color>
+  <Color x:Key="TrackBackgroundAltColor">#302C38</Color>
   
   <Color x:Key="WarningColor">#433519</Color>
 
   <!--Keyboard Background-->
-  <Color x:Key="WhiteKeyColorLeft">#CC2A63</Color>
-  <Color x:Key="WhiteKeyColorRight">#FF347C</Color>
+  <Color x:Key="WhiteKeyColorLeft">#CC527C</Color>
+  <Color x:Key="WhiteKeyColorRight">#FF4D8B</Color>
   <Color x:Key="WhiteKeyNameColor">#FFFFFF</Color>
 
   <Color x:Key="CenterKeyColorLeft">#CCA5B0</Color>
   <Color x:Key="CenterKeyColorRight">#FFCEDC</Color>
-  <Color x:Key="CenterKeyNameColor">#FF347C</Color>
+  <Color x:Key="CenterKeyNameColor">#FF4D8B</Color>
 
   <Color x:Key="BlackKeyColorLeft">Transparent</Color>
   <Color x:Key="BlackKeyColorRight">Transparent</Color>

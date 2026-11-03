@@ -89,10 +89,47 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
+    /// <summary>
+    /// A singer type chip of the flyout's filter row. Every chip is lit while showing all types,
+    /// then only the chosen one is.
+    /// </summary>
+    public class SingerTypeChipViewModel : ViewModelBase {
+        /// <summary>Null for the "All" chip.</summary>
+        public USingerType? Type { get; }
+        public string Label { get; }
+        public bool IsOn { get; }
+        public string ToolTipText { get; }
+
+        public SingerTypeChipViewModel(USingerType? type, string label, bool isOn, string toolTipText) {
+            Type = type;
+            Label = label;
+            IsOn = isOn;
+            ToolTipText = toolTipText;
+        }
+    }
+
     public partial class SingerFlyoutViewModel : ViewModelBase, ICmdSubscriber {
+        /// <summary>Singer types in the order the flyout's sections use them.</summary>
+        static readonly USingerType[] TypeOrder = {
+            USingerType.Classic, USingerType.DiffSinger, USingerType.Enunu, USingerType.Voicevox, USingerType.Vogen,
+        };
+
         [Reactive] public partial IReadOnlyList<SingerTileViewModel> Tiles { get; set; } = Array.Empty<SingerTileViewModel>();
         public IReadOnlyList<int> SectionStarts { get; private set; } = Array.Empty<int>();
-        [Reactive] public partial int AllTileCount { get; set; }
+        [Reactive] public partial IReadOnlyList<SingerTypeChipViewModel> TypeChips { get; private set; } = Array.Empty<SingerTypeChipViewModel>();
+
+        /// <summary>The singer type filter, or null for all of them. Kept only while the flyout is open.</summary>
+        [Reactive] public partial USingerType? TypeFilter { get; set; }
+
+        /// <summary>The filter row is only worth its space when there is more than one type to choose from.</summary>
+        public bool ShowTypeFilter => TypeChips.Count > 1;
+
+        /// <summary>
+        /// Tiles the grid shows for the current type filter, ignoring the search text.
+        /// Sizes the flyout, so searching doesn't resize it while filtering does.
+        /// </summary>
+        [Reactive] public partial int GridTileCount { get; set; }
+
         [Reactive] public partial bool IsEmpty { get; set; }
         [Reactive] public partial bool NoMatch { get; set; }
         [Reactive] public partial string SearchText { get; set; } = string.Empty;
@@ -106,12 +143,14 @@ namespace OpenUtau.App.ViewModels {
         private readonly Func<USinger?> getCurrentSinger;
         private readonly ICommand selectSingerCommand;
         private IReadOnlyList<SingerTileViewModel[]> sections = Array.Empty<SingerTileViewModel[]>();
+        private IReadOnlyList<USingerType> availableTypes = Array.Empty<USingerType>();
 
         public SingerFlyoutViewModel(Func<USinger?> getCurrentSinger, ICommand selectSingerCommand) {
             this.getCurrentSinger = getCurrentSinger;
             this.selectSingerCommand = selectSingerCommand;
             Rebuild();
-            this.WhenAnyValue(x => x.SearchText).Subscribe(_ => ApplySearch());
+            this.WhenAnyValue(x => x.SearchText).Subscribe(_ => ApplyFilters());
+            this.WhenAnyValue(x => x.TypeFilter).Subscribe(_ => ApplyTypeFilter());
         }
 
         public void Rebuild() {
@@ -132,19 +171,57 @@ namespace OpenUtau.App.ViewModels {
                     .Select(singer => new SingerTileViewModel(singer, current != null && singer.Equals(current)))
                     .ToArray())
                 .ToArray();
-            AllTileCount = sections.Sum(section => section.Length);
-            IsEmpty = AllTileCount == 0;
-            ApplySearch();
+            var types = sections.SelectMany(section => section)
+                .Select(tile => tile.Singer.SingerType)
+                .ToHashSet();
+            availableTypes = TypeOrder.Where(types.Contains).ToArray();
+            if (TypeFilter is { } filter && !availableTypes.Contains(filter)) {
+                // The filtered type has no singers anymore.
+                TypeFilter = null;
+            }
+            IsEmpty = sections.Sum(section => section.Length) == 0;
+            ApplyTypeFilter();
             this.RaisePropertyChanged(nameof(HasAdditionalSingersFolder));
         }
 
-        void ApplySearch() {
+        /// <summary>
+        /// All-hot while no type is picked, one-hot for a picked type.
+        /// Clicking the lit type, or the All chip, goes back to all-hot.
+        /// </summary>
+        public void ToggleTypeFilter(USingerType? type) {
+            TypeFilter = type == null || TypeFilter == type ? null : type;
+        }
+
+        void ApplyTypeFilter() {
+            GridTileCount = CountForType();
+            BuildTypeChips();
+            this.RaisePropertyChanged(nameof(ShowTypeFilter));
+            ApplyFilters();
+        }
+
+        int CountForType() => sections.Sum(section => section.Count(tile => MatchesTypeFilter(tile.Singer.SingerType)));
+
+        void BuildTypeChips() {
+            var chips = new List<SingerTypeChipViewModel> {
+                new SingerTypeChipViewModel(null,
+                    ThemeManager.GetString("tracks.filtertype.all"), TypeFilter == null,
+                    ThemeManager.GetString("tracks.filtertype.all.tip")),
+            };
+            foreach (var type in availableTypes) {
+                var label = SingerTypeUtils.SingerTypeNames.TryGetValue(type, out var name) ? name : type.ToString();
+                chips.Add(new SingerTypeChipViewModel(type, label, TypeFilter == null || TypeFilter == type,
+                    string.Format(ThemeManager.GetString("tracks.filtertype.only"), label)));
+            }
+            TypeChips = chips;
+        }
+
+        void ApplyFilters() {
             var query = SearchText.Trim();
             var tiles = new List<SingerTileViewModel>();
             var starts = new List<int>();
             foreach (var section in sections) {
                 int start = tiles.Count;
-                tiles.AddRange(section.Where(tile => tile.Matches(query)));
+                tiles.AddRange(section.Where(tile => MatchesTypeFilter(tile.Singer.SingerType) && tile.Matches(query)));
                 if (start > 0 && tiles.Count > start) {
                     starts.Add(start);
                 }
@@ -153,6 +230,9 @@ namespace OpenUtau.App.ViewModels {
             Tiles = tiles;
             NoMatch = !IsEmpty && tiles.Count == 0;
         }
+
+        bool MatchesTypeFilter(USingerType type) =>
+            TypeFilter is not { } filter || type == filter;
 
         /// <summary>Selects the first tile matching the search, if any.</summary>
         public void SelectFirst() {

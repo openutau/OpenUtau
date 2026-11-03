@@ -1,6 +1,4 @@
-%YAML 1.2
----
-version: 1.0
+version: 1.1
 symbols:
 #Con Pez
   - {symbol: z, type: fricative}
@@ -34,8 +32,8 @@ symbols:
   - {symbol: l, type: liquid}
   - {symbol: ch, type: affricate}
   - {symbol: jj, type: affricate}
-
-#Combo??? (Phonemize like: [e k][ks i])
+  - {symbol: --, type: end}
+#Combo
   - {symbol: ks, type: stop}
 
 replacements:
@@ -43,7 +41,7 @@ replacements:
   - {from: [n, B], to: [m, b], where: all}
   - {from: [m, B], to: [m, b], where: all}
   - {from: [n, b], to: [m, b], where: all}
-  - {from: [n, m], to: [m, m], where: all}
+  #- {from: [n, m], to: [m, m], where: all}
   - {from: [n, D], to: [n, d], where: all}
   - {from: [l, D], to: [l, d], where: all}
   - {from: [n, G], to: [n, g], where: all}
@@ -52,15 +50,213 @@ replacements:
   - {from: [n, r], to: [n, rr], where: all}
   - {from: [m, r], to: [m, rr], where: all}
   - {from: [l, r], to: [l, rr], where: all}
-  - {from: [r, r], to: [rr]}
-  - {from: [vowel, b, vowel], to: [vowel, B, vowel], where: all}
-  - {from: [vowel, g, vowel], to: [vowel, G, vowel], where: all}
-  - {from: [vowel, d, vowel], to: [vowel, D, vowel], where: all}
+  - {from: [ch, r], to: [ch, rr], where: all}
+  - {from: [z, r], to: [z, rr], where: all}
+
+  - {from: ['vowel&semivowel', b], to: ['vowel&semivowel', B], where: all}
+  - {from: ['vowel&semivowel', g], to: ['vowel&semivowel', G], where: all}
+  - {from: ['vowel&semivowel', d], to: ['vowel&semivowel', D], where: all}
+
+  - {from: ["null", r], to: ["null", rr], where: all}
+  - {from: [r, r], to: [rr], where: all}
+  - {from: [r, rr], to: [rr], where: all}
+  - {from: [rr, r], to: [rr, rr], where: all}
+
+  - {from: [B, B], to: [B], where: all}
+  - {from: [D, D], to: [D], where: all}
+  - {from: [G, G], to: [G], where: all}
+  - {from: [B, b], to: [B], where: all}
+  - {from: [D, d], to: [D], where: all}
+  - {from: [G, g], to: [G], where: all}
+  - {from: [b, b], to: [B], where: inside}
+  - {from: [d, d], to: [D], where: inside}
+  - {from: [g, g], to: [G], where: inside}
+
+  - {from: [s, s], to: [s], where: all}
+  - {from: [f, f], to: [f], where: all}
+  - {from: [z, z], to: [t, z], where: all}
+  - {from: [x, x], to: [x], where: all}
+  - {from: [l, l], to: [l], where: all}
+  - {from: [p, p], to: [p], where: all}
+  - {from: [k, k], to: [k], where: all}
+  - {from: [t, t], to: [t], where: all}
+
+
+fallbacks:
+  - {from: k s, to: -ks}
+  - {from: k z, to: -ks}
+  - {from: [xy], to: [xi]}
+  - {from: [f g], to: [fe]}
+  - {from: [f G], to: [fe]}
+  - {from: [nJy], to: [nJi]}
+  - {from: [nJw], to: [nJu]}
+  - {from: [rr y], to: [rri]}
+  - {from: [rr w], to: [rru]}
+  - {from: [lw], to: [lu]}
+  - {from: [ly], to: [li]}
+  - {from: [rw], to: [ru]}
+  - {from: [rry], to: [rri]}
+  - {from: [rrw], to: [rru]}
+  - {from: d, to: D}
+  - {from: g, to: G}
+  - {from: b, to: B}
+  - {from: [rr p], to: [rr t]}
+  - {from: [rr k], to: [rr t]}
+  - {from: [rr nJ], to: [rr n]}
+  - {from: [r ch], to: [r t]}
+  - {from: [rr ch], to: [rr t]}
+  - {from: [rr jj], to: [rr-]}
+  - {from: [B f], to: [B-]}
+  - {from: [B g], to: [B-]}
+  - {from: [B b], to: [B m]}
+  - {from: [B rr], to: [Br]}
+  - {from: [B nJ], to: [B n]}
+  - {from: [B ch], to: [B t]}
+  - {from: [B l], to: [Bl]}
+  - {from: [B p], to: [B m]}
+  - {from: [B t], to: [B D]}
+  - {from: [B k], to: [B-]}
+  - {from: [b f], to: [B-]}
+  - {from: [B G], to: [B-]}
+  - {from: [b B], to: [B m]}
+  - {from: [b rr], to: [Br]}
+  - {from: [b nJ], to: [B n]}
+  - {from: [b ch], to: [B t]}
+  - {from: [b l], to: [Bl]}
+  - {from: [b p], to: [B m]}
+  - {from: [b t], to: [B D]}
+  - {from: [b k], to: [B-]}
+  - {from: [s k], to: [s t]}
+  - {from: [s p], to: [s t]}
+  - {from: [s z], to: [ss]}
+  - {from: [z s], to: [ss]}
+  - {from: [s s], to: [ss]}
+  - {from: [p b], to: [p t]}
+  - {from: [p g], to: [p t]}
+  - {from: [p d], to: [p t]}
+  - {from: [p f], to: [p t]}
+  - {from: [p jj], to: [p t]}
+  - {from: [p k], to: [p t]}
+  - {from: [p p], to: [p t]}
+  - {from: [p rr], to: [p t]}
+  - {from: [p l], to: [pl]}
+  - {from: [p n], to: [p t]}
+  - {from: [p m], to: [p t]}
+  - {from: [p nJ], to: [p t]}
+  - {from: [p x], to: [p t]}
+  - {from: [p ch], to: [p t]}
+  - {from: [k f], to: [k t]}
+  - {from: [k jj], to: [k t]}
+  - {from: [k k], to: [k t]}
+  - {from: [k p], to: [k t]}
+  - {from: [k rr], to: [k t]}
+  - {from: [k l], to: [kl]}
+  - {from: [k m], to: [k t]}
+  - {from: [k nJ], to: [k t]}
+  - {from: [k ch], to: [k t]}
+  - {from: [k s], to: [ks]}
+  - {from: [t b], to: [t-]}
+  - {from: [t g], to: [t-]}
+  - {from: [t d], to: [t-]}
+  - {from: [t f], to: [t-]}
+  - {from: [t jj], to: [t-]}
+  - {from: [t k], to: [t-]}
+  - {from: [t p], to: [t-]}
+  - {from: [t t], to: [t-]}
+  - {from: [t rr], to: [tr]}
+  - {from: [t l], to: [tl]}
+  - {from: [t n], to: [t-]}
+  - {from: [t nJ], to: [t-]}
+  - {from: [t x], to: [t-]}
+  - {from: [t ch], to: [t-]}
+  - {from: [t s], to: [ts]}
+  - {from: [D k], to: [D t]}
+  - {from: [D p], to: [D t]}
+  - {from: [n k], to: [n t]}
+  - {from: [m g], to: [m p]}
+  - {from: [m d], to: [m p]}
+  - {from: [m f], to: [m p]}
+  - {from: [m jj], to: [m p]}
+  - {from: [m k], to: [m p]}
+  - {from: [m l], to: [m p]}
+  - {from: [m nJ], to: [m n]}
+  - {from: [m x], to: [m p]}
+  - {from: [m ch], to: [m t]}
+  - {from: [m s], to: [m p]}
+  - {from: [x b], to: [x-]}
+  - {from: [x g], to: [x-]}
+  - {from: [x d], to: [x-]}
+  - {from: [x f], to: [x-]}
+  - {from: [x jj], to: [x-]}
+  - {from: [x k], to: [x-]}
+  - {from: [x p], to: [x-]}
+  - {from: [x t], to: [x-]}
+  - {from: [x rr], to: [x-]}
+  - {from: [x l], to: [x-]}
+  - {from: [x n], to: [x-]}
+  - {from: [x m], to: [x-]}
+  - {from: [x nJ], to: [x-]}
+  - {from: [x ch], to: [x-]}
+  - {from: [G b], to: [G m]}
+  - {from: [G g], to: [G t]}
+  - {from: [G f], to: [G t]}
+  - {from: [G jj], to: [G t]}
+  - {from: [G k], to: [G t]}
+  - {from: [G p], to: [G t]}
+  - {from: [G rr], to: [G t]}
+  - {from: [G l], to: [Gl]}
+  - {from: [G nJ], to: [G n]}
+  - {from: [g B], to: [G m]}
+  - {from: [g G], to: [G t]}
+  - {from: [g f], to: [G t]}
+  - {from: [g jj], to: [G t]}
+  - {from: [g k], to: [G t]}
+  - {from: [g p], to: [G t]}
+  - {from: [g rr], to: [G t]}
+  - {from: [g l], to: [Gl]}
+  - {from: [g nJ], to: [G n]}
+  - {from: [jj g], to: [jj t]}
+  - {from: [jj d], to: [jj t]}
+  - {from: [jj f], to: [jj t]}
+  - {from: [jj jj], to: [jj t]}
+  - {from: [jj k], to: [jj t]}
+  - {from: [jj p], to: [jj t]}
+  - {from: [jj rr], to: [jj t]}
+  - {from: [jj l], to: [jj t]}
+  - {from: [jj n], to: [jj t]}
+  - {from: [jj m], to: [jj t]}
+  - {from: [jj nJ], to: [jj t]}
+  - {from: [jj x], to: [jj t]}
+  - {from: [jj ch], to: [jj t]}
+  - {from: [jj s], to: [jj t]}
 
 entries:
-  - grapheme: openutau
-    phonemes: [o, p, e, n, u, t, a, u]
-  - grapheme: vccv
-    phonemes: [b, e, s, e, s, e, B, e]
-  - grapheme: "VCCV"
-    phonemes: [b, e, s, e, s, e, B, e]
+  - {grapheme: <3, phonemes: [k, o, r, a, z, o, n]}  
+  - {grapheme: nJokis, phonemes: [nJ, o, k, i, s]}  
+  - {grapheme: njokis, phonemes: [nJ, o, k, i, s]}  
+  - {grapheme: VCCV, phonemes: [b, e, z, e, z, e, B, e]}
+  - {grapheme: vccv, phonemes: [b, e, z, e, z, e, B, e]}
+  - {grapheme: "--", phonemes: [--]}
+  - {grapheme: ra, phonemes: [r, a]}
+  - {grapheme: re, phonemes: [r, e]}
+  - {grapheme: ri, phonemes: [r, i]}
+  - {grapheme: ro, phonemes: [r, o]}
+  - {grapheme: ru, phonemes: [r, u]}
+  - {grapheme: ria, phonemes: [r, y, a]}
+  - {grapheme: rie, phonemes: [r, y, e]}
+  - {grapheme: rio, phonemes: [r, y, o]}
+  - {grapheme: riu, phonemes: [r, y, u]}
+  - {grapheme: rua, phonemes: [r, w, a]}
+  - {grapheme: ruo, phonemes: [r, w, o]}
+  - {grapheme: rui, phonemes: [r, w, i]}
+  - {grapheme: rue, phonemes: [r, w, e]}
+  - {grapheme: rai, phonemes: [r, a, I]}
+  - {grapheme: rei, phonemes: [r, e, I]}
+  - {grapheme: roi, phonemes: [r, o, I]}
+  - {grapheme: ray, phonemes: [r, a, I]}
+  - {grapheme: rey, phonemes: [r, e, I]}
+  - {grapheme: roy, phonemes: [r, o, I]}
+  - {grapheme: ruy, phonemes: [r, u, I]}
+  - {grapheme: rau, phonemes: [r, a, U]}
+  - {grapheme: reu, phonemes: [r, e, U]}
+  - {grapheme: rou, phonemes: [r, o, U]}

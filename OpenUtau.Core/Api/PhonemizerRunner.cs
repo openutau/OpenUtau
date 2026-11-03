@@ -128,12 +128,9 @@ namespace OpenUtau.Api {
                     timestamp = request.timestamp,
                 };
             }
-            for (int i = 0; i < notes.Length; i++) {
-                var p = phonemizers[request.notePhonemizerIndices[i]];
-                for (int j = 0; j < notes[i].Length; j++) {
-                    notes[i][j].phonemizer = p;
-                }
-            }
+            // The pass competes with these CPU models for cores, and the phonemes produced
+            // here invalidate it anyway.
+            using var preRenderHold = PlaybackManager.Inst.HoldPreRender();
             foreach (var p in phonemizers) {
                 p.SetUpException = null;
                 try {

@@ -28,6 +28,20 @@ namespace OpenUtau.App.ViewModels {
         public IEnumerable<MenuItemViewModel> PartApplyPitchMenuItems { get; set; } = new List<MenuItemViewModel>();
     }
 
+    public class WarningItem {
+        public string Key { get; }
+        public string Title { get; }
+        public string? Detail { get; }
+
+        public WarningItem(WarningNotification warning) {
+            Key = warning.Key;
+            Title = string.Format(ThemeManager.GetString(warning.TitleKey), warning.Args);
+            Detail = warning.DetailKey == null
+                ? null
+                : string.Format(ThemeManager.GetString(warning.DetailKey), warning.Args);
+        }
+    }
+
     public class RecentFileInfo {
         public string Name { get; }
         public string PathName { get; }
@@ -69,6 +83,9 @@ namespace OpenUtau.App.ViewModels {
         public ObservableCollectionExtended<MenuItemViewModel> OpenTemplatesMenuItems => openTemplatesMenuItems;
         public ObservableCollectionExtended<MenuItemViewModel> TimelineContextMenuItems { get; }
             = new ObservableCollectionExtended<MenuItemViewModel>();
+        public ObservableCollectionExtended<WarningItem> Warnings { get; }
+            = new ObservableCollectionExtended<WarningItem>();
+        [Reactive] public partial bool HasWarnings { get; set; }
 
         [Reactive] public partial string ClearCacheHeader { get; set; }
         public bool ProjectSaved => !string.IsNullOrEmpty(DocManager.Inst.Project.FilePath) && DocManager.Inst.Project.Saved;
@@ -136,6 +153,8 @@ namespace OpenUtau.App.ViewModels {
             PartDeleteCommand = ReactiveCommand.Create<UPart>(part => {
                 TracksViewModel.DeleteSelectedParts();
             });
+            // Warnings raised before the window existed, e.g. by the startup singer search.
+            RefreshWarnings();
             DocManager.Inst.AddSubscriber(this);
 
             this.WhenAnyValue(vm => vm.ShowPianoRoll)
@@ -331,6 +350,16 @@ namespace OpenUtau.App.ViewModels {
             DocManager.Inst.EndUndoGroup();
         }
 
+        public void ClearWarnings(string? key = null) {
+            DocManager.Inst.ExecuteCmd(new ClearWarningsNotification(key));
+        }
+
+        private void RefreshWarnings() {
+            Warnings.Clear();
+            Warnings.AddRange(DocManager.Inst.Warnings.Select(w => new WarningItem(w)));
+            HasWarnings = Warnings.Count > 0;
+        }
+
         public void RefreshOpenRecent() {
             openRecentMenuItems.Clear();
             openRecentMenuItems.AddRange(Preferences.Default.RecentFiles.Select(file => new MenuItemViewModel() {
@@ -465,10 +494,14 @@ namespace OpenUtau.App.ViewModels {
                     Progress = progressBarNotification.Progress;
                     ProgressText = progressBarNotification.Info;
                 }, DispatcherPriority.Background);
+            } else if (cmd is WarningNotification || cmd is ClearWarningsNotification) {
+                RefreshWarnings();
             } else if (cmd is LoadProjectNotification loadProject) {
                 Preferences.AddRecentFileIfEnabled(loadProject.project.FilePath);
             } else if (cmd is SaveProjectNotification saveProject) {
                 Preferences.AddRecentFileIfEnabled(saveProject.Path);
+            } else if (cmd is PackagesChangedNotification) {
+                App.ReloadPackages();
             }
             SetUndoState();
             this.RaisePropertyChanged(nameof(Title));

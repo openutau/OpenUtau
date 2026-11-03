@@ -1069,6 +1069,7 @@ namespace OpenUtau.App.ViewModels {
                 Task.Run(() => {
                     foreach (var phrase in phrases) {
                         phrase.DeleteCacheFiles();
+                        DocManager.Inst.ExecuteCmd(new PhraseRenderStateNotification(Part, phrase, false));
                     }
                     Task.Factory.StartNew(() => {
                         DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, ThemeManager.GetString("progress.cachecleared")));

@@ -39,45 +39,93 @@ namespace OpenUtau.App.Controls {
         }
         const double DotSize = 10;
 
+        const double MinZoom = 0.25;
+        const double MaxZoom = 2;
+        // How far a duplicate, or a paste without the pointer over the canvas, lands from the copied nodes.
+        const float PasteOffset = 24;
+
         readonly Panel host;
         readonly Canvas nodeLayer;
         readonly LinkLayer linkLayer;
-        readonly TranslateTransform pan = new TranslateTransform();
+        readonly Rectangle marquee;
+        // Both layers share the view: node-layer point p shows at p * zoom + offset on the host.
+        readonly MatrixTransform view = new MatrixTransform();
+        double zoom = 1;
+        Vector offset;
 
         UProject? project;
         UExpressionGraph? graph;
         readonly Dictionary<(int node, string port), Ellipse> inputDots = new Dictionary<(int, string), Ellipse>();
         readonly Dictionary<(int node, int output), Ellipse> outputDots = new Dictionary<(int, int), Ellipse>();
         readonly Dictionary<int, Border> nodeViews = new Dictionary<int, Border>();
+        readonly HashSet<int> selection = new HashSet<int>();
 
-        public int? SelectedNode { get; private set; }
+        // Copied nodes, shared by every graph editor in this session.
+        static UExpressionGraph? clipboard;
 
         /// <summary>A message about the last edit that couldn't be made, e.g. a link closing a cycle.</summary>
         public event Action<string>? Refused;
 
         public ExpressionGraphCanvas() {
             Focusable = true;
-            linkLayer = new LinkLayer(this) { RenderTransform = pan, IsHitTestVisible = false };
-            nodeLayer = new Canvas { RenderTransform = pan };
+            linkLayer = new LinkLayer(this) {
+                RenderTransform = view, RenderTransformOrigin = RelativePoint.TopLeft, IsHitTestVisible = false,
+            };
+            nodeLayer = new Canvas { RenderTransform = view, RenderTransformOrigin = RelativePoint.TopLeft };
+            marquee = new Rectangle { IsVisible = false, StrokeThickness = 1 };
             host = new Panel {
                 ClipToBounds = true,
                 Background = Brushes.Transparent,
-                Children = { linkLayer, nodeLayer },
+                Children = { linkLayer, nodeLayer, new Canvas { IsHitTestVisible = false, Children = { marquee } } },
             };
             host.PointerPressed += OnHostPointerPressed;
+            // Middle-drag pans from anywhere, over nodes too.
+            host.AddHandler(PointerPressedEvent, OnMiddlePressed, RoutingStrategies.Tunnel);
             host.PointerMoved += OnPointerMoved;
             host.PointerReleased += OnPointerReleased;
+            host.PointerExited += (s, e) => pointer = null;
+            host.PointerWheelChanged += OnWheel;
             Content = host;
         }
 
-        /// <summary>Shows a graph of the project, or nothing. Keeps the view's panning.</summary>
+        /// <summary>Shows a graph of the project, or nothing. Keeps the view's panning and zoom.</summary>
         public void Show(UProject? project, UExpressionGraph? graph) {
             this.project = project;
             this.graph = graph?.Clone();
-            if (SelectedNode != null && this.graph?.nodes.Any(n => n.id == SelectedNode) != true) {
-                SelectedNode = null;
-            }
+            selection.RemoveWhere(id => this.graph?.nodes.Any(n => n.id == id) != true);
             Rebuild();
+        }
+
+        void ApplyView() => view.Matrix = Matrix.CreateScale(zoom, zoom) * Matrix.CreateTranslation(offset);
+
+        /// <summary>Zooms to <paramref name="value"/>, keeping the host point <paramref name="at"/> still.</summary>
+        void ZoomAt(Point at, double value) {
+            value = Math.Clamp(value, MinZoom, MaxZoom);
+            var under = (at - offset) / zoom;
+            zoom = value;
+            offset = at - under * zoom;
+            ApplyView();
+        }
+
+        void OnWheel(object? sender, PointerWheelEventArgs e) {
+            ZoomAt(e.GetPosition(host), zoom * Math.Pow(1.1, e.Delta.Y));
+            e.Handled = true;
+        }
+
+        /// <summary>Fits every node in view, at no more than full size.</summary>
+        public void FitAll() {
+            var size = host.Bounds.Size;
+            if (nodeViews.Count == 0 || size.Width <= 0 || size.Height <= 0) {
+                zoom = 1;
+                offset = default;
+            } else {
+                const double margin = 20;
+                var bounds = nodeViews.Values.Select(v => v.Bounds).Aggregate((a, b) => a.Union(b));
+                zoom = Math.Clamp(Math.Min((size.Width - 2 * margin) / bounds.Width,
+                    (size.Height - 2 * margin) / bounds.Height), MinZoom, 1);
+                offset = new Vector(size.Width / 2 - bounds.Center.X * zoom, size.Height / 2 - bounds.Center.Y * zoom);
+            }
+            ApplyView();
         }
 
         void Rebuild() {
@@ -118,8 +166,79 @@ namespace OpenUtau.App.Controls {
         }
 
         public void DeleteSelected() {
-            if (SelectedNode is int id) {
-                Edit(g => ExpressionGraphEdits.RemoveNode(g, id));
+            if (selection.Count == 0) {
+                return;
+            }
+            var ids = selection.ToList();
+            selection.Clear();
+            Edit(g => ids.ForEach(id => ExpressionGraphEdits.RemoveNode(g, id)));
+        }
+
+        public void CopySelected() {
+            if (graph != null && selection.Count > 0) {
+                clipboard = ExpressionGraphEdits.CopyNodes(graph, selection);
+            }
+        }
+
+        public void CutSelected() {
+            CopySelected();
+            DeleteSelected();
+        }
+
+        /// <summary>Pastes the copied nodes at the pointer, or beside where they were copied from.</summary>
+        public void Paste() => Paste(pointer);
+
+        void Paste(Point? at) {
+            if (clipboard == null || clipboard.nodes.Count == 0) {
+                return;
+            }
+            var copied = clipboard;
+            float dx = PasteOffset, dy = PasteOffset;
+            if (at is Point point) {
+                dx = (float)Math.Round(point.X - copied.nodes.Min(n => n.x));
+                dy = (float)Math.Round(point.Y - copied.nodes.Min(n => n.y));
+            }
+            List<int>? pasted = null;
+            Edit(g => pasted = ExpressionGraphEdits.PasteNodes(g, copied, dx, dy));
+            if (pasted != null) {
+                selection.Clear();
+                selection.UnionWith(pasted);
+                UpdateSelection();
+            }
+        }
+
+        public void DuplicateSelected() {
+            if (graph == null || selection.Count == 0) {
+                return;
+            }
+            var copied = ExpressionGraphEdits.CopyNodes(graph, selection);
+            List<int>? pasted = null;
+            Edit(g => pasted = ExpressionGraphEdits.PasteNodes(g, copied, PasteOffset, PasteOffset));
+            if (pasted != null) {
+                selection.Clear();
+                selection.UnionWith(pasted);
+                UpdateSelection();
+            }
+        }
+
+        public void SelectAll() {
+            selection.Clear();
+            selection.UnionWith(nodeViews.Keys);
+            UpdateSelection();
+        }
+
+        public void ClearSelection() {
+            selection.Clear();
+            UpdateSelection();
+        }
+
+        IBrush? NodeBorder(int id) => (IBrush?)FindBrush(selection.Contains(id)
+            ? "SelectedTrackAccentBrush" : "SystemControlForegroundBaseMediumLowBrush") ?? Brushes.Gray;
+
+        /// <summary>Recolours the nodes' borders: selecting doesn't rebuild them, so fields keep their focus.</summary>
+        void UpdateSelection() {
+            foreach (var (id, view) in nodeViews) {
+                view.BorderBrush = NodeBorder(id);
             }
         }
 
@@ -151,9 +270,14 @@ namespace OpenUtau.App.Controls {
                 Cursor = new Cursor(StandardCursorType.SizeAll),
             };
             header.PointerPressed += (s, e) => BeginNodeDrag(node, e);
-            var delete = new MenuItem { Header = Text("expressiongraph.deletenode", "Delete") };
-            delete.Click += (s, e) => Edit(g => ExpressionGraphEdits.RemoveNode(g, node.id));
-            header.ContextMenu = new ContextMenu { Items = { delete } };
+            // The menu acts on the selection, which the right-click made include this node.
+            var copy = new MenuItem { Header = Text("expressiongraph.copynodes", "Copy"), InputGesture = new KeyGesture(Key.C, KeyModifiers.Control) };
+            copy.Click += (s, e) => CopySelected();
+            var duplicate = new MenuItem { Header = Text("expressiongraph.duplicatenodes", "Duplicate"), InputGesture = new KeyGesture(Key.D, KeyModifiers.Control) };
+            duplicate.Click += (s, e) => DuplicateSelected();
+            var delete = new MenuItem { Header = Text("expressiongraph.deletenode", "Delete"), InputGesture = new KeyGesture(Key.Delete) };
+            delete.Click += (s, e) => DeleteSelected();
+            header.ContextMenu = new ContextMenu { Items = { copy, duplicate, delete } };
             body.Children.Add(header);
 
             if (type == null) {
@@ -213,8 +337,7 @@ namespace OpenUtau.App.Controls {
                 CornerRadius = new CornerRadius(4),
                 // Selection changes the colour only, so the node doesn't shift.
                 BorderThickness = new Thickness(1),
-                BorderBrush = (IBrush?)FindBrush(node.id == SelectedNode
-                    ? "SelectedTrackAccentBrush" : "SystemControlForegroundBaseMediumLowBrush") ?? Brushes.Gray,
+                BorderBrush = NodeBorder(node.id),
                 Background = (IBrush?)FindBrush("SystemControlBackgroundAltHighBrush"),
                 Child = body,
             };
@@ -245,7 +368,7 @@ namespace OpenUtau.App.Controls {
         Ellipse Dot() => new Ellipse {
             Width = DotSize,
             Height = DotSize,
-            Fill = (IBrush?)FindBrush("SystemControlForegroundBaseMediumBrush") ?? Brushes.Gray,
+            Fill = (IBrush?)FindBrush("ForegroundBrushSecondary") ?? Brushes.Gray,
             VerticalAlignment = VerticalAlignment.Center,
             Cursor = new Cursor(StandardCursorType.Hand),
         };
@@ -434,12 +557,19 @@ namespace OpenUtau.App.Controls {
 
         #region Pointer
 
-        enum DragKind { None, Pan, Node, Link }
+        enum DragKind { None, Pan, Node, Link, Select }
         DragKind drag;
+        // Where the drag started, on the host.
         Point dragStart;
+        bool dragMoved;
         Vector panStart;
-        UGraphNode? dragNode;
-        Point nodeStart;
+        // A left click on the background, unlike a middle one, clears the selection.
+        bool panClears;
+        // The dragged nodes and where each started; pressedNode is the one under the pointer.
+        readonly List<(UGraphNode node, Point start)> dragNodes = new List<(UGraphNode, Point)>();
+        int pressedNode;
+        // The pointer on the node layer while it's over the canvas: where pastes land.
+        Point? pointer;
         int linkFrom;
         int linkFromOutput;
         UGraphLink? detached;
@@ -454,16 +584,29 @@ namespace OpenUtau.App.Controls {
 
         Point CanvasPoint(PointerEventArgs e) => e.GetPosition(nodeLayer);
 
-        void Select(int? id) {
-            if (SelectedNode == id) {
-                return;
+        // Ctrl (Cmd on macOS) or Shift add to the selection instead of replacing it.
+        static bool Adds(KeyModifiers modifiers) =>
+            (modifiers & (KeyModifiers.Control | KeyModifiers.Meta | KeyModifiers.Shift)) != 0;
+
+        void BeginPan(PointerPressedEventArgs e, bool clears) {
+            drag = DragKind.Pan;
+            panClears = clears;
+            dragStart = e.GetPosition(host);
+            dragMoved = false;
+            panStart = offset;
+            e.Pointer.Capture(host);
+            e.Handled = true;
+        }
+
+        void OnMiddlePressed(object? sender, PointerPressedEventArgs e) {
+            if (e.GetCurrentPoint(host).Properties.IsMiddleButtonPressed) {
+                Focus();
+                BeginPan(e, clears: false);
             }
-            SelectedNode = id;
-            Rebuild();
         }
 
         void OnHostPointerPressed(object? sender, PointerPressedEventArgs e) {
-            // Only the empty background pans or adds nodes.
+            // Only the empty background pans, selects or adds nodes.
             if (e.Handled || (e.Source != host && e.Source != nodeLayer)) {
                 return;
             }
@@ -474,24 +617,62 @@ namespace OpenUtau.App.Controls {
                 e.Handled = true;
                 return;
             }
-            Select(null);
-            drag = DragKind.Pan;
+            if (!Adds(e.KeyModifiers)) {
+                // A click clears the selection; a drag pans and keeps it.
+                BeginPan(e, clears: true);
+                return;
+            }
+            drag = DragKind.Select;
             dragStart = point.Position;
-            panStart = new Vector(pan.X, pan.Y);
+            marquee.Stroke = (IBrush?)FindBrush("SelectedTrackAccentBrush");
+            marquee.Fill = (IBrush?)FindBrush("SelectedTrackAccentLightBrushSemi");
+            UpdateMarquee(point.Position);
+            marquee.IsVisible = true;
             e.Pointer.Capture(host);
             e.Handled = true;
         }
 
+        void UpdateMarquee(Point to) {
+            var rect = new Rect(dragStart, to).Normalize();
+            Canvas.SetLeft(marquee, rect.X);
+            Canvas.SetTop(marquee, rect.Y);
+            marquee.Width = rect.Width;
+            marquee.Height = rect.Height;
+        }
+
         void BeginNodeDrag(UGraphNode node, PointerPressedEventArgs e) {
-            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) {
+            var properties = e.GetCurrentPoint(this).Properties;
+            if (properties.IsRightButtonPressed && !selection.Contains(node.id)) {
+                // The context menu that opens acts on this node.
+                selection.Clear();
+                selection.Add(node.id);
+                UpdateSelection();
+                return;
+            }
+            if (!properties.IsLeftButtonPressed) {
                 return;
             }
             Focus();
-            Select(node.id);
+            if (Adds(e.KeyModifiers)) {
+                if (!selection.Remove(node.id)) {
+                    selection.Add(node.id);
+                }
+                UpdateSelection();
+                e.Handled = true;
+                return;
+            }
+            if (!selection.Contains(node.id)) {
+                selection.Clear();
+                selection.Add(node.id);
+                UpdateSelection();
+            }
+            // Dragging a selected node moves the whole selection.
             drag = DragKind.Node;
-            dragNode = graph!.nodes.First(n => n.id == node.id);
+            dragMoved = false;
+            pressedNode = node.id;
+            dragNodes.Clear();
+            dragNodes.AddRange(graph!.nodes.Where(n => selection.Contains(n.id)).Select(n => (n, new Point(n.x, n.y))));
             dragStart = e.GetPosition(host);
-            nodeStart = new Point(dragNode.x, dragNode.y);
             e.Pointer.Capture(host);
             e.Handled = true;
         }
@@ -528,24 +709,32 @@ namespace OpenUtau.App.Controls {
         }
 
         void OnPointerMoved(object? sender, PointerEventArgs e) {
+            pointer = CanvasPoint(e);
+            var delta = e.GetPosition(host) - dragStart;
+            // A few pixels of jitter is still a click.
+            dragMoved |= Math.Abs(delta.X) > 3 || Math.Abs(delta.Y) > 3;
             switch (drag) {
-                case DragKind.Pan: {
-                        var delta = e.GetPosition(host) - dragStart;
-                        pan.X = panStart.X + delta.X;
-                        pan.Y = panStart.Y + delta.Y;
-                        break;
-                    }
-                case DragKind.Node when dragNode != null: {
-                        var delta = e.GetPosition(host) - dragStart;
-                        dragNode.x = (float)Math.Round(nodeStart.X + delta.X);
-                        dragNode.y = (float)Math.Round(nodeStart.Y + delta.Y);
-                        if (nodeViews.TryGetValue(dragNode.id, out var view)) {
-                            Canvas.SetLeft(view, dragNode.x);
-                            Canvas.SetTop(view, dragNode.y);
+                case DragKind.Pan:
+                    offset = panStart + delta;
+                    ApplyView();
+                    break;
+                case DragKind.Node: {
+                        // The pointer moves on the host; nodes move on the zoomed layer.
+                        var moved = delta / zoom;
+                        foreach (var (node, start) in dragNodes) {
+                            node.x = (float)Math.Round(start.X + moved.X);
+                            node.y = (float)Math.Round(start.Y + moved.Y);
+                            if (nodeViews.TryGetValue(node.id, out var view)) {
+                                Canvas.SetLeft(view, node.x);
+                                Canvas.SetTop(view, node.y);
+                            }
                         }
                         linkLayer.InvalidateVisual();
                         break;
                     }
+                case DragKind.Select:
+                    UpdateMarquee(e.GetPosition(host));
+                    break;
                 case DragKind.Link:
                     PendingLinkEnd = CanvasPoint(e);
                     linkLayer.InvalidateVisual();
@@ -558,18 +747,38 @@ namespace OpenUtau.App.Controls {
             drag = DragKind.None;
             e.Pointer.Capture(null);
             switch (kind) {
-                case DragKind.Node when dragNode != null: {
-                        var node = dragNode;
-                        dragNode = null;
-                        if (node.x != nodeStart.X || node.y != nodeStart.Y) {
-                            float x = node.x, y = node.y;
+                case DragKind.Pan when panClears && !dragMoved:
+                    ClearSelection();
+                    break;
+                case DragKind.Select: {
+                        marquee.IsVisible = false;
+                        // The box, from the host onto the node layer.
+                        var a = (dragStart - offset) / zoom;
+                        var b = (e.GetPosition(host) - offset) / zoom;
+                        var box = new Rect(new Point(a.X, a.Y), new Point(b.X, b.Y)).Normalize();
+                        selection.UnionWith(nodeViews.Where(kv => kv.Value.Bounds.Intersects(box)).Select(kv => kv.Key));
+                        UpdateSelection();
+                        break;
+                    }
+                case DragKind.Node: {
+                        var moved = dragNodes.Where(d => d.node.x != d.start.X || d.node.y != d.start.Y)
+                            .Select(d => (d.node.id, d.node.x, d.node.y)).ToList();
+                        dragNodes.Clear();
+                        if (moved.Count > 0) {
                             Edit(g => {
-                                var target = Find(g, node.id);
-                                if (target != null) {
-                                    target.x = x;
-                                    target.y = y;
+                                foreach (var (id, x, y) in moved) {
+                                    var target = Find(g, id);
+                                    if (target != null) {
+                                        target.x = x;
+                                        target.y = y;
+                                    }
                                 }
                             });
+                        } else if (!dragMoved) {
+                            // Clicking one of several selected nodes selects just it.
+                            selection.Clear();
+                            selection.Add(pressedNode);
+                            UpdateSelection();
                         }
                         break;
                     }
@@ -633,6 +842,15 @@ namespace OpenUtau.App.Controls {
                 }
                 menu.Items.Add(group);
             }
+            if (clipboard != null) {
+                var paste = new MenuItem {
+                    Header = Text("expressiongraph.pastenodes", "Paste"),
+                    InputGesture = new KeyGesture(Key.V, KeyModifiers.Control),
+                };
+                paste.Click += (s, e) => Paste(at);
+                menu.Items.Add(new Separator());
+                menu.Items.Add(paste);
+            }
             menu.Open(host);
         }
 
@@ -656,7 +874,7 @@ namespace OpenUtau.App.Controls {
                 if (graph == null) {
                     return;
                 }
-                var brush = (IBrush?)owner.FindBrush("SystemControlForegroundBaseMediumBrush") ?? Brushes.Gray;
+                var brush = (IBrush?)owner.FindBrush("ForegroundBrushSecondary") ?? Brushes.Gray;
                 var pen = new Pen(brush, 2);
                 foreach (var link in graph.links) {
                     if (owner.outputDots.TryGetValue((link.from, owner.OutputIndexOf(link)), out var fromDot)

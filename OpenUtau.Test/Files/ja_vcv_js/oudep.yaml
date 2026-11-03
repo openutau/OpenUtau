@@ -1,0 +1,6 @@
+id: ja_vcv_js
+version: '1.0.0'
+description: Japanese VCV phonemizer written in JavaScript, ported from JapaneseVCVPhonemizer.cs.
+entrypoints:
+  - loader: JsPhonemizer
+    path: ja_vcv.js

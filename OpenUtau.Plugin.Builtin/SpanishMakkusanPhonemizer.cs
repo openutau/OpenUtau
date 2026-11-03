@@ -221,41 +221,30 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
-        protected override string ValidateAlias(string alias, int tone = 0) {
-            if (HasOto(alias, tone)) return alias;
+        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+            string candidate = alias;
 
-            string baseResolved = base.ValidateAlias(alias, tone);
-            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
-                if (HasOto(baseResolved, tone)) {
-                    return baseResolved;
-                }
-                alias = baseResolved;
+            // Helper to apply single-token replacements with strict casing and YAML suppression checks
+            void TryReplace(string fromToken, string toToken) {
+                if (suppressedTokens != null && suppressedTokens.Contains(fromToken)) return;
+                candidate = candidate.Replace(fromToken, toToken, StringComparison.Ordinal);
             }
-            foreach (var consonant in new[] { "B" }) {
-                alias = alias.Replace("B", "b");
+
+            // Consonant normalizations & substitutions
+            TryReplace("B", "b");
+            TryReplace("D", "d");
+            TryReplace("G", "g");
+            TryReplace("T", "s");
+            TryReplace("Y", "y");
+            TryReplace("x", "h");
+            TryReplace("y", "i");
+            TryReplace("w", "u");
+
+            if (!string.Equals(candidate, alias, StringComparison.Ordinal) && HasOto(candidate, tone)) {
+                return candidate;
             }
-            foreach (var consonant in new[] { "D" }) {
-                alias = alias.Replace("D", "d");
-            }
-            foreach (var consonant in new[] { "G" }) {
-                alias = alias.Replace("G", "g");
-            }
-            foreach (var consonant in new[] { "T" }) {
-                alias = alias.Replace("T", "s");
-            }
-            foreach (var consonant in new[] { "Y" }) {
-                alias = alias.Replace("Y", "y");
-            }
-            foreach (var consonant in new[] { "x" }) {
-                alias = alias.Replace("x", "h");
-            }
-            foreach (var consonant in new[] { "y" }) {
-                alias = alias.Replace("y", "i");
-            }
-            foreach (var consonant in new[] { "w" }) {
-                alias = alias.Replace("w", "u");
-            }
-            return alias;
+
+            return null;
         }
 
         // Endings has 50 ticks gap

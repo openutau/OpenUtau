@@ -283,9 +283,34 @@ namespace OpenUtau.App.Controls {
                 } else if (e.Key == Key.Y || e.Key == Key.Z) {
                     DocManager.Inst.Redo();
                     e.Handled = true;
+                } else if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) {
+                    return;
+                } else if (e.Key == Key.C) {
+                    Canvas.CopySelected();
+                    e.Handled = true;
+                } else if (e.Key == Key.X) {
+                    Canvas.CutSelected();
+                    e.Handled = true;
+                } else if (e.Key == Key.V) {
+                    Canvas.Paste();
+                    e.Handled = true;
+                } else if (e.Key == Key.D) {
+                    Canvas.DuplicateSelected();
+                    e.Handled = true;
+                } else if (e.Key == Key.A) {
+                    Canvas.SelectAll();
+                    e.Handled = true;
                 }
+            } else if (e.KeyModifiers != KeyModifiers.None) {
+                return;
             } else if (e.Key == Key.Delete || e.Key == Key.Back) {
                 Canvas.DeleteSelected();
+                e.Handled = true;
+            } else if (e.Key == Key.Escape) {
+                Canvas.ClearSelection();
+                e.Handled = true;
+            } else if (e.Key == Key.Home) {
+                Canvas.FitAll();
                 e.Handled = true;
             }
         }
