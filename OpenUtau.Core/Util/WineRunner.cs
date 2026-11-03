@@ -33,7 +33,7 @@ namespace OpenUtau.Core.Util {
                         ArgumentList = {
                             "cmd.exe",
                             "/c",
-                            "timeout /t 120 /nobreak > nul & :: Keep wineserver alive for OpenUtau" },
+                            "echo start & timeout /t 120 /nobreak > nul & :: Keep wineserver alive for OpenUtau" },
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
@@ -55,6 +55,7 @@ namespace OpenUtau.Core.Util {
                 try {
                     if (process.Start()) {
                         daemon = process;
+                        process.StandardOutput.ReadLine();
                     } else {
                         process.Dispose();
                     }
@@ -64,8 +65,6 @@ namespace OpenUtau.Core.Util {
                 }
 
                 daemonWinePath = winePath;
-
-                Thread.Sleep(100);
             }
         }
 
