@@ -57,9 +57,7 @@ namespace OpenUtau.Core.Render {
                 if (totalSamples <= 0 || cancellation.IsCancellationRequested) {
                     return result;
                 }
-                result.samples = Preferences.Default.PlaySineWhenNoSinger
-                    ? Synthesize(phrase, result, totalSamples)
-                    : new float[totalSamples];
+                result.samples = Synthesize(phrase, result, totalSamples);
                 progress.Complete(phrase.phones.Length, progressInfo);
                 Renderers.ApplyDynamics(phrase, result);
                 DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());

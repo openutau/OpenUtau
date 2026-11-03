@@ -423,7 +423,6 @@ namespace OpenUtau.Core.Pipeline {
         /// <summary>The supported curve descriptors in document order.</summary>
         public readonly UExpressionDescriptor[] CurveDescriptors;
         public readonly bool XsyAvailable;
-        public readonly bool SineFallback;
         public readonly int Resolution;
         /// <summary>The default value of every curve expression, for curves the part doesn't have.</summary>
         public readonly IReadOnlyDictionary<string, int> CurveDefaults;
@@ -457,8 +456,7 @@ namespace OpenUtau.Core.Pipeline {
             Axis = project.timeAxis.Clone();
             DefaultBpm = project.tempos.Count > 0 ? project.tempos[0].bpm : 120;
             Singer = track.Singer;
-            SineFallback = SineRenderer.IsFallbackActive(track);
-            Renderer = SineFallback ? SineRenderer.Instance : track.RendererSettings.Renderer;
+            Renderer = track.RendererSettings.Renderer;
             Resampler = track.RendererSettings.resampler;
             Wavtool = track.RendererSettings.wavtool;
             ClassicSinger = Singer as ClassicSinger;
@@ -505,18 +503,21 @@ namespace OpenUtau.Core.Pipeline {
                     .ToDictionary(d => d.abbr);
             }
 
-            if (SineFallback) {
-                var sineGroups = BuildSineGroups(Notes);
+            bool sine = Renderer is SineRenderer;
+            if (sine) {
                 var sinePhonemes = new List<PhonemeSource>();
                 var phraseGroups = new List<(int Start, int End)>();
-                foreach (var group in sineGroups) {
-                    int start = sinePhonemes.Count;
-                    foreach (int noteIndex in group) {
-                        char? vowel = SineVowels.GetVowel(Notes[noteIndex].Lyric);
-                        sinePhonemes.Add(new PhonemeSource(
-                            Notes[noteIndex], Axis, part.position, vowel?.ToString() ?? "sine"));
+                int groupStart = 0;
+                foreach (var note in Notes.Where(n => !n.OverlapError)) {
+                    if (sinePhonemes.Count > groupStart
+                        && sinePhonemes[sinePhonemes.Count - 1].End != note.Position) {
+                        phraseGroups.Add((groupStart, sinePhonemes.Count));
+                        groupStart = sinePhonemes.Count;
                     }
-                    phraseGroups.Add((start, sinePhonemes.Count));
+                    sinePhonemes.Add(new PhonemeSource(note, Axis, part.position, "sine"));
+                }
+                if (sinePhonemes.Count > groupStart) {
+                    phraseGroups.Add((groupStart, sinePhonemes.Count));
                 }
                 Phonemes = sinePhonemes.ToArray();
                 PhraseGroups = phraseGroups.ToArray();
@@ -532,47 +533,13 @@ namespace OpenUtau.Core.Pipeline {
             }
             PhraseNoteIndex = new Lazy<int[][]>(() => PhraseGroups
                 .Select(g => PhraseNotes(g.Start, g.End).ToArray()).ToArray());
-            if (!SineFallback && ExpressionGraph != null) {
+            if (!sine && ExpressionGraph != null) {
                 // Options expressions are indices, not values; the graph neither reads nor drives them.
                 var numerical = graphExpressions!.Where(d => d.type == UExpressionType.Numerical).Select(d => d.abbr);
                 PhonemeAnchors = new ExpressionGraph.PhonemeAnchors(
                     Phonemes.Select(p => p.Position).ToArray(),
                     numerical.ToDictionary(abbr => abbr, abbr => Phonemes.Select(p => p.Values![abbr]).ToArray()));
             }
-        }
-
-        private static List<int[]> BuildSineGroups(NoteSource[] notes) {
-            var headNotes = notes
-                .Where(note => note.Extends == -1 && !note.OverlapError)
-                .ToArray();
-            int totalNotes = headNotes.Length;
-            int moraNotes = headNotes.Count(note => SineVowels.GetVowel(note.Lyric) != null);
-            bool japaneseLyrics = totalNotes > 0 && moraNotes * 10 >= totalNotes * 3;
-            var phrases = new List<int[]>();
-            var group = new List<int>();
-            foreach (var note in headNotes) {
-                var chain = new List<int> { note.Index };
-                int tail = note.Index;
-                int next = notes[tail].Next;
-                while (next != -1 && notes[next].Extends == tail) {
-                    chain.Add(next);
-                    tail = next;
-                    next = notes[next].Next;
-                }
-                bool mergeable = japaneseLyrics
-                    && SineVowels.IsBareVowel(notes[chain[0]].Lyric)
-                    && group.Count > 0
-                    && notes[group[group.Count - 1]].End == notes[chain[0]].Position;
-                if (!mergeable && group.Count > 0) {
-                    phrases.Add(group.ToArray());
-                    group.Clear();
-                }
-                group.AddRange(chain);
-            }
-            if (group.Count > 0) {
-                phrases.Add(group.ToArray());
-            }
-            return phrases;
         }
 
         /// <summary>
@@ -585,14 +552,14 @@ namespace OpenUtau.Core.Pipeline {
             var phonemes = part.phonemes
                 .Where(phoneme => !phoneme.Error)
                 .ToList();
-            bool sineFallback = SineRenderer.IsFallbackActive(track);
-            if (phonemes.Count == 0 && !sineFallback) {
+            var renderer = track.RendererSettings.Renderer;
+            bool sine = renderer is SineRenderer;
+            if (sine ? part.notes.Count == 0 : phonemes.Count == 0) {
                 return null;
             }
-            var renderer = sineFallback ? SineRenderer.Instance : track.RendererSettings.Renderer;
             float maxMergeMs = Preferences.Default.MergePhrasesSec * 1000;
             var groups = new List<(int, int)>();
-            if (!sineFallback) {
+            if (!sine) {
                 int start = 0;
                 for (int i = 1; i < phonemes.Count; ++i) {
                     if (phonemes[i - 1].End == phonemes[i].position) {

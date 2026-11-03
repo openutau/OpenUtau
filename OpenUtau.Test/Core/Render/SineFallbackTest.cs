@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+
+
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -24,6 +24,7 @@ namespace OpenUtau.Core {
             });
             track = new UTrack(project);
             project.tracks.Add(track);
+            track.RendererSettings.Validate(track);
             part = new UVoicePart { trackNo = 0 };
             project.parts.Add(part);
             return project;
@@ -37,23 +38,42 @@ namespace OpenUtau.Core {
             return note;
         }
 
+        static void Link(UNote first, UNote second) {
+            first.Next = second;
+            second.Prev = first;
+        }
+
         [Fact]
-        public void FromPartBuildsOnePhrasePerConsonantNoteWithoutSinger() {
+        public void FromPartGroupsTouchingNotesIntoOnePhrase() {
             var project = CreateProject(out var track, out var part);
-            var note1 = MakeNote(0, 480, 60);
-            note1.lyric = "ka";
-            var note2 = MakeNote(480, 240, 64);
-            note2.lyric = "ki";
-            part.notes.Add(note1);
-            part.notes.Add(note2);
+            var first = MakeNote(0, 480, 60);
+            var second = MakeNote(480, 240, 64);
+            Link(first, second);
+            part.notes.Add(first);
+            part.notes.Add(second);
+
+            var phrases = RenderPhrase.FromPart(project, track, part);
+
+            var phrase = Assert.Single(phrases);
+            Assert.Same(SineRenderer.Instance, phrase.renderer);
+            Assert.Equal(2, phrase.phones.Length);
+            Assert.Equal(720, phrase.duration);
+            Assert.Equal(60 * 100, phrase.pitches[0], 0);
+            Assert.Equal(64 * 100, phrase.pitches.Last(), 0);
+        }
+
+        [Fact]
+        public void FromPartSplitsPhrasesAtGaps() {
+            var project = CreateProject(out var track, out var part);
+            var first = MakeNote(0, 480, 60);
+            var second = MakeNote(960, 240, 64);
+            Link(first, second);
+            part.notes.Add(first);
+            part.notes.Add(second);
 
             var phrases = RenderPhrase.FromPart(project, track, part);
 
             Assert.Equal(2, phrases.Count);
-            Assert.All(phrases, phrase => Assert.Same(SineRenderer.Instance, phrase.renderer));
-            Assert.All(phrases, phrase => Assert.NotEmpty(phrase.phones));
-            Assert.Equal("a", phrases[0].phones[0].phoneme);
-            Assert.Equal("i", phrases[1].phones[0].phoneme);
             Assert.Equal(60 * 100, phrases[0].pitches[0], 0);
             Assert.Equal(64 * 100, phrases[1].pitches[0], 0);
         }
@@ -113,51 +133,35 @@ namespace OpenUtau.Core {
         }
 
         [Fact]
-        public void PreferenceOffSilencesSineWithoutStoppingTheRender() {
+        public void PreferenceOffRemovesSineRenderer() {
             var project = CreateProject(out var track, out var part);
             part.notes.Add(MakeNote(0, 480, 60));
-            var phrase = RenderPhrase.FromPart(project, track, part).Single();
-            var layout = SineRenderer.Instance.Layout(phrase);
 
             var original = Preferences.Default.PlaySineWhenNoSinger;
-            var previousProject = DocManager.Inst.TakeProjectForTest(project);
-            DocManager.Inst.CommandSink = cmd => cmd.Execute();
             try {
-                Preferences.Default.PlaySineWhenNoSinger = true;
-                var tone = SineRenderer.Instance.Render(phrase, new Progress(1), 0,
-                    new CancellationTokenSource()).Result;
-                Assert.True(tone.samples.Any(sample => sample != 0f));
-
                 Preferences.Default.PlaySineWhenNoSinger = false;
-                var silent = SineRenderer.Instance.Render(phrase, new Progress(1), 0,
-                    new CancellationTokenSource()).Result;
-                Assert.Equal(tone.samples.Length, silent.samples.Length);
-                Assert.All(silent.samples, sample => Assert.Equal(0f, sample));
-                Assert.Equal(layout.leadingMs, silent.leadingMs);
-                Assert.Equal(layout.estimatedLengthMs, silent.estimatedLengthMs);
+                track.RendererSettings.Validate(track);
+                Assert.Null(track.RendererSettings.Renderer);
+                Assert.Null(Pipeline.PhraseSource.FromPart(project, track, part, 0));
+
+                Preferences.Default.PlaySineWhenNoSinger = true;
+                track.RendererSettings.Validate(track);
+                Assert.Same(SineRenderer.Instance, track.RendererSettings.Renderer);
+                Assert.NotNull(Pipeline.PhraseSource.FromPart(project, track, part, 0));
             } finally {
                 Preferences.Default.PlaySineWhenNoSinger = original;
-                DocManager.Inst.CommandSink = null!;
-                DocManager.Inst.TakeProjectForTest(previousProject);
             }
         }
 
         [Fact]
-        public void PreferenceOffChangesPhraseHash() {
+        public void AssigningSingerReplacesSineRenderer() {
             var project = CreateProject(out var track, out var part);
-            part.notes.Add(MakeNote(0, 480, 60));
+            Assert.Same(SineRenderer.Instance, track.RendererSettings.Renderer);
 
-            var original = Preferences.Default.PlaySineWhenNoSinger;
-            try {
-                Preferences.Default.PlaySineWhenNoSinger = true;
-                var withTone = RenderPhrase.FromPart(project, track, part).Single();
-                Preferences.Default.PlaySineWhenNoSinger = false;
-                var withoutTone = RenderPhrase.FromPart(project, track, part).Single();
+            track.Singer = new MockLoadedSinger();
+            track.RendererSettings.Validate(track);
 
-                Assert.NotEqual(withTone.hash, withoutTone.hash);
-            } finally {
-                Preferences.Default.PlaySineWhenNoSinger = original;
-            }
+            Assert.NotSame(SineRenderer.Instance, track.RendererSettings.Renderer);
         }
 
         class MockLoadedSinger : USinger {
