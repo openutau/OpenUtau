@@ -43,6 +43,7 @@ namespace OpenUtau.App.ViewModels {
         }
         // Release channel index: 0 = stable, 1 = beta, 2 = alpha.
         [Reactive] public partial int Channel { get; set; }
+        [Reactive] public partial bool PlaySineWhenNoSinger { get; set; }
 
         // Playback
         private List<AudioOutputDevice>? audioOutputDevices;
@@ -253,6 +254,7 @@ namespace OpenUtau.App.ViewModels {
                 "alpha" => 2,
                 _ => 0
             };
+            PlaySineWhenNoSinger = Preferences.Default.PlaySineWhenNoSinger;
             LyricsHelper = LyricsHelpers.FirstOrDefault(option => option.klass.Equals(ActiveLyricsHelper.Inst.GetPreferred()));
             LyricsHelperBrackets = Preferences.Default.LyricsHelperBrackets;
             RenderStatusInTrackBar = Preferences.Default.RenderStatusInTrackBar;
@@ -440,6 +442,12 @@ namespace OpenUtau.App.ViewModels {
                     2 => "alpha",
                     _ => "stable"
                 };
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.PlaySineWhenNoSinger), playSine => {
+                Preferences.Default.PlaySineWhenNoSinger = playSine;
+                DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
+                DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                MessageBus.Current.SendMessage(new TracksRefreshEvent());
             });
             this.WhenAnyValue(vm => vm.LyricsHelper)
                 .Skip(1)

@@ -238,6 +238,7 @@ namespace OpenUtau.Core.Util {
             public bool ShowPlaybackNoteBounce = false;
             public EditTool EditTool = new EditTool();
             public bool PlayTone = true;
+            public bool PlaySineWhenNoSinger = true;
             /// <summary>Legacy; migrated to <see cref="RealTimePitchMode"/> on load.</summary>
             public bool RealTimePitchGeneration = false;
             public int RealTimePitchMode = (int)LivePitchMode.Off;
