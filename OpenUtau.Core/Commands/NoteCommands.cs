@@ -179,6 +179,51 @@ namespace OpenUtau.Core {
         }
     }
 
+    /// <summary>
+    /// Holds the phonemes of the given notes where they are now, while later commands in the same
+    /// undo group change the notes. The phonemizer output for the edited notes is turned into
+    /// phoneme offsets that keep the phonemes there. Call <see cref="Release"/> when the edit is over.
+    /// </summary>
+    public class PinPhonemesCommand : NoteCommand {
+        readonly Dictionary<(UNote, int), int> positions;
+        readonly List<UPhonemeOverride>[] oldOverrides;
+        PhonemePins? pins;
+        bool released;
+
+        public PinPhonemesCommand(UVoicePart part, IEnumerable<UNote> notes) : base(part, notes.Distinct()) {
+            positions = part.phonemes
+                .Where(phoneme => phoneme.Parent != null && Notes.Contains(phoneme.Parent))
+                .ToDictionary(phoneme => (phoneme.Parent, phoneme.index), phoneme => phoneme.position);
+            oldOverrides = Notes.Select(note => note.phonemeOverrides.Select(o => o.Clone()).ToList()).ToArray();
+        }
+        public override string ToString() => "Pin phonemes";
+        public override void Execute() {
+            pins = new PhonemePins(positions) { Released = released };
+            Part.phonemePins = pins;
+        }
+        public override void Unexecute() {
+            if (Part.phonemePins == pins) {
+                Part.phonemePins = null;
+            }
+            for (int i = 0; i < Notes.Length; i++) {
+                Notes[i].phonemeOverrides = oldOverrides[i].Select(o => o.Clone()).ToList();
+            }
+        }
+        /// <summary>
+        /// Ends the edit: the pins go away once the phonemizer has caught up with the notes.
+        /// </summary>
+        public void Release() {
+            released = true;
+            if (pins == null || Part.phonemePins != pins) {
+                return;
+            }
+            pins.Released = true;
+            if (Part.PhonemesUpToDate) {
+                Part.phonemePins = null;
+            }
+        }
+    }
+
     public class ChangeNoteLyricCommand : NoteCommand {
         readonly string[] NewLyrics;
         readonly string[] OldLyrics;

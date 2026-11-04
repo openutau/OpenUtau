@@ -57,6 +57,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool ShowTips { get; set; }
         [Reactive] public partial bool PlayTone { get; set; }
+        [Reactive] public partial bool KeepPhonemeTiming { get; set; }
         [Reactive] public partial bool ShowVibrato { get; set; }
         [Reactive] public partial bool ShowPitch { get; set; }
         [Reactive] public partial bool ShowFinalPitch { get; set; }
@@ -315,6 +316,12 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(x => x.ShowNoteParams)
             .Subscribe(showNoteParams => {
                 Preferences.Default.ShowNoteParams = showNoteParams;
+                Preferences.Save();
+            });
+            KeepPhonemeTiming = Preferences.Default.KeepPhonemeTiming;
+            this.WhenAnyValue(x => x.KeepPhonemeTiming)
+            .Subscribe(keepPhonemeTiming => {
+                Preferences.Default.KeepPhonemeTiming = keepPhonemeTiming;
                 Preferences.Save();
             });
             ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;

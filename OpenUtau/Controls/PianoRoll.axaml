@@ -512,6 +512,21 @@
                 </Path>
               </Grid>
             </ToggleButton>
+            <ToggleButton Name="KeepPhonemeTimingToggle" Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20"
+                          IsChecked="{Binding NotesViewModel.KeepPhonemeTiming}"
+                          ToolTip.Tip="{DynamicResource pianoroll.toggle.keepphonemetiming}">
+              <Grid Width="18" Height="18">
+                <!--From https://pictogrammers.com/library/mdi/icon/pin/-->
+                <Path Classes="filled" Data="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z">
+                  <Path.RenderTransform>
+                    <TransformGroup>
+                      <ScaleTransform ScaleX=".6" ScaleY=".6" />
+                      <TranslateTransform X="-2" Y="-2"/>
+                    </TransformGroup>
+                  </Path.RenderTransform>
+                </Path>
+              </Grid>
+            </ToggleButton>
             <ToggleButton Name="SnapToggle" Classes="toolbar" Margin="0" Padding="1" Height="20" IsChecked="{Binding NotesViewModel.IsSnapOn}"
                           ToolTip.Tip="{DynamicResource pianoroll.toggle.snap}">
               <Border Width="18" Height="18">

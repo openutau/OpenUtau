@@ -332,6 +332,7 @@ namespace OpenUtau.App.Views {
         public readonly int neighborNoteLength;
         public readonly bool fromStart;
         public bool resizeNeighbor;
+        PinPhonemesCommand? pinPhonemes;
         protected override string? commandNameKey => "command.note.edit";
 
         public NoteResizeEditState(
@@ -401,6 +402,16 @@ namespace OpenUtau.App.Views {
                 valueTip.UpdateValueTip(note.duration.ToString());
                 return;
             }
+            if (pinPhonemes == null && notesVm.KeepPhonemeTiming) {
+                // Hold the phonemes of the resized notes and of the notes beside them.
+                var resized = notesVm.Selection.Count <= 1 ? new List<UNote> { note } : notesVm.Selection.ToList();
+                var pinned = resized
+                    .SelectMany(n => new[] { n.Prev, n, n.Next })
+                    .Append(neighborNote)
+                    .OfType<UNote>();
+                pinPhonemes = new PinPhonemesCommand(part, pinned);
+                DocManager.Inst.ExecuteCmd(pinPhonemes);
+            }
             // Resize neighbor note
             if (resizeNeighbor && neighborNote != null) {
                 int cutDuration = deltaDuration;
@@ -430,6 +441,10 @@ namespace OpenUtau.App.Views {
                 DocManager.Inst.ExecuteCmd(new ResizeNoteCommand(part, notesVm.Selection.ToList(), deltaDuration));
             }
             valueTip.UpdateValueTip(note.duration.ToString());
+        }
+        public override void End(IPointer pointer, Point point) {
+            base.End(pointer, point);
+            pinPhonemes?.Release();
         }
     }
 
