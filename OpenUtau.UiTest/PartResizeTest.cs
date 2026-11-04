@@ -39,9 +39,9 @@ namespace OpenUtau.UiTest {
                 }
                 var added = parts.Select(p => {
                     var part = new UVoicePart { trackNo = p.trackNo, position = p.position, Duration = p.duration };
-                    // Notes as pairs of position and duration, relative to the part.
-                    for (int i = 0; i + 1 < (p.notes?.Length ?? 0); i += 2) {
-                        part.notes.Add(project.CreateNote(60, p.notes![i], p.notes[i + 1]));
+                    // Notes as position, duration and tone, with positions relative to the part.
+                    for (int i = 0; i + 2 < (p.notes?.Length ?? 0); i += 3) {
+                        part.notes.Add(project.CreateNote(p.notes![i + 2], p.notes[i], p.notes[i + 1]));
                     }
                     document.ExecuteCmd(new AddPartCommand(project, part));
                     return part;
@@ -98,6 +98,31 @@ namespace OpenUtau.UiTest {
             Assert.Equal(Avalonia.Media.Colors.White, PixelAt(window, At(window, canvas, viewModel, below.End, 0)));
         });
 
+        [Fact]
+        public void OverlapShowsTheNotesOfBothParts() => WithParts(new (int, int, int, int[]?)[] {
+            // Two notes 20 semitones apart put the lower one 36/52 of the way down the part, the upper one 16/52.
+            (0, 0, 3840, new[] { 0, 960, 80, 2400, 960, 60 }),
+            (0, 1920, 3840, new[] { 0, 480, 90, 2400, 960, 70 }),
+        }, (window, viewModel, canvas, parts) => {
+            double height = viewModel.TracksViewModel.TrackHeight;
+            Point In(int tick, double fraction) => At(window, canvas, viewModel, tick, 0, 0) + new Point(0, (fraction - 0.5) * height);
+            int Brightness(Color color) => color.R + color.G + color.B;
+
+            // The note of the part on top, inside the overlap, stays solid.
+            var aboveNote = PixelAt(window, In(2160, 16.0 / 52));
+            Assert.True(Brightness(aboveNote) > 3 * 230, $"The note on top is {aboveNote}");
+            // The note of the part below shows through, fainter than a solid note.
+            int empty = Brightness(PixelAt(window, In(2880, 0.9)));
+            int belowNote = Brightness(PixelAt(window, In(2880, 36.0 / 52)));
+            Assert.True(belowNote > empty + 60, $"The covered note ({belowNote}) doesn't show over the part ({empty})");
+            Assert.True(belowNote < Brightness(aboveNote) - 60, "The covered note looks as solid as the one on top");
+
+            // Selecting the part below brings its notes forward.
+            viewModel.TracksViewModel.SelectPart(parts[0]);
+            HeadlessUi.Flush();
+            Assert.True(Brightness(PixelAt(window, In(2880, 36.0 / 52))) > 3 * 230, "The selected part's note isn't solid");
+        });
+
         // The color the window shows at a point.
         static Color PixelAt(Window window, Point point) {
             using var frame = window.CaptureRenderedFrame();
@@ -111,7 +136,7 @@ namespace OpenUtau.UiTest {
 
         [Fact]
         public void StartNearTheFirstNoteDoesNotGrowWhenShrinking() => WithParts(new (int, int, int, int[]?)[] {
-            (0, 1920, 1920, new[] { 100, 480 }),
+            (0, 1920, 1920, new[] { 100, 480, 60 }),
         }, (window, viewModel, canvas, parts) => {
             var part = parts[0];
             Drag(window, At(window, canvas, viewModel, part.position, 0, 2), At(window, canvas, viewModel, 2400, 0));
@@ -122,7 +147,7 @@ namespace OpenUtau.UiTest {
 
         [Fact]
         public void SelectedPartsShrinkAsFarAsEachAllows() => WithParts(new (int, int, int, int[]?)[] {
-            (0, 0, 3840, new[] { 0, 2880 }),
+            (0, 0, 3840, new[] { 0, 2880, 60 }),
             (1, 0, 3840, null),
         }, (window, viewModel, canvas, parts) => {
             var (full, empty) = (parts[0], parts[1]);

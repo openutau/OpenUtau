@@ -280,22 +280,7 @@ namespace OpenUtau.App.Controls {
                         }
                     }
                 }
-                // Notes
-                if (voicePart.notes.Count > 0) {
-                    int maxTone = voicePart.notes.Max(note => note.tone);
-                    int minTone = voicePart.notes.Min(note => note.tone);
-                    if (maxTone - minTone < 52) {
-                        int additional = (52 - (maxTone - minTone)) / 2;
-                        minTone -= additional;
-                        maxTone += additional;
-                    }
-                    using var pushedState = context.PushTransform(Matrix.CreateScale(1, trackHeight / (maxTone - minTone)));
-                    foreach (var note in voicePart.notes) {
-                        var start = new Point((int)(note.position * tickWidth), maxTone - note.tone);
-                        var end = new Point((int)(note.End * tickWidth), maxTone - note.tone);
-                        context.DrawLine(notePen, start, end);
-                    }
-                }
+                DrawNotes(context, voicePart);
                 // Highlight
                 if (PianoRollViewportRect() is Rect vpRect) {
                     context.DrawRectangle(viewportFill, viewportPen, new RoundedRect(vpRect, new CornerRadius(3)));
@@ -393,6 +378,54 @@ namespace OpenUtau.App.Controls {
 
         // The file's channels as lanes, on a grid from the part's start: scrolling
         // moves the whole control, so it never re-bins the samples.
+        /// <summary>
+        /// Redraws the part, and where it overlaps other parts, as the canvas draws its content there too.
+        /// Hides <see cref="Visual.InvalidateVisual"/> so every redraw of a part does both.
+        /// </summary>
+        public new void InvalidateVisual() {
+            base.InvalidateVisual();
+            partsCanvas?.InvalidateOverlaps();
+        }
+
+        /// <summary>The part's fill, as drawn behind its content.</summary>
+        internal IBrush FillBrush => Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
+
+        /// <summary>
+        /// Draws the part's notes or waveform at the given opacity, in the part's own coordinates.
+        /// Used to show a part's content through a part that covers it.
+        /// </summary>
+        internal void DrawContent(DrawingContext context, double opacity) {
+            using var pushedOpacity = context.PushOpacity(opacity);
+            if (part is UVoicePart voicePart) {
+                DrawNotes(context, voicePart);
+            } else if (part is UWavePart wavePart) {
+                try {
+                    DrawWaveform(context, wavePart);
+                } catch (Exception e) {
+                    Log.Error(e, "failed to draw waveform");
+                }
+            }
+        }
+
+        private void DrawNotes(DrawingContext context, UVoicePart voicePart) {
+            if (voicePart.notes.Count == 0) {
+                return;
+            }
+            int maxTone = voicePart.notes.Max(note => note.tone);
+            int minTone = voicePart.notes.Min(note => note.tone);
+            if (maxTone - minTone < 52) {
+                int additional = (52 - (maxTone - minTone)) / 2;
+                minTone -= additional;
+                maxTone += additional;
+            }
+            using var pushedState = context.PushTransform(Matrix.CreateScale(1, trackHeight / (maxTone - minTone)));
+            foreach (var note in voicePart.notes) {
+                var start = new Point((int)(note.position * tickWidth), maxTone - note.tone);
+                var end = new Point((int)(note.End * tickWidth), maxTone - note.tone);
+                context.DrawLine(notePen, start, end);
+            }
+        }
+
         private void DrawWaveform(DrawingContext context, UWavePart wavePart) {
             if (wavePart.Peaks is not { IsCompletedSuccessfully: true, Result: WavePeaks peaks }) {
                 return;

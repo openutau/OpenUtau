@@ -117,7 +117,7 @@ namespace OpenUtau.App.Controls {
         public PartsCanvas() {
             coveredEdges = new CoveredPartEdges(this);
             Children.Add(coveredEdges);
-            // Parts move and resize through layout, so draw their covered edges again after each pass.
+            // Parts move and resize through layout, so draw where they overlap again after each pass.
             LayoutUpdated += (_, _) => coveredEdges.InvalidateVisual();
             MessageBus.Current.Listen<TracksRefreshEvent>()
                 .Subscribe(_ => {
@@ -156,6 +156,9 @@ namespace OpenUtau.App.Controls {
                 .Subscribe(_ => InvalidateVisual());
         }
 
+        /// <summary>Redraws where parts overlap, after a part changes how it looks.</summary>
+        internal void InvalidateOverlaps() => coveredEdges.InvalidateVisual();
+
         protected override Size ArrangeOverride(Size finalSize) {
             var size = base.ArrangeOverride(finalSize);
             coveredEdges.Arrange(new Rect(finalSize));
@@ -163,12 +166,18 @@ namespace OpenUtau.App.Controls {
         }
 
         /// <summary>
-        /// Marks the edges of parts that lie under a part drawn on top of them, so they can be seen
-        /// and dragged. Drawn over all parts, and lets the pointer through to them.
+        /// Shows both parts where parts overlap: the part on top turns see-through there, with
+        /// stripes marking the overlap, and the notes or waveform of the part below show through.
+        /// The content of the selected part, or else of the part on top, stays solid. The edges of
+        /// covered parts are marked, so they can be seen and dragged. Drawn over all parts, and lets
+        /// the pointer through to them.
         /// </summary>
         class CoveredPartEdges : Control {
+            const double ShowThroughOpacity = 0.5;
+            const double HatchSpacing = 8;
             static readonly IPen LinePen = new Pen(Brushes.White, 2);
             static readonly IPen ShadowPen = new Pen(new SolidColorBrush(Avalonia.Media.Colors.Black, 0.5), 4);
+            static readonly IPen HatchPen = new Pen(new SolidColorBrush(Avalonia.Media.Colors.White, 0.25), 1);
             readonly PartsCanvas canvas;
 
             public CoveredPartEdges(PartsCanvas canvas) {
@@ -180,6 +189,14 @@ namespace OpenUtau.App.Controls {
             public override void Render(DrawingContext context) {
                 // Children are drawn in order, so a later part covers an earlier one.
                 var parts = canvas.Children.OfType<PartControl>().Where(p => p.IsVisible).ToArray();
+                for (int i = 0; i < parts.Length; i++) {
+                    for (int j = i + 1; j < parts.Length; j++) {
+                        var overlap = parts[i].Bounds.Intersect(parts[j].Bounds);
+                        if (overlap.Width > 0 && overlap.Height > 0) {
+                            DrawOverlap(context, parts[i], parts[j], overlap);
+                        }
+                    }
+                }
                 for (int i = 0; i < parts.Length; i++) {
                     var below = parts[i].Bounds;
                     foreach (double x in new[] { below.Left, below.Right }) {
@@ -196,6 +213,28 @@ namespace OpenUtau.App.Controls {
                         }
                     }
                 }
+            }
+
+            void DrawOverlap(DrawingContext context, PartControl below, PartControl above, Rect overlap) {
+                using var clip = context.PushClip(overlap);
+                // The fill of the part below shows through the part on top, and fades its content.
+                using (context.PushOpacity(ShowThroughOpacity)) {
+                    context.FillRectangle(below.FillBrush, overlap);
+                }
+                for (double x = overlap.Left - overlap.Height; x < overlap.Right; x += HatchSpacing) {
+                    context.DrawLine(HatchPen, new Point(x, overlap.Bottom), new Point(x + overlap.Height, overlap.Top));
+                }
+                // The selected part comes forward, otherwise the part on top.
+                bool belowInFront = below.Selected && !above.Selected;
+                DrawContent(context, below, belowInFront ? 1 : ShowThroughOpacity);
+                if (!belowInFront) {
+                    DrawContent(context, above, 1);
+                }
+            }
+
+            static void DrawContent(DrawingContext context, PartControl part, double opacity) {
+                using var moved = context.PushTransform(Matrix.CreateTranslation(part.Bounds.X, part.Bounds.Y));
+                part.DrawContent(context, opacity);
             }
         }
 
