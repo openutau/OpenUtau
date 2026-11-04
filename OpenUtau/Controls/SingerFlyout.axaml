@@ -182,6 +182,12 @@
             <Path Data="M12,12H14V10H16V12H18V14H16V16H14V14H12V12M22,8V18C22,19.11 21.11,20 20,20H4C2.89,20 2,19.11 2,18V6C2,4.89 2.89,4 4,4H10L12,6H20C21.11,6 22,6.89 22,8M20,8H4V18H20V8Z"/>
           </Canvas></Viewbox>
         </Button>
+        <Button Classes="footer" ToolTip.Tip="{DynamicResource tracks.clearsinger}" Command="{Binding ClearSinger}"
+                IsVisible="{Binding CanClearSinger}">
+          <Viewbox><Canvas>
+            <Path Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+          </Canvas></Viewbox>
+        </Button>
         <!-- mdi-refresh -->
         <Button Classes="footer" ToolTip.Tip="{DynamicResource singers.refresh}" Command="{Binding RefreshSingers}">
           <Viewbox><Canvas>
