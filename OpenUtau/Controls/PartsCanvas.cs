@@ -112,13 +112,13 @@ namespace OpenUtau.App.Controls {
         private double _pianoRollViewViewportTicks;
 
         Dictionary<UPart, PartControl> partControls = new Dictionary<UPart, PartControl>();
-        readonly CoveredPartEdges coveredEdges;
+        readonly PartOverlaps overlaps;
 
         public PartsCanvas() {
-            coveredEdges = new CoveredPartEdges(this);
-            Children.Add(coveredEdges);
+            overlaps = new PartOverlaps(this);
+            Children.Add(overlaps);
             // Parts move and resize through layout, so draw where they overlap again after each pass.
-            LayoutUpdated += (_, _) => coveredEdges.InvalidateVisual();
+            LayoutUpdated += (_, _) => overlaps.InvalidateVisual();
             MessageBus.Current.Listen<TracksRefreshEvent>()
                 .Subscribe(_ => {
                     foreach (var (part, control) in partControls) {
@@ -157,30 +157,29 @@ namespace OpenUtau.App.Controls {
         }
 
         /// <summary>Redraws where parts overlap, after a part changes how it looks.</summary>
-        internal void InvalidateOverlaps() => coveredEdges.InvalidateVisual();
+        internal void InvalidateOverlaps() => overlaps.InvalidateVisual();
 
         protected override Size ArrangeOverride(Size finalSize) {
             var size = base.ArrangeOverride(finalSize);
-            coveredEdges.Arrange(new Rect(finalSize));
+            overlaps.Arrange(new Rect(finalSize));
             return size;
         }
 
         /// <summary>
         /// Shows both parts where parts overlap: the part on top turns see-through there, with
         /// stripes marking the overlap, and the notes or waveform of the part below show through.
-        /// The content of the selected part, or else of the part on top, stays solid. The edges of
-        /// covered parts are marked, so they can be seen and dragged. Drawn over all parts, and lets
-        /// the pointer through to them.
+        /// The content of the selected part, or else of the part on top, stays solid. Drawn over all
+        /// parts, and lets the pointer through to them.
         /// </summary>
-        class CoveredPartEdges : Control {
+        class PartOverlaps : Control {
             const double ShowThroughOpacity = 0.5;
             const double HatchSpacing = 8;
-            static readonly IPen LinePen = new Pen(Brushes.White, 2);
-            static readonly IPen ShadowPen = new Pen(new SolidColorBrush(Avalonia.Media.Colors.Black, 0.5), 4);
+            // As in PartControl.Render.
+            const double PartCornerRadius = 4;
             static readonly IPen HatchPen = new Pen(new SolidColorBrush(Avalonia.Media.Colors.White, 0.25), 1);
             readonly PartsCanvas canvas;
 
-            public CoveredPartEdges(PartsCanvas canvas) {
+            public PartOverlaps(PartsCanvas canvas) {
                 this.canvas = canvas;
                 IsHitTestVisible = false;
                 ZIndex = int.MaxValue;
@@ -192,31 +191,18 @@ namespace OpenUtau.App.Controls {
                 for (int i = 0; i < parts.Length; i++) {
                     for (int j = i + 1; j < parts.Length; j++) {
                         var overlap = parts[i].Bounds.Intersect(parts[j].Bounds);
-                        if (overlap.Width > 0 && overlap.Height > 0) {
+                        if (overlap.Width > 1 && overlap.Height > 1) {
                             DrawOverlap(context, parts[i], parts[j], overlap);
-                        }
-                    }
-                }
-                for (int i = 0; i < parts.Length; i++) {
-                    var below = parts[i].Bounds;
-                    foreach (double x in new[] { below.Left, below.Right }) {
-                        for (int j = i + 1; j < parts.Length; j++) {
-                            var above = parts[j].Bounds;
-                            double top = Math.Max(below.Top, above.Top);
-                            double bottom = Math.Min(below.Bottom, above.Bottom);
-                            if (above.Left < x && x < above.Right && top < bottom) {
-                                var (start, end) = (new Point(x, top + 1), new Point(x, bottom - 1));
-                                context.DrawLine(ShadowPen, start, end);
-                                context.DrawLine(LinePen, start, end);
-                                break;
-                            }
                         }
                     }
                 }
             }
 
             void DrawOverlap(DrawingContext context, PartControl below, PartControl above, Rect overlap) {
-                using var clip = context.PushClip(overlap);
+                // Shaped like a part, inset and rounded as parts draw themselves, so where the overlap
+                // ends at a covered edge, the part below looks like it ends there.
+                var shape = new RoundedRect(new Rect(overlap.X + 1, overlap.Y, overlap.Width - 1, overlap.Height - 1), PartCornerRadius);
+                using var clip = context.PushClip(shape);
                 // The fill of the part below shows through the part on top, and fades its content.
                 using (context.PushOpacity(ShowThroughOpacity)) {
                     context.FillRectangle(below.FillBrush, overlap);

@@ -85,17 +85,26 @@ namespace OpenUtau.UiTest {
             (0, 1920, 3840, null),
         }, (window, viewModel, canvas, parts) => {
             var (below, above) = (parts[0], parts[1]);
-            // The end of the part below lies inside the part above, and is drawn over it.
-            Assert.Equal(Avalonia.Media.Colors.White, PixelAt(window, At(window, canvas, viewModel, below.End, 0)));
-            Assert.NotEqual(Avalonia.Media.Colors.White, PixelAt(window, At(window, canvas, viewModel, below.End, 0, 6)));
+            // The end of the part below lies inside the part above, where the overlap stripes end.
+            AssertOverlapEndsAt(below.End);
             var edge = At(window, canvas, viewModel, below.End, 0, -2);
             Drag(window, edge, At(window, canvas, viewModel, 2880, 0, -1));
 
             Assert.Equal(0, below.position);
             Assert.Equal(2880, below.End);
             Assert.Equal((1920, 3840), (above.position, above.Duration));
-            // The mark follows the edge.
-            Assert.Equal(Avalonia.Media.Colors.White, PixelAt(window, At(window, canvas, viewModel, below.End, 0)));
+            AssertOverlapEndsAt(below.End);
+
+            void AssertOverlapEndsAt(int tick) {
+                // Brightness along a row of pixels, from dx to dx + 16 pixels away from the tick.
+                int[] Row(double dx) => Enumerable.Range(0, 16)
+                    .Select(i => PixelAt(window, At(window, canvas, viewModel, tick, 0, dx + i)))
+                    .Select(color => color.R + color.G + color.B).ToArray();
+                var inside = Row(-18);
+                var outside = Row(2);
+                Assert.True(inside.Max() - inside.Min() > 20, "No overlap stripes before the covered edge");
+                Assert.True(outside.Max() - outside.Min() < 5, "Overlap stripes past the covered edge");
+            }
         });
 
         [Fact]
