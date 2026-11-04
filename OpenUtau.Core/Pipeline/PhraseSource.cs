@@ -445,7 +445,6 @@ namespace OpenUtau.Core.Pipeline {
             ClassicSinger = Singer as ClassicSinger;
             ModpSupported = track.TryGetExpDescriptor(project, Format.Ustx.MODP, out var modp)
                 && Renderer.SupportsExpression(modp);
-            bool sine = Renderer is SineRenderer;
 
             var noteIndexByNote = new Dictionary<UNote, int>();
             var notes = part.notes.ToList();
@@ -488,11 +487,23 @@ namespace OpenUtau.Core.Pipeline {
                     .ToDictionary(d => d.abbr);
             }
 
-            if (sine && phonemes.Count == 0) {
-                Phonemes = new PhonemeSource[Notes.Length];
-                for (int i = 0; i < Notes.Length; i++) {
-                    Phonemes[i] = new PhonemeSource(Notes[i], Axis, part.position, "sine");
+            bool sine = Renderer is SineRenderer;
+            if (sine) {
+                var sinePhonemes = new List<PhonemeSource>();
+                var phraseGroups = new List<(int Start, int End)>();
+                int groupStart = 0;
+                foreach (var note in Notes.Where(n => !n.OverlapError)) {
+                    if (note.Extends == -1 && sinePhonemes.Count > groupStart) {
+                        phraseGroups.Add((groupStart, sinePhonemes.Count));
+                        groupStart = sinePhonemes.Count;
+                    }
+                    sinePhonemes.Add(new PhonemeSource(note, Axis, part.position, "sine"));
                 }
+                if (sinePhonemes.Count > groupStart) {
+                    phraseGroups.Add((groupStart, sinePhonemes.Count));
+                }
+                Phonemes = sinePhonemes.ToArray();
+                PhraseGroups = phraseGroups.ToArray();
             } else {
                 Phonemes = new PhonemeSource[phonemes.Count];
                 for (int i = 0; i < phonemes.Count; i++) {
@@ -501,8 +512,8 @@ namespace OpenUtau.Core.Pipeline {
                         p.Parent != null ? noteIndexByNote[p.Parent] : -1,
                         Axis, part.position, track, project, Resampler, FlagExpressions, graphExpressions);
                 }
+                PhraseGroups = groups;
             }
-            PhraseGroups = groups;
             PhraseNoteIndex = new Lazy<int[][]>(() => PhraseGroups
                 .Select(g => PhraseNotes(g.Start, g.End).ToArray()).ToArray());
             if (!sine && ExpressionGraph != null) {
@@ -528,13 +539,9 @@ namespace OpenUtau.Core.Pipeline {
             if (sine ? part.notes.Count == 0 : phonemes.Count == 0) {
                 return null;
             }
+            float maxMergeMs = Preferences.Default.MergePhrasesSec * 1000;
             var groups = new List<(int, int)>();
-            if (sine) {
-                for (int i = 0; i < part.notes.Count; ++i) {
-                    groups.Add((i, i + 1));
-                }
-            } else {
-                float maxMergeMs = Preferences.Default.MergePhrasesSec * 1000;
+            if (!sine) {
                 int start = 0;
                 for (int i = 1; i < phonemes.Count; ++i) {
                     if (phonemes[i - 1].End == phonemes[i].position) {
@@ -584,10 +591,6 @@ namespace OpenUtau.Core.Pipeline {
             return phrases;
         }
 
-        /// <summary>
-        /// The phonemes with the graph's per-phoneme outputs applied. The graph runs once over the whole part,
-        /// reading each phoneme's value at its own position, so no value is ever resampled.
-        /// </summary>
         PhonemeSource[] DrivenPhonemes() {
             if (ExpressionGraph == null || ExpressionGraph.PhonemeOutputs.Count == 0) {
                 return Phonemes;
