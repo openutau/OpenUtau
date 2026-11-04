@@ -176,85 +176,12 @@ namespace OpenUtau.Core.DiffSinger
                 .First()
                 .AsTensor<bool>();
             
-            //Build note durations, inserting rest notes for gaps between notes
-            //that are bridged by ahead-of-time consonants in the same phrase
-            var noteDurMsList = new List<double>();
-            var noteMidiList = new List<float>();
-            var noteRestList = new List<bool>();
-            //paddedToRealNoteIndex is kept in lockstep with noteDurMsList so the retake
-            //frame mask can map each padded segment to the real note it belongs to.
-            //Gap-rest segments inserted below follow the preceding real note.
-            var paddedToRealNoteIndex = new List<int>();
-            //Head padding
-            noteDurMsList.Add(Math.Max(0, phrase.notes[0].positionMs - startMs));
-            noteMidiList.Add(phrase.notes[0].adjustedTone);
-            noteRestList.Add(true);
-            paddedToRealNoteIndex.Add(0);
-            double prevNoteEndMs = phrase.notes[0].positionMs;
-            for (int realIdx = 0; realIdx < phrase.notes.Length; realIdx++) {
-                var note = phrase.notes[realIdx];
-                double gapMs = note.positionMs - prevNoteEndMs;
-                if (gapMs > 0) {
-                    //Insert a rest note for the gap; associate it with the previous real note
-                    noteDurMsList.Add(gapMs);
-                    noteMidiList.Add(note.adjustedTone);
-                    noteRestList.Add(true);
-                    paddedToRealNoteIndex.Add(realIdx - 1);
-                }
-                noteDurMsList.Add(note.durationMs);
-                noteMidiList.Add(note.adjustedTone);
-                paddedToRealNoteIndex.Add(realIdx);
-                //Slur notes follow the previous note's rest status
-                if (note.lyric.StartsWith("+")) {
-                    noteRestList.Add(noteRestList[^1]);
-                } else {
-                    var phs = phrase.phones
-                        .SkipWhile(ph => ph.end <= note.position + 1)
-                        .TakeWhile(ph => ph.position < note.end - 1)
-                        .ToArray();
-                    bool isRest = phs.Length == 0
-                        || phs.All(ph => ph.phoneme == "AP" || ph.phoneme == "SP" || !g2p.IsVowel(ph.phoneme));
-                    noteRestList.Add(isRest);
-                }
-                prevNoteEndMs = note.positionMs + note.durationMs;
-            }
-            //Tail padding
-            noteDurMsList.Add(DiffSingerUtils.GetTailMs(frameMs));
-            noteMidiList.Add(phrase.notes[^1].adjustedTone);
-            noteRestList.Add(true);
-            paddedToRealNoteIndex.Add(phrase.notes.Length - 1);
-
-            //Set tone for each rest group using nearest non-rest note
-            var note_rest = noteRestList;
-            var note_midi = noteMidiList.ToArray();
-            if (note_rest.All(rest => rest)) {
-                Array.Fill(note_midi, 60f);
-            } else {
-                var restGroups = new List<Tuple<int, int>>();
-                for (var i = 0; i < note_rest.Count; ++i) {
-                    if (!note_rest[i]) continue;
-                    var j = i + 1;
-                    for (; j < note_rest.Count && note_rest[j]; ++j) { }
-                    restGroups.Add(new Tuple<int, int>(i, j));
-                    i = j;
-                }
-                foreach (var restGroup in restGroups) {
-                    if (restGroup.Item1 == 0) {
-                        Array.Fill(note_midi, note_midi[restGroup.Item2], 0, restGroup.Item2);
-                    } else if (restGroup.Item2 == note_rest.Count) {
-                        Array.Fill(note_midi, note_midi[restGroup.Item1 - 1], restGroup.Item1, note_rest.Count - restGroup.Item1);
-                    } else {
-                        int mid = (restGroup.Item1 + restGroup.Item2 + 1) / 2;
-                        Array.Fill(note_midi, note_midi[restGroup.Item1 - 1], restGroup.Item1, mid - restGroup.Item1);
-                        Array.Fill(note_midi, note_midi[restGroup.Item2], mid, restGroup.Item2 - mid);
-                    }
-                }
-            }
-
-            var note_dur = DiffSingerUtils.FitDurationSum(
-                    DiffSingerUtils.DurationsMsToFrames(noteDurMsList, frameMs),
-                    totalFrames)
-                .ToList();
+            //Build the note timeline for the pitch predictor. Notes without
+            //phonemes (error notes, notes the phonemizer skipped) are left out:
+            //they own no frames in the phone timeline, so keeping their duration
+            //would shift every following note in the prediction.
+            var (note_dur, note_midi, note_rest, paddedToRealNoteIndex) =
+                DiffSingerUtils.PaddedNoteTimeline(phrase, startMs, frameMs, totalFrames, g2p.IsVowel);
             var pitch = Enumerable.Repeat(60f, totalFrames).ToArray();
             var retake = Enumerable.Repeat(true, totalFrames).ToArray();
             if (retakeNoteIndexes != null && existingPitch != null) {
@@ -270,8 +197,8 @@ namespace OpenUtau.Core.DiffSinger
                 new DenseTensor<float>(note_midi, new int[] { note_midi.Length }, false)
                 .Reshape(new int[] { 1, note_midi.Length })));
             pitchInputs.Add(NamedOnnxValue.CreateFromTensor("note_dur",
-                new DenseTensor<Int64>(note_dur.Select(x=>(Int64)x).ToArray(), new int[] { note_dur.Count }, false)
-                .Reshape(new int[] { 1, note_dur.Count })));
+                new DenseTensor<Int64>(note_dur.Select(x=>(Int64)x).ToArray(), new int[] { note_dur.Length }, false)
+                .Reshape(new int[] { 1, note_dur.Length })));
             pitchInputs.Add(NamedOnnxValue.CreateFromTensor("ph_dur",
                 new DenseTensor<Int64>(ph_dur.Select(x=>(Int64)x).ToArray(), new int[] { ph_dur.Length }, false)
                 .Reshape(new int[] { 1, ph_dur.Length })));
@@ -314,8 +241,8 @@ namespace OpenUtau.Core.DiffSinger
             //Melody encoder
             if(dsConfig.use_note_rest) {
                 pitchInputs.Add(NamedOnnxValue.CreateFromTensor("note_rest",
-                new DenseTensor<bool>(note_rest.ToArray(), new int[] { note_rest.Count }, false)
-                .Reshape(new int[] { 1, note_rest.Count })));
+                new DenseTensor<bool>(note_rest, new int[] { note_rest.Length }, false)
+                .Reshape(new int[] { 1, note_rest.Length })));
             }
 
             Onnx.VerifyInputNames(pitchModel, pitchInputs);
