@@ -176,46 +176,57 @@ namespace OpenUtau.App.Views {
                 selectedParts.Add(part);
             }
             this.fromStart = fromStart;
+            startEdges = selectedParts.ToDictionary(p => p, Edge);
         }
+
+        // Where each resized part's dragged edge was when the drag started.
+        readonly Dictionary<UPart, int> startEdges;
+        int Edge(UPart p) => fromStart ? p.position : p.End;
+
         public override void Update(IPointer pointer, Point point) {
             var project = DocManager.Inst.Project;
             var tracksVm = vm.TracksViewModel;
 
+            int edge;
             if (part is UVoicePart) {
                 tracksVm.PointToLineTick(point, out int left, out int right);
-                int deltaDuration = this.fromStart
-                    ? part.position - left
-                    : right - part.End;
-                if (deltaDuration < 0) {
-                    int maxDurReduction = selectedParts.Min(p => fromStart ? p.GetMaxPosiTick(project) - p.position : p.Duration - p.GetMinDurTick(project));
-                    deltaDuration = Math.Max(deltaDuration, -maxDurReduction);
-                }
+                edge = fromStart ? left : right;
+            } else {
+                edge = tracksVm.PointToTick(point);
+            }
+            // How much longer the parts should be than at the start of the drag.
+            int lengthening = fromStart ? startEdges[part] - edge : edge - startEdges[part];
+            // Each part goes as far as its own limits allow, so a part that can't shrink any more
+            // doesn't hold back the others. Measuring from the start of the drag keeps the other
+            // parts from going further on each pointer move while the dragged part is held.
+            foreach (var p in selectedParts) {
+                int done = fromStart ? startEdges[p] - p.position : p.End - startEdges[p];
+                int deltaDuration = ClampDelta(project, p, lengthening - done);
                 if (deltaDuration == 0) {
-                    return;
+                    continue;
                 }
-                foreach (UVoicePart voicePart in selectedParts.Where(part => part is UVoicePart)) {
+                if (p is UVoicePart voicePart) {
                     DocManager.Inst.ExecuteCmd(new ResizeVoicePartCommand(project, voicePart, deltaDuration, fromStart));
-                }
-            } else if (part is UWavePart) {
-                int newPos = tracksVm.PointToTick(point);
-                int deltaDuration = this.fromStart
-                    ? part.position - newPos
-                    : newPos - part.End;
-                var selectedWaveParts = selectedParts.Select(part => (UWavePart)part);
-                if (deltaDuration < 0) {
-                    int maxDurReduction = selectedWaveParts.Min(p => fromStart ? p.GetMaxPosiTick(project) - p.position : p.Duration - p.GetMinDurTick(project));
-                    deltaDuration = Math.Max(deltaDuration, -maxDurReduction);
-                } else if (deltaDuration > 0) {
-                    int maxDurExtension = selectedWaveParts.Min(p => fromStart ? Math.Min(p.skip, p.position) : p.trim);
-                    deltaDuration = Math.Min(deltaDuration, maxDurExtension);
-                }
-                if (deltaDuration == 0) {
-                    return;
-                }
-                foreach (UWavePart wavePart in selectedWaveParts) {
+                } else if (p is UWavePart wavePart) {
                     DocManager.Inst.ExecuteCmd(new ResizeWavePartCommand(project, wavePart, deltaDuration, fromStart));
                 }
             }
+        }
+
+        // Limits a change in a part's length to what the part allows.
+        int ClampDelta(UProject project, UPart p, int deltaDuration) {
+            if (deltaDuration < 0) {
+                int maxDurReduction = fromStart
+                    ? p.GetMaxPosiTick(project) - p.position
+                    : p.Duration - p.GetMinDurTick(project);
+                // A part already at or past its limit stays as it is, rather than growing.
+                return Math.Max(deltaDuration, -Math.Max(0, maxDurReduction));
+            }
+            if (p is UWavePart wavePart) {
+                return Math.Min(deltaDuration, fromStart ? Math.Min(wavePart.skip, wavePart.position) : wavePart.trim);
+            }
+            // A part can't start before the project start.
+            return fromStart ? Math.Min(deltaDuration, p.position) : deltaDuration;
         }
     }
 
