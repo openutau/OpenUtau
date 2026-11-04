@@ -1,9 +1,12 @@
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
+using Avalonia.Media;
 using OpenUtau.App.ViewModels;
 using OpenUtau.App.Views;
 using OpenUtau.Core;
@@ -17,7 +20,8 @@ namespace OpenUtau.UiTest {
     public class PartResizeTest {
         // Opens the editor with the given voice parts, added in order, so later parts are drawn on top.
         static void WithParts((int trackNo, int position, int duration, int[]? notes)[] parts,
-                Action<MainWindow, MainWindowViewModel, Canvas, UVoicePart[]> test) => HeadlessUi.Run(() => {
+                Action<MainWindow, MainWindowViewModel, Canvas, UVoicePart[]> test,
+                [CallerMemberName] string name = "") => HeadlessUi.Run(() => {
             MainWindowTest.InitCore();
             var document = DocManager.Inst;
             document.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
@@ -51,7 +55,7 @@ namespace OpenUtau.UiTest {
                 Assert.True(errors.Count == 0, "Errors reported:\n" + string.Join("\n", errors));
             } finally {
                 HeadlessUi.Flush();
-                HeadlessUi.SaveScreenshot(window, nameof(PartResizeTest));
+                HeadlessUi.SaveScreenshot(window, $"{nameof(PartResizeTest)}-{name}");
                 window.Close();
                 // Leave no unsaved edits behind for later tests, which share DocManager.
                 document.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
@@ -81,14 +85,29 @@ namespace OpenUtau.UiTest {
             (0, 1920, 3840, null),
         }, (window, viewModel, canvas, parts) => {
             var (below, above) = (parts[0], parts[1]);
-            // The end of the part below lies inside the part above.
+            // The end of the part below lies inside the part above, and is drawn over it.
+            Assert.Equal(Avalonia.Media.Colors.White, PixelAt(window, At(window, canvas, viewModel, below.End, 0)));
+            Assert.NotEqual(Avalonia.Media.Colors.White, PixelAt(window, At(window, canvas, viewModel, below.End, 0, 6)));
             var edge = At(window, canvas, viewModel, below.End, 0, -2);
             Drag(window, edge, At(window, canvas, viewModel, 2880, 0, -1));
 
             Assert.Equal(0, below.position);
             Assert.Equal(2880, below.End);
             Assert.Equal((1920, 3840), (above.position, above.Duration));
+            // The mark follows the edge.
+            Assert.Equal(Avalonia.Media.Colors.White, PixelAt(window, At(window, canvas, viewModel, below.End, 0)));
         });
+
+        // The color the window shows at a point.
+        static Color PixelAt(Window window, Point point) {
+            using var frame = window.CaptureRenderedFrame();
+            Assert.NotNull(frame);
+            using var buffer = frame.Lock();
+            int x = (int)(point.X * window.RenderScaling);
+            int y = (int)(point.Y * window.RenderScaling);
+            uint bgra = (uint)Marshal.ReadInt32(buffer.Address, y * buffer.RowBytes + x * 4);
+            return Color.FromUInt32(bgra);
+        }
 
         [Fact]
         public void StartNearTheFirstNoteDoesNotGrowWhenShrinking() => WithParts(new (int, int, int, int[]?)[] {

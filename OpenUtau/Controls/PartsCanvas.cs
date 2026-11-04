@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
@@ -111,8 +112,13 @@ namespace OpenUtau.App.Controls {
         private double _pianoRollViewViewportTicks;
 
         Dictionary<UPart, PartControl> partControls = new Dictionary<UPart, PartControl>();
+        readonly CoveredPartEdges coveredEdges;
 
         public PartsCanvas() {
+            coveredEdges = new CoveredPartEdges(this);
+            Children.Add(coveredEdges);
+            // Parts move and resize through layout, so draw their covered edges again after each pass.
+            LayoutUpdated += (_, _) => coveredEdges.InvalidateVisual();
             MessageBus.Current.Listen<TracksRefreshEvent>()
                 .Subscribe(_ => {
                     foreach (var (part, control) in partControls) {
@@ -148,6 +154,49 @@ namespace OpenUtau.App.Controls {
                 });
             MessageBus.Current.Listen<ThemeChangedEvent>()
                 .Subscribe(_ => InvalidateVisual());
+        }
+
+        protected override Size ArrangeOverride(Size finalSize) {
+            var size = base.ArrangeOverride(finalSize);
+            coveredEdges.Arrange(new Rect(finalSize));
+            return size;
+        }
+
+        /// <summary>
+        /// Marks the edges of parts that lie under a part drawn on top of them, so they can be seen
+        /// and dragged. Drawn over all parts, and lets the pointer through to them.
+        /// </summary>
+        class CoveredPartEdges : Control {
+            static readonly IPen LinePen = new Pen(Brushes.White, 2);
+            static readonly IPen ShadowPen = new Pen(new SolidColorBrush(Avalonia.Media.Colors.Black, 0.5), 4);
+            readonly PartsCanvas canvas;
+
+            public CoveredPartEdges(PartsCanvas canvas) {
+                this.canvas = canvas;
+                IsHitTestVisible = false;
+                ZIndex = int.MaxValue;
+            }
+
+            public override void Render(DrawingContext context) {
+                // Children are drawn in order, so a later part covers an earlier one.
+                var parts = canvas.Children.OfType<PartControl>().Where(p => p.IsVisible).ToArray();
+                for (int i = 0; i < parts.Length; i++) {
+                    var below = parts[i].Bounds;
+                    foreach (double x in new[] { below.Left, below.Right }) {
+                        for (int j = i + 1; j < parts.Length; j++) {
+                            var above = parts[j].Bounds;
+                            double top = Math.Max(below.Top, above.Top);
+                            double bottom = Math.Min(below.Bottom, above.Bottom);
+                            if (above.Left < x && x < above.Right && top < bottom) {
+                                var (start, end) = (new Point(x, top + 1), new Point(x, bottom - 1));
+                                context.DrawLine(ShadowPen, start, end);
+                                context.DrawLine(LinePen, start, end);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
