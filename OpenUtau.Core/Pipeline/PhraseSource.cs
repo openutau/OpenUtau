@@ -530,16 +530,8 @@ namespace OpenUtau.Core.Pipeline {
             }
             var groups = new List<(int, int)>();
             if (sine) {
-                int start = 0;
-                var notes = part.notes.OrderBy(n => n.position).ToList();
-                for (int i = 1; i < notes.Count; ++i) {
-                    if (notes[i - 1].End < notes[i].position) {
-                        groups.Add((start, i));
-                        start = i;
-                    }
-                }
-                if (notes.Count > 0) {
-                    groups.Add((start, notes.Count));
+                for (int i = 0; i < part.notes.Count; ++i) {
+                    groups.Add((i, i + 1));
                 }
             } else {
                 float maxMergeMs = Preferences.Default.MergePhrasesSec * 1000;
