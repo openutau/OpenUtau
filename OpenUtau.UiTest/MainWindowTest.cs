@@ -42,12 +42,20 @@ namespace OpenUtau.UiTest {
             DocManager.Inst.AddSubscriber(HeadlessUi.Errors);
         }
 
+        // Call at the start of every test that opens a main window.
+        internal static void InitTest() {
+            InitCore();
+            // The headless app shares DocManager across tests. Start each one from an empty saved
+            // project, so edits left by an earlier test don't make "New" ask to save first.
+            DocManager.Inst.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
+            HeadlessUi.Errors.Clear();
+        }
+
         // Opens the main window as the splash window would, runs the test, then saves a screenshot
         // of the final state (also when the test fails) and closes the window.
         static void WithMainWindow(string name, Action<MainWindow> test) {
             HeadlessUi.Run(() => {
-                InitCore();
-                HeadlessUi.Errors.Clear();
+                InitTest();
                 var window = new MainWindow { Width = 1280, Height = 800 };
                 try {
                     window.Show();
@@ -131,7 +139,6 @@ namespace OpenUtau.UiTest {
                 Core.Format.Wave.WriteMono16Wav(audioPath,
                     Enumerable.Range(0, 66150).Select(i => (float)(0.3 * Math.Sin(i * 2 * Math.PI * 440 / 44100))).ToArray());
                 WithMainWindow(nameof(ImportedAudioSplitsFromContextMenuAndUndoes), window => {
-                    DocManager.Inst.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
                     Click(window, FindButtonWithText(window, "welcome.new"));
                     var viewModel = ViewModelOf(window);
                     viewModel.ImportAudio(audioPath);
@@ -428,8 +435,6 @@ namespace OpenUtau.UiTest {
                 Core.Format.Wave.WriteMono16Wav(audioPath, new float[44100 * 6]);
                 WithMainWindow($"{nameof(CroppedAudioRightEdgeBurstKeepsGeometryValid)}-{changingTempo}", window => {
                     var document = DocManager.Inst;
-                    // The headless app shares DocManager across test cases.
-                    document.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
                     Click(window, FindButtonWithText(window, "welcome.new"));
                     var viewModel = ViewModelOf(window);
                     var tracks = viewModel.TracksViewModel;
