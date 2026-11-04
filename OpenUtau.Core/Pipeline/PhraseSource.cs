@@ -509,8 +509,7 @@ namespace OpenUtau.Core.Pipeline {
                 var phraseGroups = new List<(int Start, int End)>();
                 int groupStart = 0;
                 foreach (var note in Notes.Where(n => !n.OverlapError)) {
-                    if (sinePhonemes.Count > groupStart
-                        && sinePhonemes[sinePhonemes.Count - 1].End != note.Position) {
+                    if (note.Extends == -1 && sinePhonemes.Count > groupStart) {
                         phraseGroups.Add((groupStart, sinePhonemes.Count));
                         groupStart = sinePhonemes.Count;
                     }

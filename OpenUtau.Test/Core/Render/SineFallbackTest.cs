@@ -44,7 +44,7 @@ namespace OpenUtau.Core {
         }
 
         [Fact]
-        public void FromPartGroupsTouchingNotesIntoOnePhrase() {
+        public void FromPartBuildsOnePhrasePerNote() {
             var project = CreateProject(out var track, out var part);
             var first = MakeNote(0, 480, 60);
             var second = MakeNote(480, 240, 64);
@@ -54,12 +54,12 @@ namespace OpenUtau.Core {
 
             var phrases = RenderPhrase.FromPart(project, track, part);
 
-            var phrase = Assert.Single(phrases);
-            Assert.Same(SineRenderer.Instance, phrase.renderer);
-            Assert.Equal(2, phrase.phones.Length);
-            Assert.Equal(720, phrase.duration);
-            Assert.Equal(60 * 100, phrase.pitches[0], 0);
-            Assert.Equal(64 * 100, phrase.pitches.Last(), 0);
+            Assert.Equal(2, phrases.Count);
+            Assert.All(phrases, phrase => Assert.Same(SineRenderer.Instance, phrase.renderer));
+            Assert.Equal(480, phrases[0].duration);
+            Assert.Equal(240, phrases[1].duration);
+            Assert.Equal(60 * 100, phrases[0].pitches[0], 0);
+            Assert.Equal(64 * 100, phrases[1].pitches[0], 0);
         }
 
         [Fact]
