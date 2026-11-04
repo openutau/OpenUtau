@@ -63,7 +63,15 @@
     <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu.Linux" Version="1.24.4" />
   </ItemGroup>
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.4" />
+    <!-- 1.31.0 and the WebGPU plugin EP replace CoreML on macOS. The plugin library
+         is built against ONNX Runtime API 30 - the package only advertises
+         "1.24.4 or later", but 1.24.x kills the process natively while an
+         InferenceSession is created and 1.26.x rejects the library, so the core
+         has to be at least the version the plugin was built for.
+         NOTE: this package does not depend on the plugin, and the plugin does not
+         depend on it; both have to move together. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.EP.WebGpu" Version="0.4.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Analysis\Crepe\Resources.Designer.cs">

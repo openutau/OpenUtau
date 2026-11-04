@@ -465,8 +465,37 @@ namespace OpenUtau.App.Views {
         }
 
         public override void Begin(IPointer pointer, Point point) {
+            base.Begin(pointer, point);   // mouse-specific: capture the pointer, open the undo group
+            BeginSplit(point);            // the actual split logic
+        }
+
+        public override void Update(IPointer pointer, Point point) {
+            UpdateSplit(point);
+        }
+
+        /// <summary>
+        /// Starts a keyboard-driven split. Returns false if nothing could be split
+        /// (e.g. the note is too short), in which case no new note was created.
+        /// </summary>
+        public bool BeginKeyboardSplit(Point point) {
+            DocManager.Inst.StartUndoGroup(commandNameKey);
+            BeginSplit(point);
+            UpdateSplit(point);
+            return newNote != null;
+        }
+
+        /// <summary>Moves the cut of an ongoing keyboard split to the given point.</summary>
+        public void MoveKeyboardSplit(Point point) {
+            UpdateSplit(point);
+        }
+
+        /// <summary>Ends the keyboard split by closing the undo group.</summary>
+        public void EndKeyboardSplit() {
+            DocManager.Inst.EndUndoGroup();
+        }
+
+        private void BeginSplit(Point point) {
             var notesVm = vm.NotesViewModel;
-            base.Begin(pointer, point);
             var project = DocManager.Inst.Project;
             var part = notesVm.Part;
             if (project == null || part == null || note == null) {
@@ -495,7 +524,7 @@ namespace OpenUtau.App.Views {
             DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(part, newNote, NotePresets.Default.SplittedLyric));
         }
 
-        public override void Update(IPointer pointer, Point point) {
+        private void UpdateSplit(Point point) {
             var project = DocManager.Inst.Project;
             var notesVm = vm.NotesViewModel;
             if (notesVm.Part == null || newNote == null) {

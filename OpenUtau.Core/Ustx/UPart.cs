@@ -209,6 +209,9 @@ namespace OpenUtau.Core.Ustx {
                             note.phonemizerExpressions.Clear();
                         }
 
+                        // Duplicate indexes only matter per note; a set keeps this linear
+                        // instead of rescanning every phoneme added so far.
+                        var seenIndexes = new HashSet<(UNote, int)>();
                         for (int i = 0; i < resp.phonemes.Length; ++i) {
                             var indexes = new List<int>();
                             var note = notes.ElementAtOrDefault(resp.noteIndexes[i]);
@@ -221,7 +224,7 @@ namespace OpenUtau.Core.Ustx {
                                     ErrorException = resp.phonemes[i][j].error
                                 };
                                 // Check for duplicate indexes
-                                if (phonemes.Any(p => p.Parent == phoneme.Parent && p.index == phoneme.index)) {
+                                if (!seenIndexes.Add((phoneme.Parent, phoneme.index))) {
                                     try {
                                         throw new ArgumentException("Duplicate phoneme index.");
                                     } catch (Exception e) {

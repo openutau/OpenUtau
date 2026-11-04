@@ -128,6 +128,9 @@ namespace OpenUtau.Api {
                     timestamp = request.timestamp,
                 };
             }
+            // The pass competes with these CPU models for cores, and the phonemes produced
+            // here invalidate it anyway.
+            using var preRenderHold = PlaybackManager.Inst.HoldPreRender();
             foreach (var p in phonemizers) {
                 p.SetUpException = null;
                 try {

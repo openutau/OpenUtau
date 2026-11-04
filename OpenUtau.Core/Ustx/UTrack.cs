@@ -20,10 +20,12 @@ namespace OpenUtau.Core.Ustx {
         public void Validate(UTrack track) {
             if (track.Singer == null || !track.Singer.Found) {
                 renderer = null;
-                Renderer = null;
                 resampler = null;
-                Resampler = null;
                 wavtool = null;
+            }
+            if (Render.SineRenderer.IsFallbackActive(track)) {
+                Renderer = Render.SineRenderer.RendererFor(track);
+                Resampler = null;
                 Wavtool = null;
                 return;
             }

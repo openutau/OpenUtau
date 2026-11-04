@@ -180,6 +180,8 @@ namespace OpenUtau.Core.Render {
         public readonly PhraseLayout Layout;
 
         private List<string> cacheFiles = new List<string>();
+        public string CacheFilePath => Path.Combine(PathManager.Inst.CachePath, $"{hash:x16}.wav");
+        public bool IsCached => File.Exists(CacheFilePath);
 
         internal RenderPhrase(Pipeline.PhraseSource source, Pipeline.PhonemeSource[] phonemes, int phraseStart, int phraseEnd) {
             var phrasePhonemes = phonemes
@@ -193,7 +195,7 @@ namespace OpenUtau.Core.Render {
                 uNotes.Insert(0, notesOf[uNotes.First()].Prev);
             }
             if (notesOf[uNotes.Last()].Next != -1
-                && notesOf[uNotes.Last()].End == notesOf[notesOf[uNotes.Last()].Next].Position) {
+                && notesOf[notesOf[uNotes.Last()].Next].End == notesOf[notesOf[uNotes.Last()].Next].Position) {
                 uNotes.Add(notesOf[uNotes.Last()].Next);
             }
 
@@ -507,7 +509,7 @@ namespace OpenUtau.Core.Render {
         private ulong Hash(bool postEffect) {
             using (var stream = new MemoryStream()) {
                 using (var writer = new BinaryWriter(stream)) {
-                    writer.Write(singer.Id);
+                    writer.Write(singer?.Id ?? string.Empty);
                     writer.Write(renderer?.ToString() ?? "");
                     writer.Write(wavtool ?? "");
                     writer.Write(timeAxis.Timestamp);

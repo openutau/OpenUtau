@@ -409,6 +409,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="languages.en">English</system:String>
   <system:String x:Key="languages.es">Spanish</system:String>
   <system:String x:Key="languages.fil">Filipino</system:String>
+  <system:String x:Key="languages.fi">Finnish</system:String>
   <system:String x:Key="languages.fr">French</system:String>
   <system:String x:Key="languages.invariant">Not translating</system:String>
   <system:String x:Key="languages.it">Italian</system:String>
@@ -803,9 +804,15 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.showghostnotes">Show other tracks' notes on piano roll</system:String>
   <system:String x:Key="prefs.appearance.showicon">Show icon on piano roll</system:String>
   <system:String x:Key="prefs.appearance.reduceanimations">Reduce animations</system:String>
+  <system:String x:Key="prefs.appearance.renderbackground">Show render status in track background</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Show portrait on piano roll</system:String>
   <system:String x:Key="prefs.appearance.sortorder">Singer name display language</system:String>
   <system:String x:Key="prefs.appearance.theme">Theme</system:String>
+  <system:String x:Key="prefs.appearance.customfont">UI font</system:String>
+  <system:String x:Key="prefs.appearance.customfont.none">System default</system:String>
+  <system:String x:Key="prefs.appearance.customfont.family">Font family</system:String>
+  <system:String x:Key="prefs.appearance.customfont.select">Select a TrueType or OpenType font</system:String>
+  <system:String x:Key="prefs.appearance.customfont.notes">Use UI font for note text</system:String>
   <system:String x:Key="prefs.appearance.theme.dark">Dark</system:String>
   <system:String x:Key="prefs.appearance.theme.light">Light</system:String>
   <system:String x:Key="prefs.appearance.trackcolor">Use track color in UI</system:String>
@@ -820,6 +827,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.diffsinger">DiffSinger</system:String>
   <system:String x:Key="prefs.editing">Editing</system:String>
   <system:String x:Key="prefs.general">General</system:String>
+  <system:String x:Key="prefs.general.sinewhennosinger">Play sine tone when no singer is selected</system:String>
   <system:String x:Key="prefs.note.restart">Note: please restart OpenUtau after changing this item.</system:String>
   <system:String x:Key="prefs.otoeditor">Oto Editor</system:String>
   <system:String x:Key="prefs.otoeditor.select">Default Oto Editor</system:String>
@@ -1024,6 +1032,10 @@ General
   <system:String x:Key="tracks.duplicate">Duplicate Track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>
   <system:String x:Key="tracks.favorite">Favorites</system:String>
+  <system:String x:Key="tracks.filtertype.all">All</system:String>
+  <system:String x:Key="tracks.filtertype.all.tip">Show all singer types</system:String>
+  <system:String x:Key="tracks.filtertype.only">Show only {0} singers</system:String>
+  <system:String x:Key="tracks.clearsinger">Remove singer from this track</system:String>
   <system:String x:Key="tracks.installsinger">Install singer</system:String>
   <system:String x:Key="tracks.mixfx">Track Polish...</system:String>
   <system:String x:Key="tracks.more">More</system:String>

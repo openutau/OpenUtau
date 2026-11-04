@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using K4os.Hash.xxHash;
+using OpenUtau.Classic;
 using OpenUtau.Core.SignalChain;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
-using OpenUtau.Classic;
 using Serilog;
 
 namespace OpenUtau.Core.Render {
@@ -85,9 +87,6 @@ namespace OpenUtau.Core.Render {
         readonly UVoicePart focusPart;
         readonly int focusTick;
 
-        static readonly ConcurrentDictionary<string, float[]> MorphBlendCache =
-            new ConcurrentDictionary<string, float[]>();
-
         public RenderEngine(
             UProject project,
             int startTick = 0,
@@ -101,6 +100,39 @@ namespace OpenUtau.Core.Render {
             this.trackNo = trackNo;
             this.focusPart = focusPart;
             this.focusTick = focusTick;
+        }
+
+        private static string GetMorphCachePath(string morphKey) {
+            ulong hash = XXH64.DigestOf(Encoding.UTF8.GetBytes(morphKey));
+            return Path.Combine(PathManager.Inst.CachePath, $"morph-{hash:x16}.bin");
+        }
+
+        private static float[] TryLoadMorphCache(string morphKey) {
+            string cachePath = GetMorphCachePath(morphKey);
+            if (!File.Exists(cachePath)) {
+                return null;
+            }
+            try {
+                byte[] bytes = File.ReadAllBytes(cachePath);
+                float[] samples = new float[bytes.Length / sizeof(float)];
+                Buffer.BlockCopy(bytes, 0, samples, 0, bytes.Length);
+                return samples;
+            } catch (Exception e) {
+                Log.Warning(e, $"Failed to load morph cache: {cachePath}");
+                return null;
+            }
+        }
+
+        private static void SaveMorphCache(string morphKey, float[] blended) {
+            if (blended == null || blended.Length == 0) return;
+            string cachePath = GetMorphCachePath(morphKey);
+            try {
+                byte[] bytes = new byte[blended.Length * sizeof(float)];
+                Buffer.BlockCopy(blended, 0, bytes, 0, bytes.Length);
+                File.WriteAllBytes(cachePath, bytes);
+            } catch (Exception e) {
+                Log.Warning(e, $"Failed to save morph cache: {cachePath}");
+            }
         }
 
         public Tuple<WaveMix, List<Fader>> RenderMixdown(
@@ -314,6 +346,10 @@ namespace OpenUtau.Core.Render {
             }
             var tuples = new List<(RenderPhrase phrase, double offsetMs, double estimatedLengthMs, RenderPartRequest request)>();
             foreach (var req in requests) {
+                // Account for first load, which has no RenderPhrases.
+                if (req.phrases.Length > 0) {
+                    DocManager.Inst.PostOnUIThread(() => DocManager.Inst.ExecuteCmd(new RebuildPhraseBlocksNotification(req.part)));
+                }
                 for (int i = 0; i < req.phrases.Length; ++i) {
                     tuples.Add((req.phrases[i], req.phraseOffsetMs[i], req.phraseEstimatedLengthMs[i], req));
                 }
@@ -360,7 +396,8 @@ namespace OpenUtau.Core.Render {
                     string morphKey = $"{phrase.hash:x16}|" +
                         string.Join(",", morphTracks.Select(t => $"{t.TargetColor}:{t.Flag}:{t.Abbr}"));
 
-                    if (!MorphBlendCache.TryGetValue(morphKey, out var blended)) {
+                    float[] blended = TryLoadMorphCache(morphKey);
+                    if (blended == null) {
                         phrase.renderSalt = 0;
                         var taskA = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
                         taskA.Wait();
@@ -511,10 +548,7 @@ namespace OpenUtau.Core.Render {
                                 Array.Resize(ref blended, targetLength);
                             }
 
-                            if (MorphBlendCache.Count > 1024) {
-                                MorphBlendCache.Clear();
-                            }
-                            MorphBlendCache[morphKey] = blended;
+                            SaveMorphCache(morphKey, blended);
                         } finally {
                             if (Preferences.Default.AutoDeleteMorphCache) {
                                 Task.Run(() => {
@@ -535,6 +569,7 @@ namespace OpenUtau.Core.Render {
                 if (coverageRanges != null && publishedUpdates != null) {
                     AccumulateCoverage(coverageRanges, request.part, publishedUpdates);
                 }
+                DocManager.Inst.ExecuteCmd(new PhraseRenderStateNotification(request.part, phrase, true));
                 if (++request.completedPhrases == request.phrases.Length) {
                     planner.MarkPartComplete(request.part, request.phrases.Select(p => p.hash));
                     if (coverageRanges != null &&

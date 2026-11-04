@@ -50,7 +50,7 @@ public class GameOnnxBackend : IGameBackend {
     public bool EnsureLoaded() {
         if (sessionsLoaded) return true;
         runOptions = new RunOptions();
-        encoderSession = CreateSession("encoder.onnx", OnnxRunnerChoice.CPUForCoreML);
+        encoderSession = CreateSession("encoder.onnx", OnnxRunnerChoice.Default);
         segmenterSession = CreateSession("segmenter.onnx", OnnxRunnerChoice.Default);
         estimatorSession = CreateSession("estimator.onnx", OnnxRunnerChoice.Default);
         bd2durSession = CreateSession("bd2dur.onnx", OnnxRunnerChoice.Default);

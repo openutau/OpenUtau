@@ -174,6 +174,9 @@ namespace OpenUtau.Core.Util {
             public bool ShowPrefs = true;
             public bool ShowTips = true;
             public string ThemeName = "Light";
+            public string UiFontPath = string.Empty;
+            public string UiFontFamily = string.Empty;
+            public bool UseUiFontForNotes = false;
             public int DegreeStyle;
             public bool UseTrackColor = false;
             public bool ClearCacheOnQuit = false;
@@ -235,6 +238,7 @@ namespace OpenUtau.Core.Util {
             public bool ShowPlaybackNoteBounce = false;
             public EditTool EditTool = new EditTool();
             public bool PlayTone = true;
+            public bool PlaySineWhenNoSinger = true;
             /// <summary>Legacy; migrated to <see cref="RealTimePitchMode"/> on load.</summary>
             public bool RealTimePitchGeneration = false;
             public int RealTimePitchMode = (int)LivePitchMode.Off;
@@ -250,6 +254,7 @@ namespace OpenUtau.Core.Util {
             public Dictionary<string, string> DefaultWavtools = new Dictionary<string, string>();
             public string LyricHelper = string.Empty;
             public bool LyricsHelperBrackets = false;
+            public bool RenderStatusInTrackBar = true;
             public int OtoEditor = 0;
             public string VLabelerPath = string.Empty;
             public string SetParamPath = string.Empty;
