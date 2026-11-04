@@ -92,6 +92,48 @@ namespace OpenUtau.App.ViewModels {
             return result;
         }
 
+        /// <summary>
+        /// The other voice part on the track that a click on the notes at the point is for: one with a
+        /// note there, or, outside the open part, the part the point is in. Null when the open part
+        /// takes the click, as when one of its notes is there.
+        /// </summary>
+        public UVoicePart? HitTestOtherPartNote(Point point) {
+            var part = viewModel.Part;
+            if (part == null || HitTestNote(point).hitBody) {
+                return null;
+            }
+            int tick = viewModel.PointToTick(point) + part.position;
+            double tone = viewModel.PointToToneDouble(point);
+            return OtherPartAt(tick, other => other.notes.Any(note =>
+                other.position + note.position <= tick && tick <= other.position + note.End &&
+                Math.Abs(tone - note.AdjustedTone) <= 0.5));
+        }
+
+        /// <summary>As <see cref="HitTestOtherPartNote"/>, for a click on the phonemes at the point.</summary>
+        public UVoicePart? HitTestOtherPartPhoneme(Point point) {
+            var part = viewModel.Part;
+            if (part == null || !viewModel.ShowPhoneme || HitTestPhoneme(point).hit) {
+                return null;
+            }
+            int tick = viewModel.PointToTick(point) + part.position;
+            return OtherPartAt(tick, other => other.phonemes.Any(phoneme =>
+                other.position + phoneme.position <= tick && tick <= other.position + phoneme.End));
+        }
+
+        UVoicePart? OtherPartAt(int tick, Func<UVoicePart, bool> hits) {
+            // Parts later in the project are drawn on top in the parts panel, so they come first here too.
+            var others = viewModel.OtherPartsOnTrack.Reverse().ToList();
+            var hit = others.FirstOrDefault(hits);
+            if (hit != null) {
+                return hit;
+            }
+            var part = viewModel.Part!;
+            if (part.position <= tick && tick < part.End) {
+                return null;
+            }
+            return others.FirstOrDefault(other => other.position <= tick && tick < other.End);
+        }
+
         public NoteHitInfo HitTestExp(Point point) {
             if (viewModel.Part == null) {
                 return default;

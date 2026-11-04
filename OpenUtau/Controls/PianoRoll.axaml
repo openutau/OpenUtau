@@ -41,6 +41,7 @@
       <ScrollBar Name="HScrollBar" Classes="music" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                  Margin="0,4,0,4" Orientation="Horizontal" AllowAutoHide="False"
                  DataContext="{Binding NotesViewModel}"
+                 Minimum="{Binding HScrollBarMin, Mode=OneWay}"
                  Maximum="{Binding HScrollBarMax, Mode=OneWay}"
                  Value="{Binding TickOffset}"
                  ViewportSize="{Binding ViewportTicks}"

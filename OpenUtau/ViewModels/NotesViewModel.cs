@@ -36,7 +36,16 @@ namespace OpenUtau.App.ViewModels {
 
     public partial class NotesViewModel : ViewModelBase, ICmdSubscriber {
         [Reactive] public partial Rect Bounds { get; set; }
-        public int TickCount => Part?.Duration ?? 480 * 4;
+        /// <summary>
+        /// The ticks the piano roll can scroll over: the whole track of the open part, from the project
+        /// start to the end of its last voice part. Ticks in the piano roll stay relative to the open part.
+        /// </summary>
+        public int TickCount => Part == null ? 480 * 4 : TrackEnd;
+        int TrackEnd => OtherPartsOnTrack.Select(part => part.End).Append(Part!.End).Max();
+        /// <summary>The voice parts on the open part's track other than the open part.</summary>
+        public IEnumerable<UVoicePart> OtherPartsOnTrack => Part == null
+            ? Enumerable.Empty<UVoicePart>()
+            : Project.parts.OfType<UVoicePart>().Where(part => part != Part && part.trackNo == Part.trackNo);
         public int TrackCount => ViewConstants.MaxTone;
         [Reactive] public partial double TickWidth { get; set; }
         public double TrackHeightMin => ViewConstants.NoteHeightMin;
@@ -91,7 +100,11 @@ namespace OpenUtau.App.ViewModels {
         public double ViewportTracks => viewportTracks.Value;
         public double SmallChangeX => smallChangeX.Value;
         public double SmallChangeY => smallChangeY.Value;
-        public double HScrollBarMax => Math.Max(0, TickCount - ViewportTicks);
+        /// <summary>The project start, relative to the open part.</summary>
+        public double HScrollBarMin => -(Part?.position ?? 0);
+        public double HScrollBarMax => Math.Max(HScrollBarMin, TickCount - (Part?.position ?? 0) - ViewportTicks);
+        /// <summary>Limits a tick offset to where the piano roll can scroll.</summary>
+        public double ClampTickOffset(double tickOffset) => Math.Clamp(tickOffset, HScrollBarMin, HScrollBarMax);
         public double VScrollBarMax => Math.Max(0, TrackCount - ViewportTracks);
         public UProject Project => DocManager.Inst.Project;
         [Reactive] public partial List<MenuItemViewModel> SnapDivs { get; set; }
@@ -400,7 +413,7 @@ namespace OpenUtau.App.ViewModels {
 
         public void OnXZoomed(Point position, double delta) {
             bool recenter = true;
-            if (TickOffset == 0 && position.X < 0.1) {
+            if (TickOffset == HScrollBarMin && position.X < 0.1) {
                 recenter = false;
             }
             double center = TickOffset + position.X * ViewportTicks;
@@ -411,7 +424,7 @@ namespace OpenUtau.App.ViewModels {
             double tickOffset = recenter
                     ? center - position.X * ViewportTicks
                     : TickOffset;
-            TickOffset = Math.Clamp(tickOffset, 0, HScrollBarMax);
+            TickOffset = ClampTickOffset(tickOffset);
             Notify();
         }
 
@@ -428,6 +441,7 @@ namespace OpenUtau.App.ViewModels {
 
         private void Notify() {
             this.RaisePropertyChanged(nameof(TickCount));
+            this.RaisePropertyChanged(nameof(HScrollBarMin));
             this.RaisePropertyChanged(nameof(HScrollBarMax));
             this.RaisePropertyChanged(nameof(ViewportTicks));
             this.RaisePropertyChanged(nameof(TrackCount));
@@ -506,6 +520,10 @@ namespace OpenUtau.App.ViewModels {
             }
             int snapUnit = project.resolution * 4 / SnapDiv;
             int tick = PointToTick(point);
+            // The piano roll also shows the track before the open part, where its notes can't go.
+            if (tick < 0) {
+                return null;
+            }
             int snappedTick = (int)Math.Floor((double)tick / snapUnit) * snapUnit;
             UNote note = project.CreateNote(tone, snappedTick,
                 useLastLength ? _lastNoteLength : IsSnapOn ? snapUnit : 15);
@@ -946,7 +964,7 @@ namespace OpenUtau.App.ViewModels {
 
                 var note = notes.First();
                 if (left < TickOffset || TickOffset + ViewportTicks < note.position + note.duration + Part.position) {
-                    TickOffset = Math.Clamp(note.position + note.duration * 0.5 - ViewportTicks * 0.5, 0, HScrollBarMax);
+                    TickOffset = ClampTickOffset(note.position + note.duration * 0.5 - ViewportTicks * 0.5);
                 }
             }
         }
@@ -987,7 +1005,7 @@ namespace OpenUtau.App.ViewModels {
 
                 var note = notes.First();
                 if (left < TickOffset || TickOffset + ViewportTicks < note.position + note.duration + Part.position) {
-                    TickOffset = Math.Clamp(note.position + note.duration * 0.5 - ViewportTicks * 0.5, 0, HScrollBarMax);
+                    TickOffset = ClampTickOffset(note.position + note.duration * 0.5 - ViewportTicks * 0.5);
                 }
             }
         }
@@ -1126,7 +1144,7 @@ namespace OpenUtau.App.ViewModels {
         }
 
         private void FocusNote(UNote note) {
-            TickOffset = Math.Clamp(note.position + note.duration * 0.5 - ViewportTicks * 0.5, 0, HScrollBarMax);
+            TickOffset = ClampTickOffset(note.position + note.duration * 0.5 - ViewportTicks * 0.5);
             TrackOffset = Math.Clamp(ViewConstants.MaxTone - note.tone + 2 - ViewportTracks * 0.5, 0, VScrollBarMax);
         }
 
@@ -1186,7 +1204,7 @@ namespace OpenUtau.App.ViewModels {
                 if (cmd is LoadPartNotification loadPart) {
                     LoadPart(loadPart.part, loadPart.project);
                     double tickOffset = loadPart.tick - loadPart.part.position - Bounds.Width / TickWidth / 2;
-                    TickOffset = Math.Clamp(tickOffset, 0, HScrollBarMax);
+                    TickOffset = ClampTickOffset(tickOffset);
                     PrimaryKeyNotSupported = !IsExpSupported(PrimaryKey);
                 } else if (cmd is LoadProjectNotification) {
                     UnloadPart();
@@ -1235,6 +1253,11 @@ namespace OpenUtau.App.ViewModels {
                     }
                 }
                 if (partCommand.part != Part) {
+                    // Other parts on the track show in the piano roll, and set how far it scrolls.
+                    if (Part != null) {
+                        Notify();
+                        MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                    }
                     return;
                 }
                 if (cmd is RemovePartCommand) {
@@ -1263,6 +1286,10 @@ namespace OpenUtau.App.ViewModels {
                             MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
                         }
                     }
+                } else if (Part != null && noteCommand.Part.trackNo == Part.trackNo) {
+                    // Notes of other parts on the track show in the piano roll too, as after undoing an
+                    // edit made while that part was open.
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 }
             } else if (cmd is ExpCommand) {
                 MessageBus.Current.SendMessage(new NotesRefreshEvent());
@@ -1298,7 +1325,7 @@ namespace OpenUtau.App.ViewModels {
 
         private void AutoScroll(double positionX) {
             double scrollDelta = GetScrollValueDelta(positionX);
-            TickOffset = Math.Clamp(TickOffset + scrollDelta, 0, HScrollBarMax);
+            TickOffset = ClampTickOffset(TickOffset + scrollDelta);
         }
 
         private double GetScrollValueDelta(double positionX) {

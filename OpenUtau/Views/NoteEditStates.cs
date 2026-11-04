@@ -640,7 +640,7 @@ namespace OpenUtau.App.Views {
             double deltaX = (point.X - startPoint.X) / notesVm.TickWidth;
             double deltaY = (point.Y - startPoint.Y) / notesVm.TrackHeight;
             startPoint = point;
-            notesVm.TickOffset = Math.Max(0, notesVm.TickOffset - deltaX);
+            notesVm.TickOffset = notesVm.ClampTickOffset(notesVm.TickOffset - deltaX);
             notesVm.TrackOffset = Math.Max(0, notesVm.TrackOffset - deltaY);
         }
     }
