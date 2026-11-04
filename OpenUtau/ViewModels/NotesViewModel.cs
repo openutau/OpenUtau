@@ -828,10 +828,12 @@ namespace OpenUtau.App.ViewModels {
             int tick = fromNote?.RightBound ?? (int)TickOffset;
             int dur = fromNote?.duration ?? snapUnit;
             DocManager.Inst.StartUndoGroup("command.note.add");
+            var pin = PinPhonemes();
             UNote note = DocManager.Inst.Project.CreateNote(tone, tick, dur);
             DocManager.Inst.ExecuteCmd(new AddNoteCommand(Part, note));
             SelectNote(note);
             DocManager.Inst.EndUndoGroup();
+            pin?.Release();
         }
 
         public void TransposeSelection(int deltaNoteNum) {
@@ -843,8 +845,10 @@ namespace OpenUtau.App.ViewModels {
                 return;
             }
             DocManager.Inst.StartUndoGroup("command.note.move");
+            var pin = PinPhonemes();
             DocManager.Inst.ExecuteCmd(new MoveNoteCommand(Part, selectedNotes, 0, deltaNoteNum));
             DocManager.Inst.EndUndoGroup();
+            pin?.Release();
         }
         public void MoveSelectedNotes(int deltaTicks) {
             if (Part == null || Selection.IsEmpty) {
@@ -856,8 +860,12 @@ namespace OpenUtau.App.ViewModels {
             var delta = Math.Max(deltaTicks, -1 * selectedNotes.First().position);
 
             DocManager.Inst.StartUndoGroup("command.note.move");
+            var pin = PinPhonemes();
             DocManager.Inst.ExecuteCmd(new MoveNoteCommand(Part, selectedNotes, delta, 0));
+            // The moved notes take their phonemes along.
+            pin?.Shift(selectedNotes, delta);
             DocManager.Inst.EndUndoGroup();
+            pin?.Release();
         }
 
         public void ResizeSelectedNotes(int deltaTicks) {
@@ -896,11 +904,13 @@ namespace OpenUtau.App.ViewModels {
                 mergedLyrics = notes[0].lyric;
             }
             DocManager.Inst.StartUndoGroup("command.note.edit");
+            var pin = PinPhonemes();
             DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(Part, notes[0], mergedLyrics));
             DocManager.Inst.ExecuteCmd(new ResizeNoteCommand(Part, notes[0], notes.Last().End - notes[0].End));
             notes.RemoveAt(0);
             DocManager.Inst.ExecuteCmd(new RemoveNoteCommand(Part, notes));
             DocManager.Inst.EndUndoGroup();
+            pin?.Release();
         }
 
         internal void DeleteSelectedNotes() {
@@ -908,8 +918,24 @@ namespace OpenUtau.App.ViewModels {
                 return;
             }
             DocManager.Inst.StartUndoGroup("command.note.delete");
+            var pin = PinPhonemes();
             DocManager.Inst.ExecuteCmd(new RemoveNoteCommand(Part, Selection.ToList()));
             DocManager.Inst.EndUndoGroup();
+            pin?.Release();
+        }
+
+        /// <summary>
+        /// With <see cref="KeepPhonemeTiming"/> on, holds the phonemes of the open part where they are
+        /// during the note edit that follows, in the open undo group. Release the returned command
+        /// when the edit is over.
+        /// </summary>
+        public PinPhonemesCommand? PinPhonemes() {
+            if (Part == null || !KeepPhonemeTiming) {
+                return null;
+            }
+            var pin = new PinPhonemesCommand(Part, Part.notes);
+            DocManager.Inst.ExecuteCmd(pin);
+            return pin;
         }
 
         public void CopyNotes() {
@@ -924,8 +950,10 @@ namespace OpenUtau.App.ViewModels {
                 var selectedNotes = Selection.ToList();
                 DocManager.Inst.NotesClipboard = selectedNotes.Select(note => note.Clone()).ToList();
                 DocManager.Inst.StartUndoGroup("command.note.delete");
+                var pin = PinPhonemes();
                 DocManager.Inst.ExecuteCmd(new RemoveNoteCommand(Part, selectedNotes));
                 DocManager.Inst.EndUndoGroup();
+                pin?.Release();
             }
         }
 
@@ -942,12 +970,14 @@ namespace OpenUtau.App.ViewModels {
                 var notes = DocManager.Inst.NotesClipboard.Select(note => note.Clone()).ToList();
                 notes.ForEach(note => note.position += offset);
                 DocManager.Inst.StartUndoGroup("command.note.paste");
+                var pin = PinPhonemes();
                 DocManager.Inst.ExecuteCmd(new AddNoteCommand(Part, notes));
                 int minDurTick = Part.GetMinDurTick(Project);
                 if (Part.Duration < minDurTick) {
                     DocManager.Inst.ExecuteCmd(new ResizeVoicePartCommand(Project, Part, minDurTick - Part.Duration, false));
                 }
                 DocManager.Inst.EndUndoGroup();
+                pin?.Release();
                 Selection.Select(notes);
                 MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
 
@@ -983,12 +1013,14 @@ namespace OpenUtau.App.ViewModels {
                 var notes = DocManager.Inst.NotesClipboard.Select(note => toPlainNote(note)).ToList();
                 notes.ForEach(note => note.position += offset);
                 DocManager.Inst.StartUndoGroup("command.note.paste");
+                var pin = PinPhonemes();
                 DocManager.Inst.ExecuteCmd(new AddNoteCommand(Part, notes));
                 int minDurTick = Part.GetMinDurTick(Project);
                 if (Part.Duration < minDurTick) {
                     DocManager.Inst.ExecuteCmd(new ResizeVoicePartCommand(Project, Part, minDurTick - Part.Duration, false));
                 }
                 DocManager.Inst.EndUndoGroup();
+                pin?.Release();
                 Selection.Select(notes);
                 MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
 

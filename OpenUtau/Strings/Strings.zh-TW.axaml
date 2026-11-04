@@ -521,7 +521,7 @@ OpenUtau 致力於為 UTAU 社群建立開源編輯環境，提供現代化使�
   <system:String x:Key="pianoroll.toggle.expressions">檢視表現 (L)</system:String>
   <system:String x:Key="pianoroll.toggle.finalpitch">顯示算繪音高曲線 (R)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>-->
-  <system:String x:Key="pianoroll.toggle.keepphonemetiming">調整音符長度時保持音素時值</system:String>
+  <system:String x:Key="pianoroll.toggle.keepphonemetiming">編輯音符時保持音素時值</system:String>
   <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
   <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">檢視音符參數 (\)</system:String>

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using Avalonia.Threading;
 using OpenUtau.Api;
+using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using Xunit;
@@ -32,6 +33,19 @@ namespace OpenUtau.UiTest {
             }
         }
 
+        // Puts the vowel on the note and a tail just after the start of its last extender note, so the
+        // tail lies on the extender and moves when the extender is merged into the note.
+        class SlurPhonemizer : Phonemizer {
+            public override void SetSinger(USinger singer) { }
+            public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevs) =>
+                new Result {
+                    phonemes = new[] {
+                        new Phoneme { index = 0, phoneme = notes[0].lyric, position = 0 },
+                        new Phoneme { index = 1, phoneme = "t", position = notes[^1].position - notes[0].position + 120 },
+                    },
+                };
+        }
+
         class Singer : USinger {
             public Singer() {
                 found = true;
@@ -43,7 +57,8 @@ namespace OpenUtau.UiTest {
         }
 
         // Runs the test on a part with notes at the given positions and lengths, phonemized.
-        static void WithPart(int[][] notes, Action<UProject, UVoicePart, UNote[]> test) => HeadlessUi.Run(() => {
+        static void WithPart(int[][] notes, Action<UProject, UVoicePart, UNote[]> test,
+                Phonemizer? phonemizer = null, string[]? lyrics = null) => HeadlessUi.Run(() => {
             MainWindowTest.InitCore();
             var document = DocManager.Inst;
             // The headless app shares DocManager across tests: start from an empty project.
@@ -54,18 +69,18 @@ namespace OpenUtau.UiTest {
             var (oldSinger, oldPhonemizer) = (track.Singer, track.Phonemizer);
             try {
                 track.Singer = new Singer();
-                track.Phonemizer = new TailPhonemizer();
+                track.Phonemizer = phonemizer ?? new TailPhonemizer();
                 var part = new UVoicePart { trackNo = 0, position = 0, Duration = 1920 * 2 };
-                foreach (var n in notes) {
-                    var note = project.CreateNote(60, n[0], n[1]);
-                    note.lyric = "a";
+                for (int i = 0; i < notes.Length; i++) {
+                    var note = project.CreateNote(60, notes[i][0], notes[i][1]);
+                    note.lyric = lyrics?[i] ?? "a";
                     part.notes.Add(note);
                 }
                 document.StartUndoGroup();
                 document.ExecuteCmd(new AddPartCommand(project, part));
                 document.EndUndoGroup();
                 WaitForPhonemes(part);
-                Assert.Equal(3 * notes.Length, part.phonemes.Count);
+                Assert.NotEmpty(part.phonemes);
                 test(project, part, part.notes.ToArray());
                 var errors = HeadlessUi.Errors.Snapshot();
                 Assert.True(errors.Count == 0, "Errors reported:\n" + string.Join("\n", errors));
@@ -174,6 +189,86 @@ namespace OpenUtau.UiTest {
                 () => Assert.Equal(before, Positions(part)));
             Assert.Equal(600, b.position);
             Assert.Equal(before, Positions(part));
+        });
+
+        // Opens the part in a piano roll's view model, with the toggle as given, and puts the toggle
+        // back as it was after the test.
+        static void InPianoRoll(UProject project, UVoicePart part, bool keepPhonemeTiming, Action<NotesViewModel> test) {
+            var notesVm = new PianoRollViewModel().NotesViewModel;
+            DocManager.Inst.ExecuteCmd(new LoadPartNotification(part, project, 0));
+            bool old = notesVm.KeepPhonemeTiming;
+            notesVm.KeepPhonemeTiming = keepPhonemeTiming;
+            try {
+                test(notesVm);
+            } finally {
+                notesVm.KeepPhonemeTiming = old;
+            }
+        }
+
+        [Fact]
+        public void CuttingANoteKeepsTheNextConsonant() => WithPart(new[] { new[] { 0, 480 }, new[] { 480, 480 }, new[] { 960, 480 } },
+                (project, part, notes) => {
+            var (b, c) = (notes[1], notes[2]);
+            // The consonant of c is shorter after b, a note right before it.
+            Assert.Equal(960 - 60, PositionOf(part, c, 0));
+            void Delete(bool keep) => InPianoRoll(project, part, keep, notesVm => {
+                notesVm.SelectNote(b);
+                notesVm.CutNotes();
+                WaitForPhonemes(part);
+            });
+
+            Delete(keep: true);
+            Assert.DoesNotContain(b, part.notes);
+            Assert.Equal(960 - 60, PositionOf(part, c, 0));
+
+            // Without the toggle, the consonant gets the length it has with no note right before it.
+            DocManager.Inst.Undo();
+            WaitForPhonemes(part);
+            Delete(keep: false);
+            Assert.Equal(960 - 30, PositionOf(part, c, 0));
+        });
+
+        [Fact]
+        public void MergingKeepsThePhonemesOnTheExtender() => WithPart(new[] { new[] { 0, 480 }, new[] { 480, 480 } },
+                (project, part, notes) => {
+            var (a, extender) = (notes[0], notes[1]);
+            Assert.Same(a, extender.Extends);
+            Assert.Equal(480 + 120, PositionOf(part, a, 1));
+            void Merge(bool keep) => InPianoRoll(project, part, keep, notesVm => {
+                notesVm.SelectNote(a);
+                notesVm.SelectNote(extender, false);
+                notesVm.MergeSelectedNotes();
+                WaitForPhonemes(part);
+            });
+
+            Merge(keep: true);
+            Assert.Equal(a, Assert.Single(part.notes));
+            Assert.Equal(960, a.duration);
+            Assert.Equal(480 + 120, PositionOf(part, a, 1));
+
+            // Without the toggle, the tail moves to after the start of the merged note.
+            DocManager.Inst.Undo();
+            WaitForPhonemes(part);
+            Merge(keep: false);
+            Assert.Equal(120, PositionOf(part, a, 1));
+        }, new SlurPhonemizer(), new[] { "a", "+" });
+
+        [Fact]
+        public void MovedNotesTakeTheirPhonemesAlong() => WithPart(new[] { new[] { 0, 480 }, new[] { 960, 480 }, new[] { 1440, 480 } },
+                (project, part, notes) => {
+            var (b, c) = (notes[1], notes[2]);
+            var before = Positions(part);
+            Assert.Equal(1440 - 60, before[(c, 0)]);
+            InPianoRoll(project, part, true, notesVm => {
+                notesVm.SelectNote(b);
+                notesVm.MoveSelectedNotes(-240);
+                WaitForPhonemes(part);
+            });
+            Assert.Equal(720, b.position);
+            // The phonemes of b moved with it, and the consonant of c, no longer after a note right
+            // before it, stayed.
+            Assert.All(Enumerable.Range(0, 3), i => Assert.Equal(before[(b, i)] - 240, PositionOf(part, b, i)));
+            Assert.Equal(1440 - 60, PositionOf(part, c, 0));
         });
     }
 }

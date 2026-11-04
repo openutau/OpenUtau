@@ -186,21 +186,35 @@ namespace OpenUtau.Core {
     /// </summary>
     public class PinPhonemesCommand : NoteCommand {
         readonly Dictionary<(UNote, int), int> positions;
+        readonly Dictionary<UNote, int> shifts = new Dictionary<UNote, int>();
         readonly List<UPhonemeOverride>[] oldOverrides;
         PhonemePins? pins;
         bool released;
 
         public PinPhonemesCommand(UVoicePart part, IEnumerable<UNote> notes) : base(part, notes.Distinct()) {
+            var pinned = Notes.ToHashSet();
             positions = part.phonemes
-                .Where(phoneme => phoneme.Parent != null && Notes.Contains(phoneme.Parent))
+                .Where(phoneme => phoneme.Parent != null && pinned.Contains(phoneme.Parent))
                 .ToDictionary(phoneme => (phoneme.Parent, phoneme.index), phoneme => phoneme.position);
             oldOverrides = Notes.Select(note => note.phonemeOverrides.Select(o => o.Clone()).ToList()).ToArray();
         }
         public override string ToString() => "Pin phonemes";
         public override void Execute() {
-            pins = new PhonemePins(positions) { Released = released };
+            pins = new PhonemePins(Positions()) { Released = released };
             Part.phonemePins = pins;
         }
+        /// <summary>
+        /// Moves the phonemes of the given notes with them, by how far they moved since they were pinned.
+        /// </summary>
+        public void Shift(IEnumerable<UNote> notes, int delta) {
+            foreach (var note in notes) {
+                shifts[note] = delta;
+            }
+            pins?.Set(Positions());
+        }
+        Dictionary<(UNote, int), int> Positions() => positions.ToDictionary(
+            pin => pin.Key,
+            pin => pin.Value + shifts.GetValueOrDefault(pin.Key.Item1));
         public override void Unexecute() {
             if (Part.phonemePins == pins) {
                 Part.phonemePins = null;

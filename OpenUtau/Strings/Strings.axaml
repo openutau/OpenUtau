@@ -690,7 +690,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.expressions">View Expressions (L)</system:String>
   <system:String x:Key="pianoroll.toggle.finalpitch">View Final Pitch to Render (R)</system:String>
   <system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>
-  <system:String x:Key="pianoroll.toggle.keepphonemetiming">Keep Phoneme Timing When Resizing Notes</system:String>
+  <system:String x:Key="pianoroll.toggle.keepphonemetiming">Keep Phoneme Timing When Editing Notes</system:String>
   <system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>
   <system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>
   <system:String x:Key="pianoroll.toggle.mergephrases">Auto-merge nearby phrases (DiffSinger)</system:String>
