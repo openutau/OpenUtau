@@ -250,6 +250,10 @@ namespace OpenUtau.App.ViewModels {
 
         public void OpenProject(string[] files) {
             if (files == null) {
+                var Project = DocManager.Inst.Project;
+                for (int i = 0; i < Project.tracks.Count; i++) {
+                    ThemeManager.LoadSingerTrackColor(Project.tracks[i].Singer);
+                }
                 return;
             }
             DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), true, "project"));
@@ -262,6 +266,10 @@ namespace OpenUtau.App.ViewModels {
                 DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), false, "project"));
             }
             DocManager.Inst.Recovered = false;
+            var project = DocManager.Inst.Project;
+            for (int i = 0; i < project.tracks.Count; i++) {
+                ThemeManager.LoadSingerTrackColor(project.tracks[i].Singer);
+            }
         }
 
         public void OpenRecent(string file) {
