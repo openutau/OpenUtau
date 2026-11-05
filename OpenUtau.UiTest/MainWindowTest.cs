@@ -229,6 +229,32 @@ namespace OpenUtau.UiTest {
             }));
         }
 
+        [Fact]
+        public void SingerFlyoutScrollsWithWheel() {
+            WithMainWindow(nameof(SingerFlyoutScrollsWithWheel), window => WithFakeSingers(40, new int[0], new int[0], singers => {
+                Click(window, FindButtonWithText(window, "welcome.new"));
+                var header = window.GetVisualDescendants().OfType<TrackHeader>().First();
+                Click(window, header.FindControl<Button>("SingerButton")!);
+
+                var flyout = window.GetVisualDescendants().OfType<SingerFlyout>().SingleOrDefault();
+                AssertHasSize(flyout);
+                // The headless platform reports no screens, so set what FitToScreen would work out.
+                flyout.LimitGrid(3, 4);
+                HeadlessUi.Flush();
+
+                var grid = flyout.FindControl<ScrollViewer>("TileScroller");
+                AssertHasSize(grid);
+                Assert.True(grid.Bounds.Width <= 4 * 180, $"The grid is {grid.Bounds.Width} wide, past its column limit");
+                Assert.True(grid.Extent.Width > grid.Viewport.Width, "The grid has nothing to scroll");
+
+                var center = grid.TranslatePoint(new Point(grid.Bounds.Width / 2, grid.Bounds.Height / 2), window);
+                Assert.NotNull(center);
+                window.MouseWheel(center.Value, new Vector(0, -1));
+                HeadlessUi.Flush();
+                Assert.True(grid.Offset.X > 0, "The wheel did not scroll the grid");
+            }));
+        }
+
         // Adds singers of the given types, one per entry, so the flyout has types to filter by.
         static void WithSingersOfTypes(IEnumerable<USingerType> types, Action<List<FakeSinger>> test) {
             var singers = types.Select((type, i) => new FakeSinger($"Fake Singer {type} {i}", type)).ToList();

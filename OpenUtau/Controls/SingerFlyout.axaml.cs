@@ -71,8 +71,8 @@ namespace OpenUtau.App.Controls {
         /// the anchor, or above it when there isn't room for even a few rows below.
         /// </summary>
         public void FitToScreen(Visual anchor) {
-            maxRows = int.MaxValue;
-            maxColumns = int.MaxValue;
+            int fitRows = int.MaxValue;
+            int fitColumns = int.MaxValue;
             var topLevel = TopLevel.GetTopLevel(anchor);
             var screen = topLevel?.Screens?.ScreenFromVisual(anchor);
             var anchorTop = anchor.PointToScreen(new Point(0, 0));
@@ -83,14 +83,20 @@ namespace OpenUtau.App.Controls {
                 int RowsFor(double pixels) => (int)((pixels / screen.Scaling - chrome) / TileHeight);
                 int below = RowsFor(area.Bottom - anchorBottom.Y);
                 int above = RowsFor(anchorTop.Y - area.Y);
-                maxRows = Math.Max(MinRows, below >= MinRows ? below : Math.Max(below, above));
+                fitRows = Math.Max(MinRows, below >= MinRows ? below : Math.Max(below, above));
                 int right = area.Right;
                 if (topLevel != null) {
                     right = Math.Min(right, topLevel.PointToScreen(new Point(topLevel.Bounds.Width, 0)).X);
                 }
                 double width = (right - anchorTop.X) / screen.Scaling - ChromeWidth;
-                maxColumns = Math.Max(1, (int)(width / TileWidth));
+                fitColumns = Math.Max(1, (int)(width / TileWidth));
             }
+            LimitGrid(fitRows, fitColumns);
+        }
+
+        public void LimitGrid(int maxRows, int maxColumns) {
+            this.maxRows = maxRows;
+            this.maxColumns = maxColumns;
             UpdateSize();
         }
 
@@ -103,6 +109,9 @@ namespace OpenUtau.App.Controls {
             TileScroller.Height = rows * TileHeight;
             // At least wide enough for the tiles; the filter row widens the flyout beyond that when it is wider.
             TileScroller.MinWidth = Math.Min(columns, maxColumns) * TileWidth;
+            // The flyout presenter measures its content with unlimited width, so without a cap
+            // the grid grows to fit every column and has nothing left to scroll.
+            TileScroller.MaxWidth = maxColumns * TileWidth;
             UpdateTiles();
         }
 
