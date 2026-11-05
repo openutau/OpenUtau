@@ -35,7 +35,7 @@ namespace OpenUtau.Core.DiffSinger {
             float headMs = DiffSingerUtils.GetHeadMs(phrase);
             float tailMs = DiffSingerUtils.GetTailMs(phrase);
 
-            var notes = phrase.notes;
+            var notes = DiffSingerUtils.NotesForPitch(phrase);
             var phones = phrase.phones;
             DiffSingerSinger singer = phrase.singer as DiffSingerSinger;
 
@@ -81,30 +81,13 @@ namespace OpenUtau.Core.DiffSinger {
             }
             ph_num = phNumList.ToArray();
 
-            //Build note arrays with rest notes inserted for gaps between notes
-            var noteSeqList = new List<int> { 0 };//head padding
-            var noteDurList = new List<double> { headMs+(notes[0].positionMs-phones[0].positionMs) };
-            var noteSlurList = new List<int> { 0 };//head padding
-            double prevNoteEndMs = notes[0].positionMs;
-            foreach(var note in notes) {
-                double gapMs = note.positionMs - prevNoteEndMs;
-                if (gapMs > 0) {
-                    //Insert a rest note for the gap
-                    noteSeqList.Add(0);
-                    noteDurList.Add(gapMs);
-                    noteSlurList.Add(0);
-                }
-                noteSeqList.Add((note.lyric == "SP" || note.lyric == "AP") ? 0 : note.tone);
-                noteDurList.Add(note.durationMs);
-                noteSlurList.Add(note.lyric.StartsWith("+") ? 1 : 0);
-                prevNoteEndMs = note.positionMs + note.durationMs;
-            }
-            noteSeqList.Add(0);//tail padding
-            noteDurList.Add(tailMs);
-            noteSlurList.Add(0);//tail padding
-            noteSeq = noteSeqList.ToArray();
-            noteDurMs = noteDurList.ToArray();
-            note_slur = noteSlurList.ToArray();
+            // Build the note arrays from the same notes as the pitch predictor:
+            // failed notes own no phone frames and must not appear in the script.
+            var (scriptNoteSeq, scriptNoteDurMs, scriptNoteSlur) =
+                DiffSingerUtils.ScriptNoteTimeline(phrase, headMs, tailMs);
+            noteSeq = scriptNoteSeq;
+            noteDurMs = scriptNoteDurMs;
+            note_slur = scriptNoteSlur;
 
             var phDurFrames = DiffSingerUtils.DurationsMsToFrames(phDurMs, frameMs);
             int headFrames = phDurFrames[0];

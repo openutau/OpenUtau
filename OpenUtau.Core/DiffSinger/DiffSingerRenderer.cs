@@ -570,17 +570,30 @@ namespace OpenUtau.Core.DiffSinger {
                 throw new Exception("This singer has no pitch predictor.");
             }
             using var dmlScope = Onnx.EnterDmlScope();
-            var noteRelativePositions = new int[phrase.notes.Length];
-            for (int i = 0; i < phrase.notes.Length; i++) {
-                noteRelativePositions[i] = phrase.notes[i].position;
-            }
-            var retakeNoteIndexes = DiffSingerRetake.MapSelectedPositionsToNoteIndexes(
+            // Retake only makes sense for notes that own frames in the pitch
+            // timeline. A failed note is still in phrase.notes (as pitch context),
+            // but it is excluded from the model's note sequence, so selecting it
+            // must not produce an all-false retake mask.
+            var includedNotes = DiffSingerUtils.NotesForPitch(phrase);
+            var noteRelativePositions = includedNotes.Select(note => note.position).ToArray();
+            var includedRetakeIndexes = DiffSingerRetake.MapSelectedPositionsToNoteIndexes(
                 phrase.position, noteRelativePositions, selectedNotePositions);
             // Use the reference inside SessionLock so a concurrent FreeMemory cannot dispose it first.
             lock (singer.SessionLock) {
                 var pitchPredictor = singer.getPitchPredictor()!;
-                if (retakeNoteIndexes.Count == 0 || retakeNoteIndexes.Count == phrase.notes.Length) {
+                if (selectedNotePositions == null || selectedNotePositions.Count == 0
+                    || includedRetakeIndexes.Count == includedNotes.Length) {
                     return pitchPredictor.Process(phrase, pitchSteps, fastRealtime);
+                }
+                if (includedRetakeIndexes.Count == 0) {
+                    // Only notes without a pitch timeline segment are selected.
+                    return null;
+                }
+                var retakeNoteIndexes = new HashSet<int>();
+                for (int i = 0; i < includedNotes.Length; ++i) {
+                    if (includedRetakeIndexes.Contains(i)) {
+                        retakeNoteIndexes.Add(Array.IndexOf(phrase.notes, includedNotes[i]));
+                    }
                 }
                 var frameMs = pitchPredictor.FrameMs;
                 int headFrames = DiffSingerUtils.headFrames;

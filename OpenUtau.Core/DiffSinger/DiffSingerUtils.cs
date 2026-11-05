@@ -106,6 +106,171 @@ namespace OpenUtau.Core.DiffSinger {
                 frameMs);
         }
 
+        /// <summary>
+        /// The score notes the pitch predictor and the script export cover: notes
+        /// that have at least one phoneme, plus the extension notes ("+") that
+        /// continue one of them.
+        ///
+        /// A note without phonemes has no frames in the phone layout. An error note
+        /// (or a note the phonemizer skipped, or a context note from the previous
+        /// phrase) therefore must not get a note duration: it would push every
+        /// following note later than its phonemes, which shifts the rendered pitch.
+        /// </summary>
+        public static RenderNote[] NotesForPitch(RenderPhrase phrase) {
+            var withPhonemes = phrase.phones
+                .Select(phone => phone.noteIndex)
+                .ToHashSet();
+            // UVoicePart.Validate resolves Extends to the root of the chain, so one
+            // level is enough.
+            return phrase.notes
+                .Where(note => withPhonemes.Contains(note.noteIndex)
+                    || (note.extends >= 0 && withPhonemes.Contains(note.extends)))
+                .ToArray();
+        }
+
+        /// <summary>
+        /// The pitch predictor's note timeline (note_midi, note_dur, note_rest) for
+        /// the padded frame layout that starts at <paramref name="startMs"/>.
+        /// <c>PaddedToRealNoteIndex</c> maps each entry to the index of the phrase
+        /// note it follows, for the retake frame mask.
+        /// </summary>
+        public static (int[] NoteDur, float[] NoteMidi, bool[] NoteRest, int[] PaddedToRealNoteIndex) PaddedNoteTimeline(
+            RenderPhrase phrase, double startMs, double frameMs, int totalFrames, Func<string, bool> isVowel) {
+            var included = NotesForPitch(phrase);
+            if (included.Length == 0) {
+                throw new InvalidDataException("DiffSinger pitch prediction requires at least one note.");
+            }
+            var phraseIndexByNote = new Dictionary<RenderNote, int>();
+            for (int i = 0; i < phrase.notes.Length; ++i) {
+                phraseIndexByNote[phrase.notes[i]] = i;
+            }
+            var noteDurMsList = new List<double>();
+            var noteMidiList = new List<float>();
+            var noteRestList = new List<bool>();
+            var paddedToRealNoteIndex = new List<int>();
+            // Head padding. When the first note starts before the frame origin, only
+            // its frames from startMs belong to the layout; trim that overlap from
+            // the note instead of counting it a second time.
+            double firstNoteStartMs = included[0].positionMs;
+            double firstNoteOverlapMs = Math.Max(0, startMs - firstNoteStartMs);
+            noteDurMsList.Add(Math.Max(0, firstNoteStartMs - startMs));
+            noteMidiList.Add(included[0].adjustedTone);
+            noteRestList.Add(true);
+            paddedToRealNoteIndex.Add(phraseIndexByNote[included[0]]);
+            double prevNoteEndMs = firstNoteStartMs;
+            int prevRealIndex = -1;
+            bool isFirstNote = true;
+            foreach (var note in included) {
+                int realIndex = phraseIndexByNote[note];
+                double gapMs = note.positionMs - prevNoteEndMs;
+                if (gapMs > 0) {
+                    // Insert a rest note for the gap; associate it with the previous real note
+                    noteDurMsList.Add(gapMs);
+                    noteMidiList.Add(note.adjustedTone);
+                    noteRestList.Add(true);
+                    paddedToRealNoteIndex.Add(prevRealIndex);
+                }
+                double noteMs = note.durationMs;
+                if (isFirstNote) {
+                    noteMs = Math.Max(0, noteMs - firstNoteOverlapMs);
+                    isFirstNote = false;
+                }
+                noteDurMsList.Add(noteMs);
+                noteMidiList.Add(note.adjustedTone);
+                paddedToRealNoteIndex.Add(realIndex);
+                // Slur notes follow the previous note's rest status
+                if (note.lyric.StartsWith("+")) {
+                    noteRestList.Add(noteRestList[^1]);
+                } else {
+                    var phs = phrase.phones
+                        .SkipWhile(ph => ph.end <= note.position + 1)
+                        .TakeWhile(ph => ph.position < note.end - 1)
+                        .ToArray();
+                    bool isRest = phs.Length == 0
+                        || phs.All(ph => ph.phoneme == "AP" || ph.phoneme == "SP" || !isVowel(ph.phoneme));
+                    noteRestList.Add(isRest);
+                }
+                prevNoteEndMs = note.positionMs + note.durationMs;
+                prevRealIndex = realIndex;
+            }
+            // Tail padding
+            noteDurMsList.Add(GetTailMs(frameMs));
+            noteMidiList.Add(included[^1].adjustedTone);
+            noteRestList.Add(true);
+            paddedToRealNoteIndex.Add(prevRealIndex);
+
+            // Set tone for each rest group using nearest non-rest note
+            var noteRest = noteRestList;
+            var noteMidi = noteMidiList.ToArray();
+            if (noteRest.All(rest => rest)) {
+                Array.Fill(noteMidi, 60f);
+            } else {
+                var restGroups = new List<Tuple<int, int>>();
+                for (var i = 0; i < noteRest.Count; ++i) {
+                    if (!noteRest[i]) continue;
+                    var j = i + 1;
+                    for (; j < noteRest.Count && noteRest[j]; ++j) { }
+                    restGroups.Add(new Tuple<int, int>(i, j));
+                    i = j;
+                }
+                foreach (var restGroup in restGroups) {
+                    if (restGroup.Item1 == 0) {
+                        Array.Fill(noteMidi, noteMidi[restGroup.Item2], 0, restGroup.Item2);
+                    } else if (restGroup.Item2 == noteRest.Count) {
+                        Array.Fill(noteMidi, noteMidi[restGroup.Item1 - 1], restGroup.Item1, noteRest.Count - restGroup.Item1);
+                    } else {
+                        int mid = (restGroup.Item1 + restGroup.Item2 + 1) / 2;
+                        Array.Fill(noteMidi, noteMidi[restGroup.Item1 - 1], restGroup.Item1, mid - restGroup.Item1);
+                        Array.Fill(noteMidi, noteMidi[restGroup.Item2], mid, restGroup.Item2 - mid);
+                    }
+                }
+            }
+
+            var noteDur = FitDurationSum(DurationsMsToFrames(noteDurMsList, frameMs), totalFrames);
+            return (noteDur, noteMidi, noteRest.ToArray(), paddedToRealNoteIndex.ToArray());
+        }
+
+        /// <summary>
+        /// The note arrays of the .ds export (note_seq, note_dur, note_slur) for the
+        /// same notes as the pitch predictor, in milliseconds from the script offset.
+        /// </summary>
+        public static (int[] NoteSeq, double[] NoteDurMs, int[] NoteSlur) ScriptNoteTimeline(
+            RenderPhrase phrase, double headMs, double tailMs) {
+            var notes = NotesForPitch(phrase);
+            if (notes.Length == 0) {
+                throw new InvalidDataException("DiffSinger script export requires at least one note.");
+            }
+            double offsetMs = phrase.phones[0].positionMs - headMs;
+            var noteSeq = new List<int> { 0 };
+            var noteDurMs = new List<double> { Math.Max(0, notes[0].positionMs - offsetMs) };
+            var noteSlur = new List<int> { 0 };
+            double firstNoteOverlapMs = Math.Max(0, offsetMs - notes[0].positionMs);
+            bool isFirstNote = true;
+            double prevNoteEndMs = notes[0].positionMs;
+            foreach (var note in notes) {
+                double gapMs = note.positionMs - prevNoteEndMs;
+                if (gapMs > 0) {
+                    // Insert a rest note for the gap
+                    noteSeq.Add(0);
+                    noteDurMs.Add(gapMs);
+                    noteSlur.Add(0);
+                }
+                double noteMs = note.durationMs;
+                if (isFirstNote) {
+                    noteMs = Math.Max(0, noteMs - firstNoteOverlapMs);
+                    isFirstNote = false;
+                }
+                noteSeq.Add((note.lyric == "SP" || note.lyric == "AP") ? 0 : note.tone);
+                noteDurMs.Add(noteMs);
+                noteSlur.Add(note.lyric.StartsWith("+") ? 1 : 0);
+                prevNoteEndMs = note.positionMs + note.durationMs;
+            }
+            noteSeq.Add(0);//tail padding
+            noteDurMs.Add(tailMs);
+            noteSlur.Add(0);//tail padding
+            return (noteSeq.ToArray(), noteDurMs.ToArray(), noteSlur.ToArray());
+        }
+
         public static long[] PaddedLanguageIds(
             RenderPhrase phrase, double frameMs, int headFrames, int tailFrames, Func<string, long> langIdByPhoneme) {
             return PaddedSegments(phrase, frameMs, headFrames, tailFrames)
