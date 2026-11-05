@@ -86,7 +86,7 @@ namespace OpenUtau.Core.ExpressionGraph {
 
         /// <summary>Reads or drives an expression, named by the "abbr" parameter.</summary>
         public bool NeedsAbbr => Role is GraphNodeRole.CurveOutput or GraphNodeRole.PhonemeOutput
-            || Name is GraphNodeTypes.CurveInput or GraphNodeTypes.PhonemeInput or GraphNodeTypes.MaskedCurveInput;
+            || Name is GraphNodeTypes.CurveInput or GraphNodeTypes.MorphingCurveInput or GraphNodeTypes.PhonemeInput or GraphNodeTypes.MaskedCurveInput;
 
         /// <summary>One array per output; output nodes return the one value they output.</summary>
         internal float[][] Evaluate(NodeArgs args) => evaluate(args);
@@ -95,7 +95,9 @@ namespace OpenUtau.Core.ExpressionGraph {
     public static class GraphNodeTypes {
         public const string Constant = "constant";
         public const string CurveInput = "curve_input";
+        public const string MorphingCurveInput = "morphing_curve_input";
         public const string CurveOutput = "curve_output";
+        public const string MorphingCurveOutput = "morphing_curve_output";
         public const string MaskedCurveInput = "masked_curve_input";
         public const string PhonemeInput = "phoneme_input";
         public const string PhonemeOutput = "phoneme_output";
@@ -137,7 +139,11 @@ namespace OpenUtau.Core.ExpressionGraph {
                 a => Fill(a, a.Node.GetFloat("value", 0))),
             new GraphNodeType(CurveInput, GraphNodeRole.Input, none, new float[0],
                 a => Map(a, tick => a.Context.SampleCurve(a.Node.GetString("abbr"), tick))),
+            new GraphNodeType(MorphingCurveInput, GraphNodeRole.Input, none, new float[0],
+                a => Map(a, tick => a.Context.SampleCurve(a.Node.GetString("abbr"), tick))),
             new GraphNodeType(CurveOutput, GraphNodeRole.CurveOutput, value, new float[] { 0 },
+                a => (float[])a.Inputs[0].Clone()),
+            new GraphNodeType(MorphingCurveOutput, GraphNodeRole.CurveOutput, value, new float[] { 0 },
                 a => (float[])a.Inputs[0].Clone()),
             // The curve where it has a value, else the fallback; and 1 where it has a value, else 0.
             new GraphNodeType(MaskedCurveInput, GraphNodeRole.Input, new[] { "fallback" }, new float[] { 0 },
@@ -369,11 +375,11 @@ namespace OpenUtau.Core.ExpressionGraph {
 
         /// <summary>Node types by category, in the order the editor offers them.</summary>
         public static readonly (string category, string[] types)[] Categories = {
-            (InputCategory, new[] { CurveInput, MaskedCurveInput, PhonemeInput, PitchInput, Constant }),
+            (InputCategory, new[] { CurveInput, MorphingCurveInput, MaskedCurveInput, PhonemeInput, PitchInput, Constant }),
             (MathCategory, new[] { Add, Subtract, Multiply, Divide, Mix, Min, Max, Abs, MapRange, Clamp }),
             (TimeCategory, new[] { Time, Lfo, RandomRange, NotePosition, PhraseNotes, NoteEnvelope, Smooth, Slew }),
             (LogicCategory, new[] { Compare, And, Or, Not, IfElse }),
-            (OutputCategory, new[] { CurveOutput, PhonemeOutput, PitchOutput }),
+            (OutputCategory, new[] { CurveOutput, MorphingCurveOutput, PhonemeOutput, PitchOutput }),
         };
 
         static GraphNodeParameter Number(string name, string? @default) => new GraphNodeParameter(name, GraphParameterKind.Number, @default);
@@ -382,8 +388,10 @@ namespace OpenUtau.Core.ExpressionGraph {
         static readonly Dictionary<string, GraphNodeParameter[]> parameters = new Dictionary<string, GraphNodeParameter[]> {
             [Constant] = new[] { Number("value", "0") },
             [CurveInput] = new[] { abbr },
+            [MorphingCurveInput] = new[] { abbr },
             [MaskedCurveInput] = new[] { abbr },
             [CurveOutput] = new[] { abbr },
+            [MorphingCurveOutput] = new[] { abbr },
             [PhonemeInput] = new[] { abbr, new GraphNodeParameter("interpolation", GraphParameterKind.Choice, "step", "step", "linear", "cubic") },
             [PhonemeOutput] = new[] { abbr },
             [PitchInput] = new[] { new GraphNodeParameter("source", GraphParameterKind.Choice, "pitch_bend",
@@ -421,6 +429,14 @@ namespace OpenUtau.Core.ExpressionGraph {
             Format.Ustx.ALT, Format.Ustx.SHFT, Format.Ustx.VEL,
         };
 
+        /// <summary>Whether a renderer supports voice color morphing curves (e.g. Worldline and Classic).</summary>
+        public static bool SupportsMorphingCurves(Render.IRenderer? renderer) {
+            if (renderer == null) return true;
+            string name = renderer.ToString() ?? string.Empty;
+            return name.Contains("Classic", StringComparison.OrdinalIgnoreCase)
+                || name.Contains("Worldline-R", StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>Whether a graph can drive a per-phoneme expression on a renderer.</summary>
         public static bool CanDrivePhonemeExpression(Ustx.UExpressionDescriptor descriptor, Render.IRenderer? renderer) =>
             descriptor.type == Ustx.UExpressionType.Numerical && !TimingExpressions.Contains(descriptor.abbr)
@@ -429,7 +445,13 @@ namespace OpenUtau.Core.ExpressionGraph {
         /// <summary>Whether a graph can drive a curve on a renderer. PITD is driven through the pitch output.</summary>
         public static bool CanDriveCurve(Ustx.UExpressionDescriptor descriptor, Render.IRenderer? renderer) =>
             descriptor.type == Ustx.UExpressionType.Curve && descriptor.abbr != Format.Ustx.PITD
-                && (renderer == null || renderer.SupportsExpression(descriptor));
+                && (!string.IsNullOrEmpty(descriptor.flag) || renderer == null || renderer.SupportsExpression(descriptor));
+
+        /// <summary>Whether a graph can drive a morphing curve (e.g. voice color) on a renderer.</summary>
+        public static bool CanDriveMorphingCurve(Ustx.UExpressionDescriptor descriptor, Render.IRenderer? renderer) =>
+            descriptor.type == Ustx.UExpressionType.MorphingCurve
+                && SupportsMorphingCurves(renderer)
+                && (!string.IsNullOrEmpty(descriptor.flag) || renderer == null || renderer.SupportsExpression(descriptor));
 
         /// <summary>The expressions a node's "abbr" parameter can name, for a graph targeting a renderer.</summary>
         public static IEnumerable<Ustx.UExpressionDescriptor> ExpressionChoices(Ustx.UProject project, string? type, string? renderer) {
@@ -444,8 +466,10 @@ namespace OpenUtau.Core.ExpressionGraph {
             var all = project.expressions.Values;
             return type switch {
                 CurveInput => all.Where(d => d.type == Ustx.UExpressionType.Curve),
+                MorphingCurveInput => all.Where(d => d.type == Ustx.UExpressionType.MorphingCurve && SupportsMorphingCurves(instance)),
                 MaskedCurveInput => all.Where(d => d.type == Ustx.UExpressionType.MaskedCurve),
                 CurveOutput => all.Where(d => CanDriveCurve(d, instance)),
+                MorphingCurveOutput => all.Where(d => CanDriveMorphingCurve(d, instance)),
                 PhonemeInput => all.Where(d => d.type == Ustx.UExpressionType.Numerical),
                 PhonemeOutput => all.Where(d => CanDrivePhonemeExpression(d, instance)),
                 _ => Enumerable.Empty<Ustx.UExpressionDescriptor>(),
