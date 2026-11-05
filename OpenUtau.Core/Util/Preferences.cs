@@ -250,6 +250,8 @@ namespace OpenUtau.Core.Util {
             public bool ShowExpressions = true;
             public bool ShowPhonemizerTags = true;
             public bool ShowNoteParams = true;
+            /// <summary>Editing notes in the piano roll keeps the phonemes of the part where they are.</summary>
+            public bool KeepPhonemeTiming = false;
             public Dictionary<string, string> DefaultResamplers = new Dictionary<string, string>();
             public Dictionary<string, string> DefaultWavtools = new Dictionary<string, string>();
             public string LyricHelper = string.Empty;

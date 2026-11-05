@@ -382,6 +382,9 @@ namespace OpenUtau.Core {
                 Log.Error($"No active UndoGroup {cmd}");
                 return;
             }
+            if (cmd is ChangeNoteLyricCommand lyricCommand) {
+                HoldPhonemesForLyrics(lyricCommand);
+            }
             undoGroup.Commands.Add(cmd);
             lock (Project) {
                 cmd.Execute();
@@ -397,6 +400,36 @@ namespace OpenUtau.Core {
                 QueueValidate(cmd.ValidateOptions);
                 ScheduleRealCurveRefresh(cmd);
             }
+        }
+
+        // Phoneme pins started for lyric changes in the open undo group, released when it ends.
+        readonly List<PinPhonemesCommand> lyricPins = new List<PinPhonemesCommand>();
+
+        /// <summary>
+        /// With phoneme timing kept, a lyric change holds the phonemes of the other notes of its
+        /// part where they are, in the open undo group: the phonemizer only places the phonemes of
+        /// the notes whose lyrics change. Lyric changes come from many places (the lyric box, the
+        /// lyrics dialogs, batch edits), so they are caught here rather than at each of them.
+        /// </summary>
+        void HoldPhonemesForLyrics(ChangeNoteLyricCommand command) {
+            if (!Preferences.Default.KeepPhonemeTiming) {
+                return;
+            }
+            // The phonemes of a note and the notes extending it belong to the note.
+            var changed = command.ChangedNotes().Select(note => note.Extends ?? note).ToHashSet();
+            if (changed.Count == 0) {
+                return;
+            }
+            var part = command.Part;
+            if (part.phonemePins is { Released: false, Owner: PinPhonemesCommand holding }) {
+                // An edit already holds the phonemes, as merging notes or an earlier lyric change
+                // in a batch: let the changed notes' phonemes go.
+                holding.Unpin(changed);
+                return;
+            }
+            var pin = new PinPhonemesCommand(part, part.notes.Where(note => !changed.Contains(note)));
+            ExecuteCmd(pin);
+            lyricPins.Add(pin);
         }
 
         /// <summary>
@@ -519,6 +552,10 @@ namespace OpenUtau.Core {
             undoGroup.Merge();
             ScheduleRealCurveRefresh(undoGroup.Commands);
             undoGroup = null;
+            foreach (var pin in lyricPins) {
+                pin.Release();
+            }
+            lyricPins.Clear();
             ExecuteCmd(new PreRenderNotification());
         }
 

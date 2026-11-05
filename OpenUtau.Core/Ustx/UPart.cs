@@ -60,6 +60,13 @@ namespace OpenUtau.Core.Ustx {
 
         [YamlIgnore] public bool PhonemesUpToDate => notesTimestamp == phonemesTimestamp;
 
+        /// <summary>
+        /// Phonemes held in place while notes are edited, set by <see cref="PinPhonemesCommand"/>.
+        /// Pinned phonemes show at their pinned position right away, and each phonemizer output
+        /// writes the pins into the phoneme offsets, so they stay there once the pins are gone.
+        /// </summary>
+        [YamlIgnore] internal PhonemePins? phonemePins;
+
         public override string DisplayName => name;
         public override int Duration { get => duration; set => duration = value; }
 
@@ -114,6 +121,26 @@ namespace OpenUtau.Core.Ustx {
         /// </summary>
         internal void ResetOverridePhonemizers() {
             overridePhonemizers.Clear();
+        }
+
+        /// <summary>
+        /// Writes each pin into its phoneme's offset, so the phonemizer output just taken in puts the
+        /// phoneme where it was pinned. Drops the pins once their edit is over.
+        /// </summary>
+        void WritePinnedOffsets() {
+            if (phonemePins == null) {
+                return;
+            }
+            foreach (var phoneme in phonemes) {
+                if (phonemePins.TryGet(phoneme, out int pinned)) {
+                    var o = phoneme.Parent.GetPhonemeOverride(phoneme.index);
+                    int offset = pinned - phoneme.rawPosition;
+                    o.offset = offset == 0 ? null : offset;
+                }
+            }
+            if (phonemePins.Released) {
+                phonemePins = null;
+            }
         }
 
         public override void Validate(ValidateOptions options, UProject project, UTrack track) {
@@ -251,6 +278,7 @@ namespace OpenUtau.Core.Ustx {
                             note.phonemeIndexes = indexes.ToArray();
                         }
                         phonemesTimestamp = resp.timestamp;
+                        WritePinnedOffsets();
                     }
                     phonemizerResponse = null;
                 }
@@ -291,6 +319,11 @@ namespace OpenUtau.Core.Ustx {
                         phoneme.overlapDelta = o.overlapDelta;
                         phoneme.attackTimeDelta = o.attackTimeDelta;
                         phoneme.releaseTimeDelta = o.releaseTimeDelta;
+                    }
+                    // Until the phonemizer output for the edit arrives, the offsets are still the
+                    // ones for the old notes, so show pinned phonemes where they were pinned.
+                    if (phonemePins != null && phonemePins.TryGet(phoneme, out int pinned)) {
+                        phoneme.position = pinned;
                     }
                 }
                 // A phonemizer is expected to return positions in order. Report it when that did
