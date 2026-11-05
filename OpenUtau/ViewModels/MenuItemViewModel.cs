@@ -8,6 +8,7 @@ using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings;
 using Avalonia.Threading;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 
 namespace OpenUtau.App.ViewModels {
     public class MenuItemViewModel {
@@ -44,7 +45,7 @@ namespace OpenUtau.App.ViewModels {
             set {
                 if (CommandParameter is USinger singer) {
                     singer.IsFavourite = value;
-                    TrackHeaderViewModel.InvalidateSingerMenuCache();
+                    if (Preferences.Default.UseLegacySingerSelection) TrackHeaderViewModel.InvalidateSingerMenuCache();
                 }
             }
         }

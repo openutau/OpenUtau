@@ -262,7 +262,7 @@ namespace OpenUtau.App.ViewModels {
                 }
             }
 
-            InvalidateSingerMenuCache();
+            if (Preferences.Default.UseLegacySingerSelection) InvalidateSingerMenuCache();
         }
 
         private bool TryChangePhonemizer(UTrack targetTrack, string phonemizerName) {
