@@ -35,6 +35,21 @@ namespace OpenUtau.UiTest {
 
         // Puts the vowel on the note and a tail just after the start of its last extender note, so the
         // tail lies on the extender and moves when the extender is merged into the note.
+        // A phoneme for each letter of the lyric, 60 ticks apart and starting 30 ticks later for each
+        // letter after the first, and a tail that ends the note earlier the longer the next note's
+        // lyric is: changing a lyric moves all the note's phonemes and the tail of the note before it.
+        class LetterPhonemizer : Phonemizer {
+            public override void SetSinger(USinger singer) { }
+            public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevs) {
+                int duration = notes.Sum(note => note.duration);
+                var lyric = notes[0].lyric;
+                int start = 30 * (lyric.Length - 1);
+                var phonemes = lyric.Select((letter, i) => new Phoneme { index = i, phoneme = letter.ToString(), position = start + i * 60 }).ToList();
+                phonemes.Add(new Phoneme { index = 100, phoneme = "t", position = duration - 60 * (nextNeighbour?.lyric.Length ?? 1) });
+                return new Result { phonemes = phonemes.ToArray() };
+            }
+        }
+
         class SlurPhonemizer : Phonemizer {
             public override void SetSinger(USinger singer) { }
             public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevs) =>
@@ -270,5 +285,55 @@ namespace OpenUtau.UiTest {
             Assert.All(Enumerable.Range(0, 3), i => Assert.Equal(before[(b, i)] - 240, PositionOf(part, b, i)));
             Assert.Equal(1440 - 60, PositionOf(part, c, 0));
         });
+
+        // Runs lyric changes in one undo group with the toggle as given, as the lyric box does.
+        static void ChangeLyrics(UVoicePart part, bool keepPhonemeTiming, params (UNote note, string lyric)[] changes) {
+            var preferences = Core.Util.Preferences.Default;
+            bool old = preferences.KeepPhonemeTiming;
+            preferences.KeepPhonemeTiming = keepPhonemeTiming;
+            try {
+                DocManager.Inst.StartUndoGroup("command.note.lyric");
+                foreach (var (note, lyric) in changes) {
+                    DocManager.Inst.ExecuteCmd(new ChangeNoteLyricCommand(part, note, lyric));
+                }
+                DocManager.Inst.EndUndoGroup();
+                WaitForPhonemes(part);
+            } finally {
+                preferences.KeepPhonemeTiming = old;
+            }
+        }
+
+        [Fact]
+        public void ChangingALyricKeepsTheOtherPhonemes() => WithPart(new[] { new[] { 0, 480 }, new[] { 480, 480 }, new[] { 960, 480 } },
+                (project, part, notes) => {
+            var (a, b, c) = (notes[0], notes[1], notes[2]);
+            var before = Positions(part);
+            Assert.Equal(480 - 60, before[(a, 100)]);
+
+            ChangeLyrics(part, true, (b, "bbb"));
+            // The changed note gets its new phonemes, and the tail of the note before it stays.
+            Assert.Equal(new[] { 540, 600, 660 }, Enumerable.Range(0, 3).Select(i => PositionOf(part, b, i)));
+            Assert.Equal(480 - 60, PositionOf(part, a, 100));
+            Assert.Equal(before[(c, 0)], PositionOf(part, c, 0));
+            // One undo takes the lyric back, with the phonemes as they were.
+            DocManager.Inst.Undo();
+            WaitForPhonemes(part);
+            Assert.Equal(before, Positions(part));
+
+            // Without the toggle, the phonemizer moves the tail for the longer lyric after it.
+            ChangeLyrics(part, false, (b, "bbb"));
+            Assert.Equal(480 - 180, PositionOf(part, a, 100));
+        }, new LetterPhonemizer(), new[] { "a", "b", "c" });
+
+        [Fact]
+        public void ChangingLyricsInABatchLetsEachChangedNoteGo() => WithPart(new[] { new[] { 0, 480 }, new[] { 480, 480 }, new[] { 960, 480 } },
+                (project, part, notes) => {
+            var (a, b, c) = (notes[0], notes[1], notes[2]);
+            ChangeLyrics(part, true, (b, "bb"), (c, "ccc"));
+            // Both changed notes get their new phonemes, though the first change already held the part.
+            Assert.Equal(new[] { 510, 570 }, Enumerable.Range(0, 2).Select(i => PositionOf(part, b, i)));
+            Assert.Equal(new[] { 1020, 1080, 1140 }, Enumerable.Range(0, 3).Select(i => PositionOf(part, c, i)));
+            Assert.Equal(480 - 60, PositionOf(part, a, 100));
+        }, new LetterPhonemizer(), new[] { "a", "b", "c" });
     }
 }

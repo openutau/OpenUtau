@@ -12,6 +12,9 @@ namespace OpenUtau.Core.Ustx {
         /// </summary>
         public bool Released { get; set; }
 
+        /// <summary>The command that set the pins.</summary>
+        public PinPhonemesCommand? Owner { get; set; }
+
         public PhonemePins(Dictionary<(UNote, int), int> positions) {
             this.positions = positions;
         }

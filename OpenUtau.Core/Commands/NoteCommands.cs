@@ -200,8 +200,19 @@ namespace OpenUtau.Core {
         }
         public override string ToString() => "Pin phonemes";
         public override void Execute() {
-            pins = new PhonemePins(Positions()) { Released = released };
+            pins = new PhonemePins(Positions()) { Released = released, Owner = this };
             Part.phonemePins = pins;
+        }
+        /// <summary>
+        /// Lets the phonemizer place the phonemes of the given notes again, as when their lyrics
+        /// change during the edit.
+        /// </summary>
+        public void Unpin(IEnumerable<UNote> notes) {
+            var unpinned = notes.ToHashSet();
+            foreach (var key in positions.Keys.Where(key => unpinned.Contains(key.Item1)).ToList()) {
+                positions.Remove(key);
+            }
+            pins?.Set(Positions());
         }
         /// <summary>
         /// Moves the phonemes of the given notes with them, by how far they moved since they were pinned.
@@ -252,6 +263,9 @@ namespace OpenUtau.Core {
             NewLyrics = newLyrics;
             OldLyrics = notes.Select(note => note.lyric).ToArray();
         }
+        /// <summary>The notes whose lyric this command changes.</summary>
+        public IEnumerable<UNote> ChangedNotes() =>
+            Notes.Where((note, i) => OldLyrics[i] != NewLyrics[i]);
         public override string ToString() {
             return "Change notes lyric";
         }
