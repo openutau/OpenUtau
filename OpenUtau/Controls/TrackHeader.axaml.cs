@@ -139,10 +139,7 @@ namespace OpenUtau.App.Controls {
                     // Opened from the "⋯" flyout
                     anchor = MoreButton;
                 }
-                SingersMenu.ItemsSource = ViewModel.SingerMenuItems;
-
-                anchor.ContextMenu = SingersMenu;
-                anchor.ContextMenu.Open();
+                SingersMenu.Open(anchor);
             } catch (Exception e) {
                 DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
             }

@@ -96,7 +96,7 @@
       </ContextMenu.Styles>
     </ContextMenu>
     <ContextMenu x:Key="SingersMenuRes" Classes="context" Name="SingersMenu" Placement="BottomEdgeAlignedLeft"
-                 HorizontalOffset="-3">
+                 HorizontalOffset="-3" ItemsSource="{Binding SingerMenuItems}">
       <ContextMenu.Styles>
         <Style Selector="MenuItem" x:DataType="vm:SingerMenuItemViewModel">
           <Setter Property="Header" Value="{Binding Header}"/>
