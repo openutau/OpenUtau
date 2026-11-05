@@ -102,24 +102,41 @@ namespace OpenUtau.App.Controls {
             if (Part == null || !ShowPhoneme) {
                 return;
             }
-            string langCode = PhonemeUIRender.getLangCode(Part);
             var viewModel = ((PianoRollViewModel?)DataContext)?.NotesViewModel;
             if (viewModel == null) {
                 return;
             }
             context.DrawRectangle(Background, null, Bounds.WithX(0).WithY(0));
-            // Renderers that do not use envelopes ignore the envelope handles (Preutter/Attack/Release/Overlap),
-            // so they draw each phoneme as a simple rectangle (bar) rather than drawing the shape of the envelope.
-            bool supportsEnvelope = PhonemeUIRender.SupportsPhonemeEnvelope(Part);
             double leftTick = TickOffset - 480;
             double rightTick = TickOffset + Bounds.Width / TickWidth + 480;
+            // The phonemes of the other parts on the track, see-through as their notes are.
+            using (context.PushOpacity(NotesCanvas.OtherPartOpacity)) {
+                foreach (var other in viewModel.OtherPartsOnTrack) {
+                    // Ticks of the other part, relative to the open part as the view's ticks are.
+                    int offset = other.position - Part.position;
+                    if (other.Duration + offset <= leftTick || rightTick <= offset) {
+                        continue;
+                    }
+                    using var moved = context.PushTransform(Matrix.CreateTranslation(offset * TickWidth, 0));
+                    RenderPhonemes(context, viewModel, other, leftTick - offset, rightTick - offset);
+                }
+            }
+            RenderPhonemes(context, viewModel, Part, leftTick, rightTick);
+        }
+
+        /// <summary>Draws a part's phonemes between two ticks of that part, in that part's ticks.</summary>
+        private void RenderPhonemes(DrawingContext context, NotesViewModel viewModel, UVoicePart part, double leftTick, double rightTick) {
+            string langCode = PhonemeUIRender.getLangCode(part);
+            // Renderers that do not use envelopes ignore the envelope handles (Preutter/Attack/Release/Overlap),
+            // so they draw each phoneme as a simple rectangle (bar) rather than drawing the shape of the envelope.
+            bool supportsEnvelope = PhonemeUIRender.SupportsPhonemeEnvelope(part);
             bool raiseText = false;
             double lastTextEndX = double.NegativeInfinity;
 
             const double y = 35.5;
             const double height = 24;
-            foreach (var phoneme in Part.phonemes) {
-                double leftBound = viewModel.Project.timeAxis.MsPosToTickPos(phoneme.PositionMs - phoneme.preutter) - Part.position;
+            foreach (var phoneme in part.phonemes) {
+                double leftBound = viewModel.Project.timeAxis.MsPosToTickPos(phoneme.PositionMs - phoneme.preutter) - part.position;
                 double rightBound = phoneme.End;
                 if (leftBound > rightTick || rightBound < leftTick || phoneme.Parent.OverlapError) {
                     continue;
@@ -133,15 +150,15 @@ namespace OpenUtau.App.Controls {
                         var brushBar = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi;
                         context.DrawRectangle(brushBar, null, new Rect(x, y, xRight - x, height));
                     } else {
-                        double x0 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[0].X) - Part.position, 0).X;
+                        double x0 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[0].X) - part.position, 0).X;
                         double y0 = (1 - phoneme.envelope.data[0].Y / 100) * height;
-                        double x1 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[1].X) - Part.position, 0).X;
+                        double x1 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[1].X) - part.position, 0).X;
                         double y1 = (1 - phoneme.envelope.data[1].Y / 100) * height;
-                        double x2 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[2].X) - Part.position, 0).X;
+                        double x2 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[2].X) - part.position, 0).X;
                         double y2 = (1 - phoneme.envelope.data[2].Y / 100) * height;
-                        double x3 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[3].X) - Part.position, 0).X;
+                        double x3 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[3].X) - part.position, 0).X;
                         double y3 = (1 - phoneme.envelope.data[3].Y / 100) * height;
-                        double x4 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[4].X) - Part.position, 0).X;
+                        double x4 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[4].X) - part.position, 0).X;
                         double y4 = (1 - phoneme.envelope.data[4].Y / 100) * height;
 
                         var pen = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;

@@ -36,7 +36,16 @@ namespace OpenUtau.App.ViewModels {
 
     public partial class NotesViewModel : ViewModelBase, ICmdSubscriber {
         [Reactive] public partial Rect Bounds { get; set; }
-        public int TickCount => Part?.Duration ?? 480 * 4;
+        /// <summary>
+        /// The ticks the piano roll can scroll over: the whole track of the open part, from the project
+        /// start to the end of its last voice part. Ticks in the piano roll stay relative to the open part.
+        /// </summary>
+        public int TickCount => Part == null ? 480 * 4 : TrackEnd;
+        int TrackEnd => OtherPartsOnTrack.Select(part => part.End).Append(Part!.End).Max();
+        /// <summary>The voice parts on the open part's track other than the open part.</summary>
+        public IEnumerable<UVoicePart> OtherPartsOnTrack => Part == null
+            ? Enumerable.Empty<UVoicePart>()
+            : Project.parts.OfType<UVoicePart>().Where(part => part != Part && part.trackNo == Part.trackNo);
         public int TrackCount => ViewConstants.MaxTone;
         [Reactive] public partial double TickWidth { get; set; }
         public double TrackHeightMin => ViewConstants.NoteHeightMin;
@@ -91,7 +100,11 @@ namespace OpenUtau.App.ViewModels {
         public double ViewportTracks => viewportTracks.Value;
         public double SmallChangeX => smallChangeX.Value;
         public double SmallChangeY => smallChangeY.Value;
-        public double HScrollBarMax => Math.Max(0, TickCount - ViewportTicks);
+        /// <summary>The project start, relative to the open part.</summary>
+        public double HScrollBarMin => -(Part?.position ?? 0);
+        public double HScrollBarMax => Math.Max(HScrollBarMin, TickCount - (Part?.position ?? 0) - ViewportTicks);
+        /// <summary>Limits a tick offset to where the piano roll can scroll.</summary>
+        public double ClampTickOffset(double tickOffset) => Math.Clamp(tickOffset, HScrollBarMin, HScrollBarMax);
         public double VScrollBarMax => Math.Max(0, TrackCount - ViewportTracks);
         public UProject Project => DocManager.Inst.Project;
         [Reactive] public partial List<MenuItemViewModel> SnapDivs { get; set; }
@@ -114,7 +127,7 @@ namespace OpenUtau.App.ViewModels {
         internal NotesViewModelHitTest HitTest;
         private int _lastNoteLength = 480;
         private int playPosTick;
-        private UNote[] playbackNotes = Array.Empty<UNote>();
+        private PlaybackNote[] playbackNotes = Array.Empty<PlaybackNote>();
         private string? portraitSource;
         private readonly object portraitLock = new object();
         private int userSnapDiv = -2;
@@ -400,7 +413,7 @@ namespace OpenUtau.App.ViewModels {
 
         public void OnXZoomed(Point position, double delta) {
             bool recenter = true;
-            if (TickOffset == 0 && position.X < 0.1) {
+            if (TickOffset == HScrollBarMin && position.X < 0.1) {
                 recenter = false;
             }
             double center = TickOffset + position.X * ViewportTicks;
@@ -411,7 +424,7 @@ namespace OpenUtau.App.ViewModels {
             double tickOffset = recenter
                     ? center - position.X * ViewportTicks
                     : TickOffset;
-            TickOffset = Math.Clamp(tickOffset, 0, HScrollBarMax);
+            TickOffset = ClampTickOffset(tickOffset);
             Notify();
         }
 
@@ -428,6 +441,7 @@ namespace OpenUtau.App.ViewModels {
 
         private void Notify() {
             this.RaisePropertyChanged(nameof(TickCount));
+            this.RaisePropertyChanged(nameof(HScrollBarMin));
             this.RaisePropertyChanged(nameof(HScrollBarMax));
             this.RaisePropertyChanged(nameof(ViewportTicks));
             this.RaisePropertyChanged(nameof(TrackCount));
@@ -506,6 +520,10 @@ namespace OpenUtau.App.ViewModels {
             }
             int snapUnit = project.resolution * 4 / SnapDiv;
             int tick = PointToTick(point);
+            // The piano roll also shows the track before the open part, where its notes can't go.
+            if (tick < 0) {
+                return null;
+            }
             int snappedTick = (int)Math.Floor((double)tick / snapUnit) * snapUnit;
             UNote note = project.CreateNote(tone, snappedTick,
                 useLastLength ? _lastNoteLength : IsSnapOn ? snapUnit : 15);
@@ -520,7 +538,6 @@ namespace OpenUtau.App.ViewModels {
             UnloadPart();
             Part = part as UVoicePart;
             OnPartModified();
-            RebuildPlaybackNoteIndex();
             LoadPortrait(part, project);
             LoadWindowTitle(part, project);
             LoadTrackColor(part, project);
@@ -634,7 +651,7 @@ namespace OpenUtau.App.ViewModels {
         private void UnloadPart() {
             DeselectNotes();
             Part = null;
-            playbackNotes = Array.Empty<UNote>();
+            playbackNotes = Array.Empty<PlaybackNote>();
             LoadPortrait(null, null);
             LoadWindowTitle(null, null);
         }
@@ -646,6 +663,8 @@ namespace OpenUtau.App.ViewModels {
             TickOrigin = Part.position;
             UpdateIsDiffSinger();
             Notify();
+            // The other parts' notes are indexed relative to the open part.
+            RebuildPlaybackNoteIndex();
         }
 
         void UpdateIsDiffSinger() {
@@ -946,7 +965,7 @@ namespace OpenUtau.App.ViewModels {
 
                 var note = notes.First();
                 if (left < TickOffset || TickOffset + ViewportTicks < note.position + note.duration + Part.position) {
-                    TickOffset = Math.Clamp(note.position + note.duration * 0.5 - ViewportTicks * 0.5, 0, HScrollBarMax);
+                    TickOffset = ClampTickOffset(note.position + note.duration * 0.5 - ViewportTicks * 0.5);
                 }
             }
         }
@@ -987,7 +1006,7 @@ namespace OpenUtau.App.ViewModels {
 
                 var note = notes.First();
                 if (left < TickOffset || TickOffset + ViewportTicks < note.position + note.duration + Part.position) {
-                    TickOffset = Math.Clamp(note.position + note.duration * 0.5 - ViewportTicks * 0.5, 0, HScrollBarMax);
+                    TickOffset = ClampTickOffset(note.position + note.duration * 0.5 - ViewportTicks * 0.5);
                 }
             }
         }
@@ -1090,25 +1109,54 @@ namespace OpenUtau.App.ViewModels {
             UpdateHighlight();
         }
 
+        // The notes of the open part and of the other parts on its track, by where they start, with their
+        // bounds in the open part's ticks, so playback highlights notes past the open part too.
         private void RebuildPlaybackNoteIndex() {
-            playbackNotes = Part?.notes.ToArray() ?? Array.Empty<UNote>();
+            if (Part == null) {
+                playbackNotes = Array.Empty<PlaybackNote>();
+                return;
+            }
+            var part = Part;
+            playbackNotes = part.notes.Select(note => new PlaybackNote(note.LeftBound, note.RightBound, note, true))
+                .Concat(OtherPartsOnTrack.SelectMany(other => other.notes.Select(note => new PlaybackNote(
+                    note.LeftBound + other.position - part.position,
+                    note.RightBound + other.position - part.position,
+                    note, false))))
+                .OrderBy(note => note.Left)
+                .ToArray();
         }
 
+        record struct PlaybackNote(int Left, int Right, UNote Note, bool InOpenPart);
+
+        /// <summary>
+        /// The note at a tick of the open part, in it or in another part on its track, preferring the
+        /// open part's where parts overlap.
+        /// </summary>
         public UNote? FindVoiceNoteAtTick(int tick) {
+            // The last note starting at or before the tick; notes that start earlier may still cover it.
             int low = 0;
             int high = playbackNotes.Length - 1;
             while (low <= high) {
                 int mid = low + (high - low) / 2;
-                var note = playbackNotes[mid];
-                if (tick < note.LeftBound) {
-                    high = mid - 1;
-                } else if (tick >= note.RightBound) {
+                if (playbackNotes[mid].Left <= tick) {
                     low = mid + 1;
                 } else {
-                    return note;
+                    high = mid - 1;
                 }
             }
-            return null;
+            UNote? found = null;
+            // Notes overlap only a little, by their portamento or where parts overlap, so a few steps
+            // back reach the notes covering the tick.
+            for (int i = high; i >= 0 && i > high - 8; i--) {
+                var candidate = playbackNotes[i];
+                if (candidate.Left <= tick && tick < candidate.Right) {
+                    if (candidate.InOpenPart) {
+                        return candidate.Note;
+                    }
+                    found ??= candidate.Note;
+                }
+            }
+            return found;
         }
 
         private void UpdateHighlight() {
@@ -1126,7 +1174,7 @@ namespace OpenUtau.App.ViewModels {
         }
 
         private void FocusNote(UNote note) {
-            TickOffset = Math.Clamp(note.position + note.duration * 0.5 - ViewportTicks * 0.5, 0, HScrollBarMax);
+            TickOffset = ClampTickOffset(note.position + note.duration * 0.5 - ViewportTicks * 0.5);
             TrackOffset = Math.Clamp(ViewConstants.MaxTone - note.tone + 2 - ViewportTracks * 0.5, 0, VScrollBarMax);
         }
 
@@ -1186,7 +1234,11 @@ namespace OpenUtau.App.ViewModels {
                 if (cmd is LoadPartNotification loadPart) {
                     LoadPart(loadPart.part, loadPart.project);
                     double tickOffset = loadPart.tick - loadPart.part.position - Bounds.Width / TickWidth / 2;
-                    TickOffset = Math.Clamp(tickOffset, 0, HScrollBarMax);
+                    // Centred on the tick, but within the part where it can be, so that opening a part
+                    // near its start or end puts that edge at the side of the view, as before the view
+                    // could scroll past the part.
+                    tickOffset = Math.Clamp(tickOffset, 0, Math.Max(0, loadPart.part.Duration - ViewportTicks));
+                    TickOffset = ClampTickOffset(tickOffset);
                     PrimaryKeyNotSupported = !IsExpSupported(PrimaryKey);
                 } else if (cmd is LoadProjectNotification) {
                     UnloadPart();
@@ -1235,6 +1287,12 @@ namespace OpenUtau.App.ViewModels {
                     }
                 }
                 if (partCommand.part != Part) {
+                    // Other parts on the track show in the piano roll, and set how far it scrolls.
+                    if (Part != null) {
+                        Notify();
+                        RebuildPlaybackNoteIndex();
+                        MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                    }
                     return;
                 }
                 if (cmd is RemovePartCommand) {
@@ -1263,6 +1321,11 @@ namespace OpenUtau.App.ViewModels {
                             MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
                         }
                     }
+                } else if (Part != null && noteCommand.Part.trackNo == Part.trackNo) {
+                    // Notes of other parts on the track show in the piano roll too, as after undoing an
+                    // edit made while that part was open.
+                    RebuildPlaybackNoteIndex();
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 }
             } else if (cmd is ExpCommand) {
                 MessageBus.Current.SendMessage(new NotesRefreshEvent());
@@ -1298,7 +1361,7 @@ namespace OpenUtau.App.ViewModels {
 
         private void AutoScroll(double positionX) {
             double scrollDelta = GetScrollValueDelta(positionX);
-            TickOffset = Math.Clamp(TickOffset + scrollDelta, 0, HScrollBarMax);
+            TickOffset = ClampTickOffset(TickOffset + scrollDelta);
         }
 
         private double GetScrollValueDelta(double positionX) {
