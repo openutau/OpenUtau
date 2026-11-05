@@ -512,10 +512,6 @@ namespace OpenUtau.App.ViewModels {
             this.RaisePropertyChanged(nameof(SingerMenuItems));
         }
 
-        public void RefreshSingers() {
-            _ = RefreshSingersAsync();
-        }
-
         public void ManuallyRaise() {
             TrackName = track.TrackName;
             TrackAccentColor = ThemeManager.GetTrackColor(track.TrackColor).AccentColor;
