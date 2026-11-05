@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
@@ -501,6 +502,13 @@ namespace OpenUtau.App.ViewModels {
                         InvalidateSingerMenuCache();
                         DocManager.Inst.ExecuteCmd(new SingersRefreshedNotification());
                         DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), false, "singer"));
+                    })
+                });
+
+                list.Add(new MenuItemViewModel() {
+                    Header = ThemeManager.GetString("tracks.clearsinger"),
+                    Command = ReactiveCommand.Create(() => {
+                        (SelectSingerCommand as ICommand).Execute(null);
                     })
                 });
 
