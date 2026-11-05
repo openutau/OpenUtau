@@ -432,6 +432,13 @@ namespace OpenUtau.App.ViewModels {
                 });
 
                 list.Add(new MenuItemViewModel() {
+                    Header = ThemeManager.GetString("tracks.clearsinger"),
+                    Command = ReactiveCommand.Create(() => {
+                        (SelectSingerCommand as ICommand).Execute(null);
+                    })
+                });
+
+                list.Add(new MenuItemViewModel() {
                     Header = ThemeManager.GetString("tracks.installsinger"),
                     Command = ReactiveCommand.Create(async () => {
                         var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
@@ -502,13 +509,6 @@ namespace OpenUtau.App.ViewModels {
                         InvalidateSingerMenuCache();
                         DocManager.Inst.ExecuteCmd(new SingersRefreshedNotification());
                         DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), false, "singer"));
-                    })
-                });
-
-                list.Add(new MenuItemViewModel() {
-                    Header = ThemeManager.GetString("tracks.clearsinger"),
-                    Command = ReactiveCommand.Create(() => {
-                        (SelectSingerCommand as ICommand).Execute(null);
                     })
                 });
 
