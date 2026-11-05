@@ -1,0 +1,246 @@
+using System;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Input;
+using Avalonia.Media;
+using OpenUtau.App.ViewModels;
+using OpenUtau.App.Views;
+using OpenUtau.Core;
+using OpenUtau.Core.Ustx;
+using Xunit;
+
+namespace OpenUtau.UiTest {
+    /// <summary>
+    /// Dragging part edges on the parts canvas with the pointer. At the default 480 ticks per beat in 4/4.
+    /// </summary>
+    public class PartResizeTest {
+        // Opens the editor with the given voice parts, added in order, so later parts are drawn on top.
+        static void WithParts((int trackNo, int position, int duration, int[]? notes)[] parts,
+                Action<MainWindow, MainWindowViewModel, Canvas, UVoicePart[]> test,
+                [CallerMemberName] string name = "") => HeadlessUi.Run(() => {
+            MainWindowTest.InitCore();
+            var document = DocManager.Inst;
+            document.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
+            HeadlessUi.Errors.Clear();
+            var project = document.Project;
+            var window = new MainWindow { Width = 1280, Height = 800 };
+            try {
+                window.Show();
+                window.InitProject();
+                var viewModel = Assert.IsType<MainWindowViewModel>(window.DataContext);
+                viewModel.Page = 1;
+                document.StartUndoGroup();
+                while (project.tracks.Count <= parts.Max(p => p.trackNo)) {
+                    document.ExecuteCmd(new AddTrackCommand(project, new UTrack(project) { TrackNo = project.tracks.Count }));
+                }
+                var added = parts.Select(p => {
+                    var part = new UVoicePart { trackNo = p.trackNo, position = p.position, Duration = p.duration };
+                    // Notes as position, duration and tone, with positions relative to the part.
+                    for (int i = 0; i + 2 < (p.notes?.Length ?? 0); i += 3) {
+                        part.notes.Add(project.CreateNote(p.notes![i + 2], p.notes[i], p.notes[i + 1]));
+                    }
+                    document.ExecuteCmd(new AddPartCommand(project, part));
+                    return part;
+                }).ToArray();
+                document.EndUndoGroup();
+                viewModel.TracksViewModel.TickWidth = 0.1;
+                HeadlessUi.Flush();
+                var canvas = Assert.IsAssignableFrom<Canvas>(window.FindControl<Canvas>("partsCanvas"));
+                test(window, viewModel, canvas, added);
+                var errors = HeadlessUi.Errors.Snapshot();
+                Assert.True(errors.Count == 0, "Errors reported:\n" + string.Join("\n", errors));
+            } finally {
+                HeadlessUi.Flush();
+                HeadlessUi.SaveScreenshot(window, $"{nameof(PartResizeTest)}-{name}");
+                window.Close();
+                // Leave no unsaved edits behind for later tests, which share DocManager.
+                document.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
+            }
+        });
+
+        // The window point at a tick, in the middle of a track; dx moves it by pixels. Dragged voice part
+        // edges snap to the grid line after the pointer, so a point just before a line ends up on it.
+        static Point At(Window window, Canvas canvas, MainWindowViewModel viewModel, int tick, int trackNo, double dx = 0) {
+            var tracks = viewModel.TracksViewModel;
+            var inCanvas = tracks.TickTrackToPoint(tick, trackNo) + new Point(dx, tracks.TrackHeight / 2);
+            return canvas.TranslatePoint(inCanvas, window)!.Value;
+        }
+
+        static void Drag(Window window, Point from, params Point[] to) {
+            window.MouseDown(from, MouseButton.Left);
+            foreach (var point in to) {
+                window.MouseMove(point, RawInputModifiers.LeftMouseButton);
+            }
+            window.MouseUp(to.Last(), MouseButton.Left);
+            HeadlessUi.Flush();
+        }
+
+        [Fact]
+        public void CoveredEdgeOfAnOverlappedPartResizes() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 0, 3840, null),
+            (0, 1920, 3840, null),
+        }, (window, viewModel, canvas, parts) => {
+            var (below, above) = (parts[0], parts[1]);
+            // The end of the part below lies inside the part above, where the overlap stripes end.
+            AssertOverlapEndsAt(below.End);
+            var edge = At(window, canvas, viewModel, below.End, 0, -2);
+            Drag(window, edge, At(window, canvas, viewModel, 2880, 0, -1));
+
+            Assert.Equal(0, below.position);
+            Assert.Equal(2880, below.End);
+            Assert.Equal((1920, 3840), (above.position, above.Duration));
+            AssertOverlapEndsAt(below.End);
+
+            void AssertOverlapEndsAt(int tick) {
+                // Brightness along a row of pixels, from dx to dx + 16 pixels away from the tick.
+                int[] Row(double dx) => Enumerable.Range(0, 16)
+                    .Select(i => PixelAt(window, At(window, canvas, viewModel, tick, 0, dx + i)))
+                    .Select(color => color.R + color.G + color.B).ToArray();
+                var inside = Row(-18);
+                var outside = Row(2);
+                Assert.True(inside.Max() - inside.Min() > 20, "No overlap stripes before the covered edge");
+                Assert.True(outside.Max() - outside.Min() < 5, "Overlap stripes past the covered edge");
+            }
+        });
+
+        [Fact]
+        public void CoveredStartOfAnOverlappedPartResizes() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 1920, 3840, new[] { 1920, 480, 60 }),
+            (0, 0, 3840, null),
+        }, (window, viewModel, canvas, parts) => {
+            var (below, above) = (parts[0], parts[1]);
+            var note = below.notes.Single();
+            int noteStart = below.position + note.position;
+            // The start of the part below lies inside the part above. A dragged start snaps to the
+            // grid line before the pointer, so a point just after a line ends up on it.
+            Drag(window, At(window, canvas, viewModel, below.position, 0, 2), At(window, canvas, viewModel, 2880, 0, 1));
+
+            Assert.Equal((2880, 5760), (below.position, below.End));
+            // The notes stay where they were in the song.
+            Assert.Equal(noteStart, below.position + note.position);
+            Assert.Equal((0, 3840), (above.position, above.Duration));
+        });
+
+        [Fact]
+        public void PressNearACoveredEdgeMovesTheSelectedPart() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 0, 3840, null),
+            (0, 1920, 3840, null),
+        }, (window, viewModel, canvas, parts) => {
+            var (below, above) = (parts[0], parts[1]);
+            viewModel.TracksViewModel.SelectPart(above);
+            HeadlessUi.Flush();
+            // Inside the selected part, within reach of the end of the part below that isn't selected.
+            var from = At(window, canvas, viewModel, below.End, 0, -2);
+            Drag(window, from, from + new Point(960 * viewModel.TracksViewModel.TickWidth, 0));
+
+            Assert.Equal((1920 + 960, 3840), (above.position, above.Duration));
+            Assert.Equal((0, 3840), (below.position, below.Duration));
+            Assert.Equal(new UPart[] { above }, viewModel.TracksViewModel.SelectedParts);
+        });
+
+        [Fact]
+        public void PartOnTopKeepsItsNameOverTheOverlap() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 0, 3840, null),
+            (0, 1920, 3840, null),
+        }, (window, viewModel, canvas, parts) => {
+            var above = parts[1];
+            // The name of the part on top is at its start, inside the overlap.
+            var nameStart = At(window, canvas, viewModel, above.position, 0) - new Point(0, viewModel.TracksViewModel.TrackHeight / 2);
+            int white = 0;
+            for (int x = 4; x < 40; x++) {
+                for (int y = 3; y < 16; y++) {
+                    var color = PixelAt(window, nameStart + new Point(x, y));
+                    if (color.R > 245 && color.G > 245 && color.B > 245) {
+                        white++;
+                    }
+                }
+            }
+            Assert.True(white > 10, $"The name of the part on top is faded ({white} white pixels)");
+        });
+
+        [Fact]
+        public void SelectedPartUnderTakesThePointerInTheOverlap() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 0, 3840, null),
+            (0, 1920, 3840, null),
+        }, (window, viewModel, canvas, parts) => {
+            var (below, above) = (parts[0], parts[1]);
+            viewModel.TracksViewModel.SelectPart(below);
+            HeadlessUi.Flush();
+            // The selected part is drawn on top, so a drag in the overlap moves it.
+            var from = At(window, canvas, viewModel, 2880, 0);
+            Drag(window, from, from + new Point(480 * viewModel.TracksViewModel.TickWidth, 0));
+
+            Assert.Equal(480, below.position);
+            Assert.Equal(1920, above.position);
+            Assert.Equal(new UPart[] { below }, viewModel.TracksViewModel.SelectedParts);
+        });
+
+        [Fact]
+        public void OverlapShowsTheNotesOfBothParts() => WithParts(new (int, int, int, int[]?)[] {
+            // Two notes 20 semitones apart put the lower one 36/52 of the way down the part, the upper one 16/52.
+            (0, 0, 3840, new[] { 0, 960, 80, 2400, 960, 60 }),
+            (0, 1920, 3840, new[] { 0, 480, 90, 2400, 960, 70 }),
+        }, (window, viewModel, canvas, parts) => {
+            double height = viewModel.TracksViewModel.TrackHeight;
+            Point In(int tick, double fraction) => At(window, canvas, viewModel, tick, 0, 0) + new Point(0, (fraction - 0.5) * height);
+            int Brightness(Color color) => color.R + color.G + color.B;
+
+            // The note of the part on top, inside the overlap, stays solid.
+            var aboveNote = PixelAt(window, In(2160, 16.0 / 52));
+            Assert.True(Brightness(aboveNote) > 3 * 230, $"The note on top is {aboveNote}");
+            // The note of the part below shows through, fainter than a solid note.
+            int empty = Brightness(PixelAt(window, In(2880, 0.9)));
+            int belowNote = Brightness(PixelAt(window, In(2880, 36.0 / 52)));
+            Assert.True(belowNote > empty + 60, $"The covered note ({belowNote}) doesn't show over the part ({empty})");
+            Assert.True(belowNote < Brightness(aboveNote) - 60, "The covered note looks as solid as the one on top");
+
+            // Selecting the part below brings its notes forward.
+            viewModel.TracksViewModel.SelectPart(parts[0]);
+            HeadlessUi.Flush();
+            Assert.True(Brightness(PixelAt(window, In(2880, 36.0 / 52))) > 3 * 230, "The selected part's note isn't solid");
+        });
+
+        // The color the window shows at a point.
+        static Color PixelAt(Window window, Point point) {
+            using var frame = window.CaptureRenderedFrame();
+            Assert.NotNull(frame);
+            using var buffer = frame.Lock();
+            int x = (int)(point.X * window.RenderScaling);
+            int y = (int)(point.Y * window.RenderScaling);
+            uint bgra = (uint)Marshal.ReadInt32(buffer.Address, y * buffer.RowBytes + x * 4);
+            return Color.FromUInt32(bgra);
+        }
+
+        [Fact]
+        public void StartNearTheFirstNoteDoesNotGrowWhenShrinking() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 1920, 1920, new[] { 100, 480, 60 }),
+        }, (window, viewModel, canvas, parts) => {
+            var part = parts[0];
+            Drag(window, At(window, canvas, viewModel, part.position, 0, 2), At(window, canvas, viewModel, 2400, 0));
+
+            // The first note is within the first beat, so the start can't move later.
+            Assert.Equal((1920, 1920), (part.position, part.Duration));
+        });
+
+        [Fact]
+        public void SelectedPartsShrinkAsFarAsEachAllows() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 0, 3840, new[] { 0, 2880, 60 }),
+            (1, 0, 3840, null),
+        }, (window, viewModel, canvas, parts) => {
+            var (full, empty) = (parts[0], parts[1]);
+            viewModel.TracksViewModel.SelectPart(full);
+            viewModel.TracksViewModel.SelectPart(empty);
+            HeadlessUi.Flush();
+            // Drag the end of the part that can't go below its note, several times to the same place.
+            var target = At(window, canvas, viewModel, 1440, 0, -1);
+            Drag(window, At(window, canvas, viewModel, full.End, 0, -2), target, target, target);
+
+            Assert.Equal(2880, full.Duration);
+            Assert.Equal(1440, empty.Duration);
+        });
+    }
+}
