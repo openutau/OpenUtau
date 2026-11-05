@@ -95,11 +95,14 @@ namespace OpenUtau.App.ViewModels {
         /// <summary>
         /// The other voice part on the track that a click on the notes at the point is for: one with a
         /// note there, or, outside the open part, the part the point is in. Null when the open part
-        /// takes the click, as when one of its notes is there.
+        /// takes the click, as when one of its notes, pitch points or vibrato handles is there; pitch
+        /// points can lie before the open part's start.
         /// </summary>
-        public UVoicePart? HitTestOtherPartNote(Point point) {
+        public UVoicePart? HitTestOtherPartNote(Point point, bool pitchPointTool) {
             var part = viewModel.Part;
-            if (part == null || HitTestNote(point).hitBody) {
+            if (part == null || HitTestNote(point).hitBody
+                || HitTestPitchPoint(point, pitchPointTool).Note != null
+                || HitTestVibrato(point).hit) {
                 return null;
             }
             int tick = viewModel.PointToTick(point) + part.position;

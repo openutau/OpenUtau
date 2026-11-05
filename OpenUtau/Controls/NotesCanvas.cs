@@ -172,7 +172,7 @@ namespace OpenUtau.App.Controls {
         private Geometry pointGeometry;
 
         private bool showGhostNotes = true;
-        private List<UPart> otherPartsInView = new List<UPart>();
+        private List<UPart> partsOnOtherTracks = new List<UPart>();
 
         public NotesCanvas() {
             ClipToBounds = true;
@@ -216,7 +216,7 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             // The piano roll scrolls over the whole track, so any part on another track can come into view.
-            otherPartsInView = DocManager.Inst.Project.parts
+            partsOnOtherTracks = DocManager.Inst.Project.parts
                 .Where(other => other.trackNo != Part.trackNo)
                 .ToList();
         }
@@ -382,9 +382,13 @@ namespace OpenUtau.App.Controls {
                 UpdatePlaybackHighlight(seek);
 
                 if (showGhostNotes) {
-                foreach (UPart otherPart in otherPartsInView) {
+                foreach (UPart otherPart in partsOnOtherTracks) {
                     if (otherPart is UVoicePart otherVoicePart) {
                         var xOffset = otherVoicePart.position - Part.position;
+                        // Skip whole parts out of view rather than each of their notes.
+                        if (xOffset + otherVoicePart.Duration <= leftTick || rightTick <= xOffset) {
+                            continue;
+                        }
                         var brush = ThemeManager.NeutralAccentBrushSemi;
                         if (otherVoicePart.trackNo >= 0) {
                             var track = DocManager.Inst.Project.tracks[otherVoicePart.trackNo];

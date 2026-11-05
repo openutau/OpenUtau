@@ -768,8 +768,10 @@ namespace OpenUtau.App.Controls {
                     return;
                 }
             }
-            if ((point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed)
-                && ViewModel.NotesViewModel.HitTest.HitTestOtherPartNote(point.Position) is UVoicePart otherPart) {
+            // Gestures with modifiers work on the open part, as selecting more of its notes.
+            bool pitchPointTool = ViewModel.EditTool.CurrentTool == EditTools.PitchPointTool;
+            if ((point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed) && args.KeyModifiers == KeyModifiers.None
+                && ViewModel.NotesViewModel.HitTest.HitTestOtherPartNote(point.Position, pitchPointTool) is UVoicePart otherPart) {
                 // The click goes on as on the open part's notes, now in the other part.
                 OpenOtherPart(otherPart);
             }
@@ -1372,7 +1374,7 @@ namespace OpenUtau.App.Controls {
             if (editState != null) {
                 return;
             }
-            if ((point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed)
+            if ((point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed) && args.KeyModifiers == KeyModifiers.None
                 && ViewModel.NotesViewModel.HitTest.HitTestOtherPartPhoneme(point.Position) is UVoicePart otherPart) {
                 // The click goes on as on the open part's phonemes, now in the other part.
                 OpenOtherPart(otherPart);

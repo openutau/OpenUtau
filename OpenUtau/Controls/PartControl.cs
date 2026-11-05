@@ -62,16 +62,6 @@ namespace OpenUtau.App.Controls {
                 nameof(FadeOut),
                 o => o.FadeOut,
                 (o, v) => o.FadeOut = v);
-        public static readonly DirectProperty<PartControl, double> PianoRollViewTickOffsetProperty =
-            AvaloniaProperty.RegisterDirect<PartControl, double>(
-                nameof(PianoRollViewTickOffset),
-                o => o.PianoRollViewTickOffset,
-                (o, v) => o.PianoRollViewTickOffset = v);
-        public static readonly DirectProperty<PartControl, double> PianoRollViewViewportTicksProperty =
-            AvaloniaProperty.RegisterDirect<PartControl, double>(
-                nameof(PianoRollViewViewportTicks),
-                o => o.PianoRollViewViewportTicks,
-                (o, v) => o.PianoRollViewViewportTicks = v);
 
         // Tick width in pixel.
         public double TickWidth {
@@ -110,25 +100,6 @@ namespace OpenUtau.App.Controls {
             get { return Width - (fadeOut * TickWidth); }
             set { SetAndRaise(FadeOutProperty, ref fadeOut, value); }
         }
-        public double PianoRollViewTickOffset {
-            get => pianoRollViewTickOffset;
-            set => SetAndRaise(PianoRollViewTickOffsetProperty, ref pianoRollViewTickOffset, value);
-        }
-        public double PianoRollViewViewportTicks {
-            get => pianoRollViewViewportTicks;
-            set => SetAndRaise(PianoRollViewViewportTicksProperty, ref pianoRollViewViewportTicks, value);
-        }
-
-        private bool _pianoRollViewportHovered;
-        private bool PianoRollViewportHovered {
-            get => _pianoRollViewportHovered;
-            set {
-                if (_pianoRollViewportHovered != value) {
-                    _pianoRollViewportHovered = value;
-                    InvalidateVisual();
-                }
-            }
-        }
 
         private double tickWidth;
         private double trackHeight;
@@ -139,18 +110,11 @@ namespace OpenUtau.App.Controls {
         private bool selected;
         private double fadeIn;
         private double fadeOut;
-        private double pianoRollViewTickOffset;
-        private double pianoRollViewViewportTicks;
         private Geometry pointGeometry;
 
         public readonly UPart part;
-        private readonly PartsCanvas partsCanvas;
         private const byte ContentAlpha = 0xF8;
         private readonly Pen notePen = new Pen(new SolidColorBrush(Color.FromArgb(ContentAlpha, 255, 255, 255)), 3);
-        private static readonly IBrush viewportFill = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255));
-        private static readonly IPen viewportPen = new Pen(Brushes.White, 2);
-        private const double GripDot = 2;
-        private const double GripGap = 3;
         private readonly Pen fadePen = new Pen(Brushes.White);
         private List<IDisposable> unbinds = new List<IDisposable>();
         private static readonly IBrush waveformFill = new SolidColorBrush(Color.FromArgb(ContentAlpha, 255, 255, 255));
@@ -160,7 +124,6 @@ namespace OpenUtau.App.Controls {
 
         public PartControl(UPart part, PartsCanvas canvas) {
             this.part = part;
-            partsCanvas = canvas;
             pointGeometry = new EllipseGeometry(new Rect(0, 0, 6, 6));
 
             unbinds.Add(this.Bind(TickWidthProperty, canvas.GetObservable(PartsCanvas.TickWidthProperty)));
@@ -171,8 +134,6 @@ namespace OpenUtau.App.Controls {
                 (tick, track) => new Point(-tick * TickWidth, -track * TrackHeight))));
             unbinds.Add(this.Bind(ViewWidthProperty, canvas.WhenAnyValue(x => x.Bounds).Select(bounds => bounds.Width)));
             unbinds.Add(this.Bind(TickOffsetProperty, canvas.WhenAnyValue(x => x.TickOffset).Select(tickOffset => tickOffset)));
-            unbinds.Add(this.Bind(PianoRollViewTickOffsetProperty, canvas.GetObservable(PartsCanvas.PianoRollViewTickOffsetProperty)));
-            unbinds.Add(this.Bind(PianoRollViewViewportTicksProperty, canvas.GetObservable(PartsCanvas.PianoRollViewViewportTicksProperty)));
 
             SetPosition();
             Refersh();
@@ -187,10 +148,6 @@ namespace OpenUtau.App.Controls {
                     }
                 }, CancellationToken.None, TaskContinuationOptions.None, scheduler);
             }
-
-            this.PointerMoved += (o, e) => PointerChanged(e.GetPosition(this));
-            this.PointerEntered += (o, e) => PointerChanged(e.GetPosition(this));
-            this.PointerExited += (_, _) => PianoRollViewportHovered = false;
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
@@ -296,21 +253,6 @@ namespace OpenUtau.App.Controls {
                         context.DrawLine(notePen, start, end);
                     }
                 }
-                // Highlight
-                if (PianoRollViewportRect() is Rect vpRect) {
-                    context.DrawRectangle(viewportFill, viewportPen, new RoundedRect(vpRect, new CornerRadius(3)));
-                    if (PianoRollViewportHovered && GripRect(vpRect) is Rect grip) {
-                        // A 3 by 3 grid of dots.
-                        for (int column = 0; column < 3; ++column) {
-                            for (int row = 0; row < 3; ++row) {
-                                var center = new Point(
-                                    grip.X + GripDot / 2 + column * (GripDot + GripGap),
-                                    grip.Y + GripDot / 2 + row * (GripDot + GripGap));
-                                context.DrawEllipse(Brushes.White, null, center, GripDot / 2, GripDot / 2);
-                            }
-                        }
-                    }
-                }
             } else if (part is UWavePart wavePart) {
                 // Waveform
                 try {
@@ -340,54 +282,6 @@ namespace OpenUtau.App.Controls {
             using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
                 context.DrawRectangle(Brushes.Transparent, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
                 textLayout.Draw(context, new Point());
-            }
-        }
-
-        /// <summary>
-        /// The piano roll's visible range inside this part, if the piano roll has
-        /// this part open.
-        /// </summary>
-        private Rect? PianoRollViewportRect() {
-            if (part is not UVoicePart || part != partsCanvas.PianoRollOpenPart || pianoRollViewViewportTicks <= 0) {
-                return null;
-            }
-            const double inset = 1;
-            double innerWidth = Math.Max(0, Width - 2 * inset);
-            double innerHeight = Math.Max(0, Height - 2 * inset);
-            double vpLeft = Math.Max(0, pianoRollViewTickOffset * tickWidth);
-            double vpRight = Math.Min(innerWidth, (pianoRollViewTickOffset + pianoRollViewViewportTicks) * tickWidth);
-            if (vpRight <= vpLeft + 1) {
-                return null;
-            }
-            return new Rect(inset + vpLeft, inset, vpRight - vpLeft, innerHeight);
-        }
-
-        /// <summary>The drag handle in the middle of the viewport indicator, if it fits.</summary>
-        private static Rect? GripRect(Rect viewport) {
-            const double width = 3 * GripDot + 2 * GripGap;
-            const double height = 3 * GripDot + 2 * GripGap;
-            if (viewport.Width < width + 6 || viewport.Height < height + 6) {
-                return null;
-            }
-            return new Rect(
-                Math.Round(viewport.Center.X - width / 2),
-                Math.Round(viewport.Center.Y - height / 2),
-                width, height);
-        }
-
-        /// <summary>
-        /// Whether a point, in this control's coordinates, is on the drag handle of
-        /// the piano roll viewport indicator.
-        /// </summary>
-        public bool HitPianoRollViewportHandle(Point point) {
-            return PianoRollViewportRect() is Rect vpRect
-                && GripRect(vpRect) is Rect grip
-                && grip.Inflate(new Thickness(6, 8)).Contains(point);
-        }
-
-        private void PointerChanged(Point point) {
-            if (PianoRollViewportRect() is Rect vpRect) {
-                PianoRollViewportHovered = vpRect.Contains(point);
             }
         }
 

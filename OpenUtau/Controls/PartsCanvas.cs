@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
@@ -78,9 +79,7 @@ namespace OpenUtau.App.Controls {
             get => _pianoRollOpenPart;
             set {
                 if (SetAndRaise(PianoRollOpenPartProperty, ref _pianoRollOpenPart, value)) {
-                    foreach (var control in partControls.Values) {
-                        control.InvalidateVisual();
-                    }
+                    InvalidatePartViewport();
                 }
             }
         }
@@ -112,7 +111,13 @@ namespace OpenUtau.App.Controls {
 
         Dictionary<UPart, PartControl> partControls = new Dictionary<UPart, PartControl>();
 
+        readonly PianoRollViewportIndicator viewportIndicator;
+
         public PartsCanvas() {
+            viewportIndicator = new PianoRollViewportIndicator(this);
+            Children.Add(viewportIndicator);
+            // Parts move and resize through layout, which moves the piano roll's view with its part.
+            LayoutUpdated += (_, _) => viewportIndicator.InvalidateVisual();
             MessageBus.Current.Listen<TracksRefreshEvent>()
                 .Subscribe(_ => {
                     foreach (var (part, control) in partControls) {
@@ -150,8 +155,18 @@ namespace OpenUtau.App.Controls {
                 .Subscribe(_ => InvalidateVisual());
         }
 
+        protected override Size ArrangeOverride(Size finalSize) {
+            var size = base.ArrangeOverride(finalSize);
+            viewportIndicator.Arrange(new Rect(finalSize));
+            return size;
+        }
+
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
             base.OnPropertyChanged(change);
+            if (change.Property == TickWidthProperty || change.Property == TrackHeightProperty
+                || change.Property == TickOffsetProperty || change.Property == TrackOffsetProperty) {
+                InvalidatePartViewport();
+            }
             if (change.Property == ItemsProperty) {
                 if (change.OldValue != null && change.OldValue is ObservableCollection<UPart> oldCol) {
                     oldCol.CollectionChanged -= Items_CollectionChanged;
@@ -265,9 +280,94 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        void InvalidatePartViewport() {
-            if (_pianoRollOpenPart != null && partControls.TryGetValue(_pianoRollOpenPart, out var control)) {
-                control.InvalidateVisual();
+        void InvalidatePartViewport() => viewportIndicator.InvalidateVisual();
+
+        /// <summary>
+        /// Where the piano roll's view is, on the row of its open part, in this canvas's coordinates.
+        /// The piano roll scrolls over the whole track, so this can go past the open part.
+        /// </summary>
+        public Rect? PianoRollViewportRect() {
+            if (_pianoRollOpenPart is not UVoicePart part || _pianoRollViewViewportTicks <= 0
+                || !partControls.ContainsKey(part)) {
+                return null;
+            }
+            const double inset = 1;
+            double left = (part.position + _pianoRollViewTickOffset - TickOffset) * TickWidth;
+            double width = _pianoRollViewViewportTicks * TickWidth;
+            double top = (part.trackNo - TrackOffset) * TrackHeight;
+            if (width <= 1) {
+                return null;
+            }
+            return new Rect(left, top + inset, width, Math.Max(0, TrackHeight - 2 * inset));
+        }
+
+        /// <summary>Whether a point, in this canvas's coordinates, is on the drag handle of the piano roll's view.</summary>
+        public bool HitPianoRollViewportHandle(Point point) {
+            return PianoRollViewportRect() is Rect viewport
+                && PianoRollViewportIndicator.GripRect(viewport) is Rect grip
+                && grip.Inflate(new Thickness(6, 8)).Contains(point);
+        }
+
+        /// <summary>Shows the drag handle while the pointer is over the piano roll's view.</summary>
+        public void HoverPianoRollViewport(Point? point) {
+            bool hovered = point is Point p && PianoRollViewportRect() is Rect viewport && viewport.Contains(p);
+            if (viewportIndicator.Hovered != hovered) {
+                viewportIndicator.Hovered = hovered;
+                viewportIndicator.InvalidateVisual();
+            }
+        }
+
+        /// <summary>
+        /// Draws the piano roll's view over the parts, across the parts it spans. Lets the pointer
+        /// through; the canvas hit tests its drag handle.
+        /// </summary>
+        class PianoRollViewportIndicator : Control {
+            static readonly IBrush Fill = new SolidColorBrush(Color.FromArgb(28, 255, 255, 255));
+            static readonly IPen Border = new Pen(Brushes.White, 2);
+            // Keeps the white border visible where the view spans the track background between parts.
+            static readonly IPen Outline = new Pen(new SolidColorBrush(Color.FromArgb(90, 0, 0, 0)), 4);
+            const double GripDot = 2;
+            const double GripGap = 3;
+            readonly PartsCanvas canvas;
+            public bool Hovered;
+
+            public PianoRollViewportIndicator(PartsCanvas canvas) {
+                this.canvas = canvas;
+                IsHitTestVisible = false;
+                ZIndex = int.MaxValue;
+            }
+
+            /// <summary>The drag handle in the middle of the view, if it fits.</summary>
+            public static Rect? GripRect(Rect viewport) {
+                const double width = 3 * GripDot + 2 * GripGap;
+                const double height = 3 * GripDot + 2 * GripGap;
+                if (viewport.Width < width + 6 || viewport.Height < height + 6) {
+                    return null;
+                }
+                return new Rect(
+                    Math.Round(viewport.Center.X - width / 2),
+                    Math.Round(viewport.Center.Y - height / 2),
+                    width, height);
+            }
+
+            public override void Render(DrawingContext context) {
+                if (canvas.PianoRollViewportRect() is not Rect viewport) {
+                    return;
+                }
+                var shape = new RoundedRect(viewport, new CornerRadius(3));
+                context.DrawRectangle(null, Outline, shape);
+                context.DrawRectangle(Fill, Border, shape);
+                if (Hovered && GripRect(viewport) is Rect grip) {
+                    // A 3 by 3 grid of dots.
+                    for (int column = 0; column < 3; ++column) {
+                        for (int row = 0; row < 3; ++row) {
+                            var center = new Point(
+                                grip.X + GripDot / 2 + column * (GripDot + GripGap),
+                                grip.Y + GripDot / 2 + row * (GripDot + GripGap));
+                            context.DrawEllipse(Brushes.White, null, center, GripDot / 2, GripDot / 2);
+                        }
+                    }
+                }
             }
         }
     }

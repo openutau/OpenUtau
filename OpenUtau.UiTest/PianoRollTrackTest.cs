@@ -55,8 +55,31 @@ namespace OpenUtau.UiTest {
             public override IList<USubbank> Subbanks { get; } = new List<USubbank>();
         }
 
+        // Two parts end to end on one track.
+        static readonly (int position, int[] notes)[] AdjacentParts = {
+            (0, new[] { 0, 480, 60, 960, 960, 62 }),
+            (1920, new[] { 0, 480, 64, 960, 480, 65 }),
+        };
+
+        static UVoicePart[] AddParts(UProject project, (int position, int[] notes)[] parts) {
+            var document = DocManager.Inst;
+            document.StartUndoGroup();
+            var added = parts.Select(p => {
+                var part = new UVoicePart { trackNo = 0, position = p.position, Duration = 1920 };
+                for (int i = 0; i + 2 < p.notes.Length; i += 3) {
+                    part.notes.Add(project.CreateNote(p.notes[i + 2], p.notes[i], p.notes[i + 1]));
+                }
+                document.ExecuteCmd(new AddPartCommand(project, part));
+                return part;
+            }).ToArray();
+            document.EndUndoGroup();
+            WaitForPhonemes(added);
+            return added;
+        }
+
         // Opens the piano roll on the first part, as double-clicking it in the main window does.
         static void WithPianoRoll(Action<Window, NotesViewModel, Control, UVoicePart[]> test,
+                (int position, int[] notes)[]? partsData = null,
                 [CallerMemberName] string name = "") => HeadlessUi.Run(() => {
             MainWindowTest.InitCore();
             var document = DocManager.Inst;
@@ -75,17 +98,7 @@ namespace OpenUtau.UiTest {
             try {
                 window.Show();
                 pianoRoll.InitializePianoRollWindowAsync();
-                document.StartUndoGroup();
-                var parts = Parts.Select(p => {
-                    var part = new UVoicePart { trackNo = 0, position = p.position, Duration = 1920 };
-                    for (int i = 0; i + 2 < p.notes.Length; i += 3) {
-                        part.notes.Add(project.CreateNote(p.notes[i + 2], p.notes[i], p.notes[i + 1]));
-                    }
-                    document.ExecuteCmd(new AddPartCommand(project, part));
-                    return part;
-                }).ToArray();
-                document.EndUndoGroup();
-                WaitForPhonemes(parts);
+                var parts = AddParts(project, partsData ?? Parts);
                 document.ExecuteCmd(new LoadPartNotification(parts[0], project, 0));
                 pianoRoll.AttachExpressions();
                 var notesVm = model.NotesViewModel;
@@ -158,7 +171,8 @@ namespace OpenUtau.UiTest {
             int Distance(Color a, Color b) => Math.Abs(a.R - b.R) + Math.Abs(a.G - b.G) + Math.Abs(a.B - b.B);
             var center = NoteCenter(window, notesVm, canvas, other, otherNote);
             var empty = PixelAt(window, center + new Point(0, notesVm.TrackHeight * 3));
-            var faint = PixelAt(window, center);
+            // Above the middle of the note, where the open part's notes draw their pitch line.
+            var faint = PixelAt(window, center - new Point(0, notesVm.TrackHeight / 4));
             Assert.True(Distance(faint, empty) > 40, $"The other part's note ({faint}) doesn't show over the background ({empty})");
 
             // Outside the open part is shaded: the same row is darker past the open part's end.
@@ -172,9 +186,20 @@ namespace OpenUtau.UiTest {
             double before = Average(edge.X - 50);
             double after = Average(edge.X + 10);
             Assert.True(after < before - 5, $"Past the open part ({after}) isn't darker than in it ({before})");
-            // A note of the open part is more solid than the other part's.
-            var solid = PixelAt(window, NoteCenter(window, notesVm, canvas, open, open.notes.Last()));
-            Assert.True(Distance(solid, faint) > 40, $"The other part's note ({faint}) looks as solid as the open part's ({solid})");
+
+            // The same note stands out less from its row while its part isn't open.
+            notesVm.TickOffset = notesVm.ClampTickOffset(other.position - 240);
+            HeadlessUi.Flush();
+            var beside = center + new Point(otherNote.duration * notesVm.TickWidth, -notesVm.TrackHeight / 4);
+            var faintBackground = PixelAt(window, beside);
+            DocManager.Inst.ExecuteCmd(new LoadPartNotification(other, DocManager.Inst.Project, other.position));
+            notesVm.TickOffset = notesVm.ClampTickOffset(-240);
+            notesVm.DeselectNotes();
+            HeadlessUi.Flush();
+            var solid = PixelAt(window, center - new Point(0, notesVm.TrackHeight / 4));
+            var solidBackground = PixelAt(window, beside);
+            Assert.True(Distance(faint, faintBackground) < 0.85 * Distance(solid, solidBackground),
+                $"The note not open ({faint} on {faintBackground}) looks as solid as open ({solid} on {solidBackground})");
         });
 
         [Fact]
@@ -237,6 +262,125 @@ namespace OpenUtau.UiTest {
             DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(second.position + 240));
             HeadlessUi.Flush();
             Assert.Same(first, notesVm.Part);
+            // The note under the playhead, for its highlight, is found in the other part too.
+            Assert.Same(second.notes.First(), notesVm.FindVoiceNoteAtTick(second.position + 240 - first.position));
+            Assert.Same(first.notes.First(), notesVm.FindVoiceNoteAtTick(240));
+            Assert.Null(notesVm.FindVoiceNoteAtTick(second.position - 240 - first.position));
+        });
+
+        [Fact]
+        public void GridAndSnappingReachBeforeTheOpenPart() => WithPianoRoll((window, notesVm, canvas, parts) => {
+            var second = parts[1];
+            DocManager.Inst.ExecuteCmd(new LoadPartNotification(second, DocManager.Inst.Project, second.position));
+            notesVm.TickOffset = notesVm.HScrollBarMin;
+            HeadlessUi.Flush();
+            // A point near the project start snaps to the project start, not to the bar before the part.
+            notesVm.TickToLineTick(-second.position + 100, out int left, out int right);
+            // Before, the grid started at the bar before the part, and this snapped there.
+            Assert.InRange(second.position + left, 0, 100);
+            Assert.True(second.position + right > 100);
+        });
+
+        [Fact]
+        public void OpeningAPartPutsItsStartAtTheLeft() => WithPianoRoll((window, notesVm, canvas, parts) => {
+            var second = parts[1];
+            DocManager.Inst.ExecuteCmd(new LoadPartNotification(second, DocManager.Inst.Project, second.position));
+            HeadlessUi.Flush();
+            Assert.Same(second, notesVm.Part);
+            Assert.Equal(0, notesVm.TickOffset, 3);
+        });
+
+        [Fact]
+        public void PitchPointBeforeThePartStartIsTheOpenParts() => WithPianoRoll((window, notesVm, canvas, parts) => {
+            var (first, second) = (parts[0], parts[1]);
+            DocManager.Inst.ExecuteCmd(new LoadPartNotification(second, DocManager.Inst.Project, second.position));
+            notesVm.ShowPitch = true;
+            notesVm.TickOffset = notesVm.ClampTickOffset(-960);
+            HeadlessUi.Flush();
+            // The first pitch point of the second part's first note lies before the part, over the first part.
+            var note = second.notes.First();
+            var pit = note.pitch.data[0];
+            float startX = pit.X;
+            var timeAxis = DocManager.Inst.Project.timeAxis;
+            int tick = timeAxis.MsPosToTickPos(note.PositionMs + pit.X) - second.position;
+            Assert.True(tick < 0);
+            var at = canvas.TranslatePoint(notesVm.TickToneToPoint(tick, note.AdjustedTone + pit.Y / 10)
+                + new Point(0, notesVm.TrackHeight / 2), window)!.Value;
+            window.MouseDown(at, MouseButton.Left);
+            window.MouseMove(at - new Point(20, 0), RawInputModifiers.LeftMouseButton);
+            window.MouseUp(at - new Point(20, 0), MouseButton.Left);
+            HeadlessUi.Flush();
+            Assert.Same(second, notesVm.Part);
+            // The drag moved the pitch point earlier. Its height snaps to the note before, so it stays.
+            Assert.True(note.pitch.data[0].X < startX);
+        }, AdjacentParts);
+
+        [Fact]
+        public void ModifierClicksStayOnTheOpenPart() => WithPianoRoll((window, notesVm, canvas, parts) => {
+            var (first, second) = (parts[0], parts[1]);
+            notesVm.TickWidth = 0.2;
+            notesVm.TickOffset = notesVm.ClampTickOffset(480);
+            notesVm.SelectNote(first.notes.First());
+            HeadlessUi.Flush();
+            // The modifier that adds to the selection: Cmd on macOS, Ctrl elsewhere.
+            var modifier = OperatingSystem.IsMacOS() ? RawInputModifiers.Meta : RawInputModifiers.Control;
+            var at = NoteCenter(window, notesVm, canvas, second, second.notes.First());
+            window.MouseDown(at, MouseButton.Left, modifier);
+            window.MouseUp(at, MouseButton.Left, modifier);
+            HeadlessUi.Flush();
+            Assert.Same(first, notesVm.Part);
+            Assert.Contains(first.notes.First(), notesVm.Selection);
+        });
+
+        [Fact]
+        public void ThePartsPanelShowsTheViewPastTheOpenPart() => HeadlessUi.Run(() => {
+            MainWindowTest.InitCore();
+            var document = DocManager.Inst;
+            document.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
+            var preRender = Core.Util.Preferences.Default.PreRender;
+            Core.Util.Preferences.Default.PreRender = false;
+            var project = document.Project;
+            project.tracks[0].Singer = new Singer();
+            project.tracks[0].Phonemizer = new OnePhonemePhonemizer();
+            var mainWindow = new App.Views.MainWindow { Width = 1280, Height = 800 };
+            var model = new PianoRollViewModel { PlaybackViewModel = new PlaybackViewModel() };
+            var pianoRollWindow = new Window { Width = 1280, Height = 800, Content = new PianoRoll(model) };
+            try {
+                mainWindow.Show();
+                mainWindow.InitProject();
+                var mainVm = Assert.IsType<MainWindowViewModel>(mainWindow.DataContext);
+                mainVm.Page = 1;
+                pianoRollWindow.Show();
+                ((PianoRoll)pianoRollWindow.Content).InitializePianoRollWindowAsync();
+                var parts = AddParts(project, Parts);
+                var tracks = mainVm.TracksViewModel;
+                tracks.TickWidth = 0.1;
+                document.ExecuteCmd(new LoadPartNotification(parts[0], project, 0));
+                var notesVm = model.NotesViewModel;
+                notesVm.TickWidth = 0.3;
+                // The view starts in the first part and ends in the gap after it.
+                notesVm.TickOffset = notesVm.ClampTickOffset(parts[0].Duration - notesVm.ViewportTicks / 2);
+                HeadlessUi.Flush();
+                var partsCanvas = Assert.IsAssignableFrom<Canvas>(mainWindow.FindControl<Canvas>("partsCanvas"));
+                // The top of the view's frame, inside the first part and in the gap after it.
+                double viewEnd = parts[0].position + notesVm.TickOffset + notesVm.ViewportTicks;
+                Point Frame(double tick, double dy) => partsCanvas.TranslatePoint(
+                    tracks.TickTrackToPoint((int)tick, 0) + new Point(0, 1 + dy), mainWindow)!.Value;
+                int Brightness(Color color) => color.R + color.G + color.B;
+                HeadlessUi.SaveScreenshot(mainWindow, $"{nameof(PianoRollTrackTest)}-PartsPanel");
+                double gapTick = (parts[0].End + viewEnd) / 2;
+                Assert.True(viewEnd > parts[0].End + 240, "The view doesn't reach past the part");
+                // Its white border shows by the dark outline around it, on the background between the parts.
+                int frame = Enumerable.Range(-4, 9).Min(dy => Brightness(PixelAt(mainWindow, Frame(gapTick, dy))));
+                int background = Brightness(PixelAt(mainWindow, Frame(gapTick, tracks.TrackHeight / 2)));
+                Assert.True(frame < background - 30, $"No frame past the part ({frame} on {background})");
+                HeadlessUi.SaveScreenshot(mainWindow, $"{nameof(PianoRollTrackTest)}-PartsPanel");
+            } finally {
+                pianoRollWindow.Close();
+                mainWindow.Close();
+                document.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
+                Core.Util.Preferences.Default.PreRender = preRender;
+            }
         });
     }
 }
