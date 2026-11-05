@@ -183,7 +183,7 @@ namespace OpenUtau.App.Controls {
                     if (task.IsFaulted) {
                         Log.Error(task.Exception, "Failed to build peaks");
                     } else {
-                        InvalidateVisual();
+                        Redraw();
                     }
                 }, CancellationToken.None, TaskContinuationOptions.None, scheduler);
             }
@@ -200,6 +200,10 @@ namespace OpenUtau.App.Controls {
                 change.Property == TickWidthProperty) {
                 SetPosition();
             }
+            if (change.Property == SelectedProperty) {
+                // Selected parts are drawn on top, and take the pointer first.
+                ZIndex = Selected ? 1 : 0;
+            }
             // The piano roll viewport only redraws the open part, which PartsCanvas
             // invalidates itself; redrawing every part here made scrolling the piano
             // roll redraw all parts, waveforms included, on every frame.
@@ -207,18 +211,32 @@ namespace OpenUtau.App.Controls {
                 change.Property == TextProperty ||
                 change.Property == FadeInProperty ||
                 change.Property == FadeOutProperty) {
-                InvalidateVisual();
+                Redraw();
             }
         }
 
         public void SetPosition() {
             Canvas.SetLeft(this, Offset.X + part.position * tickWidth);
             Canvas.SetTop(this, Offset.Y + part.trackNo * trackHeight);
+            DrawnSpan = (part.trackNo, part.position, part.End);
         }
 
         public void SetSize() {
             Width = TickWidth * part.Duration;
             Height = trackHeight;
+            DrawnSpan = (part.trackNo, part.position, part.End);
+        }
+
+        /// <summary>The track and ticks the part was last laid out at.</summary>
+        internal (int trackNo, int start, int end) DrawnSpan { get; private set; }
+
+        /// <summary>
+        /// Redraws the part and the parts overlapping it, after the part changes how it looks:
+        /// a part draws the parts under it where they overlap.
+        /// </summary>
+        internal void Redraw() {
+            InvalidateVisual();
+            partsCanvas.InvalidateOverlapping(DrawnSpan);
         }
 
         public void Refersh() {
@@ -233,19 +251,72 @@ namespace OpenUtau.App.Controls {
         /// <summary>Redraws, rebuilding the waveform, as after a tempo change.</summary>
         public void InvalidateWaveform() {
             waveform.Invalidate();
-            InvalidateVisual();
+            Redraw();
         }
 
+        // A part is drawn as a rounded rectangle, inset on the left and at the bottom.
+        private const double PartCornerRadius = 4;
+        private static RoundedRect PartShape(Rect rect) =>
+            new RoundedRect(new Rect(rect.X + 1, rect.Y, rect.Width - 1, rect.Height - 1), PartCornerRadius);
+        private IBrush BackgroundBrush => Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
+
+        // Where parts overlap, how much of the part under shows through the part on top.
+        private const double ShowThroughOpacity = 0.5;
+        private const double HatchSpacing = 8;
+        private static readonly IPen hatchPen = new Pen(new SolidColorBrush(Avalonia.Media.Colors.White, 0.25), 1);
+
         public override void Render(DrawingContext context) {
-            var backgroundBrush = Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
-            // Background
+            DrawBackground(context);
+            DrawPartsUnder(context);
+            DrawContent(context);
+            DrawPianoRollViewport(context);
+            if (part is UWavePart wavePart) {
+                DrawFades(context, wavePart);
+            }
+            // Text
+            var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
+            using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
+                context.DrawRectangle(Brushes.Transparent, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
+                textLayout.Draw(context, new Point());
+            }
+        }
+
+        /// <summary>
+        /// Where the parts under this one overlap it, shows them through it: their background and
+        /// content, faded, with stripes marking the overlap, under this part's own content. The
+        /// overlap is shaped like a part, so where it ends at a covered edge, the part under looks
+        /// like it ends there.
+        /// </summary>
+        private void DrawPartsUnder(DrawingContext context) {
+            // What of this part shows in the canvas, in this part's coordinates.
+            var visible = new Rect(-Bounds.X, 0, ViewWidth, Bounds.Height);
+            foreach (var under in partsCanvas.PartsUnder(this)) {
+                var overlap = Bounds.Intersect(under.Bounds).Translate(-Bounds.Position);
+                if (overlap.Width <= 1 || overlap.Height <= 1 || !overlap.Intersects(visible)) {
+                    continue;
+                }
+                using var clip = context.PushClip(PartShape(overlap));
+                using (context.PushOpacity(ShowThroughOpacity))
+                using (context.PushTransform(Matrix.CreateTranslation(under.Bounds.Position - Bounds.Position))) {
+                    under.DrawBackground(context);
+                    under.DrawContent(context);
+                }
+                for (double x = overlap.Left - overlap.Height; x < overlap.Right; x += HatchSpacing) {
+                    context.DrawLine(hatchPen, new Point(x, overlap.Bottom), new Point(x + overlap.Height, overlap.Top));
+                }
+            }
+        }
+
+        /// <summary>The part's background, with rendered phrases shaded if that is shown.</summary>
+        private void DrawBackground(DrawingContext context) {
+            var backgroundBrush = BackgroundBrush;
             if (Preferences.Default.RenderStatusInTrackBar && part is UVoicePart { notes.Count: > 0 }) {
-                context.DrawRectangle(Selected ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+                context.DrawRectangle(Selected ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi, null, PartShape(new Rect(Bounds.Size)));
             } else {
-                context.DrawRectangle(backgroundBrush, null, new Rect(1, 0, Width - 1, Height - 1), 4, 4);
+                context.DrawRectangle(backgroundBrush, null, PartShape(new Rect(Bounds.Size)));
             }
 
-            if (part is UVoicePart voicePart) {
+            if (part is UVoicePart) {
                 // Note Render Status
                 if (Preferences.Default.RenderStatusInTrackBar) {
                     List<Rect> phraseRects = [];
@@ -269,10 +340,10 @@ namespace OpenUtau.App.Controls {
                         // Draw part phrase blocks if phrase is rendered.
                         if (rendered) {
                             if (i == 0) {
-                                var roundedRect = new RoundedRect(rect, new CornerRadius(4, 0, 0, 4));
+                                var roundedRect = new RoundedRect(rect, new CornerRadius(PartCornerRadius, 0, 0, PartCornerRadius));
                                 context.DrawRectangle(backgroundBrush, null, roundedRect);
                             } else if (i == phraseBlocks.Length - 1) {
-                                var roundedRect = new RoundedRect(rect, new CornerRadius(0, 4, 4, 0));
+                                var roundedRect = new RoundedRect(rect, new CornerRadius(0, PartCornerRadius, PartCornerRadius, 0));
                                 context.DrawRectangle(backgroundBrush, null, roundedRect);
                             } else {
                                 context.DrawRectangle(backgroundBrush, null, rect);
@@ -280,51 +351,54 @@ namespace OpenUtau.App.Controls {
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>The part's notes or waveform, in the part's own coordinates.</summary>
+        private void DrawContent(DrawingContext context) {
+            if (part is UVoicePart voicePart) {
                 DrawNotes(context, voicePart);
-                // Highlight
-                if (PianoRollViewportRect() is Rect vpRect) {
-                    context.DrawRectangle(viewportFill, viewportPen, new RoundedRect(vpRect, new CornerRadius(3)));
-                    if (PianoRollViewportHovered && GripRect(vpRect) is Rect grip) {
-                        // A 3 by 3 grid of dots.
-                        for (int column = 0; column < 3; ++column) {
-                            for (int row = 0; row < 3; ++row) {
-                                var center = new Point(
-                                    grip.X + GripDot / 2 + column * (GripDot + GripGap),
-                                    grip.Y + GripDot / 2 + row * (GripDot + GripGap));
-                                context.DrawEllipse(Brushes.White, null, center, GripDot / 2, GripDot / 2);
-                            }
-                        }
-                    }
-                }
             } else if (part is UWavePart wavePart) {
-                // Waveform
                 try {
                     DrawWaveform(context, wavePart);
                 } catch (Exception e) {
                     Log.Error(e, "failed to draw waveform");
                 }
-                // Fade
-                var brush = Brushes.White;
-                var pen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
-                using (var state = context.PushTransform(Matrix.CreateTranslation(FadeIn, 0))) {
-                    context.DrawGeometry(brush, pen, pointGeometry);
-                }
-                if (wavePart.fadein > 0) {
-                    context.DrawLine(fadePen, new Point(2, Height - 2), new Point(FadeIn + 1, 2));
-                }
-                using (var state = context.PushTransform(Matrix.CreateTranslation(FadeOut - 6, 0))) {
-                    context.DrawGeometry(brush, pen, pointGeometry);
-                }
-                if (wavePart.fadeout > 0) {
-                    context.DrawLine(fadePen, new Point(Width - 1, Height - 2), new Point(FadeOut, 2));
+            }
+        }
+
+        /// <summary>The piano roll's visible range, if the piano roll has this part open.</summary>
+        private void DrawPianoRollViewport(DrawingContext context) {
+            if (PianoRollViewportRect() is Rect vpRect) {
+                context.DrawRectangle(viewportFill, viewportPen, new RoundedRect(vpRect, new CornerRadius(3)));
+                if (PianoRollViewportHovered && GripRect(vpRect) is Rect grip) {
+                    // A 3 by 3 grid of dots.
+                    for (int column = 0; column < 3; ++column) {
+                        for (int row = 0; row < 3; ++row) {
+                            var center = new Point(
+                                grip.X + GripDot / 2 + column * (GripDot + GripGap),
+                                grip.Y + GripDot / 2 + row * (GripDot + GripGap));
+                            context.DrawEllipse(Brushes.White, null, center, GripDot / 2, GripDot / 2);
+                        }
+                    }
                 }
             }
+        }
 
-            // Text
-            var textLayout = TextLayoutCache.Get(Text, Brushes.White, 12);
-            using (var state = context.PushTransform(Matrix.CreateTranslation(3, 2))) {
-                context.DrawRectangle(Brushes.Transparent, null, new Rect(new Point(0, 0), new Size(textLayout.Width, textLayout.Height)));
-                textLayout.Draw(context, new Point());
+        private void DrawFades(DrawingContext context, UWavePart wavePart) {
+            var brush = Brushes.White;
+            var pen = Selected ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
+            using (var state = context.PushTransform(Matrix.CreateTranslation(FadeIn, 0))) {
+                context.DrawGeometry(brush, pen, pointGeometry);
+            }
+            if (wavePart.fadein > 0) {
+                context.DrawLine(fadePen, new Point(2, Height - 2), new Point(FadeIn + 1, 2));
+            }
+            using (var state = context.PushTransform(Matrix.CreateTranslation(FadeOut - 6, 0))) {
+                context.DrawGeometry(brush, pen, pointGeometry);
+            }
+            if (wavePart.fadeout > 0) {
+                context.DrawLine(fadePen, new Point(Width - 1, Height - 2), new Point(FadeOut, 2));
             }
         }
 
@@ -376,37 +450,6 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        // The file's channels as lanes, on a grid from the part's start: scrolling
-        // moves the whole control, so it never re-bins the samples.
-        /// <summary>
-        /// Redraws the part, and where it overlaps other parts, as the canvas draws its content there too.
-        /// Hides <see cref="Visual.InvalidateVisual"/> so every redraw of a part does both.
-        /// </summary>
-        public new void InvalidateVisual() {
-            base.InvalidateVisual();
-            partsCanvas?.InvalidateOverlaps();
-        }
-
-        /// <summary>The part's fill, as drawn behind its content.</summary>
-        internal IBrush FillBrush => Selected ? ThemeManager.AccentBrush2 : ThemeManager.AccentBrush1;
-
-        /// <summary>
-        /// Draws the part's notes or waveform at the given opacity, in the part's own coordinates.
-        /// Used to show a part's content through a part that covers it.
-        /// </summary>
-        internal void DrawContent(DrawingContext context, double opacity) {
-            using var pushedOpacity = context.PushOpacity(opacity);
-            if (part is UVoicePart voicePart) {
-                DrawNotes(context, voicePart);
-            } else if (part is UWavePart wavePart) {
-                try {
-                    DrawWaveform(context, wavePart);
-                } catch (Exception e) {
-                    Log.Error(e, "failed to draw waveform");
-                }
-            }
-        }
-
         private void DrawNotes(DrawingContext context, UVoicePart voicePart) {
             if (voicePart.notes.Count == 0) {
                 return;
@@ -426,6 +469,8 @@ namespace OpenUtau.App.Controls {
             }
         }
 
+        // The file's channels as lanes, on a grid from the part's start: scrolling
+        // moves the whole control, so it never re-bins the samples.
         private void DrawWaveform(DrawingContext context, UWavePart wavePart) {
             if (wavePart.Peaks is not { IsCompletedSuccessfully: true, Result: WavePeaks peaks }) {
                 return;
@@ -504,7 +549,7 @@ namespace OpenUtau.App.Controls {
                 triggerRender = true;
             }
 
-            if (triggerRender) InvalidateVisual();
+            if (triggerRender) Redraw();
         }
 
         /// <summary>
@@ -518,7 +563,7 @@ namespace OpenUtau.App.Controls {
                     if (phraseBlock.rendered == rendered) return;
 
                     phraseBlocks[i] = phraseBlock with { rendered = rendered };
-                    InvalidateVisual();
+                    Redraw();
                     return;
                 }
             }

@@ -112,17 +112,14 @@ namespace OpenUtau.App.Controls {
         private double _pianoRollViewViewportTicks;
 
         Dictionary<UPart, PartControl> partControls = new Dictionary<UPart, PartControl>();
-        readonly PartOverlaps overlaps;
 
         public PartsCanvas() {
-            overlaps = new PartOverlaps(this);
-            Children.Add(overlaps);
-            // Parts move and resize through layout, so draw where they overlap again after each pass.
-            LayoutUpdated += (_, _) => overlaps.InvalidateVisual();
             MessageBus.Current.Listen<TracksRefreshEvent>()
                 .Subscribe(_ => {
                     foreach (var (part, control) in partControls) {
                         control.SetPosition();
+                        // Parts can now overlap others than before.
+                        control.InvalidateVisual();
                     }
                 });
             MessageBus.Current.Listen<PartsSelectionEvent>()
@@ -135,6 +132,8 @@ namespace OpenUtau.App.Controls {
             MessageBus.Current.Listen<PartRefreshEvent>()
                 .Subscribe(e => {
                     if (partControls.TryGetValue(e.part, out var control)) {
+                        // The parts it overlapped; Refersh redraws those it overlaps now.
+                        InvalidateOverlapping(control.DrawnSpan);
                         control.SetSize();
                         control.SetPosition();
                         control.Refersh();
@@ -143,7 +142,7 @@ namespace OpenUtau.App.Controls {
             MessageBus.Current.Listen<PartRedrawEvent>()
                 .Subscribe(e => {
                     if (partControls.TryGetValue(e.part, out var control)) {
-                        control.InvalidateVisual();
+                        control.Redraw();
                     }
                 });
             MessageBus.Current.Listen<TimeAxisChangedEvent>()
@@ -156,73 +155,42 @@ namespace OpenUtau.App.Controls {
                 .Subscribe(_ => InvalidateVisual());
         }
 
-        /// <summary>Redraws where parts overlap, after a part changes how it looks.</summary>
-        internal void InvalidateOverlaps() => overlaps.InvalidateVisual();
+        /// <summary>
+        /// The part controls in the order they are drawn: by z-index, which puts selected parts on
+        /// top, then in the order they were added. A later one covers an earlier one.
+        /// </summary>
+        internal IEnumerable<PartControl> PartsInDrawnOrder() => Children.OfType<PartControl>()
+            .Select((control, index) => (control, index))
+            .OrderBy(p => p.control.ZIndex)
+            .ThenBy(p => p.index)
+            .Select(p => p.control);
 
-        protected override Size ArrangeOverride(Size finalSize) {
-            var size = base.ArrangeOverride(finalSize);
-            overlaps.Arrange(new Rect(finalSize));
-            return size;
+        /// <summary>The parts drawn under a part that overlap it, bottom first.</summary>
+        internal IEnumerable<PartControl> PartsUnder(PartControl top) {
+            foreach (var control in PartsInDrawnOrder()) {
+                if (control == top) {
+                    yield break;
+                }
+                if (Overlaps(control.DrawnSpan, top.DrawnSpan)) {
+                    yield return control;
+                }
+            }
         }
 
         /// <summary>
-        /// Shows both parts where parts overlap: the part on top turns see-through there, with
-        /// stripes marking the overlap, and the notes or waveform of the part below show through.
-        /// The content of the selected part, or else of the part on top, stays solid. Drawn over all
-        /// parts, and lets the pointer through to them.
+        /// Redraws the parts overlapping a span of a track, as the part there changed: a part draws
+        /// the parts under it where they overlap.
         /// </summary>
-        class PartOverlaps : Control {
-            const double ShowThroughOpacity = 0.5;
-            const double HatchSpacing = 8;
-            // As in PartControl.Render.
-            const double PartCornerRadius = 4;
-            static readonly IPen HatchPen = new Pen(new SolidColorBrush(Avalonia.Media.Colors.White, 0.25), 1);
-            readonly PartsCanvas canvas;
-
-            public PartOverlaps(PartsCanvas canvas) {
-                this.canvas = canvas;
-                IsHitTestVisible = false;
-                ZIndex = int.MaxValue;
-            }
-
-            public override void Render(DrawingContext context) {
-                // Children are drawn in order, so a later part covers an earlier one.
-                var parts = canvas.Children.OfType<PartControl>().Where(p => p.IsVisible).ToArray();
-                for (int i = 0; i < parts.Length; i++) {
-                    for (int j = i + 1; j < parts.Length; j++) {
-                        var overlap = parts[i].Bounds.Intersect(parts[j].Bounds);
-                        if (overlap.Width > 1 && overlap.Height > 1) {
-                            DrawOverlap(context, parts[i], parts[j], overlap);
-                        }
-                    }
+        internal void InvalidateOverlapping((int trackNo, int start, int end) span) {
+            foreach (var control in partControls.Values) {
+                if (Overlaps(control.DrawnSpan, span)) {
+                    control.InvalidateVisual();
                 }
-            }
-
-            void DrawOverlap(DrawingContext context, PartControl below, PartControl above, Rect overlap) {
-                // Shaped like a part, inset and rounded as parts draw themselves, so where the overlap
-                // ends at a covered edge, the part below looks like it ends there.
-                var shape = new RoundedRect(new Rect(overlap.X + 1, overlap.Y, overlap.Width - 1, overlap.Height - 1), PartCornerRadius);
-                using var clip = context.PushClip(shape);
-                // The fill of the part below shows through the part on top, and fades its content.
-                using (context.PushOpacity(ShowThroughOpacity)) {
-                    context.FillRectangle(below.FillBrush, overlap);
-                }
-                for (double x = overlap.Left - overlap.Height; x < overlap.Right; x += HatchSpacing) {
-                    context.DrawLine(HatchPen, new Point(x, overlap.Bottom), new Point(x + overlap.Height, overlap.Top));
-                }
-                // The selected part comes forward, otherwise the part on top.
-                bool belowInFront = below.Selected && !above.Selected;
-                DrawContent(context, below, belowInFront ? 1 : ShowThroughOpacity);
-                if (!belowInFront) {
-                    DrawContent(context, above, 1);
-                }
-            }
-
-            static void DrawContent(DrawingContext context, PartControl part, double opacity) {
-                using var moved = context.PushTransform(Matrix.CreateTranslation(part.Bounds.X, part.Bounds.Y));
-                part.DrawContent(context, opacity);
             }
         }
+
+        static bool Overlaps((int trackNo, int start, int end) a, (int trackNo, int start, int end) b) =>
+            a.trackNo == b.trackNo && a.start < b.end && b.start < a.end;
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
             base.OnPropertyChanged(change);
@@ -268,6 +236,7 @@ namespace OpenUtau.App.Controls {
             var control = new PartControl(part, this);
             Children.Add(control);
             partControls.Add(part, control);
+            InvalidateOverlapping(control.DrawnSpan);
         }
 
         void Remove(UPart part) {
@@ -275,6 +244,8 @@ namespace OpenUtau.App.Controls {
             control.Dispose();
             partControls.Remove(part);
             Children.Remove(control);
+            // The parts above it drew it where they overlapped it.
+            InvalidateOverlapping(control.DrawnSpan);
         }
 
         public void HandlePhraseRenderStateEvent(UVoicePart part, int startTick, int endTick, bool rendered) {

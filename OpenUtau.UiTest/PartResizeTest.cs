@@ -108,6 +108,78 @@ namespace OpenUtau.UiTest {
         });
 
         [Fact]
+        public void CoveredStartOfAnOverlappedPartResizes() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 1920, 3840, new[] { 1920, 480, 60 }),
+            (0, 0, 3840, null),
+        }, (window, viewModel, canvas, parts) => {
+            var (below, above) = (parts[0], parts[1]);
+            var note = below.notes.Single();
+            int noteStart = below.position + note.position;
+            // The start of the part below lies inside the part above. A dragged start snaps to the
+            // grid line before the pointer, so a point just after a line ends up on it.
+            Drag(window, At(window, canvas, viewModel, below.position, 0, 2), At(window, canvas, viewModel, 2880, 0, 1));
+
+            Assert.Equal((2880, 5760), (below.position, below.End));
+            // The notes stay where they were in the song.
+            Assert.Equal(noteStart, below.position + note.position);
+            Assert.Equal((0, 3840), (above.position, above.Duration));
+        });
+
+        [Fact]
+        public void PressNearACoveredEdgeMovesTheSelectedPart() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 0, 3840, null),
+            (0, 1920, 3840, null),
+        }, (window, viewModel, canvas, parts) => {
+            var (below, above) = (parts[0], parts[1]);
+            viewModel.TracksViewModel.SelectPart(above);
+            HeadlessUi.Flush();
+            // Inside the selected part, within reach of the end of the part below that isn't selected.
+            var from = At(window, canvas, viewModel, below.End, 0, -2);
+            Drag(window, from, from + new Point(960 * viewModel.TracksViewModel.TickWidth, 0));
+
+            Assert.Equal((1920 + 960, 3840), (above.position, above.Duration));
+            Assert.Equal((0, 3840), (below.position, below.Duration));
+            Assert.Equal(new UPart[] { above }, viewModel.TracksViewModel.SelectedParts);
+        });
+
+        [Fact]
+        public void PartOnTopKeepsItsNameOverTheOverlap() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 0, 3840, null),
+            (0, 1920, 3840, null),
+        }, (window, viewModel, canvas, parts) => {
+            var above = parts[1];
+            // The name of the part on top is at its start, inside the overlap.
+            var nameStart = At(window, canvas, viewModel, above.position, 0) - new Point(0, viewModel.TracksViewModel.TrackHeight / 2);
+            int white = 0;
+            for (int x = 4; x < 40; x++) {
+                for (int y = 3; y < 16; y++) {
+                    var color = PixelAt(window, nameStart + new Point(x, y));
+                    if (color.R > 245 && color.G > 245 && color.B > 245) {
+                        white++;
+                    }
+                }
+            }
+            Assert.True(white > 10, $"The name of the part on top is faded ({white} white pixels)");
+        });
+
+        [Fact]
+        public void SelectedPartUnderTakesThePointerInTheOverlap() => WithParts(new (int, int, int, int[]?)[] {
+            (0, 0, 3840, null),
+            (0, 1920, 3840, null),
+        }, (window, viewModel, canvas, parts) => {
+            var (below, above) = (parts[0], parts[1]);
+            viewModel.TracksViewModel.SelectPart(below);
+            HeadlessUi.Flush();
+            // The selected part is drawn on top, so a drag in the overlap moves it.
+            var from = At(window, canvas, viewModel, 2880, 0);
+            Drag(window, from, from + new Point(480 * viewModel.TracksViewModel.TickWidth, 0));
+
+            Assert.Equal(480, below.position);
+            Assert.Equal(1920, above.position);
+            Assert.Equal(new UPart[] { below }, viewModel.TracksViewModel.SelectedParts);
+        });
+
+        [Fact]
         public void OverlapShowsTheNotesOfBothParts() => WithParts(new (int, int, int, int[]?)[] {
             // Two notes 20 semitones apart put the lower one 36/52 of the way down the part, the upper one 16/52.
             (0, 0, 3840, new[] { 0, 960, 80, 2400, 960, 60 }),

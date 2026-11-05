@@ -1406,11 +1406,16 @@ namespace OpenUtau.App.Views {
         /// </summary>
         static PartControl? FindCoveredPartEdge(Control canvas, PartControl top, Point point, out bool fromStart) {
             fromStart = false;
-            if (canvas is not Panel panel) {
+            if (canvas is not PartsCanvas partsCanvas) {
                 return null;
             }
-            foreach (var partControl in panel.Children.OfType<PartControl>().Reverse()) {
+            foreach (var partControl in partsCanvas.PartsInDrawnOrder().Reverse()) {
                 var bounds = partControl.Bounds;
+                // A press on a selected part goes to the selection, as dragging the group, not to the
+                // edge of a part under it that isn't selected.
+                if (top.Selected && !partControl.Selected) {
+                    continue;
+                }
                 if (partControl == top || !partControl.IsVisible
                     || point.Y < bounds.Top || point.Y >= bounds.Bottom
                     || point.X < bounds.Left || point.X > bounds.Right) {
