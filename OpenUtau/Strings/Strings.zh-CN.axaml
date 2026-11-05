@@ -69,6 +69,7 @@
   <system:String x:Key="context.note.clearcache">清除当前乐句的缓存</system:String>
   <system:String x:Key="context.note.copy">复制音符</system:String>
   <system:String x:Key="context.note.delete">删除音符</system:String>
+  <system:String x:Key="context.note.merge">合并音符</system:String>
   <system:String x:Key="context.note.pasteparameters">粘贴表情</system:String>
   <system:String x:Key="context.part.applypitch">应用音高自...</system:String>
   <system:String x:Key="context.part.delete">删除片段</system:String>
@@ -868,6 +869,7 @@ OpenUtau 是一个开源项目, 旨在为 UTAU 用户社区提供现代的用户
     Ctrl + 框选: 选择更多音符
     上方向键/下方向键: 为选中音符移调
     Ctrl + 上方向键/下方向键: 为选中音符移调八度
+    Ctrl + U: 合并选中音符
 笔工具
     鼠标左键绘制: 添加音符
     鼠标右键: 删除音符

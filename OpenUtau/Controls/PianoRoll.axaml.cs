@@ -1008,6 +1008,13 @@ namespace OpenUtau.App.Controls {
                             CommandParameter = hitInfo,
                             InputGesture = new KeyGesture(Key.Delete),
                         });
+                        if (ViewModel.NotesViewModel.Selection.Count > 1) {
+                            ViewModel.NotesContextMenuItems.Add(new MenuItemViewModel() {
+                                Header = ThemeManager.GetString("context.note.merge"),
+                                Command = ReactiveCommand.Create(() => ViewModel.NotesViewModel.MergeSelectedNotes()),
+                                InputGesture = new KeyGesture(Key.U, KeyModifiers.Control),
+                            });
+                        }
                         ViewModel.NotesContextMenuItems.Add(new MenuItemViewModel() {
                             Header = ThemeManager.GetString("context.note.pasteparameters"),
                             Command = ReactiveCommand.Create(() => ViewModel.NotesViewModel.PasteSelectedParams(RootWindow)),

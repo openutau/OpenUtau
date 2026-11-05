@@ -69,6 +69,7 @@
   <system:String x:Key="context.note.clearcache">清除快取</system:String>
   <system:String x:Key="context.note.copy">複製音符</system:String>
   <system:String x:Key="context.note.delete">刪除音符</system:String>
+  <system:String x:Key="context.note.merge">合併音符</system:String>
   <system:String x:Key="context.note.pasteparameters">選取並貼上參數</system:String>
   <system:String x:Key="context.part.applypitch">套用音高自...</system:String>
   <system:String x:Key="context.part.delete">刪除段落</system:String>
@@ -802,6 +803,7 @@ Shift + 左鍵描繪：繪製水平線
     Ctrl + 框選: 選取更多音符
     上下鍵: 移調選取音符（一個半音）
     Ctrl + 上下鍵: 移調選取音符（一個八度）
+    Ctrl + U: 合併選取音符
 畫筆工具
     使用左鍵描繪: 新增音符
     點擊右鍵: 移除音符
