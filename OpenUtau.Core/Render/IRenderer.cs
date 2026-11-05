@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +16,12 @@ namespace OpenUtau.Core.Render {
     /// Render result of a phrase.
     /// </summary>
     public class RenderResult {
+        /// <summary>
+        /// Runs when the render engine actually uses this result. Deferred cleanup
+        /// belongs here: a cancelled render must not commit side effects.
+        /// </summary>
+        public Action? onAccepted;
+
         public float[] samples;
 
         /// <summary>

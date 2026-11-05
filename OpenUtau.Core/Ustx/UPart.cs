@@ -48,6 +48,13 @@ namespace OpenUtau.Core.Ustx {
         public List<UCurve> curves = new List<UCurve>();
         [YamlMember(Order = 102)]
         public List<UMaskedCurve> maskedCurves = new List<UMaskedCurve>();
+        /// <summary>
+        /// Part-relative tick ranges whose rendered audio a replaceable renderer
+        /// should keep. Null when nothing is pinned, so existing projects do not
+        /// gain an empty field.
+        /// </summary>
+        [YamlMember(Order = 103)]
+        public List<UTickRange>? preservedRanges = null;
 
         [YamlIgnore] public List<UPhoneme> phonemes = new List<UPhoneme>();
         [YamlIgnore] public int phonemesRevision = 0;
@@ -405,6 +412,7 @@ namespace OpenUtau.Core.Ustx {
                 notes = new SortedSet<UNote>(notes.Select(note => note.Clone())),
                 curves = curves.Select(c => c.Clone()).ToList(),
                 maskedCurves = maskedCurves.Select(c => c.Clone()).ToList(),
+                preservedRanges = preservedRanges?.Select(r => r.Clone()).ToList(),
                 Duration = Duration,
             };
         }
