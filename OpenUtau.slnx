@@ -4,6 +4,7 @@
     <File Path=".gitignore" />
     <File Path="LICENSE.txt" />
     <File Path="README.md" />
+    <File Path="OpenUtau.Android/README.md" />
   </Folder>
   <Project Path="OpenUtau.Core/OpenUtau.Core.csproj" />
   <Project Path="OpenUtau.Plugin.Builtin/OpenUtau.Plugin.Builtin.csproj" />
@@ -14,4 +15,5 @@
   <Project Path="OpenUtau/OpenUtau.csproj">
     <BuildDependency Project="OpenUtau.Plugin.Builtin/OpenUtau.Plugin.Builtin.csproj" />
   </Project>
+  <Project Path="OpenUtau.Android/OpenUtau.Android.csproj" />
 </Solution>
