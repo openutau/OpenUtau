@@ -255,6 +255,7 @@ namespace OpenUtau.Core.Util {
             public string LyricHelper = string.Empty;
             public bool LyricsHelperBrackets = false;
             public bool RenderStatusInTrackBar = true;
+            public bool UseLegacySingerSelection = false;
             public int OtoEditor = 0;
             public string VLabelerPath = string.Empty;
             public string SetParamPath = string.Empty;

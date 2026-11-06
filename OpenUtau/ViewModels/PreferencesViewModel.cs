@@ -124,6 +124,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool DetachPianoRoll { get; set; }
+        [Reactive] public partial bool UseLegacySingerSelection { get; set; }
         public bool ThemeEditable => themeEditable.Value;
         public List<string> ThemeItems => ThemeManager.GetAvailableThemes();
         public bool IsThemeEditorOpen => Views.ThemeEditorWindow.IsOpen;
@@ -249,6 +250,7 @@ namespace OpenUtau.App.ViewModels {
             ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;
             ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
             DetachPianoRoll = Preferences.Default.DetachPianoRoll;
+            UseLegacySingerSelection = Preferences.Default.UseLegacySingerSelection;
             Channel = Preferences.Default.Channel switch {
                 "beta" => 1,
                 "alpha" => 2,
@@ -436,6 +438,8 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Attachment"));
                 });
+            PersistOn(this.WhenAnyValue(vm => vm.UseLegacySingerSelection),
+                index => Preferences.Default.UseLegacySingerSelection = index);
             PersistOn(this.WhenAnyValue(vm => vm.Channel), channel => {
                 Preferences.Default.Channel = channel switch {
                     1 => "beta",
