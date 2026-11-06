@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <NuGetAuditMode>direct</NuGetAuditMode>
+  </PropertyGroup>
+</Project>
