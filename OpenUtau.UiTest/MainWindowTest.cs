@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,12 +42,20 @@ namespace OpenUtau.UiTest {
             DocManager.Inst.AddSubscriber(HeadlessUi.Errors);
         }
 
+        // Call at the start of every test that opens a main window.
+        internal static void InitTest() {
+            InitCore();
+            // The headless app shares DocManager across tests. Start each one from an empty saved
+            // project, so edits left by an earlier test don't make "New" ask to save first.
+            DocManager.Inst.ExecuteCmd(new LoadProjectNotification(Core.Format.Ustx.Create()));
+            HeadlessUi.Errors.Clear();
+        }
+
         // Opens the main window as the splash window would, runs the test, then saves a screenshot
         // of the final state (also when the test fails) and closes the window.
         static void WithMainWindow(string name, Action<MainWindow> test) {
             HeadlessUi.Run(() => {
-                InitCore();
-                HeadlessUi.Errors.Clear();
+                InitTest();
                 var window = new MainWindow { Width = 1280, Height = 800 };
                 try {
                     window.Show();
@@ -121,6 +130,89 @@ namespace OpenUtau.UiTest {
                 AssertHasSize(window.FindControl<Control>("partsCanvas"));
                 AssertRendered(window);
             });
+        }
+
+        [Fact]
+        public void ImportedAudioSplitsFromContextMenuAndUndoes() {
+            string audioPath = Path.Combine(Path.GetTempPath(), $"OpenUtau-wave-split-{Guid.NewGuid():N}.wav");
+            try {
+                Core.Format.Wave.WriteMono16Wav(audioPath,
+                    Enumerable.Range(0, 66150).Select(i => (float)(0.3 * Math.Sin(i * 2 * Math.PI * 440 / 44100))).ToArray());
+                WithMainWindow(nameof(ImportedAudioSplitsFromContextMenuAndUndoes), window => {
+                    Click(window, FindButtonWithText(window, "welcome.new"));
+                    var viewModel = ViewModelOf(window);
+                    viewModel.ImportAudio(audioPath);
+                    var project = DocManager.Inst.Project;
+                    var original = Assert.Single(project.parts.OfType<UWavePart>());
+                    original.Peaks.GetAwaiter().GetResult();
+                    DocManager.Inst.StartUndoGroup();
+                    DocManager.Inst.ExecuteCmd(new PartFadeInCommand(project, original, 600));
+                    DocManager.Inst.EndUndoGroup();
+                    int splitTick = original.position + 240;
+                    DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(splitTick));
+                    HeadlessUi.Flush();
+
+                    var canvas = Assert.IsAssignableFrom<Canvas>(window.FindControl<Canvas>("partsCanvas"));
+                    AssertHasSize(canvas);
+                    var originalControl = Assert.Single(PartControls());
+                    AssertHasSize(originalControl);
+                    var clickPoint = originalControl.TranslatePoint(
+                        new Point(originalControl.Bounds.Width / 2, originalControl.Bounds.Height / 2), window);
+                    Assert.NotNull(clickPoint);
+                    window.MouseDown(clickPoint.Value, MouseButton.Right);
+                    window.MouseUp(clickPoint.Value, MouseButton.Right);
+                    HeadlessUi.Flush();
+
+                    var menu = canvas.ContextMenu;
+                    Assert.NotNull(menu);
+                    Assert.True(menu.IsOpen);
+                    var splitItem = menu.Items.OfType<MenuItem>()
+                        .Single(item => Equals(item.Header, window.FindResource("context.part.split")));
+                    Assert.True(splitItem.IsVisible);
+                    Assert.Same(original, splitItem.CommandParameter);
+                    Assert.NotNull(splitItem.Command);
+                    Assert.True(splitItem.Command.CanExecute(splitItem.CommandParameter));
+                    splitItem.Command.Execute(splitItem.CommandParameter);
+                    menu.Close();
+                    HeadlessUi.Flush();
+
+                    var splitParts = project.parts.OfType<UWavePart>().OrderBy(part => part.position).ToArray();
+                    Assert.Equal(2, splitParts.Length);
+                    Assert.Equal(splitTick, splitParts[0].End);
+                    Assert.Equal(splitTick, splitParts[1].position);
+                    Assert.DoesNotContain(original, project.parts);
+                    AssertPartsAgree(splitParts);
+                    AssertRendered(window);
+
+                    DocManager.Inst.Undo();
+                    HeadlessUi.Flush();
+                    Assert.Same(original, Assert.Single(project.parts));
+                    AssertPartsAgree(original);
+
+                    DocManager.Inst.Redo();
+                    HeadlessUi.Flush();
+                    AssertPartsAgree(splitParts);
+                    AssertRendered(window);
+
+                    void AssertPartsAgree(params UPart[] expected) {
+                        Assert.Equal(expected, project.parts.OrderBy(part => part.position));
+                        Assert.Equal(expected, viewModel.TracksViewModel.Parts.OrderBy(part => part.position));
+                        var controls = PartControls().OrderBy(Canvas.GetLeft).ToArray();
+                        Assert.Equal(expected.Length, controls.Length);
+                        Assert.All(controls, control => AssertHasSize(control));
+                        for (int i = 0; i < expected.Length; i++) {
+                            var position = viewModel.TracksViewModel.TickTrackToPoint(expected[i].position, expected[i].trackNo);
+                            Assert.Equal(position.X, Canvas.GetLeft(controls[i]), 6);
+                            Assert.Equal(position.Y, Canvas.GetTop(controls[i]), 6);
+                            Assert.Equal(expected[i].Duration * viewModel.TracksViewModel.TickWidth, controls[i].Width, 6);
+                        }
+                    }
+                    IEnumerable<Control> PartControls() => canvas.GetVisualDescendants().OfType<Control>()
+                        .Where(control => control.GetType().Name == "PartControl");
+                });
+            } finally {
+                File.Delete(audioPath);
+            }
         }
 
         class FakeSinger : USinger {
@@ -360,5 +452,120 @@ namespace OpenUtau.UiTest {
                 Assert.Contains(window.FindResource("tracks.removefromrecent"), MenuHeaders(singers[5]));
             }));
         }
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void CroppedAudioRightEdgeBurstKeepsGeometryValid(bool changingTempo) {
+            string audioPath = Path.Combine(Path.GetTempPath(), $"OpenUtau-wave-resize-{Guid.NewGuid():N}.wav");
+            try {
+                Core.Format.Wave.WriteMono16Wav(audioPath, new float[44100 * 6]);
+                WithMainWindow($"{nameof(CroppedAudioRightEdgeBurstKeepsGeometryValid)}-{changingTempo}", window => {
+                    var document = DocManager.Inst;
+                    Click(window, FindButtonWithText(window, "welcome.new"));
+                    var viewModel = ViewModelOf(window);
+                    var tracks = viewModel.TracksViewModel;
+                    var project = document.Project;
+                    if (changingTempo) {
+                        project.tempos[0].bpm = 137;
+                        project.tempos.Add(new UTempo(960, 71));
+                        project.tempos.Add(new UTempo(2200, 190));
+                        project.timeAxis.BuildSegments(project);
+                    }
+                    viewModel.ImportAudio(audioPath);
+                    var original = Assert.Single(project.parts.OfType<UWavePart>());
+                    original.Peaks.GetAwaiter().GetResult();
+                    int cut = original.position + original.Duration / 2;
+                    var first = new UWavePart {
+                        FilePath = original.FilePath,
+                        position = original.position,
+                        trackNo = original.trackNo,
+                        skip = original.skip,
+                        trim = original.trim + original.End - cut,
+                    };
+                    var second = new UWavePart {
+                        FilePath = original.FilePath,
+                        position = cut,
+                        trackNo = original.trackNo,
+                        skip = original.skip + cut - original.position,
+                        trim = original.trim,
+                    };
+                    first.Load(project);
+                    second.Load(project);
+                    first.Peaks.GetAwaiter().GetResult();
+                    second.Peaks.GetAwaiter().GetResult();
+                    document.StartUndoGroup();
+                    document.ExecuteCmd(new RemovePartCommand(project, original));
+                    document.ExecuteCmd(new AddPartCommand(project, first));
+                    document.ExecuteCmd(new AddPartCommand(project, second));
+                    document.EndUndoGroup();
+                    tracks.TickWidth = 0.2;
+                    HeadlessUi.Flush();
+
+                    var canvas = Assert.IsAssignableFrom<Canvas>(window.FindControl<Canvas>("partsCanvas"));
+                    int originalEnd = first.End;
+                    int targetEnd = first.position + first.Duration / 2;
+                    Assert.True(targetEnd - first.position >= project.resolution);
+                    var firstControl = PartControls().OrderBy(Canvas.GetLeft).First();
+                    var from = firstControl.TranslatePoint(
+                        new Point(firstControl.Bounds.Width - 1, firstControl.Bounds.Height / 2), window)!.Value;
+                    var targetInCanvas = tracks.TickTrackToPoint(targetEnd, first.trackNo)
+                        + new Point(tracks.TickWidth / 4, tracks.TrackHeight / 2);
+                    var to = canvas.TranslatePoint(targetInCanvas, window)!.Value;
+                    var requestFrame = document.RequestFrame;
+                    // Multiple pointer events can arrive before the next validation frame.
+                    // Hold that frame to make the stale-duration regression deterministic.
+                    document.RequestFrame = _ => { };
+                    try {
+                        window.MouseDown(from, MouseButton.Left);
+                        for (int i = 0; i < 6; i++) {
+                            window.MouseMove(to, RawInputModifiers.LeftMouseButton);
+                            AssertValidGeometry();
+                            Assert.Equal(targetEnd, first.End);
+                        }
+                    } finally {
+                        try {
+                            window.MouseUp(to, MouseButton.Left);
+                        } finally {
+                            document.RequestFrame = requestFrame;
+                            document.FlushValidation();
+                        }
+                    }
+                    HeadlessUi.Flush();
+                    AssertValidGeometry();
+                    Assert.Equal(originalEnd, second.position);
+
+                    document.Undo();
+                    HeadlessUi.Flush();
+                    Assert.Equal(originalEnd, first.End);
+                    AssertValidGeometry();
+                    document.Redo();
+                    HeadlessUi.Flush();
+                    Assert.Equal(targetEnd, first.End);
+                    AssertValidGeometry();
+
+                    IEnumerable<Control> PartControls() => canvas.GetVisualDescendants().OfType<Control>()
+                        .Where(control => control.GetType().Name == "PartControl");
+                    void AssertValidGeometry() {
+                        var parts = project.parts.OrderBy(part => part.position).ToArray();
+                        var controls = PartControls().OrderBy(Canvas.GetLeft).ToArray();
+                        Assert.Equal(parts.Length, controls.Length);
+                        for (int i = 0; i < parts.Length; i++) {
+                            var wave = Assert.IsType<UWavePart>(parts[i]);
+                            int sourceEnd = project.timeAxis.MsPosToTickPos(
+                                project.timeAxis.TickPosToMsPos(wave.position - wave.skip) + wave.fileDurationMs);
+                            int expectedDuration = sourceEnd - wave.trim - wave.position;
+                            Assert.True(expectedDuration > 0);
+                            Assert.True(wave.skip >= 0 && wave.trim >= 0);
+                            Assert.Equal(expectedDuration, wave.Duration);
+                            Assert.Equal(wave.Duration * tracks.TickWidth, controls[i].Width, 6);
+                            Assert.Equal(tracks.TickTrackToPoint(wave.position, wave.trackNo).X, Canvas.GetLeft(controls[i]), 6);
+                        }
+                    }
+                });
+            } finally {
+                File.Delete(audioPath);
+            }
+        }
+
     }
 }
