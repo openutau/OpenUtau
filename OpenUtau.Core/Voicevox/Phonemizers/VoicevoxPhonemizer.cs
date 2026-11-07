@@ -6,16 +6,16 @@ using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Core.Voicevox {
     [Phonemizer("Voicevox Japanese Phonemizer", "VOICEVOX JA", language: "JA")]
-    public class VoicevoxPhonemizer : Phonemizer {
+    public class VoicevoxPhonemizer : MachineLearningPhonemizer {
 
-        protected VoicevoxSinger singer;
-        Dictionary<Note[], Phoneme[]> partResult = new Dictionary<Note[], Phoneme[]>();
+        protected VoicevoxSinger? singer;
+        VoicevoxConfig? config;
 
         public override void SetSinger(USinger singer) {
             this.singer = singer as VoicevoxSinger;
         }
 
-        public override void SetUp(Note[][] notes, UProject project, UTrack track) {
+        public override void SetUp(Note[][] groups, UProject project, UTrack track) {
             if (singer == null) {
                 throw new VoicevoxException("Singer is not a VOICEVOX singer.");
             }
@@ -23,13 +23,18 @@ namespace OpenUtau.Core.Voicevox {
                 // The engine may have been started after OpenUtau. VoicevoxClient's cooldown keeps this cheap while it is down.
                 singer.Reload();
             }
-            var config = singer.voicevoxConfig
+            config = singer.voicevoxConfig
                 ?? throw new VoicevoxException("Could not connect to the VOICEVOX engine. Please start the engine.");
-            base.SetUp(notes, project, track);
-            partResult.Clear();
-            VoicevoxNote[] vNotes = new VoicevoxNote[notes.Length];
-            for (int i = 0; i < notes.Length; i++) {
-                var currentLyric = notes[i][0].lyric.Normalize();
+            // Splits the part into phrases at rests and calls ProcessPart for each,
+            // the same way the renderer queries the engine per phrase.
+            base.SetUp(groups, project, track);
+        }
+
+        protected override void ProcessPart(Note[][] phrase) {
+            var config = this.config ?? throw new VoicevoxException("VOICEVOX singer is not loaded.");
+            VoicevoxNote[] vNotes = new VoicevoxNote[phrase.Length];
+            for (int i = 0; i < phrase.Length; i++) {
+                var currentLyric = phrase[i][0].lyric.Normalize();
                 var lyricList = currentLyric.Split(" ");
                 if (!VoicevoxUtils.IsSyllableVowelExtensionNote(lyricList[^1])) {
                     if (VoicevoxUtils.IsPau(lyricList[^1])) {
@@ -44,9 +49,9 @@ namespace OpenUtau.Core.Voicevox {
                 }
                 vNotes[i] = new VoicevoxNote() {
                     lyric = currentLyric,
-                    positionMs = timeAxis.TickPosToMsPos(notes[i][0].position),
-                    durationMs = timeAxis.TickPosToMsPos(notes[i][0].position + notes[i][0].duration) - timeAxis.TickPosToMsPos(notes[i][0].position),
-                    tone = notes[i][0].tone + (notes[i][0].phonemeAttributes.FirstOrDefault().toneShift ?? 0)
+                    positionMs = timeAxis.TickPosToMsPos(phrase[i][0].position),
+                    durationMs = timeAxis.TickPosToMsPos(phrase[i][0].position + phrase[i][0].duration) - timeAxis.TickPosToMsPos(phrase[i][0].position),
+                    tone = phrase[i][0].tone + (phrase[i][0].phonemeAttributes.FirstOrDefault().toneShift ?? 0)
                 };
             }
             VoicevoxQueryMain vqMain = VoicevoxUtils.NoteGroupsToVQuery(vNotes, timeAxis);
@@ -71,53 +76,29 @@ namespace OpenUtau.Core.Voicevox {
             List<Phonemes> list = vsParams.phonemes;
             foreach (var note in vqMain.notes) {
                 if (note.vqnindex < 0) {
-                    list.Remove(list[0]);
+                    if (list.Count > 0) {
+                        list.RemoveAt(0);
+                    }
                     continue;
                 }
-                var noteGroup = notes[note.vqnindex];
-                var phoneme = new List<Phoneme>();
-                int index = 0;
+                var noteGroup = phrase[note.vqnindex];
+                int notePos = noteGroup[0].position;
+                // Positions are relative to the start of the note.
+                var phonemes = new List<Tuple<string, int>>();
                 while (list.Count > 0) {
-                    if (VoicevoxUtils.phoneme_List.vowels.Contains(list[0].phoneme)) {
-                        phoneme.Add(new Phoneme() { phoneme = list[0].phoneme, position = noteGroup[0].position });
-                        index++;
-                        list.Remove(list[0]);
+                    var current = list[0];
+                    list.RemoveAt(0);
+                    if (VoicevoxUtils.phoneme_List.vowels.Contains(current.phoneme)) {
+                        phonemes.Add(Tuple.Create(current.phoneme, 0));
                         break;
-                    } else if (VoicevoxUtils.phoneme_List.consonants.Contains(list[0].phoneme)) {
-                        double consonantMs = (list[0].frame_length / VoicevoxUtils.fps) * 1000;
-                        //Note positions are absolute ticks, so convert the duration relative to the note.
-                        int notePos = noteGroup[0].position;
-                        int tickOffset = notePos - timeAxis.MsPosToTickPos(timeAxis.TickPosToMsPos(notePos) - consonantMs);
-                        phoneme.Add(new Phoneme() {
-                            phoneme = list[0].phoneme,
-                            position = noteGroup[0].position - tickOffset
-                        });
+                    } else if (VoicevoxUtils.phoneme_List.consonants.Contains(current.phoneme)) {
+                        double consonantMs = (current.frame_length / VoicevoxUtils.fps) * 1000;
+                        int consonantStart = timeAxis.MsPosToTickPos(timeAxis.TickPosToMsPos(notePos) - consonantMs);
+                        phonemes.Add(Tuple.Create(current.phoneme, consonantStart - notePos));
                     }
-                    list.Remove(list[0]);
                 }
-                partResult[noteGroup] = phoneme.ToArray();
+                partResult[notePos] = phonemes;
             }
-        }
-
-        public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevs) {
-            var ps = new List<Phoneme>();
-            if (partResult.TryGetValue(notes, out var phonemes)) {
-                return new Result {
-                    phonemes = phonemes.Select(p => {
-                        p.position = p.position - notes[0].position;
-                        return p;
-                    }).ToArray(),
-                };
-            }
-            if (SetUpException != null) {
-                throw new Exception("Phonemizer failed to process.", SetUpException);
-            }
-            throw new Exception("Part result not found");
-
-        }
-
-        public override void CleanUp() {
-            partResult.Clear();
         }
     }
 }
