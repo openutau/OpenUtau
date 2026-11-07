@@ -211,7 +211,7 @@ namespace OpenUtau.App.Views {
 
             return bpm;
         }
-        
+
         private void AddTempoChange(int tick) {
             var project = DocManager.Inst.Project;
             var dialog = new TypeInDialog {
@@ -617,6 +617,10 @@ namespace OpenUtau.App.Views {
 
         void OnMenuUndo(object sender, RoutedEventArgs args) => viewModel.Undo();
         void OnMenuRedo(object sender, RoutedEventArgs args) => viewModel.Redo();
+
+        void BatchEditProject(object sender, RoutedEventArgs args) {
+            BatchEditProjectDialog.Open(this);
+        }
 
         void OnMenuExpressionss(object sender, RoutedEventArgs args) {
             ExpressionsDialog.Open(this);
@@ -1069,7 +1073,7 @@ namespace OpenUtau.App.Views {
                 .Where(i => i != null)
                 .Select(i => i.Path.LocalPath)
                 .ToArray() ?? new string[] { };
-            
+
             if (files.Length == 0) {
                 return;
             }
@@ -1420,12 +1424,12 @@ namespace OpenUtau.App.Views {
             if (sender is not Canvas canvas) {
                 return;
             }
-            
+
             var point = args.GetPosition(canvas);
             var visuals = canvas.GetVisualsAt(point);
             var hitPartControl = visuals
                 .Select(v => v.FindAncestorOfType<PartControl>(includeSelf: true))
-                .FirstOrDefault(pc => pc != null);    
+                .FirstOrDefault(pc => pc != null);
             if (hitPartControl?.part is UVoicePart) {
                 if (pianoRoll == null) {
                     LoadingWindow.BeginLoading(this);

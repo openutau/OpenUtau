@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using DynamicData.Binding;
+using OpenUtau.App.Controls;
 using OpenUtau.App.Views;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
@@ -183,10 +184,6 @@ namespace OpenUtau.App.ViewModels {
             } else {
                 RedoText = ThemeManager.GetString("menu.edit.redo");
             }
-        }
-
-        public void SanitiseProject() {
-
         }
 
         public void InitProject(MainWindow window) {

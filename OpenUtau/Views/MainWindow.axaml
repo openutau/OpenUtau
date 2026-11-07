@@ -65,7 +65,7 @@
           <MenuItem Header="{DynamicResource menu.project}" IsEnabled="{Binding Page}">
             <MenuItem Header="{DynamicResource menu.project.expressions}" Click="OnMenuExpressionss"/>
             <MenuItem Header="{DynamicResource menu.project.remaptimeaxis}" Click="OnMenuRemapTimeaxis"/>
-            <MenuItem Header="{DynamicResource command.batch.project}" Command="{Binding Redo}"/>
+            <MenuItem Header="{DynamicResource command.batch.project}" Click="BatchEditProject"/>
           </MenuItem>
           <MenuItem Header="{DynamicResource menu.tools}">
             <MenuItem Header="{DynamicResource menu.tools.layout}">
