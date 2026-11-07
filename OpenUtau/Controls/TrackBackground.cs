@@ -92,7 +92,20 @@ namespace OpenUtau.App.Controls {
             string[] degreeNames;
             switch(Preferences.Default.DegreeStyle){
                 case 1:
-                    degreeNames = MusicMath.Solfeges;
+                    degreeNames = [
+                        ThemeManager.GetString("solfege.do"),
+                        "",
+                        ThemeManager.GetString("solfege.re"),
+                        "",
+                        ThemeManager.GetString("solfege.mi"),
+                        ThemeManager.GetString("solfege.fa"),
+                        "",
+                        ThemeManager.GetString("solfege.sol"),
+                        "",
+                        ThemeManager.GetString("solfege.la"),
+                        "",
+                        ThemeManager.GetString("solfege.ti")
+                        ];
                     break;
                 case 2:
                     degreeNames = MusicMath.NumberedNotations;
