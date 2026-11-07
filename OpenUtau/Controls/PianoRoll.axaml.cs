@@ -1218,6 +1218,21 @@ namespace OpenUtau.App.Controls {
                             ViewModel.CurveViewModel.ClearSelect();
                             break;
                     }
+                } else if (descriptor.type == UExpressionType.Numerical) {
+                    switch (ViewModel.CurveViewModel.CurveTool) {
+                        case CurveTools.CurveVerticalStretchTool:
+                            editState = new PhonemeExpVerticalStretchState(control, ViewModel, this, descriptor);
+                            break;
+                        case CurveTools.CurveVerticalShiftTool:
+                            editState = new PhonemeExpVerticalShiftState(control, ViewModel, this, descriptor);
+                            break;
+                        case CurveTools.CurveHorizontalStretchTool:
+                        case CurveTools.CurveHorizontalShiftTool:
+                            break;
+                        default:
+                            editState = new ExpSetValueState(control, ViewModel, this, descriptor);
+                            break;
+                    }
                 } else {
                     editState = new ExpSetValueState(control, ViewModel, this, descriptor);
                 }
