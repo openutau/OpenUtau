@@ -19,12 +19,36 @@ namespace OpenUtau.Core.Voicevox {
         public override string Voice => voicebank.Voice;
         public override string Location => Path.GetDirectoryName(voicebank.File);
         public override string Web => voicebank.Web;
-        public override string Version => voicebank.Version;
+        public override string Version => voicebank.Version ?? string.Empty;
         public override string OtherInfo => voicebank.OtherInfo;
         public override IList<string> Errors => errors;
-        public override string Avatar => voicebank.Image == null ? voicevoxConfig == null ? null : voicevoxConfig.style_infos[0].icon == null ? null : voicevoxConfig.style_infos[0].icon : Path.Combine(Location, voicebank.Image);
+        public override string Avatar {
+            get {
+                if (voicebank.Image != null) {
+                    return Path.Combine(Location, voicebank.Image);
+                }
+                var icon = voicevoxConfig?.style_infos?.FirstOrDefault()?.icon;
+                if (!string.IsNullOrEmpty(icon)) {
+                    return icon;
+                }
+                var fallback = Path.Combine(Location, $"{Name}_icon.png");
+                return File.Exists(fallback) ? fallback : null;
+            }
+        }
         public override byte[] AvatarData => avatarData;
-        public override string Portrait => voicebank.Portrait == null ? voicevoxConfig == null ? null : voicevoxConfig.portraitPath == null ? null : voicevoxConfig.style_infos[0].portrait : Path.Combine(Location, voicebank.Portrait);
+        public override string Portrait {
+            get {
+                if (voicebank.Portrait != null) {
+                    return Path.Combine(Location, voicebank.Portrait);
+                }
+                var portrait = voicevoxConfig?.style_infos?.FirstOrDefault()?.portrait;
+                if (!string.IsNullOrEmpty(portrait)) {
+                    return portrait;
+                }
+                var fallback = Path.Combine(Location, $"{Name}_portrait.png");
+                return File.Exists(fallback) ? fallback : null;
+            }
+        }
         public override float PortraitOpacity => voicebank.PortraitOpacity;
         public override int PortraitHeight => voicebank.PortraitHeight;
         public override string Sample => voicebank.Sample == null ? null : Path.Combine(Location, voicebank.Sample);
@@ -61,13 +85,36 @@ namespace OpenUtau.Core.Voicevox {
             if (!Found) {
                 return;
             }
+            // character.yaml and images are local, so show the avatar even if the engine is unreachable.
+            try {
+                voicebank.Reload();
+            } catch (Exception e) {
+                Log.Error(e, $"Failed to reload {voicebank.File}");
+            }
+            LoadAvatar();
             try {
                 voicevoxConfig = VoicevoxConfig.Load(this);
                 voicebank.Reload();
                 Load();
+                LoadAvatar();
                 loaded = true;
             } catch (Exception e) {
                 Log.Error(e, $"Failed to load {voicebank.File}");
+            }
+        }
+
+        void LoadAvatar() {
+            var path = Avatar;
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) {
+                avatarData = null;
+                Log.Error("Avatar can't be found");
+                return;
+            }
+            try {
+                avatarData = File.ReadAllBytes(path);
+            } catch (Exception e) {
+                avatarData = null;
+                Log.Error(e, "Failed to load avatar data.");
             }
         }
 
@@ -136,23 +183,6 @@ namespace OpenUtau.Core.Voicevox {
                     }
                 }
             }
-
-            if (Avatar != null && File.Exists(Avatar)) {
-                try {
-                    using (var stream = new FileStream(Avatar, FileMode.Open)) {
-                        using (var memoryStream = new MemoryStream()) {
-                            stream.CopyTo(memoryStream);
-                            avatarData = memoryStream.ToArray();
-                        }
-                    }
-                } catch (Exception e) {
-                    avatarData = null;
-                    Log.Error(e, "Failed to load avatar data.");
-                }
-            } else {
-                avatarData = null;
-                Log.Error("Avatar can't be found");
-            }
         }
 
         public override bool TryGetOto(string phoneme, out UOto oto) {
@@ -181,9 +211,10 @@ namespace OpenUtau.Core.Voicevox {
         }
 
         public override byte[] LoadPortrait() {
-            return string.IsNullOrEmpty(Portrait)
+            var path = Portrait;
+            return string.IsNullOrEmpty(path) || !File.Exists(path)
                 ? null
-                : File.ReadAllBytes(Portrait);
+                : File.ReadAllBytes(path);
         }
 
         public override byte[] LoadSample() {
