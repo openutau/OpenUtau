@@ -184,7 +184,7 @@ namespace OpenUtau.App.ViewModels {
                         } else {
                             ExpTrackHeight = 0;
                         }
-                        ShowToolbar = descriptor.type != UExpressionType.Options;
+                        ShowToolbar = descriptor.type != UExpressionType.Options && descriptor.type != UExpressionType.MaskedCurve;
                         ShowCurveTools = descriptor.type == UExpressionType.Curve;
                     } else {
                         ExpTrackHeight = 0;
