@@ -709,6 +709,7 @@ Warning: this option removes custom presets.</system:String>
     Left click to select</system:String>
   <system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
     Left click to draw
+    Hold Shift + Left click to draw (draw horizontal line)
     Right click to reset</system:String>
   <system:String x:Key="pianoroll.tool.curve.line">Line Tool
     Left click to draw (draw straight line)

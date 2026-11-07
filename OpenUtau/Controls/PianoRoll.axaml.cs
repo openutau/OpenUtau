@@ -1247,8 +1247,9 @@ namespace OpenUtau.App.Controls {
                 valueTipPointerPosition = args.GetCurrentPoint(ValueTipCanvas!).Position;
             }
             if (editState != null) {
+                // Allow straight lines to be drawn by holding down the Shift key, like in illustration software    
                 editState.ctrlShiftHeld = args.KeyModifiers != KeyModifiers.Shift && ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool;
-                editState.shiftHeld = args.KeyModifiers == KeyModifiers.Shift  && (ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool  || (editState is ExpSetValueState expSetValueState && !expSetValueState.IsCurve));
+                editState.shiftHeld = (args.KeyModifiers == KeyModifiers.Shift && (ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool || ViewModel.CurveViewModel.CurveTool == CurveTools.CurvePenTool));
                 UpdateEditState(args, control, point);
             } else {
                 Cursor = null;
