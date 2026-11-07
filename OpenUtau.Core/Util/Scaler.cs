@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using OpenUtau.Core;
 
-namespace OpenUtau.Plugin.Builtin.EnunuOnnx {
+namespace OpenUtau.Core.Util {
     public class ScalerLine {
         public float xmin;
         public float scale;
