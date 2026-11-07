@@ -16,6 +16,15 @@ namespace OpenUtau.Core.Voicevox {
         }
 
         public override void SetUp(Note[][] notes, UProject project, UTrack track) {
+            if (singer == null) {
+                throw new VoicevoxException("Singer is not a VOICEVOX singer.");
+            }
+            if (singer.voicevoxConfig == null) {
+                // The engine may have been started after OpenUtau. VoicevoxClient's cooldown keeps this cheap while it is down.
+                singer.Reload();
+            }
+            var config = singer.voicevoxConfig
+                ?? throw new VoicevoxException("Could not connect to the VOICEVOX engine. Please start the engine.");
             base.SetUp(notes, project, track);
             partResult.Clear();
             VoicevoxNote[] vNotes = new VoicevoxNote[notes.Length];
@@ -43,11 +52,11 @@ namespace OpenUtau.Core.Voicevox {
             VoicevoxQueryMain vqMain = VoicevoxUtils.NoteGroupsToVQuery(vNotes, timeAxis);
             VoicevoxSynthParams vsParams = new VoicevoxSynthParams();
             string singerID = VoicevoxUtils.defaultID;
-            if (this.singer.voicevoxConfig.base_singer_style != null) {
-                foreach (var s in this.singer.voicevoxConfig.base_singer_style) {
-                    if (s.name.Equals(this.singer.voicevoxConfig.base_singer_name)) {
+            if (config.base_singer_style != null) {
+                foreach (var s in config.base_singer_style) {
+                    if (s.name.Equals(config.base_singer_name)) {
                         vsParams = VoicevoxUtils.VoicevoxVoiceBase(vqMain, s.styles.id.ToString());
-                        if (s.styles.name.Equals(this.singer.voicevoxConfig.base_singer_style_name)) {
+                        if (s.styles.name.Equals(config.base_singer_style_name)) {
                             break;
                         }
                     } else {
