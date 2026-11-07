@@ -1,4 +1,6 @@
-﻿using Avalonia.Controls;
+﻿using System.Collections.Generic;
+using Avalonia.Controls;
+using OpenUtau.Core.Editing;
 
 namespace OpenUtau.App.Controls {
     public partial class BatchEditProjectDialog : Window {

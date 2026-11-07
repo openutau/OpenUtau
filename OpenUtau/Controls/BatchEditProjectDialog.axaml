@@ -1,11 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:c="using:OpenUtau.App.Controls"
-             mc:Ignorable="d"
-             x:Class="OpenUtau.App.Controls.BatchEditProjectDialog">
-  <Grid>
-
-  </Grid>
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        xmlns:edit="using:OpenUtau.Core.Editing"
+        xmlns:c="using:OpenUtau.App.Controls"
+        mc:Ignorable="d"
+        x:DataType="vm:BatchEditProjectViewModel"
+        x:Class="OpenUtau.App.Controls.BatchEditProjectDialog">
+  <StackPanel>
+    <ListBox x:Name="ApplyEdits" ItemsSource="{Binding ApplyingEdits}"></ListBox>
+  </StackPanel>
 </Window>
