@@ -1,3 +1,5 @@
+load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
+
 package(
     default_visibility = ["//visibility:public"],
 )
@@ -56,6 +58,41 @@ cc_library(
         "@world",
     ],
     alwayslink = 1,
+)
+
+filegroup(
+    name = "worldline-post-js",
+    srcs = ["worldline-post.js"],
+)
+
+cc_binary(
+    name = "worldline_wasm_bin",
+    additional_linker_inputs = [":worldline-post-js"],
+    copts = [
+        "-DNDEBUG",
+    ],
+    linkopts = [
+        "-sEXPORTED_FUNCTIONS=['_F0FrameCount','_F0','_DecodeMgc','_DecodeBap','_InitAnalysisConfig','_WorldAnalysisF0In','_WorldSynthesisSampleCount','_WorldSynthesis','_HnAnalysisF0In','_WorldSynthesisContinuousNoise']",
+        "-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap']",
+        "-sALLOW_MEMORY_GROWTH=1",
+        "-sASSERTIONS=0",
+        "-sNO_FILESYSTEM=1",
+        "-sNO_EXIT_RUNTIME=1",
+        "-sERROR_ON_UNDEFINED_SYMBOLS=0",
+        "--post-js=$(location :worldline-post-js)",
+    ],
+    deps = [
+        ":worldline_lib",
+    ],
+)
+
+wasm_cc_binary(
+    name = "worldline_wasm",
+    cc_target = ":worldline_wasm_bin",
+    outputs = [
+        "worldline.wasm",
+        "worldline.js",
+    ],
 )
 
 cc_shared_library(

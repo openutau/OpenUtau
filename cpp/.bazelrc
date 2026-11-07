@@ -1,6 +1,7 @@
 common --enable_platform_specific_config
 common --experimental_cc_shared_library
 common --enable_bzlmod
+build --incompatible_enable_cc_toolchain_resolution
 
 run --define absl=1
 test --define absl=1

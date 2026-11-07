@@ -363,3 +363,8 @@ DLL_API int WorldSynthesisContinuousNoise(
   }
   return y_length;
 }
+
+// Emscripten requires a main() to link a cc_binary target
+#ifdef __EMSCRIPTEN__
+int main() { return 0; }
+#endif
