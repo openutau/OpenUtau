@@ -65,6 +65,7 @@
           <MenuItem Header="{DynamicResource menu.project}" IsEnabled="{Binding Page}">
             <MenuItem Header="{DynamicResource menu.project.expressions}" Click="OnMenuExpressionss"/>
             <MenuItem Header="{DynamicResource menu.project.remaptimeaxis}" Click="OnMenuRemapTimeaxis"/>
+            <MenuItem Header="{DynamicResource command.batch.project}" Command="{Binding Redo}"/>
           </MenuItem>
           <MenuItem Header="{DynamicResource menu.tools}">
             <MenuItem Header="{DynamicResource menu.tools.layout}">
@@ -259,7 +260,7 @@
             </ListBox.ItemTemplate>
           </ListBox>
         </Grid>
-      
+
         <!--Main page-->
         <Grid ColumnDefinitions="300,*,24" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" KeyDown="OnCarouselPageKeyDown">
           <Grid.RowDefinitions>
