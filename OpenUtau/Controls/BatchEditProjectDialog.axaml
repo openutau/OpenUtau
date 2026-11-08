@@ -6,7 +6,7 @@
         mc:Ignorable="d" MinWidth="200" MinHeight="200" Width="350" Height="350"
         x:Class="OpenUtau.App.Controls.BatchEditProjectDialog"
         Icon="/Assets/open-utau.ico"
-        Title="{DynamicResource dialogs.voicecolorremapping}"
+        Title="{DynamicResource dialogs.batchedit.project.caption}"
         WindowStartupLocation="CenterOwner"
         x:DataType="vm:BatchEditProjectViewModel">
   <Window.Styles>
@@ -25,7 +25,7 @@
   </Window.Styles>
 
   <Grid RowDefinitions="40,1*,30" Margin="10">
-    <TextBlock Grid.Row="0" Text="Set the New world here"/>
+    <TextBlock Grid.Row="0" Text="{DynamicResource dialogs.batchedit.project.message}"/>
 
     <Grid Grid.Row="1" ColumnDefinitions="*, *" RowDefinitions="30,30,30,30,30,30">
       <TextBlock Grid.Row="0" Grid.Column="0" Classes="batchedit" Text="{DynamicResource pianoroll.menu.notes.reset.exps}"/>

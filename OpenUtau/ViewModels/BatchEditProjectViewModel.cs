@@ -1,27 +1,16 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
-using MonoMac.Foundation;
 using OpenUtau.Core;
 using OpenUtau.Core.Editing;
 using OpenUtau.Core.Ustx;
-using ReactiveUI;
 using ReactiveUI.SourceGenerators;
-using Serilog;
 
 namespace OpenUtau.App.ViewModels {
-    public partial class BatchEditProjectViewModel: ViewModelBase {
+    public partial class BatchEditProjectViewModel(UProject project) : ViewModelBase {
         [Reactive] public partial bool DoResetAllExpressions { get; set; }
         [Reactive] public partial bool DoResetPitchBends { get; set; }
         [Reactive] public partial bool DoResetAliases { get; set; }
         [Reactive] public partial bool DoResetVibratos { get; set; }
-
-        private UProject project;
-
-        public BatchEditProjectViewModel(UProject project) {
-            this.project = project;
-        }
 
         public void RunSelected() {
             List<BatchEdit> edits = new List<BatchEdit>();

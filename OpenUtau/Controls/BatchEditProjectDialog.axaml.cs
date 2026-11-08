@@ -44,7 +44,7 @@ namespace OpenUtau.App.Controls {
         public void OnFinish(object? sender, RoutedEventArgs? args) {
             ViewModel.RunSelected();
             open?.Close();
-            DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", "Batch Reset done", "command.batch.project.toast"));
+            DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", "Batch reset done", "command.batch.project.toast"));
             open = null;
         }
     }
