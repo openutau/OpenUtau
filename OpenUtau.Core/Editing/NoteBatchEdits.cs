@@ -18,7 +18,7 @@ namespace OpenUtau.Core.Editing {
             this.name = name;
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             List<UNote> toAdd = new List<UNote>();
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             foreach (var note in notes) {
@@ -33,12 +33,12 @@ namespace OpenUtau.Core.Editing {
             if (toAdd.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             foreach (var note in toAdd) {
                 note.lyric = lyric;
                 docManager.ExecuteCmd(new AddNoteCommand(part, note));
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -58,18 +58,18 @@ namespace OpenUtau.Core.Editing {
                 && (note.Next == null || note.Next.position > note.End);
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             List<UNote> toRemove = notes.Where(NeedToBeRemoved).ToList();
             if (toRemove.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             foreach (var note in toRemove) {
                 note.lyric = lyric;
                 docManager.ExecuteCmd(new RemoveNoteCommand(part, note));
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -84,7 +84,7 @@ namespace OpenUtau.Core.Editing {
             this.name = "pianoroll.menu.notes.addbreath";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             List<UNote> toAdd = new List<UNote>();
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             foreach (var note in notes) {
@@ -109,12 +109,12 @@ namespace OpenUtau.Core.Editing {
             if (toAdd.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             foreach (var note in toAdd) {
                 note.lyric = lyric;
                 docManager.ExecuteCmd(new AddNoteCommand(part, note));
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -129,13 +129,13 @@ namespace OpenUtau.Core.Editing {
             this.name = name;
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             foreach (var note in notes) {
                 docManager.ExecuteCmd(new MoveNoteCommand(part, note, 0, deltaNoteNum));
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -150,9 +150,9 @@ namespace OpenUtau.Core.Editing {
             name = $"pianoroll.menu.notes.quantize";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             foreach (var note in notes) {
                 int pos = note.position;
                 int end = note.End;
@@ -165,7 +165,7 @@ namespace OpenUtau.Core.Editing {
                     docManager.ExecuteCmd(new ResizeNoteCommand(part, note, newEnd - newPos - note.duration));
                 }
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -178,14 +178,14 @@ namespace OpenUtau.Core.Editing {
             name = $"pianoroll.menu.notes.autolegato";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             notes.Sort((a, b) => a.position.CompareTo(b.position));
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             for (int i = 0; i < notes.Count - 1; i++) {
                 docManager.ExecuteCmd(new ResizeNoteCommand(part, notes[i], notes[i + 1].position - notes[i].position - notes[i].duration));
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -203,12 +203,12 @@ namespace OpenUtau.Core.Editing {
             name = $"pianoroll.menu.notes.fixoverlap";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             if (notes.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note");
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note");
             var currentNote = notes[0];
             foreach (var note in notes.Skip(1)) {
                 if (note.position == currentNote.position) {
@@ -225,7 +225,7 @@ namespace OpenUtau.Core.Editing {
                     currentNote = note;
                 }
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -238,7 +238,7 @@ namespace OpenUtau.Core.Editing {
             name = $"pianoroll.menu.notes.commonnotecopy";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             Commonnote.CopyToClipboard(notes, project);
         }
@@ -252,7 +252,7 @@ namespace OpenUtau.Core.Editing {
         public CommonnotePaste() {
             name = $"pianoroll.menu.notes.commonnotepaste";
         }
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = Commonnote.LoadFromClipboard(project);
             if (notes == null) {
                 return;
@@ -264,13 +264,13 @@ namespace OpenUtau.Core.Editing {
             }
             int offset = left - minPosition - part.position;
             notes.ForEach(note => note.position += offset);
-            DocManager.Inst.StartUndoGroup("command.batch.note");
+            if (applyUndoGroup) DocManager.Inst.StartUndoGroup("command.batch.note");
             DocManager.Inst.ExecuteCmd(new AddNoteCommand(part, notes));
             int minDurTick = part.GetMinDurTick(project);
             if (part.Duration < minDurTick) {
                 DocManager.Inst.ExecuteCmd(new ResizeVoicePartCommand(project, part, minDurTick - part.Duration, false));
             }
-            DocManager.Inst.EndUndoGroup();
+            if (applyUndoGroup) DocManager.Inst.EndUndoGroup();
         }
     }
 
@@ -283,14 +283,14 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.hanzitopinyin";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var pinyinResult = BaseChinesePhonemizer.Romanize(selectedNotes.Select(note => note.lyric));
-            docManager.StartUndoGroup("command.batch.lyric", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.lyric", true);
             foreach (var t in Enumerable.Zip(selectedNotes, pinyinResult,
                 (note, pinyin) => Tuple.Create(note, pinyin))) {
                 docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, t.Item1, t.Item2));
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -304,12 +304,12 @@ namespace OpenUtau.Core.Editing {
             this.ratio = ratio;
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             if (notes.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             var track = project.tracks[part.trackNo];
             foreach (var note in notes) {
                 foreach (UPhoneme phoneme in part.phonemes) {
@@ -325,7 +325,7 @@ namespace OpenUtau.Core.Editing {
                     }
                 }
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -337,12 +337,12 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.randomizetiming";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             if (notes.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             const int maxTick = 20;
             int delta;
             Random random = new Random();
@@ -364,7 +364,7 @@ namespace OpenUtau.Core.Editing {
                 docManager.ExecuteCmd(new MoveNoteCommand(part, note, delta, 0));
                 docManager.ExecuteCmd(new ResizeNoteCommand(part, note, -delta));
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -376,12 +376,12 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.randomizeoffset";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             if (notes.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             const int maxTick = 20 ;
             Random random = new Random();
             foreach (var note in notes) {
@@ -404,7 +404,7 @@ namespace OpenUtau.Core.Editing {
                     }
                 }
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -418,12 +418,12 @@ namespace OpenUtau.Core.Editing {
             this.max = max;
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
             if (notes.Count == 0) {
                 return;
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             Random random = new Random();
             foreach (var note in notes) {
                 if (random.Next(2) == 0) { // +
@@ -433,7 +433,7 @@ namespace OpenUtau.Core.Editing {
                     docManager.ExecuteCmd(new ChangeNoteTuningCommand(part, note, -delta));
                 }
             }
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -448,41 +448,38 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.loadrenderedpitch";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             RunAsync(
                 project, part, selectedNotes, docManager,
-                (current, total) => { }, CancellationToken.None);
+                (current, total) => { }, CancellationToken.None, applyUndoGroup);
         }
 
-        public void RunAsync(
-            UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
-            Action<int, int> setProgressCallback, CancellationToken cancellationToken) {
+        public void RunAsync(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
+            Action<int, int> setProgressCallback, CancellationToken cancellationToken, bool applyUndoGroup = true) {
             // The pre-render pass holds the same ONNX locks for whole audio phrases, which
             // would cost one audio render per phrase of this edit.
             using var preRenderHold = PlaybackManager.Inst.HoldPreRender();
             RunInternal(
                 project, part, selectedNotes, docManager,
-                setProgressCallback, cancellationToken);
+                setProgressCallback, cancellationToken, applyUndoGroup);
         }
 
         /// <summary>Live pitch only; must not replace <see cref="RunAsync"/> (BatchEdit interface).</summary>
-        internal void RunLive(
-            UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
-            CancellationToken cancellationToken, double pitchSteps, bool fastRealtime) {
+        internal void RunLive(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
+            CancellationToken cancellationToken, double pitchSteps, bool fastRealtime, bool applyUndoGroup = true) {
             RunInternal(
                 project, part, selectedNotes, docManager,
                 (_, _) => { }, cancellationToken,
                 recordUndo: false,
                 showUnsupportedError: false,
                 pitchSteps: pitchSteps,
-                fastRealtime: fastRealtime);
+                fastRealtime: fastRealtime, applyUndoGroup: applyUndoGroup);
         }
 
-        void RunInternal(
-            UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
+        void RunInternal(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
             Action<int, int> setProgressCallback, CancellationToken cancellationToken,
             bool recordUndo = true, bool showUnsupportedError = true, double? pitchSteps = null,
-            bool fastRealtime = false) {
+            bool fastRealtime = false, bool applyUndoGroup = true) {
             var renderer = project.tracks[part.trackNo].RendererSettings.Renderer;
             if (renderer == null || !renderer.SupportsRenderPitch) {
                 if (showUnsupportedError) {
@@ -618,9 +615,9 @@ namespace OpenUtau.Core.Editing {
                     all.Add(new ReplaceMaskedCurveCommand(part, Format.Ustx.RPIT, curve));
                 }
                 if (recordUndo) {
-                    docManager.StartUndoGroup("command.batch.note", true);
+                    if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
                     all.ForEach(docManager.ExecuteCmd);
-                    docManager.EndUndoGroup();
+                    if (applyUndoGroup) docManager.EndUndoGroup();
                 } else {
                     docManager.ApplyTransient(all, validateOptions, preRender: !fastRealtime);
                 }
@@ -803,7 +800,7 @@ namespace OpenUtau.Core.Editing {
             return minIndex;
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             TimeAxis timeAxis = project.timeAxis;
             const int pitchInterval = 5;
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
@@ -890,7 +887,7 @@ namespace OpenUtau.Core.Editing {
                             pitch);
                 }
             }
-            docManager.StartUndoGroup("command.batch.note", true);
+            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
             //Apply pitch points to notes
             foreach (var note in notes) {
                 if (pitchPointsPerNote.TryGetValue(note.position, out var tickRangeAndPitch)) {
@@ -926,7 +923,7 @@ namespace OpenUtau.Core.Editing {
             }
             //Clear MOD+ expressions for selected notes
             docManager.ExecuteCmd(new SetNotesSameExpressionCommand(DocManager.Inst.Project, project.tracks[part.trackNo], part, notes, "mod+", null));
-            docManager.EndUndoGroup();
+            if (applyUndoGroup) docManager.EndUndoGroup();
         }
     }
 
@@ -941,15 +938,15 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.refreshrealcurves";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
             RunAsync(
                 project, part, selectedNotes, docManager,
-                (current, total) => { }, CancellationToken.None);
+                (current, total) => { }, CancellationToken.None, applyUndoGroup);
         }
 
         public void RunAsync(
             UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager,
-            Action<int, int> setProgressCallback, CancellationToken cancellationToken) {
+            Action<int, int> setProgressCallback, CancellationToken cancellationToken, bool applyUndoGroup = true) {
             var renderer = project.tracks[part.trackNo].RendererSettings.Renderer;
             if (renderer == null || !renderer.SupportsRealCurve) {
                 docManager.ExecuteCmd(new ErrorMessageNotification("Not supported"));
@@ -1007,9 +1004,9 @@ namespace OpenUtau.Core.Editing {
                         newYsDict[kv.Key].ToArray(),
                         true))
                     .ToList();
-                docManager.StartUndoGroup("command.batch.note", true);
+                if (applyUndoGroup) docManager.StartUndoGroup("command.batch.note", true);
                 commands.ForEach(docManager.ExecuteCmd);
-                docManager.EndUndoGroup();
+                if (applyUndoGroup) docManager.EndUndoGroup();
             });
         }
     }

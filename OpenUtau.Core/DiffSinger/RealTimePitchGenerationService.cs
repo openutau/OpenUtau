@@ -176,8 +176,7 @@ namespace OpenUtau.Core.DiffSinger {
             try {
                 pitchLoader.RunLive(
                     project, part, affectedNotes,
-                    DocManager.Inst,
-                    cancellationToken,
+                    DocManager.Inst, cancellationToken,
                     settings.PitchSteps,
                     settings.FastRealtime);
             } catch (Exception e) {
