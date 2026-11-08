@@ -1,30 +1,35 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
 using MonoMac.Foundation;
+using OpenUtau.Core;
 using OpenUtau.Core.Editing;
+using OpenUtau.Core.Ustx;
+using ReactiveUI;
 using ReactiveUI.SourceGenerators;
+using Serilog;
 
 namespace OpenUtau.App.ViewModels {
     public partial class BatchEditProjectViewModel: ViewModelBase {
-        [Reactive] public partial ObservableCollection<BatchEdit> ApplyingEdits { get; set; }
+        [Reactive] public partial bool DoResetAllExpressions { get; set; }
+        [Reactive] public partial bool DoResetPitchBends { get; set; }
+        [Reactive] public partial bool DoResetAliases { get; set; }
+        [Reactive] public partial bool DoResetVibratos { get; set; }
 
-        // Available Batch Edits
-        public ResetPitchBends ResetPitchBends;
-        public ResetAllExpressions resetAllExpressions;
-        public ClearVibratos clearVibratos;
-        public ResetVibratos resetVibratos;
-        public ClearTimings clearTimings;
-        public ResetAliases resetAliases;
+        public void RunSelected() {
+            List<BatchEdit> edits = new List<BatchEdit>();
 
-        public BatchEditProjectViewModel(ObservableCollection<BatchEdit> applyingEdits) {
-            ApplyingEdits = applyingEdits;
+            if (DoResetAllExpressions) edits.Add(new ResetAllExpressions());
+            if (DoResetPitchBends) edits.Add(new ResetPitchBends());
+            if (DoResetAliases) edits.Add(new ResetAliases());
+            if (DoResetVibratos) edits.Add(new ResetVibratos());
 
-            ResetPitchBends = new ResetPitchBends();
-            resetAllExpressions = new ResetAllExpressions();
-            clearVibratos = new ClearVibratos();
-            resetVibratos = new ResetVibratos();
-            clearTimings = new ClearTimings();
-            resetAliases = new ResetAliases();
+            foreach (var batchEdit in edits) {
+                foreach (UVoicePart voicePart in DocManager.Inst.Project.parts.Where(part => part is UVoicePart)) {
+                    batchEdit.Run(DocManager.Inst.Project, voicePart, voicePart.notes.ToList(), DocManager.Inst);
+                }
+            }
         }
     }
 }
