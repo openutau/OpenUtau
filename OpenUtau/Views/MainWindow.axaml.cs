@@ -619,7 +619,7 @@ namespace OpenUtau.App.Views {
         void OnMenuRedo(object sender, RoutedEventArgs args) => viewModel.Redo();
 
         void BatchEditProject(object sender, RoutedEventArgs args) {
-            BatchEditProjectDialog.Open(this);
+            BatchEditProjectDialog.Open(this, DocManager.Inst.Project);
         }
 
         void OnMenuExpressionss(object sender, RoutedEventArgs args) {

@@ -5,7 +5,9 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using OpenUtau.App.ViewModels;
 using OpenUtau.App.Views;
+using OpenUtau.Core;
 using OpenUtau.Core.Editing;
+using OpenUtau.Core.Ustx;
 using ReactiveUI.SourceGenerators;
 using SharpJaad.MP4.Boxes.Impl.SampleEntries;
 
@@ -19,13 +21,13 @@ namespace OpenUtau.App.Controls {
             DataContext = ViewModel = model;
         }
 
-        public static void Open(Window owner) {
+        public static void Open(Window owner, UProject project) {
             if (open != null) {
                 open.Activate();
                 return;
             }
             open?.Close();
-            var dialog = new BatchEditProjectDialog(new BatchEditProjectViewModel());
+            var dialog = new BatchEditProjectDialog(new BatchEditProjectViewModel(project));
             open = dialog;
             dialog.Show(owner);
             if (dialog.Position.Y < 0) {
@@ -42,6 +44,7 @@ namespace OpenUtau.App.Controls {
         public void OnFinish(object? sender, RoutedEventArgs? args) {
             ViewModel.RunSelected();
             open?.Close();
+            DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", "Batch Reset done", "command.batch.project.toast"));
             open = null;
         }
     }

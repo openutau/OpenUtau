@@ -20,6 +20,7 @@
   <system:String x:Key="command.batch.plugin">Apply plugin edit</system:String>
   <system:String x:Key="command.batch.reset">Batch reset</system:String>
   <system:String x:Key="command.batch.project">Sanitise project</system:String>
+  <system:String x:Key="command.batch.project.toast">Batch edits on project completed</system:String>
   <system:String x:Key="command.exp.edit">Edit expression</system:String>
   <system:String x:Key="command.exp.paste">Paste expression curve</system:String>
   <system:String x:Key="command.exp.reset">Reset expression</system:String>

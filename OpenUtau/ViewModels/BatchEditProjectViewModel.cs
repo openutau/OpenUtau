@@ -17,6 +17,12 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool DoResetAliases { get; set; }
         [Reactive] public partial bool DoResetVibratos { get; set; }
 
+        private UProject project;
+
+        public BatchEditProjectViewModel(UProject project) {
+            this.project = project;
+        }
+
         public void RunSelected() {
             List<BatchEdit> edits = new List<BatchEdit>();
 
@@ -26,8 +32,9 @@ namespace OpenUtau.App.ViewModels {
             if (DoResetVibratos) edits.Add(new ResetVibratos());
 
             foreach (var batchEdit in edits) {
-                foreach (UVoicePart voicePart in DocManager.Inst.Project.parts.Where(part => part is UVoicePart)) {
-                    batchEdit.Run(DocManager.Inst.Project, voicePart, voicePart.notes.ToList(), DocManager.Inst);
+                foreach (var uPart in project.parts.Where(part => part is UVoicePart)) {
+                    var voicePart = (UVoicePart)uPart;
+                    batchEdit.Run(project, voicePart, voicePart.notes.ToList(), DocManager.Inst);
                 }
             }
         }
