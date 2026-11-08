@@ -20,11 +20,16 @@ namespace OpenUtau.App.ViewModels {
             if (DoResetAliases) edits.Add(new ResetAliases());
             if (DoResetVibratos) edits.Add(new ResetVibratos());
 
-            foreach (var batchEdit in edits) {
-                foreach (var uPart in project.parts.Where(part => part is UVoicePart)) {
-                    var voicePart = (UVoicePart)uPart;
-                    batchEdit.Run(project, voicePart, voicePart.notes.ToList(), DocManager.Inst);
+            try {
+                DocManager.Inst.StartUndoGroup("dialogs.batchedit.project.caption", true);
+                foreach (var batchEdit in edits) {
+                    foreach (var uPart in project.parts.Where(part => part is UVoicePart)) {
+                        var voicePart = (UVoicePart)uPart;
+                        batchEdit.Run(project, voicePart, voicePart.notes.ToList(), DocManager.Inst, false);
+                    }
                 }
+            } finally {
+                DocManager.Inst.EndUndoGroup();
             }
         }
     }
