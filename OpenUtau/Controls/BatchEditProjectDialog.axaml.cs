@@ -1,15 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks.Dataflow;
-using System.Windows.Forms;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Interactivity;
 using OpenUtau.App.ViewModels;
-using OpenUtau.App.Views;
 using OpenUtau.Core;
-using OpenUtau.Core.Editing;
 using OpenUtau.Core.Ustx;
-using ReactiveUI.SourceGenerators;
-using SharpJaad.MP4.Boxes.Impl.SampleEntries;
 
 namespace OpenUtau.App.Controls {
     public partial class BatchEditProjectDialog : Window {
