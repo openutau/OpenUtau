@@ -468,6 +468,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.file.exportproject">Export Project</system:String>
   <system:String x:Key="menu.file.exportust">Export Ust Files</system:String>
   <system:String x:Key="menu.file.exportustto">Export Ust Files To...</system:String>
+  <system:String x:Key="menu.file.exportustx">Export Ustx File (advanced)</system:String>
   <system:String x:Key="menu.file.exportwav">Export Wav Files</system:String>
   <system:String x:Key="menu.file.exportwavto">Export Wav Files To...</system:String>
   <system:String x:Key="menu.file.importaudio">Import Audio...</system:String>

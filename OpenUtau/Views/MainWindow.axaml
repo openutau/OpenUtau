@@ -53,6 +53,7 @@
             <MenuItem Header="{DynamicResource menu.file.exportproject}">
               <MenuItem Header="{DynamicResource menu.file.exportust}" Click="OnMenuExportUst"/>
               <MenuItem Header="{DynamicResource menu.file.exportustto}" Click="OnMenuExportUstTo"/>
+              <MenuItem Header="{DynamicResource menu.file.exportustx}" Click="OnMenuExportUstx"/>
               <MenuItem Header="{DynamicResource menu.file.exportmidi}" Click="OnMenuExportMidi"/>
               <MenuItem Header="{DynamicResource menu.file.exportds}" Click="OnMenuExportDsTo"/>
             </MenuItem>

@@ -594,6 +594,19 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        async void OnMenuExportUstx(object sender, RoutedEventArgs e) {
+            var project = DocManager.Inst.Project;
+            if (await WarnToSave(project)) {
+                var name = Path.GetFileNameWithoutExtension(project.FilePath);
+                var path = Path.GetDirectoryName(project.FilePath);
+
+                var file = await FilePicker.SaveFileAboutProject(this, "menu.file.saveas", FilePicker.USTX);
+                if (!string.IsNullOrEmpty(file)) {
+                    viewModel.SaveProject(file);
+                }
+            }
+        }
+
         async void OnMenuExportMidi(object sender, RoutedEventArgs e) {
             var project = DocManager.Inst.Project;
             var file = await FilePicker.SaveFileAboutProject(
