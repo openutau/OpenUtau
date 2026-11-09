@@ -48,8 +48,7 @@ namespace OpenUtau.UiTest {
         [InlineData("VolumeTextBox")]
         [InlineData("PanTextBox")]
         public void EditorStandsOnTheValueItReplaces(string editorName) => HeadlessUi.Run(() => {
-            MainWindowTest.InitCore();
-            HeadlessUi.Errors.Clear();
+            MainWindowTest.InitTest();
             var window = new MainWindow { Width = 1280, Height = 800 };
             try {
                 window.Show();

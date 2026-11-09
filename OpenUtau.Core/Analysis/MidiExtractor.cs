@@ -22,19 +22,6 @@ public abstract class MidiExtractor<TOptions> : IDisposable where TOptions : new
         return batch.Select(s => TranscribeWaveform(s, options)).ToList();
     }
 
-    private float[] ToMono(float[] samples, int channels) {
-        if (channels == 1) {
-            return samples;
-        }
-
-        float[] monoSamples = new float[samples.Length / channels];
-        for (int i = 0; i < monoSamples.Length; i++) {
-            monoSamples[i] = samples[(i * channels)..((i + 1) * channels)].Average();
-        }
-
-        return monoSamples;
-    }
-
     private float[] Resample(float[] samples, int fromRate, int toRate) {
         if (fromRate == toRate) {
             return samples;
@@ -63,7 +50,14 @@ public abstract class MidiExtractor<TOptions> : IDisposable where TOptions : new
         Func<bool>? confirm, Action<int, int> progress) {
         try {
             options ??= new TOptions();
-            var monoSamples = ToMono(wavePart.Samples, wavePart.channels);
+            var part = new UVoicePart {
+                position = wavePart.position,
+                Duration = wavePart.Duration,
+            };
+            var monoSamples = WavePartAudio.GetMonoSamples(project, wavePart);
+            if (monoSamples.Length == 0) {
+                return part;
+            }
             var resampledSamples = Resample(monoSamples, wavePart.sampleRate, AudioSlicer.SampleRate);
             var chunks = AudioSlicer.Slice(resampledSamples);
             if (AudioSlicer.SampleRate != ExpectedSampleRate) {
@@ -81,12 +75,9 @@ public abstract class MidiExtractor<TOptions> : IDisposable where TOptions : new
                 }
             }
 
-            var part = new UVoicePart();
-            part.position = wavePart.position;
-            part.Duration = wavePart.Duration;
             var timeAxis = project.timeAxis;
             double partOffsetMs = timeAxis.TickPosToMsPos(wavePart.position);
-            double currMs = partOffsetMs;
+            double partEndMs = timeAxis.TickPosToMsPos(wavePart.End);
 
             // Total duration of all chunks in seconds
             int totalDurationS = (int)chunks.Sum(c => (double)c.samples.Length / ExpectedSampleRate);
@@ -154,12 +145,19 @@ public abstract class MidiExtractor<TOptions> : IDisposable where TOptions : new
             }
 
             for (int ci = 0; ci < chunks.Count; ci++) {
-                currMs = chunks[ci].offsetMs + partOffsetMs;
+                double currMs = chunks[ci].offsetMs + partOffsetMs;
+                double chunkEndMs = Math.Min(partEndMs,
+                    currMs + (double)chunks[ci].samples.Length / ExpectedSampleRate * 1000);
                 foreach (var note in notesByChunkIndex[ci]) {
+                    if (currMs >= chunkEndMs) {
+                        break;
+                    }
                     var noteDurMs = note.noteDuration * 1000;
                     if (note.noteVoiced) {
-                        var posTick = timeAxis.MsPosToTickPos(currMs);
-                        var durTick = timeAxis.MsPosToTickPos(currMs + noteDurMs) - posTick;
+                        var posTick = Math.Clamp(timeAxis.MsPosToTickPos(currMs), part.position, part.End);
+                        var noteEndTick = Math.Clamp(timeAxis.MsPosToTickPos(Math.Min(currMs + noteDurMs, chunkEndMs)),
+                            posTick, part.End);
+                        var durTick = noteEndTick - posTick;
                         if (durTick > 0) {
                             var uNote = project.CreateNote(
                                 (int)Math.Round(note.noteScore),
@@ -172,11 +170,6 @@ public abstract class MidiExtractor<TOptions> : IDisposable where TOptions : new
 
                     currMs += noteDurMs;
                 }
-            }
-
-            var endTick = timeAxis.MsPosToTickPos(currMs);
-            if (endTick > part.End) {
-                part.Duration = endTick - part.position;
             }
 
             return part;
