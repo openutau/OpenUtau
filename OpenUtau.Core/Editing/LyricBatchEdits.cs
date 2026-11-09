@@ -11,15 +11,15 @@ namespace OpenUtau.Core.Editing {
 
     public abstract class SingleNoteLyricEdit : BatchEdit {
         public abstract string Name { get; }
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes.ToArray() : part.notes.ToArray();
             if (notes.Length == 0) {
                 return;
             }
             var lyrics = notes.Select(note => Transform(note.lyric)).ToArray();
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.lyric", true);
+            docManager.StartUndoGroup("command.batch.lyric", true);
             docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, notes, lyrics));
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
         }
         protected abstract string Transform(string lyric);
     }
@@ -96,7 +96,7 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.lyrics.movesuffixtovoicecolor";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes.ToArray() : part.notes.ToArray();
             if (notes.Length == 0) {
                 return;
@@ -133,7 +133,7 @@ namespace OpenUtau.Core.Editing {
             suffixes.Sort((a, b) => b.Length - a.Length);
 
             // Set lyric and color
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.lyric", true);
+            docManager.StartUndoGroup("command.batch.lyric", true);
             foreach (var note in notes) {
                 foreach (var suffix in suffixes) {
                     if (note.lyric.Contains(suffix)) {
@@ -146,7 +146,7 @@ namespace OpenUtau.Core.Editing {
                     }
                 }
             }
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
         }
     }
 
@@ -160,7 +160,7 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.lyrics.addphonetichints";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes.ToArray() : part.notes.ToArray();
             if (notes.Length == 0) {
                 return; // make no edits if no notes exist
@@ -171,7 +171,7 @@ namespace OpenUtau.Core.Editing {
             if (phonemizer == null) return;
 
 
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.lyric", true);
+            docManager.StartUndoGroup("command.batch.lyric", true);
             foreach (var note in notes) {
                 if (phoneticHintPattern.IsMatch(note.lyric) || note.lyric.StartsWith("+")) { // break out of loop for notes with hint
                     continue;
@@ -221,7 +221,7 @@ namespace OpenUtau.Core.Editing {
                 }
             }
 
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
 
 
         }
@@ -272,13 +272,13 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.lyrics.insertslur";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             if(selectedNotes.Count == 0){
                 return;
             }
             var startPos = selectedNotes.First().position;
             Queue<string> lyricsQueue = new Queue<string>();
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.lyric", true);
+            docManager.StartUndoGroup("command.batch.lyric", true);
             foreach(var note in part.notes.Where(n => n.position >= startPos)){
                 lyricsQueue.Enqueue(note.lyric);
                 if(selectedNotes.Contains(note)){
@@ -287,7 +287,7 @@ namespace OpenUtau.Core.Editing {
                     docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, note, lyricsQueue.Dequeue()));
                 }
             }
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
         }
     }
 }

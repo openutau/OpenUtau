@@ -90,13 +90,13 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.reset.pitchbends";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.reset", true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             foreach (var note in notes) {
                 docManager.ExecuteCmd(new ResetPitchPointsCommand(part, note));
             }
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
         }
     }
 
@@ -109,9 +109,9 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.reset.exps";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.reset", true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             //reset numerical and options expressions
             foreach (var note in notes) {
                 if (note.phonemeExpressions.Count > 0) {
@@ -135,7 +135,7 @@ namespace OpenUtau.Core.Editing {
                     }
                 }
             }
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
         }
     }
 
@@ -148,15 +148,15 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.clear.vibratos";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.reset", true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             foreach (var note in notes) {
                 if (note.vibrato.length > 0) {
                     docManager.ExecuteCmd(new VibratoLengthCommand(part, note, 0));
                 }
             }
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
         }
     }
 
@@ -169,9 +169,9 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.reset.vibratos";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.reset", true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             var vibrato = new UVibrato();
             foreach (var note in notes) {
                 docManager.ExecuteCmd(new SetVibratoCommand(part, note, vibrato));
@@ -181,7 +181,7 @@ namespace OpenUtau.Core.Editing {
                     docManager.ExecuteCmd(new VibratoLengthCommand(part, note, 0));
                 }
             }
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
         }
     }
 
@@ -194,9 +194,9 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.reset.phonemetimings";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.reset", true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             foreach (var note in notes) {
                 bool shouldClear = false;
                 foreach (var o in note.phonemeOverrides) {
@@ -209,7 +209,7 @@ namespace OpenUtau.Core.Editing {
                     docManager.ExecuteCmd(new ClearPhonemeTimingCommand(part, note));
                 }
             }
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
         }
     }
 
@@ -222,9 +222,9 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.reset.aliases";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.reset", true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             foreach (var note in notes) {
                 foreach (var o in note.phonemeOverrides) {
                     if (o.phoneme != null) {
@@ -232,7 +232,7 @@ namespace OpenUtau.Core.Editing {
                     }
                 }
             }
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
         }
     }
 
@@ -245,9 +245,9 @@ namespace OpenUtau.Core.Editing {
             name = "pianoroll.menu.notes.reset.all";
         }
 
-        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager, bool applyUndoGroup = true) {
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
-            if (applyUndoGroup) docManager.StartUndoGroup("command.batch.reset", true);
+            docManager.StartUndoGroup("command.batch.reset", true);
             foreach (var note in notes) {
                 // pitch points
                 docManager.ExecuteCmd(new ResetPitchPointsCommand(part, note));
@@ -294,7 +294,7 @@ namespace OpenUtau.Core.Editing {
                     }
                 }
             }
-            if (applyUndoGroup) docManager.EndUndoGroup();
+            docManager.EndUndoGroup();
         }
     }
 }
