@@ -151,6 +151,8 @@ namespace OpenUtau.App.Views {
     class NoteMoveEditState : NoteEditState {
         public UNote note;
         private double xOffset;
+        private int startPosition;
+        private PinPhonemesCommand? pinPhonemes;
         private bool duplicated = true;
         protected override bool ShowValueTip => false;
         protected override string? commandNameKey => commandNameKeyLocal;
@@ -176,6 +178,7 @@ namespace OpenUtau.App.Views {
             base.Begin(pointer, point);
             var notesVm = vm.NotesViewModel;
             xOffset = point.X - notesVm.TickToneToPoint(note.position, 0).X;
+            startPosition = note.position;
         }
         public override void Update(IPointer pointer, Point point) {
             var delta = point - startPoint;
@@ -223,6 +226,7 @@ namespace OpenUtau.App.Views {
                 return;
             }
 
+            pinPhonemes ??= notesVm.PinPhonemes();
             if (!duplicated) {
                 notes.Remove(note);
                 note = note.Clone();
@@ -238,11 +242,18 @@ namespace OpenUtau.App.Views {
             } else {
                 DocManager.Inst.ExecuteCmd(new MoveNoteCommand(part, notes, deltaTick, deltaTone));
             }
+            // The moved notes take their phonemes along, by how far they moved since the drag started.
+            pinPhonemes?.Shift(notes.Count == 0 ? new[] { note } : notes, note.position - startPosition);
+        }
+        public override void End(IPointer pointer, Point point) {
+            base.End(pointer, point);
+            pinPhonemes?.Release();
         }
     }
 
     class NoteDrawEditState : NoteEditState {
         private UNote? note;
+        private PinPhonemesCommand? pinPhonemes;
         private bool playTone;
         private int activeTone;
         protected override string? commandNameKey => "command.note.add";
@@ -256,6 +267,7 @@ namespace OpenUtau.App.Views {
         }
         public override void Begin(IPointer pointer, Point point) {
             base.Begin(pointer, point);
+            pinPhonemes = vm.NotesViewModel.PinPhonemes();
             note = vm.NotesViewModel.MaybeAddNote(point, false);
             if (note != null && playTone) {
                 if (PlaybackManager.Inst.PlayingMaster) {
@@ -323,6 +335,7 @@ namespace OpenUtau.App.Views {
         public override void End(IPointer pointer, Point point) {
             base.End(pointer, point);
             PlaybackManager.Inst.EndTone(MusicMath.ToneToFreq(activeTone));
+            pinPhonemes?.Release();
         }
     }
 
@@ -332,6 +345,7 @@ namespace OpenUtau.App.Views {
         public readonly int neighborNoteLength;
         public readonly bool fromStart;
         public bool resizeNeighbor;
+        PinPhonemesCommand? pinPhonemes;
         protected override string? commandNameKey => "command.note.edit";
 
         public NoteResizeEditState(
@@ -401,6 +415,7 @@ namespace OpenUtau.App.Views {
                 valueTip.UpdateValueTip(note.duration.ToString());
                 return;
             }
+            pinPhonemes ??= notesVm.PinPhonemes();
             // Resize neighbor note
             if (resizeNeighbor && neighborNote != null) {
                 int cutDuration = deltaDuration;
@@ -430,6 +445,10 @@ namespace OpenUtau.App.Views {
                 DocManager.Inst.ExecuteCmd(new ResizeNoteCommand(part, notesVm.Selection.ToList(), deltaDuration));
             }
             valueTip.UpdateValueTip(note.duration.ToString());
+        }
+        public override void End(IPointer pointer, Point point) {
+            base.End(pointer, point);
+            pinPhonemes?.Release();
         }
     }
 
@@ -605,6 +624,8 @@ namespace OpenUtau.App.Views {
         protected override bool ShowValueTip => false;
         protected override string? commandNameKey => "command.note.delete";
 
+        PinPhonemesCommand? pinPhonemes;
+
         public NoteEraseEditState(
             Control control,
             PianoRollViewModel vm,
@@ -616,8 +637,13 @@ namespace OpenUtau.App.Views {
             var notesVm = vm.NotesViewModel;
             var noteHitInfo = notesVm.HitTest.HitTestNote(point);
             if (noteHitInfo.hitBody && notesVm.Part != null) {
+                pinPhonemes ??= notesVm.PinPhonemes();
                 DocManager.Inst.ExecuteCmd(new RemoveNoteCommand(notesVm.Part, noteHitInfo.note));
             }
+        }
+        public override void End(IPointer pointer, Point point) {
+            base.End(pointer, point);
+            pinPhonemes?.Release();
         }
     }
 

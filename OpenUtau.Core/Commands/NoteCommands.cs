@@ -179,6 +179,76 @@ namespace OpenUtau.Core {
         }
     }
 
+    /// <summary>
+    /// Holds the phonemes of the given notes where they are now, while later commands in the same
+    /// undo group change the notes. The phonemizer output for the edited notes is turned into
+    /// phoneme offsets that keep the phonemes there. Call <see cref="Release"/> when the edit is over.
+    /// </summary>
+    public class PinPhonemesCommand : NoteCommand {
+        readonly Dictionary<(UNote, int), int> positions;
+        readonly Dictionary<UNote, int> shifts = new Dictionary<UNote, int>();
+        readonly List<UPhonemeOverride>[] oldOverrides;
+        PhonemePins? pins;
+        bool released;
+
+        public PinPhonemesCommand(UVoicePart part, IEnumerable<UNote> notes) : base(part, notes.Distinct()) {
+            var pinned = Notes.ToHashSet();
+            positions = part.phonemes
+                .Where(phoneme => phoneme.Parent != null && pinned.Contains(phoneme.Parent))
+                .ToDictionary(phoneme => (phoneme.Parent, phoneme.index), phoneme => phoneme.position);
+            oldOverrides = Notes.Select(note => note.phonemeOverrides.Select(o => o.Clone()).ToList()).ToArray();
+        }
+        public override string ToString() => "Pin phonemes";
+        public override void Execute() {
+            pins = new PhonemePins(Positions()) { Released = released, Owner = this };
+            Part.phonemePins = pins;
+        }
+        /// <summary>
+        /// Lets the phonemizer place the phonemes of the given notes again, as when their lyrics
+        /// change during the edit.
+        /// </summary>
+        public void Unpin(IEnumerable<UNote> notes) {
+            var unpinned = notes.ToHashSet();
+            foreach (var key in positions.Keys.Where(key => unpinned.Contains(key.Item1)).ToList()) {
+                positions.Remove(key);
+            }
+            pins?.Set(Positions());
+        }
+        /// <summary>
+        /// Moves the phonemes of the given notes with them, by how far they moved since they were pinned.
+        /// </summary>
+        public void Shift(IEnumerable<UNote> notes, int delta) {
+            foreach (var note in notes) {
+                shifts[note] = delta;
+            }
+            pins?.Set(Positions());
+        }
+        Dictionary<(UNote, int), int> Positions() => positions.ToDictionary(
+            pin => pin.Key,
+            pin => pin.Value + shifts.GetValueOrDefault(pin.Key.Item1));
+        public override void Unexecute() {
+            if (Part.phonemePins == pins) {
+                Part.phonemePins = null;
+            }
+            for (int i = 0; i < Notes.Length; i++) {
+                Notes[i].phonemeOverrides = oldOverrides[i].Select(o => o.Clone()).ToList();
+            }
+        }
+        /// <summary>
+        /// Ends the edit: the pins go away once the phonemizer has caught up with the notes.
+        /// </summary>
+        public void Release() {
+            released = true;
+            if (pins == null || Part.phonemePins != pins) {
+                return;
+            }
+            pins.Released = true;
+            if (Part.PhonemesUpToDate) {
+                Part.phonemePins = null;
+            }
+        }
+    }
+
     public class ChangeNoteLyricCommand : NoteCommand {
         readonly string[] NewLyrics;
         readonly string[] OldLyrics;
@@ -193,6 +263,9 @@ namespace OpenUtau.Core {
             NewLyrics = newLyrics;
             OldLyrics = notes.Select(note => note.lyric).ToArray();
         }
+        /// <summary>The notes whose lyric this command changes.</summary>
+        public IEnumerable<UNote> ChangedNotes() =>
+            Notes.Where((note, i) => OldLyrics[i] != NewLyrics[i]);
         public override string ToString() {
             return "Change notes lyric";
         }
