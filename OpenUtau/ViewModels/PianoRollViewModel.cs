@@ -107,6 +107,7 @@ namespace OpenUtau.App.ViewModels {
         public ReactiveCommand<NoteHitInfo, RxVoid> NoteDeleteCommand { get; set; }
         public ReactiveCommand<NoteHitInfo, RxVoid> NoteCopyCommand { get; set; }
         public ReactiveCommand<NoteHitInfo, RxVoid> ClearPhraseCacheCommand { get; set; }
+        public ReactiveCommand<NoteHitInfo, RxVoid> RerollTakeLockCommand { get; set; }
         public ReactiveCommand<PitchPointHitInfo, RxVoid> PitEaseInOutCommand { get; set; }
         public ReactiveCommand<PitchPointHitInfo, RxVoid> PitLinearCommand { get; set; }
         public ReactiveCommand<PitchPointHitInfo, RxVoid> PitEaseInCommand { get; set; }
@@ -137,6 +138,9 @@ namespace OpenUtau.App.ViewModels {
             });
             ClearPhraseCacheCommand = ReactiveCommand.Create<NoteHitInfo>(info => {
                 NotesViewModel.ClearPhraseCache();
+            });
+            RerollTakeLockCommand = ReactiveCommand.Create<NoteHitInfo>(info => {
+                NotesViewModel.RerollPreservingLocks();
             });
             PitEaseInOutCommand = ReactiveCommand.Create<PitchPointHitInfo>(info => {
                 if (NotesViewModel.Part == null) { return; }

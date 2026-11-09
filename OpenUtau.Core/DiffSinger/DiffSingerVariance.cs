@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -264,10 +264,19 @@ namespace OpenUtau.Core.DiffSinger{
                 AddVarianceInput(NamedOnnxValue.CreateFromTensor("spk_embed", spkEmbedTensor), includeInPatchKey: false);
             }
             ulong? variancePatchKey = null;
-            if (Preferences.Default.DiffSingerTensorCache &&
-                Preferences.Default.DiffSingerVarianceLocalPitchPatch) {
+            // Take lock needs the previous prediction even when the standalone patch
+            // preference is off, otherwise a pitch edit re-rolls the whole phrase's
+            // variance and there is nothing local for the acoustic take to keep.
+            bool localVariancePatch = Preferences.Default.DiffSingerTakeLock ||
+                (Preferences.Default.DiffSingerTensorCache && Preferences.Default.DiffSingerVarianceLocalPitchPatch);
+            if (localVariancePatch) {
                 var baseHash = new DiffSingerCache(varianceHash, variancePatchInputs).Hash;
                 variancePatchKey = DiffSingerVariancePatch.BuildStateKey(baseHash, phrase.position, phrase.end);
+            }
+            void RememberPatchState(ulong key, VariancePatchState state) {
+                variancePatchStates.Set(key, state);
+                DiffSingerVarianceStateStore.Save(key, state);
+                phrase.AddCacheFile(DiffSingerVarianceStateStore.GetFilename(key));
             }
             // Cache the final pipeline result in a separate namespace from raw predictor outputs.
             var resultCacheInputs = new List<NamedOnnxValue>(varianceInputs) {
@@ -281,16 +290,26 @@ namespace OpenUtau.Core.DiffSinger{
             var cachedOutputs = resultCache?.Load();
             if (cachedOutputs != null) {
                 var cachedResult = ParseVarianceResult(cachedOutputs, frameMs, headFrames, tailFrames, totalFrames);
-                if (variancePatchKey.HasValue) {
-                    variancePatchStates.Set(
-                        variancePatchKey.Value,
+                if (variancePatchKey.HasValue &&
+                    !variancePatchStates.TryGetValue(variancePatchKey.Value, out _) &&
+                    !DiffSingerVarianceStateStore.Exists(variancePatchKey.Value)) {
+                    // Only materialize the state once; cached predictions would otherwise
+                    // rewrite a few hundred KB per phrase on every pre-render pass.
+                    RememberPatchState(variancePatchKey.Value,
                         new VariancePatchState(pitch, speakerEmbed, cachedResult));
                 }
                 return cachedResult;
             }
             VariancePatchState? previous = null;
             bool[]? retakeMask = null;
-            if (variancePatchKey.HasValue && variancePatchStates.TryGetValue(variancePatchKey.Value, out var cachedState) &&
+            VariancePatchState? cachedState = null;
+            if (variancePatchKey.HasValue &&
+                !variancePatchStates.TryGetValue(variancePatchKey.Value, out cachedState) &&
+                DiffSingerVarianceStateStore.TryLoad(variancePatchKey.Value, out var loadedState)) {
+                variancePatchStates.Set(variancePatchKey.Value, loadedState);
+                cachedState = loadedState;
+            }
+            if (cachedState != null &&
                 DiffSingerVariancePatch.IsMetadataCompatible(cachedState.result, new VarianceResult {
                     frameMs = frameMs,
                     headFrames = headFrames,
@@ -378,8 +397,7 @@ namespace OpenUtau.Core.DiffSinger{
                 phrase.AddCacheFile(resultCache.Filename);
             }
             if (variancePatchKey.HasValue) {
-                variancePatchStates.Set(
-                    variancePatchKey.Value,
+                RememberPatchState(variancePatchKey.Value,
                     new VariancePatchState(pitch, speakerEmbed, result));
             }
             return result;

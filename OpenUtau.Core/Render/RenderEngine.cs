@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -382,9 +382,12 @@ namespace OpenUtau.Core.Render {
                         break;
                     }
                     planner.RegisterPcm(request.part, phrase.hash, tuple.offsetMs, tuple.estimatedLengthMs, 1, task.Result.samples);
+                    task.Result.onAccepted?.Invoke();
                 } else {
                     string xsyKey = $"{phrase.hash:x16}|" +
                         string.Join(",", phrase.phones.Select(p => $"{p.oto2?.Set}:{p.oto2?.Alias}"));
+                    RenderResult? originalResult = null;
+                    RenderResult? variantResult = null;
                     if (!XsyBlendCache.TryGetValue(xsyKey, out var blended)) {
                         var taskA = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
                         taskA.Wait();
@@ -392,6 +395,7 @@ namespace OpenUtau.Core.Render {
                             break;
                         }
                         float[] samplesA = taskA.Result.samples;
+                        originalResult = taskA.Result;
                         // The secondary render runs on a separate phrase with oto2
                         // substituted, so the live phrase is never mutated.
                         var variant = RenderPhrase.BuildXsyVariant(phrase);
@@ -401,6 +405,7 @@ namespace OpenUtau.Core.Render {
                             break;
                         }
                         float[] samplesB = taskB.Result.samples;
+                        variantResult = taskB.Result;
 
                         const int fftSize = 2048;
                         const int hopSize = 512;
@@ -425,7 +430,12 @@ namespace OpenUtau.Core.Render {
                         }
                         XsyBlendCache[xsyKey] = blended;
                     }
+                    if (cancellation.IsCancellationRequested) {
+                        break;
+                    }
                     planner.RegisterPcm(request.part, phrase.hash, tuple.offsetMs, tuple.estimatedLengthMs, 1, blended);
+                    originalResult?.onAccepted?.Invoke();
+                    variantResult?.onAccepted?.Invoke();
                 }
                 // Progressive waveform: coalesced to a ~10 Hz repaint rate.
                 WaveformRefresh.Request();
