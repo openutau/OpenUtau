@@ -2,14 +2,15 @@
 using System.IO;
 using System.Text;
 using Avalonia;
+using Avalonia.Markup.Xaml.Templates;
 using Avalonia.Media;
 using Avalonia.Styling;
+using OpenUtau.Colors;
 using OpenUtau.Core;
 using ReactiveUI;
 using ReactiveUI.Primitives;
 using ReactiveUI.SourceGenerators;
 using Serilog;
-using OpenUtau.Colors;
 
 namespace OpenUtau.App.ViewModels {
     public class ThemeEditorStateChangedEvent { }
@@ -59,6 +60,12 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial Color BlackKeyColorLeft { get; set; }
         [Reactive] public partial Color BlackKeyColorRight { get; set; }
         [Reactive] public partial Color BlackKeyNameColor { get; set; }
+
+        [Reactive] public Color MainColorA { get; set; }
+        [Reactive] public Color MainColorB { get; set; }
+        [Reactive] public bool IsDarkModeEasy { get; set; }
+
+        [Reactive] public bool IsEasyMode { get; set; } = true;
 
         public ThemeEditorViewModel(string customThemePath) {
             this.customThemePath = customThemePath;
@@ -111,6 +118,10 @@ namespace OpenUtau.App.ViewModels {
             BlackKeyColorRight = Color.Parse(themeYaml.BlackKeyColorRight);
             BlackKeyNameColor = Color.Parse(themeYaml.BlackKeyNameColor);
 
+            MainColorA = Color.Parse(themeYaml.MainColorA);
+            MainColorB = Color.Parse(themeYaml.MainColorB);
+            IsDarkModeEasy = themeYaml.IsDarkModeEasy;
+
             this.WhenAnyValue(vm => vm.IsDarkMode)
                 .Subscribe(v => {
                     Application.Current!.Resources["IsDarkMode"] = v; 
@@ -120,6 +131,13 @@ namespace OpenUtau.App.ViewModels {
                         Application.Current.RequestedThemeVariant = ThemeVariant.Light;
                     }
                     ThemeManager.LoadTheme();
+                });
+
+
+            this.WhenAnyValue(vm => vm.IsDarkModeEasy)
+                .Subscribe(v => {
+                    Application.Current!.Resources["IsDarkModeEasy"] = v;
+                    UpdateColorsByMain();
                 });
 
             this.WhenAnyValue(vm => vm.BackgroundColor)
@@ -222,6 +240,18 @@ namespace OpenUtau.App.ViewModels {
 
             this.WhenAnyValue(vm => vm.BlackKeyNameColor)
                 .Subscribe(v => Application.Current!.Resources["BlackKeyNameColor"] = v);
+                
+            this.WhenAnyValue(vm => vm.MainColorA)
+                .Subscribe(v => {
+                    Application.Current!.Resources["MainColorA"] = v;
+                    UpdateColorsByMain();
+                });
+
+            this.WhenAnyValue(vm => vm.MainColorB)
+                .Subscribe(v => {
+                    Application.Current!.Resources["MainColorB"] = v;
+                    UpdateColorsByMain();
+                });
         }
 
         public void Save() {
@@ -266,10 +296,116 @@ namespace OpenUtau.App.ViewModels {
 
                 BlackKeyColorLeft = BlackKeyColorLeft.ToString(),
                 BlackKeyColorRight = BlackKeyColorRight.ToString(),
-                BlackKeyNameColor = BlackKeyNameColor.ToString()
+                BlackKeyNameColor = BlackKeyNameColor.ToString(),
+
+                MainColorA = MainColorA.ToString(),
+                MainColorB = MainColorB.ToString(),
+                IsDarkModeEasy = IsDarkModeEasy
             };
 
             File.WriteAllText(customThemePath, Yaml.DefaultSerializer.Serialize(themeYaml), Encoding.UTF8);
+        }
+
+        private void UpdateColorsByMain() {
+            if (IsDarkModeEasy) {
+                BackgroundColor = Color.FromUInt32(0xFF303030);
+                BackgroundColorPointerOver = Color.FromUInt32(0xFF505050);
+                BackgroundColorPressed = Color.FromUInt32(0xFF707070);
+                BackgroundColorDisabled = Color.FromUInt32(0xFF404040);
+
+                ForegroundColor = Color.FromUInt32(0xFFE0E0E0);
+                ForegroundColorPointerOver = Color.FromUInt32(0xFFFCFCFC);
+                ForegroundColorPressed = Color.FromUInt32(0xFFFFFFFF);
+                ForegroundColorDisabled = Color.FromUInt32(0xFFA0A0A0);
+
+                BorderColor = Color.FromUInt32(0xFF707070);
+                BorderColorPointerOver = Color.FromUInt32(0xFFB0B0B0);
+
+                SystemAccentColor = MainColorA;
+                SystemAccentColorLight1 = ColorShift(MainColorA, 32);
+                SystemAccentColorDark1 = ColorMultiply(MainColorA, 0.8f);
+
+                NeutralAccentColor = Color.FromUInt32(0xFF808080);
+                NeutralAccentColorPointerOver = Color.FromUInt32(0xFFA0A0A0);
+                AccentColor1 = MainColorA;
+                AccentColor2 = ColorShift(MainColorB, 32);
+                AccentColor3 = ColorMultiply(MainColorB, 0.8f);
+
+                TickLineColor = Color.FromUInt32(0xFF707070);
+                BarNumberColor = Color.FromUInt32(0xFFD0D0D0);
+                FinalPitchColor = Color.FromUInt32(0xFFD0D0D0);
+                TrackBackgroundAltColor = Color.FromUInt32(0xFF404040);
+
+                WhiteKeyColorLeft = ColorMultiply(MainColorB, 0.9f);
+                WhiteKeyColorRight = MainColorB; 
+                WhiteKeyNameColor = Color.FromUInt32(0xFFFFFFFF);
+
+                CenterKeyColorLeft = ColorMultiply(ColorShift(MainColorB, 152), 0.9f);
+                CenterKeyColorRight = ColorShift(MainColorB, 152);
+                CenterKeyNameColor = MainColorB;
+
+                BlackKeyColorLeft = Color.FromUInt32(0x00000000);
+                BlackKeyColorRight = Color.FromUInt32(0x00000000);
+                BlackKeyNameColor = Color.FromUInt32(0xFFFFFFFF);
+            } else {
+                BackgroundColor = Color.FromUInt32(0xFFFFFFFF);
+                BackgroundColorPointerOver = Color.FromUInt32(0xFFF0F0F0);
+                BackgroundColorPressed = Color.FromUInt32(0xFFE0E0E0);
+                BackgroundColorDisabled = Color.FromUInt32(0xFFD0D0D0);
+
+                ForegroundColor = Color.FromUInt32(0xFF000000);
+                ForegroundColorPointerOver = Color.FromUInt32(0xFF000000);
+                ForegroundColorPressed = Color.FromUInt32(0xFF202020);
+                ForegroundColorDisabled = Color.FromUInt32(0xFF808080);
+
+                BorderColor = Color.FromUInt32(0xFF707070);
+                BorderColorPointerOver = Color.FromUInt32(0xFFB0B0B0);
+
+                SystemAccentColor = MainColorA;
+                SystemAccentColorLight1 = ColorShift(MainColorA, 32);
+                SystemAccentColorDark1 = ColorMultiply(MainColorA, 0.8f);
+
+                NeutralAccentColor = Color.FromUInt32(0xFFA7A7A7);
+                NeutralAccentColorPointerOver = Color.FromUInt32(0xFF909090);
+                AccentColor1 = MainColorA;
+                AccentColor2 = ColorShift(MainColorB, 32);
+                AccentColor3 = ColorMultiply(MainColorB, 0.8f);
+
+                TickLineColor = Color.FromUInt32(0xFFB0B0B0);
+                BarNumberColor = Color.FromUInt32(0xFFB0B0B0);
+                FinalPitchColor = Color.FromUInt32(0xFFC0C0C0);
+                TrackBackgroundAltColor = Color.FromUInt32(0xFFF0F0F0);
+
+                WhiteKeyColorLeft = Color.FromUInt32(0x00000000);
+                WhiteKeyColorRight = Color.FromUInt32(0x00000000);
+                WhiteKeyNameColor = MainColorB;
+
+                CenterKeyColorLeft = ColorShift(MainColorB, 144);
+                CenterKeyColorRight = ColorShift(MainColorB, 152);
+                CenterKeyNameColor = MainColorB;
+
+                BlackKeyColorLeft = ColorShift(MainColorB, 32);
+                BlackKeyColorRight = MainColorB;
+                BlackKeyNameColor = Color.FromUInt32(0xFFFFFFFF);
+            }
+            IsDarkMode = IsDarkModeEasy;
+        }
+
+        public static Color ColorMultiply(Color color, float ratio) {
+            return Color.FromArgb(
+                color.A,
+                (byte)((color.R * ratio) > 255 ? 255 : color.R * ratio),
+                (byte)((color.G * ratio) > 255 ? 255 : color.G * ratio),
+                (byte)((color.B * ratio) > 255 ? 255 : color.B * ratio)
+            );
+        }
+        public static Color ColorShift(Color color, int delta) {
+            return Color.FromArgb(
+                color.A,
+                (byte)((color.R + delta) > 255 ? 255 : ((color.R + delta) < 0 ? 0 : color.R + delta)),
+                (byte)((color.G + delta) > 255 ? 255 : ((color.G + delta) < 0 ? 0 : color.G + delta)),
+                (byte)((color.B + delta) > 255 ? 255 : ((color.B + delta) < 0 ? 0 : color.B + delta))
+            );
         }
 
     }
