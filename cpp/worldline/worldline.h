@@ -9,6 +9,8 @@
 
 #if defined(_MSC_VER)
 #define DLL_API __declspec(dllexport)
+#elif defined(__EMSCRIPTEN__)
+#define DLL_API __attribute__((used)) __attribute__((visibility("default")))
 #elif defined(__GNUC__)
 #define DLL_API __attribute__((visibility("default")))
 #endif
