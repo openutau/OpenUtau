@@ -666,7 +666,7 @@
                           PointerMoved="ExpCanvasPointerMoved"
                           PointerReleased="ExpCanvasPointerReleased"/>
       <ListBox Grid.Row="5" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Classes="toolbar" Padding="2"
-               SelectedIndex="{Binding CurveViewModel.CurveToolIndex}" IsVisible="{Binding NotesViewModel.ShowCurveToolbar, Mode=OneWay}">
+               SelectedIndex="{Binding CurveViewModel.CurveToolIndex}" IsVisible="{Binding NotesViewModel.ShowToolbar, Mode=OneWay}">
         <ListBox.ItemsPanel>
             <ItemsPanelTemplate>
                 <StackPanel Orientation="Horizontal"/>
@@ -678,9 +678,9 @@
           <ListBoxItem Classes="toolbar pitchLineTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.line}"/>
           <ListBoxItem Classes="toolbar eraserTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.eraser}"/>
           <ListBoxItem Classes="toolbar verticalStretchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.verticalstretch}"/>
-          <ListBoxItem Classes="toolbar horizontalStretchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.horizontalstretch}"/>
+          <ListBoxItem Classes="toolbar horizontalStretchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.horizontalstretch}" IsVisible="{Binding NotesViewModel.ShowCurveTools, Mode=OneWay}"/>
           <ListBoxItem Classes="toolbar verticalShiftTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.verticalshift}"/>
-          <ListBoxItem Classes="toolbar horizontalShiftTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.horizontalshift}"/>
+          <ListBoxItem Classes="toolbar horizontalShiftTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.horizontalshift}" IsVisible="{Binding NotesViewModel.ShowCurveTools, Mode=OneWay}"/>
         </ListBox.Items>
       </ListBox>
       <TextBlock Classes="tips" Grid.Row="5" Grid.Column="1"
