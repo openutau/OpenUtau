@@ -325,20 +325,31 @@ namespace OpenUtau.Core {
                 SkipPhonemizer = true,
                 SkipPhoneme = true,
             };
-        public SetCurveCommand(UProject project, UVoicePart part, string abbr, int x, int y, int lastX, int lastY) : base(part) {
+        // The line lies outside the part, where values would have no effect.
+        readonly bool outside;
+        /// <param name="withinPart">
+        /// Cut the line to the part's ticks, as for drawing in the piano roll, which shows the track around the part.
+        /// </param>
+        public SetCurveCommand(UProject project, UVoicePart part, string abbr, int x, int y, int lastX, int lastY, bool withinPart = false) : base(part) {
             this.project = project;
             this.abbr = abbr;
             Key = abbr;
+            double y0 = y;
+            double y1 = lastY;
+            outside = withinPart && !part.ClipToPart(ref x, ref y0, ref lastX, ref y1);
             this.x = x;
-            this.y = y;
+            this.y = (int)Math.Round(y0);
             this.lastX = lastX;
-            this.lastY = lastY;
+            this.lastY = (int)Math.Round(y1);
             var curve = part.curves.FirstOrDefault(c => c.abbr == abbr);
             oldXs = curve?.xs.ToArray();
             oldYs = curve?.ys.ToArray();
         }
         public override string ToString() => "Edit Curve";
         public override void Execute() {
+            if (outside) {
+                return;
+            }
             var curve = Part.curves.FirstOrDefault(c => c.abbr == abbr);
             if (project.expressions.TryGetValue(abbr, out var descriptor)) {
                 if (curve == null) {

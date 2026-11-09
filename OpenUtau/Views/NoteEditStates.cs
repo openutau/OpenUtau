@@ -640,7 +640,7 @@ namespace OpenUtau.App.Views {
             double deltaX = (point.X - startPoint.X) / notesVm.TickWidth;
             double deltaY = (point.Y - startPoint.Y) / notesVm.TrackHeight;
             startPoint = point;
-            notesVm.TickOffset = Math.Max(0, notesVm.TickOffset - deltaX);
+            notesVm.TickOffset = notesVm.ClampTickOffset(notesVm.TickOffset - deltaX);
             notesVm.TrackOffset = Math.Max(0, notesVm.TrackOffset - deltaY);
         }
     }
@@ -891,9 +891,9 @@ namespace OpenUtau.App.Views {
                 startValue = y;
             }
             if (masked) {
-                DocManager.Inst.ExecuteCmd(new SetMaskedCurveCommand(notesVm.Part, notesVm.PrimaryKey, lastX, (float)lastY, x, (float)y));
+                DocManager.Inst.ExecuteCmd(new SetMaskedCurveCommand(notesVm.Part, notesVm.PrimaryKey, lastX, (float)lastY, x, (float)y, withinPart: true));
             } else {
-                DocManager.Inst.ExecuteCmd(new SetCurveCommand(notesVm.Project, notesVm.Part, notesVm.PrimaryKey, x, (int)y, lastX, (int)lastY));
+                DocManager.Inst.ExecuteCmd(new SetCurveCommand(notesVm.Project, notesVm.Part, notesVm.PrimaryKey, x, (int)y, lastX, (int)lastY, withinPart: true));
             }
         }
     }
@@ -975,7 +975,7 @@ namespace OpenUtau.App.Views {
             if (descriptor != null && notesVm.Part != null) {
                 DocManager.Inst.ExecuteCmd(new SetCurveCommand(
                     notesVm.Project, notesVm.Part, notesVm.PrimaryKey,
-                    x, (int)descriptor.defaultValue, lastX, (int)descriptor.defaultValue));
+                    x, (int)descriptor.defaultValue, lastX, (int)descriptor.defaultValue, withinPart: true));
             }
         }
     }
@@ -1025,8 +1025,13 @@ namespace OpenUtau.App.Views {
                 vm.CurveViewModel.ClearSelect();
                 return;
             }
-            int minTick = Math.Min(tick, startTick);
-            int maxTick = Math.Max(tick, startTick);
+            // Only the open part's ticks can be selected; the lanes show the track around it too.
+            int minTick = Math.Max(0, Math.Min(tick, startTick));
+            int maxTick = Math.Min(notesVm.Part.Duration, Math.Max(tick, startTick));
+            if (minTick >= maxTick) {
+                vm.CurveViewModel.ClearSelect();
+                return;
+            }
             var curve = notesVm.Part.curves.FirstOrDefault(c => c.abbr == descriptor.abbr);
             vm.CurveViewModel.Select(descriptor, minTick, maxTick, curve);
         }
@@ -1732,7 +1737,7 @@ namespace OpenUtau.App.Views {
                         vm.NotesViewModel.PointToTick(lastPoint),
                         (float)(vm.NotesViewModel.PointToToneDouble(lastPoint) * 100),
                         vm.NotesViewModel.PointToTick(point),
-                        (float)(vm.NotesViewModel.PointToToneDouble(point) * 100)));
+                        (float)(vm.NotesViewModel.PointToToneDouble(point) * 100), withinPart: true));
                 }
                 lastPoint = point;
                 return;
@@ -1755,7 +1760,7 @@ namespace OpenUtau.App.Views {
                 vm.NotesViewModel.PointToTick(point),
                 (int)Math.Round(tone * 100 - pitch.Value),
                 vm.NotesViewModel.PointToTick(lastPitch == null ? point : lastPoint),
-                (int)Math.Round(tone * 100 - (lastPitch ?? pitch.Value))));
+                (int)Math.Round(tone * 100 - (lastPitch ?? pitch.Value)), withinPart: true));
             lastPitch = pitch;
             lastPoint = point;
         }
@@ -1974,7 +1979,7 @@ namespace OpenUtau.App.Views {
                     .Select(s => (s.tick, (float)(s.tone * 100)))
                     .ToList();
                 if (values.Count > 0) {
-                    DocManager.Inst.ExecuteCmd(new SetMaskedCurveValuesCommand(notesVm.Part, Core.Format.Ustx.PITO, values));
+                    DocManager.Inst.ExecuteCmd(new SetMaskedCurveValuesCommand(notesVm.Part, Core.Format.Ustx.PITO, values, withinPart: true));
                 }
                 return;
             }
@@ -2005,15 +2010,16 @@ namespace OpenUtau.App.Views {
                     if (oldXs[i] < startTick) { newXs.Add(oldXs[i]); newYs.Add(oldYs[i]); }
                 }
                 // Insert start boundary anchor if there's a gap
-                if (startAnchor.HasValue) {
+                if (startAnchor.HasValue && part.ContainsTick(startAnchor.Value.Item1)) {
                     var (ax, ay) = startAnchor.Value;
                     if (newXs.Count == 0 || newXs[newXs.Count - 1] < ax) {
                         newXs.Add(ax); newYs.Add(ay);
                     }
                 }
-                foreach (var (x, y) in curveSamples) { newXs.Add(x); newYs.Add(y); }
+                // The piano roll shows the track around the part, where the curve has no effect.
+                foreach (var (x, y) in curveSamples.Where(sample => part.ContainsTick(sample.Item1))) { newXs.Add(x); newYs.Add(y); }
                 // Insert end boundary anchor if there's a gap
-                if (endAnchor.HasValue) {
+                if (endAnchor.HasValue && part.ContainsTick(endAnchor.Value.Item1)) {
                     var (ax, ay) = endAnchor.Value;
                     newXs.Add(ax); newYs.Add(ay);
                 }
@@ -2025,14 +2031,14 @@ namespace OpenUtau.App.Views {
                 // Insert start boundary anchor if there's a gap
                 if (startAnchor.HasValue) {
                     var (ax, ay) = startAnchor.Value;
-                    DocManager.Inst.ExecuteCmd(new SetCurveCommand(project, part, Core.Format.Ustx.PITD, ax, ay, ax, ay));
+                    DocManager.Inst.ExecuteCmd(new SetCurveCommand(project, part, Core.Format.Ustx.PITD, ax, ay, ax, ay, withinPart: true));
                 }
                 foreach (var (x, y) in curveSamples)
-                    DocManager.Inst.ExecuteCmd(new SetCurveCommand(project, part, Core.Format.Ustx.PITD, x, y, x, y));
+                    DocManager.Inst.ExecuteCmd(new SetCurveCommand(project, part, Core.Format.Ustx.PITD, x, y, x, y, withinPart: true));
                 // Insert end boundary anchor if there's a gap
                 if (endAnchor.HasValue) {
                     var (ax, ay) = endAnchor.Value;
-                    DocManager.Inst.ExecuteCmd(new SetCurveCommand(project, part, Core.Format.Ustx.PITD, ax, ay, ax, ay));
+                    DocManager.Inst.ExecuteCmd(new SetCurveCommand(project, part, Core.Format.Ustx.PITD, ax, ay, ax, ay, withinPart: true));
                 }
             }
         }
@@ -2105,7 +2111,7 @@ namespace OpenUtau.App.Views {
             if (drawsOverride) {
                 float cents = (float)(notesVm.PointToToneDouble(point) * 100);
                 DocManager.Inst.ExecuteCmd(new SetMaskedCurveCommand(
-                    part, Core.Format.Ustx.PITO, notesVm.PointToTick(lastPoint), cents, notesVm.PointToTick(point), cents));
+                    part, Core.Format.Ustx.PITO, notesVm.PointToTick(lastPoint), cents, notesVm.PointToTick(point), cents, withinPart: true));
                 return;
             }
             int tick = notesVm.PointToTick(point);
@@ -2117,6 +2123,8 @@ namespace OpenUtau.App.Views {
             double tone = notesVm.PointToToneDouble(point);
             int y = (int)Math.Round(tone * 100 - pitch.Value);
             if (overwrite) {
+                // The piano roll shows the track around the part, where the curve has no effect.
+                if (!part.ContainsTick(tick)) return;
                 var curve = part.curves.FirstOrDefault(c => c.abbr == Core.Format.Ustx.PITD);
                 var oldXs = curve != null ? curve.xs.ToArray() : Array.Empty<int>();
                 var oldYs = curve != null ? curve.ys.ToArray() : Array.Empty<int>();
@@ -2134,7 +2142,7 @@ namespace OpenUtau.App.Views {
                 DocManager.Inst.ExecuteCmd(new SetCurveCommand(
                     notesVm.Project, part, Core.Format.Ustx.PITD,
                     notesVm.PointToTick(point), y,
-                    notesVm.PointToTick(lastPoint), y));
+                    notesVm.PointToTick(lastPoint), y, withinPart: true));
             }
         }
 
@@ -2235,7 +2243,7 @@ namespace OpenUtau.App.Views {
                 values.Add((tick, (float)(total / count)));
             }
             if (values.Count > 0) {
-                DocManager.Inst.ExecuteCmd(new SetMaskedCurveValuesCommand(part, Core.Format.Ustx.PITO, values));
+                DocManager.Inst.ExecuteCmd(new SetMaskedCurveValuesCommand(part, Core.Format.Ustx.PITO, values, withinPart: true));
             }
         }
         private double GetPitch(int tick, UCurve? curve = null) {
@@ -2273,7 +2281,7 @@ namespace OpenUtau.App.Views {
                     vm.NotesViewModel.Part,
                     Core.Format.Ustx.PITD,
                     tick, pitch,
-                    tick, pitch));
+                    tick, pitch, withinPart: true));
         }
     }
 
@@ -2317,7 +2325,7 @@ namespace OpenUtau.App.Views {
                 vm.NotesViewModel.PointToTick(point),
                 0,
                 vm.NotesViewModel.PointToTick(lastPoint),
-                0));
+                0, withinPart: true));
             lastPoint = point;
         }
     }
