@@ -1256,7 +1256,7 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             if (point.Properties.IsLeftButtonPressed) {
-                if (descriptor.type == UExpressionType.Curve) {
+                if (descriptor.type == UExpressionType.Curve || descriptor.type == UExpressionType.MorphingCurve) {
                     switch (ViewModel.CurveViewModel.CurveTool) {
                         case CurveTools.CurveSelectTool:
                             editState = new CurveSelectionState(control, ViewModel, this, descriptor);
@@ -1294,7 +1294,7 @@ namespace OpenUtau.App.Controls {
                 }
                 Cursor = null;
             } else if (point.Properties.IsRightButtonPressed) {
-                if (descriptor.type == UExpressionType.Curve && ViewModel.CurveViewModel.CurveTool == CurveTools.CurveSelectTool) {
+                if ((descriptor.type == UExpressionType.Curve || descriptor.type == UExpressionType.MorphingCurve) && ViewModel.CurveViewModel.CurveTool == CurveTools.CurveSelectTool) {
                     ViewModel.CurveViewModel.ClearSelect();
                 } else {
                     ViewModel.CurveViewModel.ClearSelect();

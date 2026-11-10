@@ -150,7 +150,7 @@ namespace OpenUtau.App.Controls {
                 DrawMaskedCurve(context, viewModel, descriptor, leftTick, rightTick);
                 return;
             }
-            if (descriptor.type == UExpressionType.Curve) {
+            if (descriptor.type == UExpressionType.Curve || descriptor.type == UExpressionType.MorphingCurve) {
                 var curve = Part.curves.FirstOrDefault(c => c.descriptor == descriptor);
                 double defaultHeight = Math.Round(Bounds.Height - Bounds.Height * (descriptor.defaultValue - descriptor.min) / (descriptor.max - descriptor.min));
                 
