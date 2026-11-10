@@ -25,7 +25,7 @@ namespace OpenUtau.App.ViewModels {
                 foreach (var batchEdit in edits) {
                     foreach (var uPart in project.parts.Where(part => part is UVoicePart)) {
                         var voicePart = (UVoicePart)uPart;
-                        batchEdit.Run(project, voicePart, voicePart.notes.ToList(), DocManager.Inst, false);
+                        batchEdit.Run(project, voicePart, voicePart.notes.ToList(), DocManager.Inst);
                     }
                 }
             } finally {
