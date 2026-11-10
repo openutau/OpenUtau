@@ -85,19 +85,22 @@ namespace OpenUtau.Core {
                         WebGpuMinMajor, WebGpuMinMinor, version);
                     return false;
                 }
-                string? libraryPath = findWebGpuLibrary();
-                if (libraryPath == null) {
-                    Log.Information("WebGPU runner is not available: {Library} was not found next to the executable.",
-                        WebGpuLibraryName);
-                    return false;
-                }
-                env.RegisterExecutionProviderLibrary(WebGpuRegistrationName, libraryPath);
                 var found = env.GetEpDevices()
                     .Where(device => string.Equals(device.EpName, WebGpuEpName, StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 if (found.Count == 0) {
-                    Log.Warning("WebGPU runner loaded {Library} but it reported no devices.", libraryPath);
-                    return false;
+                    string? libraryPath = findWebGpuLibrary();
+                    if (libraryPath == null) {
+                        Log.Information("WebGPU runner is not available: {Library} was not found next to the executable.",
+                            WebGpuLibraryName);
+                        return false;
+                    }
+                    env.RegisterExecutionProviderLibrary(WebGpuRegistrationName, libraryPath);
+                    found = [.. env.GetEpDevices().Where(device => string.Equals(device.EpName, WebGpuEpName, StringComparison.OrdinalIgnoreCase))];
+                    if (found.Count == 0) {
+                        Log.Warning("WebGPU runner loaded {Library} but it reported no devices.", libraryPath);
+                        return false;
+                    }
                 }
                 webGpuDevices = found;
                 Log.Information("WebGPU runner is ready with {Count} device(s).", found.Count);
