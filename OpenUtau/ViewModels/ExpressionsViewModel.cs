@@ -308,7 +308,11 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void GetSuggestions() {
-            foreach (var track in DocManager.Inst.Project.tracks) {
+            // User-editable external resampler flags take priority, while the built-in Worldline resampler is processed last.
+            var tracks = DocManager.Inst.Project.tracks
+                .OrderBy(track => track.RendererSettings.Resampler?.ToString() == "worldline" ? 1 : 0)
+                .ToList();
+            foreach (var track in tracks) {
                 if (track.RendererSettings.Renderer == null) {
                     continue;
                 }
@@ -317,8 +321,9 @@ namespace OpenUtau.App.ViewModels {
                     continue;
                 }
                 foreach (var suggestion in suggestions) {
-                    //Add if not already in the list
-                    if (!expressionsSourceProject.Any(builder => builder.Abbr == suggestion.abbr)) {
+                    // Skip when the abbreviation, or a non-empty flag, is already taken.
+                    if (!expressionsSourceProject.Any(builder => builder.Abbr == suggestion.abbr
+                        || (!string.IsNullOrEmpty(suggestion.flag) && builder.Flag == suggestion.flag))) {
                         expressionsSourceProject.Add(new ExpressionBuilder(suggestion));
                     }
                 }
