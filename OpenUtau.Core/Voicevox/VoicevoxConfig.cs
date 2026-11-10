@@ -41,9 +41,17 @@ namespace OpenUtau.Core.Voicevox {
                     throw new VoicevoxException(errorMessage);
                 }
                 var manifest = Json.Deserialize<Engine_manifest>(jObj);
-                manifest.SaveLicenses(singer.Location);
+                if (manifest != null) {
+                    try {
+                        manifest.SaveLicenses(singer.Location);
+                    } catch (Exception e) {
+                        // Licenses are not needed to sing, so keep loading the singer.
+                        // The version file is not updated, so saving is retried next time.
+                        Log.Error(e, "Could not save Licenses.");
+                    }
+                }
             } catch (Exception e) {
-                var errorMessage = $"Could not load Licenses.:{e}";
+                var errorMessage = $"Could not load engine manifest.:{e}";
                 Log.Error(errorMessage);
                 throw new VoicevoxException(errorMessage, e);
             }
@@ -63,7 +71,7 @@ namespace OpenUtau.Core.Voicevox {
                     VoicevoxConfig voicevoxConfig = rowVoicevoxConfig.Convert();
                     var folderPath = Path.Join(parentDirectory, voicevoxConfig.name);
                     var filePath = Path.Join(folderPath, "character.yaml");
-                    if (!File.Exists(filePath)) {
+                    if (!File.Exists(filePath) || !singer.Version.Equals(voicevoxConfig.version)) {
                         Directory.CreateDirectory(folderPath);
                         string typename = string.Empty;
                         SingerTypeUtils.SingerTypeNames.TryGetValue(USingerType.Voicevox, out typename);
@@ -72,7 +80,11 @@ namespace OpenUtau.Core.Voicevox {
                             TextFileEncoding = Encoding.UTF8.WebName,
                             SingerType = typename,
                             PortraitHeight = 600,
-                            Portrait = $"{voicevoxConfig.name}_portrait.png"
+                            Portrait = $"{voicevoxConfig.name}_portrait.png",
+                            Image = voicevoxConfig.styles != null && voicevoxConfig.styles.Count > 0
+                                    ? $"{voicevoxConfig.name}_{voicevoxConfig.styles[0].name}_icon.png"
+                                    : $"{voicevoxConfig.name}_icon.png",
+                            Version = voicevoxConfig.version
                         };
                         using (var stream = File.Open(filePath, FileMode.Create)) {
                             config.Save(stream);
@@ -150,22 +162,50 @@ namespace OpenUtau.Core.Voicevox {
         public string supported_vvlib_manifest_version;
         public Supported_features supported_features;
 
+        const string VersionFileName = "manifest_version.txt";
+
         public void SaveLicenses(string location) {
             var parentDirectory = Directory.GetParent(location).ToString();
             var licenseDirectory = Path.Join(parentDirectory, "Licenses");
-            if (!Directory.Exists(licenseDirectory)) {
-                Directory.CreateDirectory(licenseDirectory);
+            Directory.CreateDirectory(licenseDirectory);
+
+            var versionFilePath = Path.Join(licenseDirectory, VersionFileName);
+            string savedVersion = File.Exists(versionFilePath)
+                ? File.ReadAllText(versionFilePath).Trim()
+                : string.Empty;
+            if (savedVersion.Equals(manifest_version)) {
+                return;
             }
-            var filePath = Path.Join(licenseDirectory, "terms_of_service.txt");
-            if (!string.IsNullOrEmpty(terms_of_service)) {
-                File.WriteAllText(filePath, terms_of_service);
-            }
-            foreach (var item in dependency_licenses) {
-                item.name = item.name.Replace("\"","");
-                filePath = Path.Join(licenseDirectory, $"{item.name}_License.txt");
-                if (!string.IsNullOrEmpty(item.text)) {
-                    File.WriteAllText(filePath, $"license:{item.license}\nversion:{item.version}\n\n" + item.text);
+
+            foreach (var file in Directory.GetFiles(licenseDirectory)) {
+                if (Path.GetFileName(file).Equals(VersionFileName, StringComparison.OrdinalIgnoreCase)) {
+                    continue;
                 }
+                try {
+                    File.Delete(file);
+                } catch (Exception e) {
+                    Log.Warning($"Could not delete {file}: {e.Message}");
+                }
+            }
+
+            if (!string.IsNullOrEmpty(terms_of_service)) {
+                File.WriteAllText(Path.Join(licenseDirectory, "terms_of_service.txt"), terms_of_service);
+            }
+            if (dependency_licenses != null) {
+                var invalidChars = Path.GetInvalidFileNameChars();
+                foreach (var item in dependency_licenses) {
+                    if (string.IsNullOrEmpty(item.name) || string.IsNullOrEmpty(item.text)) {
+                        continue;
+                    }
+                    var fileName = new string(item.name.Replace("\"", "")
+                        .Select(c => invalidChars.Contains(c) ? '_' : c).ToArray());
+                    File.WriteAllText(Path.Join(licenseDirectory, $"{fileName}_License.txt"),
+                        $"license:{item.license}\nversion:{item.version}\n\n" + item.text);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(manifest_version)) {
+                File.WriteAllText(versionFilePath, manifest_version);
             }
         }
     }
