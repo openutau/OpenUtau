@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 using OpenUtau.Core;
 using OpenUtau.Core.Util;
@@ -68,7 +69,8 @@ public class CustomTheme {
         Load(themeName);
 
         if (Application.Current != null) {
-            Application.Current.Resources["IsDarkMode"] = Default.IsDarkMode; 
+            Application.Current.Resources["IsDarkMode"] = Default.IsDarkMode;
+            Application.Current.Resources["ThemeTransparencyLevelHint"] = ParseTransparency(Default.Transparency);
             SetResourceColor("BackgroundColor", Default.BackgroundColor);
             SetResourceColor("BackgroundColorPointerOver", Default.BackgroundColorPointerOver);
             SetResourceColor("BackgroundColorPressed", Default.BackgroundColorPressed);
@@ -110,6 +112,31 @@ public class CustomTheme {
             SetResourceColor("BlackKeyNameColor", Default.BlackKeyNameColor);
         }
     }
+    
+    private static readonly IReadOnlyList<WindowTransparencyLevel> NoneHint = new[] { WindowTransparencyLevel.None };
+    private static readonly IReadOnlyList<WindowTransparencyLevel> TransparentHint = new[] { WindowTransparencyLevel.Transparent };
+    private static readonly IReadOnlyList<WindowTransparencyLevel> BlurHint = new[] { WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent };
+    private static readonly IReadOnlyList<WindowTransparencyLevel> AcrylicHint = new[] { WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Transparent };
+    private static readonly IReadOnlyList<WindowTransparencyLevel> MicaHint = new[] { WindowTransparencyLevel.Mica, WindowTransparencyLevel.Transparent };
+
+    public static IReadOnlyList<WindowTransparencyLevel> ParseTransparency(string? value) {
+        switch ((value ?? "").Trim().ToLowerInvariant()) {
+            case "transparent":
+            case "":
+                return TransparentHint;
+            case "blur":
+                return BlurHint;
+            case "acrylicblur":
+                return AcrylicHint;
+            case "mica":
+                return MicaHint;
+            case "none":
+                return NoneHint;
+            default:
+                Log.Error($"Unknown TransparencyLevel \"{value}\" in {Default.Name} custom theme");
+                return TransparentHint;
+        }
+    }
 
     private static void SetResourceColor(string res, string colorStr) {
         if (Color.TryParse(colorStr, out var color)) {
@@ -124,6 +151,7 @@ public class CustomTheme {
         public string Name = "Custom YAML";
             
         public bool IsDarkMode = false;
+        public string Transparency = "Transparent";
         public string BackgroundColor = "#FFFFFF";
         public string BackgroundColorPointerOver = "#F0F0F0";
         public string BackgroundColorPressed = "#E0E0E0";
