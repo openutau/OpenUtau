@@ -21,7 +21,7 @@ namespace OpenUtau.App.ViewModels {
             if (DoResetVibratos) edits.Add(new ResetVibratos());
 
             try {
-                DocManager.Inst.StartUndoGroup("dialogs.batchedit.project.caption", true);
+                DocManager.Inst.StartUndoGroup("dialogs.batchedit.project.caption", true, isDeep: true);
                 foreach (var batchEdit in edits) {
                     foreach (var uPart in project.parts.Where(part => part is UVoicePart)) {
                         var voicePart = (UVoicePart)uPart;

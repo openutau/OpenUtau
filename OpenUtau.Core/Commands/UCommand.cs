@@ -22,10 +22,13 @@ namespace OpenUtau.Core {
         public string? NameKey;
         public bool DeferValidate;
         public List<UCommand> Commands;
+        public List<UCommandGroup> Children;
+
         public UCommandGroup(string? nameKey, bool deferValidate) {
             NameKey = nameKey;
             DeferValidate = deferValidate;
             Commands = new List<UCommand>();
+            Children = new List<UCommandGroup>();
         }
         public void Merge() {
             if (Commands.Count > 0 && Commands.Last().CanMerge(Commands)) {
