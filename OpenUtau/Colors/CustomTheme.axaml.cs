@@ -112,22 +112,29 @@ public class CustomTheme {
             SetResourceColor("BlackKeyNameColor", Default.BlackKeyNameColor);
         }
     }
+    
+    private static readonly IReadOnlyList<WindowTransparencyLevel> NoneHint = new[] { WindowTransparencyLevel.None };
+    private static readonly IReadOnlyList<WindowTransparencyLevel> TransparentHint = new[] { WindowTransparencyLevel.Transparent };
+    private static readonly IReadOnlyList<WindowTransparencyLevel> BlurHint = new[] { WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent };
+    private static readonly IReadOnlyList<WindowTransparencyLevel> AcrylicHint = new[] { WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Transparent };
+    private static readonly IReadOnlyList<WindowTransparencyLevel> MicaHint = new[] { WindowTransparencyLevel.Mica, WindowTransparencyLevel.Transparent };
+
     public static IReadOnlyList<WindowTransparencyLevel> ParseTransparency(string? value) {
         switch ((value ?? "").Trim().ToLowerInvariant()) {
             case "transparent":
             case "":
-                return new[] { WindowTransparencyLevel.Transparent };
+                return TransparentHint;
             case "blur":
-                return new[] { WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent };
+                return BlurHint;
             case "acrylicblur":
-                return new[] { WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Transparent };
+                return AcrylicHint;
             case "mica":
-                return new[] { WindowTransparencyLevel.Mica, WindowTransparencyLevel.Transparent };
+                return MicaHint;
             case "none":
-                return new[] { WindowTransparencyLevel.None };
+                return NoneHint;
             default:
                 Log.Error($"Unknown TransparencyLevel \"{value}\" in {Default.Name} custom theme");
-                return new[] { WindowTransparencyLevel.None };
+                return TransparentHint;
         }
     }
 
