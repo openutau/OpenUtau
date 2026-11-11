@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 using OpenUtau.Core;
 using OpenUtau.Core.Util;
@@ -68,7 +69,8 @@ public class CustomTheme {
         Load(themeName);
 
         if (Application.Current != null) {
-            Application.Current.Resources["IsDarkMode"] = Default.IsDarkMode; 
+            Application.Current.Resources["IsDarkMode"] = Default.IsDarkMode;
+            Application.Current.Resources["ThemeTransparencyLevelHint"] = ParseTransparency(Default.Transparency);
             SetResourceColor("BackgroundColor", Default.BackgroundColor);
             SetResourceColor("BackgroundColorPointerOver", Default.BackgroundColorPointerOver);
             SetResourceColor("BackgroundColorPressed", Default.BackgroundColorPressed);
@@ -110,6 +112,24 @@ public class CustomTheme {
             SetResourceColor("BlackKeyNameColor", Default.BlackKeyNameColor);
         }
     }
+    public static IReadOnlyList<WindowTransparencyLevel> ParseTransparency(string? value) {
+        switch ((value ?? "").Trim().ToLowerInvariant()) {
+            case "transparent":
+            case "":
+                return new[] { WindowTransparencyLevel.Transparent };
+            case "blur":
+                return new[] { WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent };
+            case "acrylicblur":
+                return new[] { WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Transparent };
+            case "mica":
+                return new[] { WindowTransparencyLevel.Mica, WindowTransparencyLevel.Transparent };
+            case "none":
+                return new[] { WindowTransparencyLevel.None };
+            default:
+                Log.Error($"Unknown TransparencyLevel \"{value}\" in {Default.Name} custom theme");
+                return new[] { WindowTransparencyLevel.None };
+        }
+    }
 
     private static void SetResourceColor(string res, string colorStr) {
         if (Color.TryParse(colorStr, out var color)) {
@@ -124,6 +144,7 @@ public class CustomTheme {
         public string Name = "Custom YAML";
             
         public bool IsDarkMode = false;
+        public string Transparency = "Transparent";
         public string BackgroundColor = "#FFFFFF";
         public string BackgroundColorPointerOver = "#F0F0F0";
         public string BackgroundColorPressed = "#E0E0E0";
