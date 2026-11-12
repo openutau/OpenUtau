@@ -511,7 +511,7 @@ namespace OpenUtau.Core {
                     // groups already invalidated per command before their
                     // validates; deferred groups invalidate once below.
                     BumpRevision();
-                    undoQueue.AddToBack(deepUndoGroup);
+                    undoQueue.AddToBack(deepUndoGroup.ConvertToShallowGroup());
                     redoQueue.Clear();
                 }
                 while (undoQueue.Count > Util.Preferences.Default.UndoLimit) {
@@ -524,7 +524,7 @@ namespace OpenUtau.Core {
                 ExecuteCmd(new PreRenderNotification());
             } else if (undoGroup != null) { // Terminating a shallow group
                 FlushValidation();
-                if (undoGroup.Commands.Count > 0) {
+                if (undoGroup.Commands.Count > 0 && deepUndoGroup == null) {
                     // The group is committed: bump the document revision. Regular
                     // groups already invalidated per command before their
                     // validates; deferred groups invalidate once below.
