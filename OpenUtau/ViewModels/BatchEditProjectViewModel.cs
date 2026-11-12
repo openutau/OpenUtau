@@ -20,6 +20,8 @@ namespace OpenUtau.App.ViewModels {
             if (DoResetAliases) edits.Add(new ResetAliases());
             if (DoResetVibratos) edits.Add(new ResetVibratos());
 
+            if (edits.Count == 0) return;
+
             try {
                 DocManager.Inst.StartUndoGroup("dialogs.batchedit.project.caption", true, isDeep: true);
                 foreach (var batchEdit in edits) {
@@ -30,6 +32,16 @@ namespace OpenUtau.App.ViewModels {
                 }
             } finally {
                 DocManager.Inst.EndUndoGroup();
+            }
+
+            // Trigger visual rerender
+            foreach (UVoicePart voicePart in project.parts.OfType<UVoicePart>()) {
+                DocManager.Inst.ExecuteCmd(new PhraseRenderStateNotification(
+                    voicePart,
+                    voicePart.position,
+                    voicePart.End,
+                    false
+                    ));
             }
         }
     }
