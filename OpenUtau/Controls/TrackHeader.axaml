@@ -95,6 +95,21 @@
         </Style>
       </ContextMenu.Styles>
     </ContextMenu>
+    <ContextMenu x:Key="SingersMenuRes" Classes="context" Name="SingersMenu" Placement="BottomEdgeAlignedLeft"
+                 HorizontalOffset="-3" ItemsSource="{Binding SingerMenuItems}">
+      <ContextMenu.Styles>
+        <Style Selector="MenuItem" x:DataType="vm:SingerMenuItemViewModel">
+          <Setter Property="Header" Value="{Binding Header}"/>
+          <Setter Property="Command" Value="{Binding Command}"/>
+          <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
+          <Setter Property="ItemsSource" Value="{Binding Items}"/>
+          <Setter Property="Icon" Value="{Binding Icon}"/>
+          <Setter Property="ToolTip.Tip" Value="{Binding Location}"/>
+          <Setter Property="Height" Value="{Binding Height}"/>
+          <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
+        </Style>
+      </ContextMenu.Styles>
+    </ContextMenu>
   </UserControl.Resources>
   <Border Margin="1,1,1,1" BorderThickness="1" BorderBrush="{Binding HeaderBorderBrush}"
            CornerRadius="2" PointerPressed="HeaderPointerPressed" UseLayoutRounding="False">

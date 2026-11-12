@@ -327,6 +327,14 @@ namespace OpenUtau.Core.Ustx {
             };
         }
 
+        public static USinger CreateDummy(string name) {
+            return new USinger() {
+                found = true,
+                loaded = false,
+                name = name,
+            };
+        }
+
         private void NotifyPropertyChanged(string propertyName = "") {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
