@@ -180,7 +180,7 @@ namespace OpenUtau.App.ViewModels {
             }
             CanRedo = DocManager.Inst.GetRedoState(out string? redoNameKey);
             if (!string.IsNullOrWhiteSpace(redoNameKey)) {
-                RedoText = $"{ThemeManager.GetString("menu.edit.redo")}:  {ThemeManager.GetString(redoNameKey)}";
+                RedoText = $"{ThemeManager.GetString("menu.edit.redo")}: {ThemeManager.GetString(redoNameKey)}";
             } else {
                 RedoText = ThemeManager.GetString("menu.edit.redo");
             }
