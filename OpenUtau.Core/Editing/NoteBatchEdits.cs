@@ -486,11 +486,10 @@ namespace OpenUtau.Core.Editing {
             var renderer = project.tracks[part.trackNo].RendererSettings.Renderer;
             if (renderer == null || !renderer.SupportsRenderPitch) {
                 if (showUnsupportedError) {
-                    var e = new MessageCustomizableException(
-                        "Current renderer doesn't support generating pitch curve", 
-                        $"<translate:errors.editing.autopitch.unsupported>",
-                        new Exception());
-                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+                    DocManager.Inst.ExecuteCmd(new ToastNotification(
+                        "Pianoroll",
+                        "Current renderer doesn't support generating pitch curve",
+                        "errors.editing.autopitch.unsupported"));
                 }
                 return;
             }
