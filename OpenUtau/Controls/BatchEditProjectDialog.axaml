@@ -8,7 +8,9 @@
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource dialogs.batchedit.project.caption}"
         WindowStartupLocation="CenterOwner"
-        x:DataType="vm:BatchEditProjectViewModel">
+        CanResize="False"
+        x:DataType="vm:BatchEditProjectViewModel"
+        Closed="OnClosed">
   <Window.Styles>
     <Style Selector="TextBlock.batchedit">
       <Setter Property="HorizontalAlignment" Value="Left"/>

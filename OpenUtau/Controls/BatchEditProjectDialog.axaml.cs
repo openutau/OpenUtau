@@ -1,4 +1,5 @@
-﻿using Avalonia.Controls;
+﻿using System;
+using Avalonia.Controls;
 using Avalonia.Interactivity;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
@@ -38,6 +39,11 @@ namespace OpenUtau.App.Controls {
             ViewModel.RunSelected();
             open?.Close();
             DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", "Batch reset done", "command.batch.project.toast"));
+            open = null;
+        }
+
+        private void OnClosed(object? sender, EventArgs e) {
+            open?.Close();
             open = null;
         }
     }
