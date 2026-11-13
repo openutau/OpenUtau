@@ -106,6 +106,34 @@ namespace OpenUtau.Core.Format {
             return project;
         }
 
+        public static UProject Sanitize(UProject project) {
+            project.outputDir = string.Empty;
+            project.cacheDir = string.Empty;
+            project.expressions = new Dictionary<string, UExpressionDescriptor>();
+            project.expPrimary = 1;
+            project.expSecondary = 0;
+            project.expSelectors = [];
+
+            foreach (var track in project.tracks) {
+                track.singer = string.Empty;
+                track.phonemizer = string.Empty;
+                track.TrackColor = string.Empty;
+                track.TrackExpressions = [];
+                track.VoiceColorNames = [];
+            }
+
+            foreach (var part in project.parts.OfType<UVoicePart>()) {
+                foreach (var note in part.notes) {
+                    note.pitch = new UPitch();
+                    note.vibrato = new UVibrato();
+                    note.phonemeExpressions = [];
+                    note.phonemeOverrides = [];
+                }
+            }
+
+            return project;
+        }
+
         public static void Save(string filePath, UProject project) {
             try {
                 project.ustxVersion = kUstxVersion;
