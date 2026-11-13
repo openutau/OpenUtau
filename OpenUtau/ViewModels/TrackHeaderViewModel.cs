@@ -24,7 +24,7 @@ namespace OpenUtau.App.ViewModels {
         public USinger? Singer => track.Singer;
         public Phonemizer Phonemizer => track.Phonemizer;
         public string PhonemizerTag => track.Phonemizer.Tag;
-        public Core.Render.IRenderer Renderer => track.RendererSettings.Renderer;
+        public Core.Render.IRenderer? Renderer => track.RendererSettings.Renderer;
         public ReactiveCommand<USinger, RxVoid> SelectSingerCommand { get; }
         public IReadOnlyList<MenuItemViewModel>? PhonemizerMenuItems { get; set; }
         public ReactiveCommand<PhonemizerFactory, RxVoid> SelectPhonemizerCommand { get; }

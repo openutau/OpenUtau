@@ -109,19 +109,22 @@ namespace OpenUtau.Core.Format {
 
         /// <summary>
         /// Sanitizes project for saving.
-        /// Requires reopening to be in playable state.
+        /// Is unsuitable for playback.
         /// </summary>
         /// <param name="project"></param>
         /// <returns></returns>
         public static UProject Sanitize(UProject project) {
             UProject newProject = new UProject {
-                name = project.name,
-                comment = project.comment,
-                outputDir = string.Empty,
-                cacheDir = string.Empty,
+                name = null,
+                comment = null,
+                outputDir = null,
+                cacheDir = null,
                 ustxVersion = project.ustxVersion,
+                bpm = 0,
+                beatPerBar = 0,
+                beatUnit = 0,
                 expPrimary = 0,
-                expSecondary = 1,
+                expSecondary = 0,
                 key = project.key,
                 timeSignatures = project.timeSignatures,
                 tracks = [],
@@ -134,11 +137,11 @@ namespace OpenUtau.Core.Format {
             foreach (var track in project.tracks) {
                 newProject.tracks.Add(new UTrack {
                     Singer = null,
-                    Phonemizer = PhonemizerFactory.Get(typeof(DefaultPhonemizer)).Create(),
-                    RendererSettings = track.RendererSettings,
+                    Phonemizer = null,
+                    RendererSettings = null,
                     TrackNo = track.TrackNo,
                     TrackName = track.TrackName,
-                    TrackColor = track.TrackColor,
+                    TrackColor = null,
                     TrackExpressions = [],
                     VoiceColorNames = []
                 });
@@ -163,7 +166,7 @@ namespace OpenUtau.Core.Format {
                             duration = note.duration,
                             tone = note.tone,
                             lyric = note.lyric,
-                            pitch = new UPitch(),
+                            pitch = project.CreateNote().pitch,
                             vibrato = new UVibrato(),
                             tuning = note.tuning,
                             phonemeExpressions = [],
@@ -172,22 +175,27 @@ namespace OpenUtau.Core.Format {
                     }
 
                     newProject.parts.Add(newVoice);
-                } else if (part is UWavePart wavePart) {
-                    newProject.parts.Add(new UWavePart {
-                        name = wavePart.name,
-                        comment = wavePart.comment,
-                        trackNo = wavePart.trackNo,
-                        position = wavePart.position,
-                        fileDurationMs = wavePart.fileDurationMs,
-                        skip = wavePart.skip,
-                        trim = wavePart.trim,
-                        fadein = wavePart.fadein,
-                        fadeout = wavePart.fadeout,
-                    });
                 }
             }
 
             return newProject;
+        }
+
+        public static void SaveSanitised(string filePath, UProject project) {
+            try {
+                project.ustxVersion = kUstxVersion;
+                project.FilePath = filePath;
+                project.BeforeSave();
+                File.WriteAllText(filePath, Yaml.DefaultSerializer.SerializeNoDefault(project), Encoding.UTF8);
+                project.Saved = true;
+                project.AfterSave();
+                Preferences.Default.RecoveryPath = string.Empty;
+                Preferences.Save();
+                DocManager.Inst.Recovered = false;
+            } catch (Exception ex) {
+                var e = new MessageCustomizableException($"Failed to save ustx: {filePath}", $"<translate:errors.failed.save>: {filePath}", ex);
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+            }
         }
 
         public static void Save(string filePath, UProject project) {
