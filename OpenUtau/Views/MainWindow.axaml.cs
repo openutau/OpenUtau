@@ -599,7 +599,8 @@ namespace OpenUtau.App.Views {
             if (await WarnToSave(project)) {
                 var file = await FilePicker.SaveFileAboutProject(this, "menu.file.saveas", FilePicker.USTX);
                 if (!string.IsNullOrEmpty(file)) {
-                    viewModel.SaveProject(file);
+                    Ustx.Save(file, project);
+                    DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", $"Exported sanitized folder to {file}", "menu.file.exportustx.toast")); //TODO: Add translatable key
                 }
             }
         }
