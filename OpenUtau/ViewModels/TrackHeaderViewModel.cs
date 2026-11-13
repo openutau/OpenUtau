@@ -21,10 +21,10 @@ using Serilog;
 namespace OpenUtau.App.ViewModels {
     public partial class TrackHeaderViewModel : ViewModelBase, IActivatableViewModel {
         public int TrackNo => track.TrackNo + 1;
-        public USinger Singer => track.Singer;
+        public USinger? Singer => track.Singer;
         public Phonemizer Phonemizer => track.Phonemizer;
         public string PhonemizerTag => track.Phonemizer.Tag;
-        public Core.Render.IRenderer Renderer => track.RendererSettings.Renderer;
+        public Core.Render.IRenderer? Renderer => track.RendererSettings.Renderer;
         public ReactiveCommand<USinger, RxVoid> SelectSingerCommand { get; }
         public IReadOnlyList<MenuItemViewModel>? PhonemizerMenuItems { get; set; }
         public ReactiveCommand<PhonemizerFactory, RxVoid> SelectPhonemizerCommand { get; }
@@ -225,7 +225,12 @@ namespace OpenUtau.App.ViewModels {
         }
 
         private void ApplySingerToTrack(UTrack targetTrack, USinger? singer) {
-            if (singer is USinger selectedSinger) {
+            if (singer == null) {
+                Log.Information($"Unloading voice for: {track.TrackName}");
+                DocManager.Inst.ExecuteCmd(new TrackChangeSingerCommand(DocManager.Inst.Project, targetTrack, null));
+                DocManager.Inst.ExecuteCmd(new TrackChangePhonemizerCommand(DocManager.Inst.Project, track, PhonemizerFactory.Get(typeof(DefaultPhonemizer)).Create()));
+                DocManager.Inst.EndUndoGroup();
+            } else if (singer is USinger selectedSinger) {
                 Log.Information($"Loading Singer: {selectedSinger.Name}");
                 DocManager.Inst.ExecuteCmd(new TrackChangeSingerCommand(DocManager.Inst.Project, targetTrack, selectedSinger));
                 if (!string.IsNullOrEmpty(selectedSinger.Id) &&

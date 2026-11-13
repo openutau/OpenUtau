@@ -210,6 +210,7 @@ namespace OpenUtau.Core {
         readonly Deque<UCommandGroup> undoQueue = new Deque<UCommandGroup>();
         readonly Deque<UCommandGroup> redoQueue = new Deque<UCommandGroup>();
         UCommandGroup? undoGroup = null;
+        UCommandGroup? deepUndoGroup = null;
         // Validation owed by the commands since the last frame, merged into one.
         ValidateOptions? pendingValidate;
         UCommandGroup? savedPoint = null;
@@ -481,45 +482,79 @@ namespace OpenUtau.Core {
             }
         }
 
-        public void StartUndoGroup(string? nameKey = null, bool deferValidate = false) {
+        public void StartUndoGroup(string? nameKey = null, bool deferValidate = false, bool isDeep = false) {
             if (undoGroup != null) {
-                Log.Error("undoGroup already started");
+                if (deepUndoGroup == null) {
+                    Log.Error("undoGroup already started");
+                } else {
+                    Log.Information("undoGroup pushed to deep undoGroup");
+                }
                 EndUndoGroup();
             }
-            undoGroup = new UCommandGroup(nameKey, deferValidate);
-            Log.Debug("undoGroup started");
+
+            if (isDeep) {
+                deepUndoGroup = new UCommandGroup(nameKey, deferValidate);
+            } else {
+                undoGroup = new UCommandGroup(nameKey, deferValidate);
+            }
+
+            Log.Debug("{0} {1} undoGroup started", nameKey, isDeep  ? "deep" : "");
         }
 
         public void EndUndoGroup() {
-            if (undoGroup == null) {
+            if (undoGroup == null && deepUndoGroup != null) { // Terminating a deep group
+                // Deep groups do not support commands, only shallow groups.
+                // Deep groups should be ignored by methods that capture to undo groups like ExecuteCmd
+                FlushValidation();
+                if (deepUndoGroup.Children.Count > 0) {
+                    // The group is committed: bump the document revision. Regular
+                    // groups already invalidated per command before their
+                    // validates; deferred groups invalidate once below.
+                    BumpRevision();
+                    undoQueue.AddToBack(deepUndoGroup.ConvertToShallowGroup());
+                    redoQueue.Clear();
+                }
+                while (undoQueue.Count > Util.Preferences.Default.UndoLimit) {
+                    undoQueue.RemoveFromFront();
+                }
+                if (deepUndoGroup.Children.Count > 0) {
+                    Log.Information("Undo deep group {Name}: {Commands}", deepUndoGroup.NameKey, DescribeCommands(deepUndoGroup.Children.SelectMany(c => c.Commands).ToList()));
+                }
+                deepUndoGroup = null;
+                ExecuteCmd(new PreRenderNotification());
+            } else if (undoGroup != null) { // Terminating a shallow group
+                FlushValidation();
+                if (undoGroup.Commands.Count > 0 && deepUndoGroup == null) {
+                    // The group is committed: bump the document revision. Regular
+                    // groups already invalidated per command before their
+                    // validates; deferred groups invalidate once below.
+                    BumpRevision();
+                    undoQueue.AddToBack(undoGroup);
+                    redoQueue.Clear();
+                }
+                while (undoQueue.Count > Util.Preferences.Default.UndoLimit) {
+                    undoQueue.RemoveFromFront();
+                }
+                if (undoGroup.DeferValidate) {
+                    // Deferred groups validated nothing per command: invalidate
+                    // once, right before the single validate that follows.
+                    InvalidateGroup(undoGroup.Commands);
+                    ValidateAndRefresh();
+                }
+                if (undoGroup.Commands.Count > 0) {
+                    Log.Information("Undo group {Name}: {Commands}", undoGroup.NameKey, DescribeCommands(undoGroup.Commands));
+                }
+                undoGroup.Merge();
+                ScheduleRealCurveRefresh(undoGroup.Commands);
+
+                // Add undo group to deep undo group
+                deepUndoGroup?.Children.Add(undoGroup);
+
+                undoGroup = null;
+                ExecuteCmd(new PreRenderNotification());
+            } else {
                 Log.Error("No active undoGroup to end.");
-                return;
             }
-            FlushValidation();
-            if (undoGroup.Commands.Count > 0) {
-                // The group is committed: bump the document revision. Regular
-                // groups already invalidated per command before their
-                // validates; deferred groups invalidate once below.
-                BumpRevision();
-                undoQueue.AddToBack(undoGroup);
-                redoQueue.Clear();
-            }
-            while (undoQueue.Count > Util.Preferences.Default.UndoLimit) {
-                undoQueue.RemoveFromFront();
-            }
-            if (undoGroup.DeferValidate) {
-                // Deferred groups validated nothing per command: invalidate
-                // once, right before the single validate that follows.
-                InvalidateGroup(undoGroup.Commands);
-                ValidateAndRefresh();
-            }
-            if (undoGroup.Commands.Count > 0) {
-                Log.Information("Undo group {Name}: {Commands}", undoGroup.NameKey, DescribeCommands(undoGroup.Commands));
-            }
-            undoGroup.Merge();
-            ScheduleRealCurveRefresh(undoGroup.Commands);
-            undoGroup = null;
-            ExecuteCmd(new PreRenderNotification());
         }
 
         /// <summary>

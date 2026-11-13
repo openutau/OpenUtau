@@ -211,7 +211,7 @@ namespace OpenUtau.App.Views {
 
             return bpm;
         }
-        
+
         private void AddTempoChange(int tick) {
             var project = DocManager.Inst.Project;
             var dialog = new TypeInDialog {
@@ -594,6 +594,17 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        async void OnMenuExportUstx(object sender, RoutedEventArgs e) {
+            var project = DocManager.Inst.Project;
+            if (await WarnToSave(project)) {
+                var file = await FilePicker.SaveFileAboutProject(this, "menu.file.saveas", FilePicker.USTX);
+                if (!string.IsNullOrEmpty(file)) {
+                    Ustx.SaveSanitised(file, Ustx.Sanitize(project));
+                    DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", $"Exported sanitized folder to {file}", "menu.file.exportustx.toast")); //TODO: Add translatable key
+                }
+            }
+        }
+
         async void OnMenuExportMidi(object sender, RoutedEventArgs e) {
             var project = DocManager.Inst.Project;
             var file = await FilePicker.SaveFileAboutProject(
@@ -617,6 +628,10 @@ namespace OpenUtau.App.Views {
 
         void OnMenuUndo(object sender, RoutedEventArgs args) => viewModel.Undo();
         void OnMenuRedo(object sender, RoutedEventArgs args) => viewModel.Redo();
+
+        void BatchEditProject(object sender, RoutedEventArgs args) {
+            BatchEditProjectDialog.Open(this, DocManager.Inst.Project);
+        }
 
         void OnMenuExpressionss(object sender, RoutedEventArgs args) {
             ExpressionsDialog.Open(this);
@@ -1069,7 +1084,7 @@ namespace OpenUtau.App.Views {
                 .Where(i => i != null)
                 .Select(i => i.Path.LocalPath)
                 .ToArray() ?? new string[] { };
-            
+
             if (files.Length == 0) {
                 return;
             }
@@ -1420,12 +1435,12 @@ namespace OpenUtau.App.Views {
             if (sender is not Canvas canvas) {
                 return;
             }
-            
+
             var point = args.GetPosition(canvas);
             var visuals = canvas.GetVisualsAt(point);
             var hitPartControl = visuals
                 .Select(v => v.FindAncestorOfType<PartControl>(includeSelf: true))
-                .FirstOrDefault(pc => pc != null);    
+                .FirstOrDefault(pc => pc != null);
             if (hitPartControl?.part is UVoicePart) {
                 if (pianoRoll == null) {
                     LoadingWindow.BeginLoading(this);
@@ -1671,6 +1686,7 @@ namespace OpenUtau.App.Views {
             }
             UWavePart newPart = new UWavePart() {
                 FilePath = file,
+                name = Path.GetFileName(file),
                 trackNo = part.trackNo,
                 position = part.position
             };
@@ -2184,7 +2200,7 @@ namespace OpenUtau.App.Views {
                     ValidateTracksVoiceColor();
                 } else {
                     UTrack track = DocManager.Inst.Project.tracks[voicecolorNotif.TrackNo];
-                    if (!voicecolorNotif.Validate) {
+                    if (!voicecolorNotif.Validate && track.VoiceColorExp != null) {
                         // When the user intentionally invokes remapping
                         if (track.VoiceColorExp.options.Length == 0) {
                             MessageBox.Show(this, ThemeManager.GetString("dialogs.voicecolorremapping.error"), ThemeManager.GetString("errors.caption"), MessageBox.MessageBoxButtons.Ok);

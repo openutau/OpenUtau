@@ -53,6 +53,7 @@
             <MenuItem Header="{DynamicResource menu.file.exportproject}">
               <MenuItem Header="{DynamicResource menu.file.exportust}" Click="OnMenuExportUst"/>
               <MenuItem Header="{DynamicResource menu.file.exportustto}" Click="OnMenuExportUstTo"/>
+              <MenuItem Header="{DynamicResource menu.file.exportustx}" Click="OnMenuExportUstx"/>
               <MenuItem Header="{DynamicResource menu.file.exportmidi}" Click="OnMenuExportMidi"/>
               <MenuItem Header="{DynamicResource menu.file.exportds}" Click="OnMenuExportDsTo"/>
             </MenuItem>
@@ -65,6 +66,7 @@
           <MenuItem Header="{DynamicResource menu.project}" IsEnabled="{Binding Page}">
             <MenuItem Header="{DynamicResource menu.project.expressions}" Click="OnMenuExpressionss"/>
             <MenuItem Header="{DynamicResource menu.project.remaptimeaxis}" Click="OnMenuRemapTimeaxis"/>
+            <MenuItem Header="{DynamicResource command.batch.project}" Click="BatchEditProject"/>
           </MenuItem>
           <MenuItem Header="{DynamicResource menu.tools}">
             <MenuItem Header="{DynamicResource menu.tools.layout}">
@@ -259,7 +261,7 @@
             </ListBox.ItemTemplate>
           </ListBox>
         </Grid>
-      
+
         <!--Main page-->
         <Grid ColumnDefinitions="300,*,24" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" KeyDown="OnCarouselPageKeyDown">
           <Grid.RowDefinitions>

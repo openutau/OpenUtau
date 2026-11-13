@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        mc:Ignorable="d" MinWidth="200" MinHeight="200" Width="350" Height="350"
+        x:Class="OpenUtau.App.Controls.BatchEditProjectDialog"
+        Icon="/Assets/open-utau.ico"
+        Title="{DynamicResource dialogs.batchedit.project.caption}"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        x:DataType="vm:BatchEditProjectViewModel"
+        Closed="OnClosed">
+  <Window.Styles>
+    <Style Selector="TextBlock.batchedit">
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="Margin" Value="30,5,10,5"/>
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="Margin" Value="10,5,0,5"/>
+      <Setter Property="MinWidth" Value="100"/>
+    </Style>
+    <Style Selector="StackPanel.batchedit">
+      <Setter Property="Orientation" Value="Horizontal"></Setter>
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="40,1*,30" Margin="10">
+    <TextBlock Grid.Row="0" Text="{DynamicResource dialogs.batchedit.project.message}"/>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*, *" RowDefinitions="30,30,30,30,30,30">
+      <TextBlock Grid.Row="0" Grid.Column="0" Classes="batchedit" Text="{DynamicResource pianoroll.menu.notes.reset.exps}"/>
+      <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding DoResetAllExpressions}"/>
+
+      <TextBlock Grid.Row="1" Grid.Column="0" Classes="batchedit" Text="{DynamicResource pianoroll.menu.notes.reset.pitchbends}"/>
+      <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding DoResetPitchBends}"/>
+
+      <TextBlock Grid.Row="2" Grid.Column="0" Classes="batchedit" Text="{DynamicResource pianoroll.menu.notes.reset.aliases}"/>
+      <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding DoResetAliases}"/>
+
+      <TextBlock Grid.Row="3" Grid.Column="0" Classes="batchedit" Text="{DynamicResource pianoroll.menu.notes.reset.vibratos}"/>
+      <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding DoResetVibratos}"/>
+    </Grid>
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Top">
+      <Button Content="{StaticResource button.cancel}" MinWidth="50" Click="OnCancel"/>
+      <Button Content="{StaticResource button.apply}" MinWidth="50" Click="OnFinish"/>
+    </StackPanel>
+  </Grid>
+</Window>

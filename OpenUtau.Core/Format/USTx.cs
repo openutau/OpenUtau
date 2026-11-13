@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using OpenUtau.Api;
 using OpenUtau.Classic;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -104,6 +105,97 @@ namespace OpenUtau.Core.Format {
             UProject project = new UProject() { Saved = false };
             AddDefaultExpressions(project);
             return project;
+        }
+
+        /// <summary>
+        /// Sanitizes project for saving.
+        /// Is unsuitable for playback.
+        /// </summary>
+        /// <param name="project"></param>
+        /// <returns></returns>
+        public static UProject Sanitize(UProject project) {
+            UProject newProject = new UProject {
+                name = null,
+                comment = null,
+                outputDir = null,
+                cacheDir = null,
+                ustxVersion = project.ustxVersion,
+                bpm = 0,
+                beatPerBar = 0,
+                beatUnit = 0,
+                expPrimary = 0,
+                expSecondary = 0,
+                key = project.key,
+                timeSignatures = project.timeSignatures,
+                tracks = [],
+                parts = [],
+                tempos = project.tempos,
+                FilePath = project.FilePath,
+                Saved = project.Saved
+            };
+
+            foreach (var track in project.tracks) {
+                newProject.tracks.Add(new UTrack {
+                    Singer = null,
+                    Phonemizer = null,
+                    RendererSettings = null,
+                    TrackNo = track.TrackNo,
+                    TrackName = track.TrackName,
+                    TrackColor = null,
+                    TrackExpressions = [],
+                    VoiceColorNames = []
+                });
+            }
+
+            foreach (var part in project.parts) {
+                if (part is UVoicePart voice) {
+                    UVoicePart newVoice = new UVoicePart {
+                        duration = voice.duration,
+                        name = voice.name,
+                        comment = voice.comment,
+                        trackNo = voice.trackNo,
+                        position = voice.position,
+                        notes = [],
+                        curves = [],
+                        maskedCurves = []
+                    };
+
+                    foreach (var note in voice.notes) {
+                        newVoice.notes.Add(new UNote {
+                            position = note.position,
+                            duration = note.duration,
+                            tone = note.tone,
+                            lyric = note.lyric,
+                            pitch = project.CreateNote().pitch,
+                            vibrato = new UVibrato(),
+                            tuning = note.tuning,
+                            phonemeExpressions = [],
+                            phonemeOverrides = []
+                        });
+                    }
+
+                    newProject.parts.Add(newVoice);
+                }
+            }
+
+            return newProject;
+        }
+
+        public static void SaveSanitised(string filePath, UProject project) {
+            try {
+                project.ustxVersion = kUstxVersion;
+                project.FilePath = filePath;
+                project.BeforeSave();
+                File.WriteAllText(filePath, Yaml.DefaultSerializer.SerializeNoDefault(project), Encoding.UTF8);
+                project.Saved = true;
+                project.AfterSave();
+                Preferences.Default.RecoveryPath = string.Empty;
+                Preferences.Save();
+                DocManager.Inst.Recovered = false;
+            } catch (Exception ex) {
+                var e = new MessageCustomizableException($"Failed to save ustx: {filePath}", $"<translate:errors.failed.save>: {filePath}", ex);
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+            }
         }
 
         public static void Save(string filePath, UProject project) {

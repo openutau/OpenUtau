@@ -22,6 +22,15 @@ namespace OpenUtau.Core {
             .WithTypeConverter(new ExpressionGraph.UGraphNodeYamlConverter())
             .Build();
 
+        private readonly ISerializer serializerNoDefault = new SerializerBuilder()
+            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+            .ConfigureDefaultValuesHandling((DefaultValuesHandling) 7)
+            .WithEventEmitter(next => new FlowEmitter(next))
+            .DisableAliases()
+            .WithQuotingNecessaryStrings()
+            .WithTypeConverter(new ExpressionGraph.UGraphNodeYamlConverter())
+            .Build();
+
         private readonly IDeserializer deserializer = new DeserializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
@@ -34,6 +43,12 @@ namespace OpenUtau.Core {
         public string Serialize(object? graph) {
             lock (serializerLock) {
                 return serializer.Serialize(graph);
+            }
+        }
+
+        public string SerializeNoDefault(object? graph) {
+            lock (serializerLock) {
+                return serializerNoDefault.Serialize(graph);
             }
         }
 

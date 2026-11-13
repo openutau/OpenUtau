@@ -22,10 +22,16 @@ namespace OpenUtau.Core {
         public string? NameKey;
         public bool DeferValidate;
         public List<UCommand> Commands;
+        /// <summary>
+        /// Transient value to store grouped commands.
+        /// </summary>
+        public List<UCommandGroup> Children;
+
         public UCommandGroup(string? nameKey, bool deferValidate) {
             NameKey = nameKey;
             DeferValidate = deferValidate;
             Commands = new List<UCommand>();
+            Children = new List<UCommandGroup>();
         }
         public void Merge() {
             if (Commands.Count > 0 && Commands.Last().CanMerge(Commands)) {
@@ -33,6 +39,14 @@ namespace OpenUtau.Core {
                 Commands.Clear();
                 Commands.Add(merged);
             }
+        }
+
+        public UCommandGroup ConvertToShallowGroup() {
+            foreach (var group in Children) {
+                Commands.AddRange(group.Commands);
+            }
+            Children.Clear();
+            return this;
         }
         public override string ToString() { return Commands.Count == 0 ? "No op" : Commands.First().ToString(); }
     }

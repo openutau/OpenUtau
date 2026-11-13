@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+﻿  <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -19,6 +19,8 @@
   <system:String x:Key="command.batch.note">Notes batch edit</system:String>
   <system:String x:Key="command.batch.plugin">Apply plugin edit</system:String>
   <system:String x:Key="command.batch.reset">Batch reset</system:String>
+  <system:String x:Key="command.batch.project">Sanitize project</system:String>
+  <system:String x:Key="command.batch.project.toast">Batch edits on project completed</system:String>
   <system:String x:Key="command.exp.edit">Edit expression</system:String>
   <system:String x:Key="command.exp.paste">Paste expression curve</system:String>
   <system:String x:Key="command.exp.reset">Reset expression</system:String>
@@ -177,6 +179,8 @@
   <system:String x:Key="dialogs.about.caption">About OpenUTAU</system:String>
   <system:String x:Key="dialogs.about.message">
 OpenUtau aims to be an open source editing environment for UTAU community, with a modern user experience and intelligent phonological support. Visit us on Github.</system:String>
+  <system:String x:Key="dialogs.batchedit.project.caption">Sanitize Project</system:String>
+  <system:String x:Key="dialogs.batchedit.project.message">Reset selected options for the entire project.</system:String>
   <system:String x:Key="dialogs.exitsave.caption">Exit OpenUtau</system:String>
   <system:String x:Key="dialogs.exitsave.message">The current project contains unsaved changes. Do you want to save it?</system:String>
   <system:String x:Key="dialogs.export.caption">Export</system:String>
@@ -464,6 +468,8 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.file.exportproject">Export Project</system:String>
   <system:String x:Key="menu.file.exportust">Export Ust Files</system:String>
   <system:String x:Key="menu.file.exportustto">Export Ust Files To...</system:String>
+  <system:String x:Key="menu.file.exportustx">Export Ustx File (advanced)</system:String>
+  <system:String x:Key="menu.file.exportustx.toast">USTx exported</system:String>
   <system:String x:Key="menu.file.exportwav">Export Wav Files</system:String>
   <system:String x:Key="menu.file.exportwavto">Export Wav Files To...</system:String>
   <system:String x:Key="menu.file.importaudio">Import Audio...</system:String>

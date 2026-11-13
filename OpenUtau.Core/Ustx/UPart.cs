@@ -417,7 +417,6 @@ namespace OpenUtau.Core.Ustx {
         public string FilePath {
             set {
                 _filePath = value;
-                name = Path.GetFileName(value);
             }
             get { return _filePath; }
         }
@@ -525,7 +524,11 @@ namespace OpenUtau.Core.Ustx {
         }
 
         public override void BeforeSave(UProject project, UTrack track) {
-            relativePath = Path.GetRelativePath(Path.GetDirectoryName(project.FilePath), FilePath);
+            try {
+                relativePath = Path.GetRelativePath(Path.GetDirectoryName(project.FilePath), FilePath);
+            } catch (Exception _) {
+                relativePath = "";
+            }
         }
 
         public override void AfterLoad(UProject project, UTrack track) {
