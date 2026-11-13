@@ -417,7 +417,6 @@ namespace OpenUtau.Core.Ustx {
         public string FilePath {
             set {
                 _filePath = value;
-                name = Path.GetFileName(value);
             }
             get { return _filePath; }
         }

@@ -1686,6 +1686,7 @@ namespace OpenUtau.App.Views {
             }
             UWavePart newPart = new UWavePart() {
                 FilePath = file,
+                name = Path.GetFileName(file),
                 trackNo = part.trackNo,
                 position = part.position
             };

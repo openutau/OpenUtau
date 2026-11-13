@@ -317,6 +317,7 @@ namespace OpenUtau.App.ViewModels {
             var project = DocManager.Inst.Project;
             UWavePart part = new UWavePart() {
                 FilePath = file,
+                name = Path.GetFileName(file)
             };
             part.Load(project);
             if (part == null) {
