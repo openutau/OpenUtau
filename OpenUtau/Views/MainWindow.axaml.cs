@@ -109,7 +109,12 @@ namespace OpenUtau.App.Views {
             autosaveTimer = new DispatcherTimer(
                 TimeSpan.FromSeconds(30),
                 DispatcherPriority.Normal,
-                (sender, args) => DocManager.Inst.AutoSave());
+                (sender, args) => {
+                    var result = DocManager.Inst.AutoSave();
+                    if (!result) {
+                        DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", "Failed to autosave", "errors.failed.autosave"));
+                    }
+                });
             autosaveTimer.Start();
 
             notificationManager = new WindowNotificationManager(this) {
@@ -211,7 +216,7 @@ namespace OpenUtau.App.Views {
 
             return bpm;
         }
-        
+
         private void AddTempoChange(int tick) {
             var project = DocManager.Inst.Project;
             var dialog = new TypeInDialog {
@@ -1069,7 +1074,7 @@ namespace OpenUtau.App.Views {
                 .Where(i => i != null)
                 .Select(i => i.Path.LocalPath)
                 .ToArray() ?? new string[] { };
-            
+
             if (files.Length == 0) {
                 return;
             }
@@ -1420,12 +1425,12 @@ namespace OpenUtau.App.Views {
             if (sender is not Canvas canvas) {
                 return;
             }
-            
+
             var point = args.GetPosition(canvas);
             var visuals = canvas.GetVisualsAt(point);
             var hitPartControl = visuals
                 .Select(v => v.FindAncestorOfType<PartControl>(includeSelf: true))
-                .FirstOrDefault(pc => pc != null);    
+                .FirstOrDefault(pc => pc != null);
             if (hitPartControl?.part is UVoicePart) {
                 if (pianoRoll == null) {
                     LoadingWindow.BeginLoading(this);

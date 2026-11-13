@@ -250,13 +250,13 @@ namespace OpenUtau.Core {
             }
         }
 
-        public void AutoSave() {
+        public bool AutoSave() {
             if (Project == null) {
-                return;
+                return false;
             }
             if (undoQueue.LastOrDefault() == autosavedPoint) {
                 Log.Information("Autosave skipped.");
-                return;
+                return true;
             }
             try {
                 bool untitled = string.IsNullOrEmpty(Project.FilePath);
@@ -270,6 +270,11 @@ namespace OpenUtau.Core {
                     ? "Untitled"
                     : Path.GetFileNameWithoutExtension(Project.FilePath);
 
+                if (filename.EndsWith("-autosave")) {
+                    Log.Information("Editing autosave file, not autosaving.");
+                    return false;
+                }
+
                 string backup = Path.Join(dir, filename + "-autosave.ustx");
                 Log.Information($"Autosave {backup}.");
                 Format.Ustx.AutoSave(backup, Project);
@@ -277,7 +282,9 @@ namespace OpenUtau.Core {
                 autosavedPoint = undoQueue.LastOrDefault();
             } catch (Exception e) {
                 Log.Error(e, "Autosave failed.");
+                return false;
             }
+            return true;
         }
 
         // Every validate path: rebuild derived data, release unused singers,
