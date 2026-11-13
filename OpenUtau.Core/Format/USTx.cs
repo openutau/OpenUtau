@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using OpenUtau.Api;
 using OpenUtau.Classic;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -106,32 +107,87 @@ namespace OpenUtau.Core.Format {
             return project;
         }
 
+        /// <summary>
+        /// Sanitizes project for saving.
+        /// Requires reopening to be in playable state.
+        /// </summary>
+        /// <param name="project"></param>
+        /// <returns></returns>
         public static UProject Sanitize(UProject project) {
-            project.outputDir = string.Empty;
-            project.cacheDir = string.Empty;
-            project.expressions = new Dictionary<string, UExpressionDescriptor>();
-            project.expPrimary = 1;
-            project.expSecondary = 0;
-            project.expSelectors = [];
+            UProject newProject = new UProject {
+                name = project.name,
+                comment = project.comment,
+                outputDir = string.Empty,
+                cacheDir = string.Empty,
+                ustxVersion = project.ustxVersion,
+                expPrimary = 0,
+                expSecondary = 1,
+                key = project.key,
+                timeSignatures = project.timeSignatures,
+                tracks = [],
+                parts = [],
+                tempos = project.tempos,
+                FilePath = project.FilePath,
+                Saved = project.Saved
+            };
 
             foreach (var track in project.tracks) {
-                track.singer = string.Empty;
-                track.phonemizer = string.Empty;
-                track.TrackColor = string.Empty;
-                track.TrackExpressions = [];
-                track.VoiceColorNames = [];
+                newProject.tracks.Add(new UTrack {
+                    Singer = null,
+                    Phonemizer = PhonemizerFactory.Get(typeof(DefaultPhonemizer)).Create(),
+                    RendererSettings = track.RendererSettings,
+                    TrackNo = track.TrackNo,
+                    TrackName = track.TrackName,
+                    TrackColor = track.TrackColor,
+                    TrackExpressions = [],
+                    VoiceColorNames = []
+                });
             }
 
-            foreach (var part in project.parts.OfType<UVoicePart>()) {
-                foreach (var note in part.notes) {
-                    note.pitch = new UPitch();
-                    note.vibrato = new UVibrato();
-                    note.phonemeExpressions = [];
-                    note.phonemeOverrides = [];
+            foreach (var part in project.parts) {
+                if (part is UVoicePart voice) {
+                    UVoicePart newVoice = new UVoicePart {
+                        duration = voice.duration,
+                        name = voice.name,
+                        comment = voice.comment,
+                        trackNo = voice.trackNo,
+                        position = voice.position,
+                        notes = [],
+                        curves = [],
+                        maskedCurves = []
+                    };
+
+                    foreach (var note in voice.notes) {
+                        newVoice.notes.Add(new UNote {
+                            position = note.position,
+                            duration = note.duration,
+                            tone = note.tone,
+                            lyric = note.lyric,
+                            pitch = new UPitch(),
+                            vibrato = new UVibrato(),
+                            tuning = note.tuning,
+                            phonemeExpressions = [],
+                            phonemeOverrides = []
+                        });
+                    }
+
+                    newProject.parts.Add(newVoice);
+                } else if (part is UWavePart wavePart) {
+                    newProject.parts.Add(new UWavePart {
+                        name = wavePart.name,
+                        comment = wavePart.comment,
+                        trackNo = wavePart.trackNo,
+                        position = wavePart.position,
+                        fileDurationMs = wavePart.fileDurationMs,
+                        skip = wavePart.skip,
+                        trim = wavePart.trim,
+                        fadein = wavePart.fadein,
+                        fadeout = wavePart.fadeout,
+                    });
                 }
             }
 
-            return project;
+            return newProject;
         }
 
         public static void Save(string filePath, UProject project) {

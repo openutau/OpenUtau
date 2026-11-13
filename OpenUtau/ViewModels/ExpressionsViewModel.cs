@@ -309,7 +309,7 @@ namespace OpenUtau.App.ViewModels {
 
         public void GetSuggestions() {
             foreach (var track in DocManager.Inst.Project.tracks) {
-                if (track.RendererSettings.Renderer == null) {
+                if (track.RendererSettings.Renderer == null || track.Singer == null) {
                     continue;
                 }
                 var suggestions = track.RendererSettings.Renderer.GetSuggestedExpressions(track.Singer, track.RendererSettings);

@@ -595,11 +595,11 @@ namespace OpenUtau.App.Views {
         }
 
         async void OnMenuExportUstx(object sender, RoutedEventArgs e) {
-            var project = Ustx.Sanitize(DocManager.Inst.Project);
+            var project = DocManager.Inst.Project;
             if (await WarnToSave(project)) {
                 var file = await FilePicker.SaveFileAboutProject(this, "menu.file.saveas", FilePicker.USTX);
                 if (!string.IsNullOrEmpty(file)) {
-                    Ustx.Save(file, project);
+                    Ustx.Save(file, Ustx.Sanitize(project));
                     DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", $"Exported sanitized folder to {file}", "menu.file.exportustx.toast")); //TODO: Add translatable key
                 }
             }
@@ -2199,7 +2199,7 @@ namespace OpenUtau.App.Views {
                     ValidateTracksVoiceColor();
                 } else {
                     UTrack track = DocManager.Inst.Project.tracks[voicecolorNotif.TrackNo];
-                    if (!voicecolorNotif.Validate) {
+                    if (!voicecolorNotif.Validate && track.VoiceColorExp != null) {
                         // When the user intentionally invokes remapping
                         if (track.VoiceColorExp.options.Length == 0) {
                             MessageBox.Show(this, ThemeManager.GetString("dialogs.voicecolorremapping.error"), ThemeManager.GetString("errors.caption"), MessageBox.MessageBoxButtons.Ok);

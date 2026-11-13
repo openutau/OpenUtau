@@ -1175,7 +1175,7 @@ namespace OpenUtau.App.ViewModels {
                 return descriptor.type == UExpressionType.MaskedCurve
                     || track.RendererSettings.Renderer.SupportsExpression(descriptor);
             }
-            if (expKey == track.VoiceColorExp.abbr) {
+            if (expKey == track.VoiceColorExp?.abbr) {
                 return track.RendererSettings.Renderer.SupportsExpression(track.VoiceColorExp);
             }
             return true;

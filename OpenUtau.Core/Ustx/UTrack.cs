@@ -70,14 +70,14 @@ namespace OpenUtau.Core.Ustx {
     }
 
     public class UTrack {
-        public string singer;
-        public string phonemizer;
+        public string singer = string.Empty;
+        public string phonemizer = string.Empty;
         public URenderSettings RendererSettings { get; set; } = new URenderSettings();
 
-        private USinger singer_;
+        private USinger? singer_;
 
         [YamlIgnore]
-        public USinger Singer {
+        public USinger? Singer {
             get => singer_;
             set {
                 if (singer_ != value) {
@@ -88,7 +88,6 @@ namespace OpenUtau.Core.Ustx {
             }
         }
         [YamlIgnore] public Phonemizer Phonemizer { get; set; } = PhonemizerFactory.Get(typeof(DefaultPhonemizer)).Create();
-        [YamlIgnore] public string PhonemizerTag => Phonemizer.Tag;
         [YamlIgnore] public int TrackNo { set; get; }
         public string TrackName { get; set; } = "New Track";
         public string TrackColor { get; set; } = "Blue";
@@ -97,15 +96,15 @@ namespace OpenUtau.Core.Ustx {
         public bool Solo { get; set; }
         // Per-track post-processing FX.  null = no FX configured (bypass).
         // Backwards compatible: older ustx files simply load with this null.
-        public UMixFx MixFx { get; set; }
+        public UMixFx? MixFx { get; set; }
         public double Volume { set; get; }
         public double Pan { set; get; }
 
         public List<UExpressionDescriptor> TrackExpressions { get; set; } = new List<UExpressionDescriptor>();
         /// <summary>The id of an expression graph overriding the project's default for this track's renderer.</summary>
         public string? ExpressionGraph { get; set; }
-        [YamlIgnore] public UExpressionDescriptor VoiceColorExp { set; get; }
-        [YamlIgnore] public UExpressionDescriptor VoiceColor2Exp { set; get; }
+        [YamlIgnore] public UExpressionDescriptor? VoiceColorExp { set; get; }
+        [YamlIgnore] public UExpressionDescriptor? VoiceColor2Exp { set; get; }
         public string[] VoiceColorNames { get; set; } = new string[] { "" };
 
         public UTrack() {
@@ -223,7 +222,7 @@ namespace OpenUtau.Core.Ustx {
         }
 
         public void BeforeSave() {
-            singer = Singer?.Id;
+            singer = Singer?.Id ?? "";
             phonemizer = Phonemizer.Id;
             if (Singer != null && Singer.Found && VoiceColorExp != null && VoiceColorExp.options.Length > 0) {
                 VoiceColorNames = VoiceColorExp.options.ToArray();
@@ -236,8 +235,8 @@ namespace OpenUtau.Core.Ustx {
             if (Phonemizer == null || !string.IsNullOrEmpty(phonemizer)) {
                 try {
                     var factory = PhonemizerFactory.Get(phonemizer);
-                    Phonemizer = factory?.Create();
-                    phonemizer = null;
+                    Phonemizer = factory!.Create();
+                    phonemizer = string.Empty;
                 } catch (Exception e) {
                     Log.Error(e, $"Failed to load phonemizer {phonemizer}");
                 }
