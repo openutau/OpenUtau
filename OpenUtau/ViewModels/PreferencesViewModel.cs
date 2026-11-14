@@ -172,6 +172,13 @@ namespace OpenUtau.App.ViewModels {
             "10", "15", "30", "60", "120", "300", "600"
         };
         [Reactive] public partial int AutosaveIntervalIndex { get; set; }
+        public List<string> AutosaveNotifyOptions { get; } = new() {
+            nameof(AutosaveNotify.Footer),
+            nameof(AutosaveNotify.Toast),
+            nameof(AutosaveNotify.Off)
+        };
+        [Reactive] public partial int AutosaveNotifyIndex { get; set; }
+
 
 
         // WhenAnyValue emits the current value immediately on subscribe, not just on
@@ -206,6 +213,8 @@ namespace OpenUtau.App.ViewModels {
             Autosave = AutosaveModeOptions.Contains(Preferences.Default.Autosave)
                 ? Preferences.Default.Autosave
                 : AutosaveModeOptions[0];
+            AutosaveNotifyIndex = Math.Max(0, AutosaveNotifyOptions.IndexOf(
+                Preferences.Default.AutosaveNotifier));
             AutosaveIntervalIndex = Math.Max(0, AutosaveIntervals.IndexOf(
                 Preferences.Default.AutosaveIntervalSec.ToString()));
             LockStartTime = Preferences.Default.LockStartTime;
@@ -341,6 +350,15 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.Autosave = mode;
                     Preferences.Save();
                     this.RaisePropertyChanged(nameof(IsAutosaveEnabled));
+                });
+            this.WhenAnyValue(vm => vm.AutosaveNotifyIndex)
+                .Subscribe(index => {
+                    if (index < 0 || index >= AutosaveNotifyOptions.Count) {
+                        return;
+                    }
+
+                    Preferences.Default.AutosaveNotifier = AutosaveNotifyOptions[index];
+                    Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.AutosaveIntervalIndex)
                 .Skip(1)

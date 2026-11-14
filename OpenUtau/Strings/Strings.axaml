@@ -177,6 +177,7 @@
   <system:String x:Key="dialogs.about.caption">About OpenUTAU</system:String>
   <system:String x:Key="dialogs.about.message">
 OpenUtau aims to be an open source editing environment for UTAU community, with a modern user experience and intelligent phonological support. Visit us on Github.</system:String>
+  <system:String x:Key="dialogs.autosave.success.toast">Autosaving...</system:String>
   <system:String x:Key="dialogs.autosave.warning.caption">Autosave Warning</system:String>
   <system:String x:Key="dialogs.autosave.warning.message">The project opened is an autosaved project.
 Make sure this is the project you want to open.</system:String>
@@ -789,6 +790,10 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.advanced.autosave.mode.saveinplace">Save the project file directly</system:String>
   <system:String x:Key="prefs.advanced.autosave.mode.off">Disabled</system:String>
   <system:String x:Key="prefs.advanced.autosave.interval">Autosave interval</system:String>
+  <system:String x:Key="prefs.advanced.autosave.notify">Autosave notification</system:String>
+  <system:String x:Key="prefs.advanced.autosave.notify.mode.footer">Footer</system:String>
+  <system:String x:Key="prefs.advanced.autosave.notify.mode.toast">Toast</system:String>
+  <system:String x:Key="prefs.advanced.autosave.notify.mode.off">Off</system:String>
   <system:String x:Key="prefs.advanced.resamplerlogging">Resampler Logging</system:String>
   <system:String x:Key="prefs.advanced.resamplerlogging.warn">Stores resampler output in log files. This option slows down UI and rendering.</system:String>
   <system:String x:Key="prefs.advanced.stable">Stable</system:String>
