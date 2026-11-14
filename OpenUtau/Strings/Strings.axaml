@@ -779,6 +779,13 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper">Lyrics Helper</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper.brackets">Lyrics Helper Adds Brackets</system:String>
   <system:String x:Key="prefs.advanced.rememberfiletypes">Remember these file types in "Open Recent"</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode">Autosave</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.backupfile">Backup file next to the project</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.backupsfolder">Backup file in the Backups folder</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.overwriteautosavefile">Update an opened autosave file in place</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.saveinplace">Save the project file directly</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.off">Disabled</system:String>
+  <system:String x:Key="prefs.advanced.autosave.interval">Autosave interval</system:String>
   <system:String x:Key="prefs.advanced.resamplerlogging">Resampler Logging</system:String>
   <system:String x:Key="prefs.advanced.resamplerlogging.warn">Stores resampler output in log files. This option slows down UI and rendering.</system:String>
   <system:String x:Key="prefs.advanced.stable">Stable</system:String>

@@ -159,6 +159,21 @@ namespace OpenUtau.App.ViewModels {
         private readonly ObservableAsPropertyHelper<bool> showOnnxGpu;
         private readonly ObservableAsPropertyHelper<bool> themeEditable;
 
+        public List<string> AutosaveModeOptions { get; } = new() {
+            nameof(AutosaveMode.BackupFile),
+            nameof(AutosaveMode.BackupsFolder),
+            nameof(AutosaveMode.OverwriteAutosaveFile),
+            nameof(AutosaveMode.SaveInPlace),
+            nameof(AutosaveMode.Off),
+        };
+        [Reactive] public partial string Autosave { get; set; }
+        public bool IsAutosaveEnabled => Autosave != nameof(AutosaveMode.Off);
+        public List<string> AutosaveIntervals { get; } = new() {
+            "10", "15", "30", "60", "120", "300", "600"
+        };
+        [Reactive] public partial int AutosaveIntervalIndex { get; set; }
+
+
         // WhenAnyValue emits the current value immediately on subscribe, not just on
         // change. For preferences that just need to persist changes to disk, that
         // means every subscription below would call Preferences.Save() once during
@@ -188,6 +203,11 @@ namespace OpenUtau.App.ViewModels {
             MetronomeVolume = Preferences.Default.MetronomeVolume;
             MetronomeHighFrequency = Preferences.Default.MetronomeHighFrequency;
             MetronomeLowFrequency = Preferences.Default.MetronomeLowFrequency;
+            Autosave = AutosaveModeOptions.Contains(Preferences.Default.Autosave)
+                ? Preferences.Default.Autosave
+                : AutosaveModeOptions[0];
+            AutosaveIntervalIndex = Math.Max(0, AutosaveIntervals.IndexOf(
+                Preferences.Default.AutosaveIntervalSec.ToString()));
             LockStartTime = Preferences.Default.LockStartTime;
             InstallToAdditionalSingersPath = Preferences.Default.InstallToAdditionalSingersPath;
             LoadDeepFolders = Preferences.Default.LoadDeepFolderSinger;
@@ -316,6 +336,21 @@ namespace OpenUtau.App.ViewModels {
                 metronomeHighFrequency => Preferences.Default.MetronomeHighFrequency = metronomeHighFrequency);
             PersistOn(this.WhenAnyValue(vm => vm.MetronomeLowFrequency),
                 metronomeLowFrequency => Preferences.Default.MetronomeLowFrequency = metronomeLowFrequency);
+            this.WhenAnyValue(vm => vm.Autosave)
+                .Subscribe(mode => {
+                    Preferences.Default.Autosave = mode;
+                    Preferences.Save();
+                    this.RaisePropertyChanged(nameof(IsAutosaveEnabled));
+                });
+            this.WhenAnyValue(vm => vm.AutosaveIntervalIndex)
+                .Skip(1)
+                .Subscribe(index => {
+                    if (index < 0 || index >= AutosaveIntervals.Count) {
+                        return;
+                    }
+                    Preferences.Default.AutosaveIntervalSec = int.Parse(AutosaveIntervals[index]);
+                    Preferences.Save();
+                });
             PersistOn(this.WhenAnyValue(vm => vm.LockStartTime),
                 lockStartTime => Preferences.Default.LockStartTime = lockStartTime);
             PersistOn(this.WhenAnyValue(vm => vm.InstallToAdditionalSingersPath),
