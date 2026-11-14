@@ -249,6 +249,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.expression.marge">The following expressions have been merged due to duplicate flags</system:String>
   <system:String x:Key="errors.expression.min">Min must be smaller than max</system:String>
   <system:String x:Key="errors.expression.name">Name must be set</system:String>
+  <system:String x:Key="errors.failed.autosave">Could not autosave. Check your project file.</system:String>
   <system:String x:Key="errors.failed.export">Failed to export</system:String>
   <system:String x:Key="errors.failed.importaudio">Failed to import audio</system:String>
   <system:String x:Key="errors.failed.importfiles">Failed to import files</system:String>
