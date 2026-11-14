@@ -97,6 +97,8 @@ public class CustomTheme {
             SetResourceColor("FinalPitchColor", Default.FinalPitchColor);
             SetResourceColor("TrackBackgroundAltColor", Default.TrackBackgroundAltColor);
 
+            SetResourceColor("WarningColor", Default.WarningColor);
+
             SetResourceColor("WhiteKeyColorLeft", Default.WhiteKeyColorLeft);
             SetResourceColor("WhiteKeyColorRight", Default.WhiteKeyColorRight);
             SetResourceColor("WhiteKeyNameColor", Default.WhiteKeyNameColor);
@@ -118,11 +120,11 @@ public class CustomTheme {
             Log.Error($"Failed to parse color \"{colorStr}\" in {Default.Name} custom theme");
         }
     }
-    
+
     [Serializable]
     public class ThemeYaml {
         public string Name = "Custom YAML";
-            
+
         public bool IsDarkMode = false;
         public string BackgroundColor = "#FFFFFF";
         public string BackgroundColorPointerOver = "#F0F0F0";
@@ -133,7 +135,7 @@ public class CustomTheme {
         public string ForegroundColorPointerOver = "#000000";
         public string ForegroundColorPressed = "#202020";
         public string ForegroundColorDisabled = "#808080";
-        
+
         public string BorderColor = "#707070";
         public string BorderColorPointerOver = "#B0B0B0";
 
@@ -152,14 +154,16 @@ public class CustomTheme {
         public string FinalPitchColor = "#C0C0C0";
         public string TrackBackgroundAltColor = "#F0F0F0";
 
+        public string WarningColor = "#FFF4CE";
+
         public string WhiteKeyColorLeft = "Transparent";
         public string WhiteKeyColorRight = "Transparent";
         public string WhiteKeyNameColor = "#FF347c";
-            
+
         public string CenterKeyColorLeft = "#FFDDE6";
         public string CenterKeyColorRight = "#FFCEDC";
         public string CenterKeyNameColor = "#FF347C";
-            
+
         public string BlackKeyColorLeft = "#FF71A3";
         public string BlackKeyColorRight = "#FF347C";
         public string BlackKeyNameColor = "#FFFFFF";

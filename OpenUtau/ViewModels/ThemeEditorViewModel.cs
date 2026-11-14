@@ -48,6 +48,8 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial Color FinalPitchColor { get; set; }
         [Reactive] public partial Color TrackBackgroundAltColor { get; set; }
 
+        [Reactive] public partial Color WarningColor { get; set; }
+
         [Reactive] public partial Color WhiteKeyColorLeft { get; set; }
         [Reactive] public partial Color WhiteKeyColorRight { get; set; }
         [Reactive] public partial Color WhiteKeyNameColor { get; set; }
@@ -99,6 +101,8 @@ namespace OpenUtau.App.ViewModels {
             FinalPitchColor = Color.Parse(themeYaml.FinalPitchColor);
             TrackBackgroundAltColor = Color.Parse(themeYaml.TrackBackgroundAltColor);
 
+            WarningColor = Color.Parse(themeYaml.WarningColor);
+
             WhiteKeyColorLeft = Color.Parse(themeYaml.WhiteKeyColorLeft);
             WhiteKeyColorRight = Color.Parse(themeYaml.WhiteKeyColorRight);
             WhiteKeyNameColor = Color.Parse(themeYaml.WhiteKeyNameColor);
@@ -106,7 +110,7 @@ namespace OpenUtau.App.ViewModels {
             CenterKeyColorLeft = Color.Parse(themeYaml.CenterKeyColorLeft);
             CenterKeyColorRight = Color.Parse(themeYaml.CenterKeyColorRight);
             CenterKeyNameColor = Color.Parse(themeYaml.CenterKeyNameColor);
-            
+
             BlackKeyColorLeft = Color.Parse(themeYaml.BlackKeyColorLeft);
             BlackKeyColorRight = Color.Parse(themeYaml.BlackKeyColorRight);
             BlackKeyNameColor = Color.Parse(themeYaml.BlackKeyNameColor);
@@ -194,6 +198,10 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(v => Application.Current!.Resources["TrackBackgroundAltColor"] = v);
 
 
+            this.WhenAnyValue(vm => vm.WarningColor)
+                .Subscribe(v => Application.Current!.Resources["WarningColor"] = v);
+
+
             this.WhenAnyValue(vm => vm.WhiteKeyColorLeft)
                 .Subscribe(v => Application.Current!.Resources["WhiteKeyColorLeft"] = v);
 
@@ -255,6 +263,8 @@ namespace OpenUtau.App.ViewModels {
                 BarNumberColor = BarNumberColor.ToString(),
                 FinalPitchColor = FinalPitchColor.ToString(),
                 TrackBackgroundAltColor = TrackBackgroundAltColor.ToString(),
+
+                WarningColor = WarningColor.ToString(),
 
                 WhiteKeyColorLeft = WhiteKeyColorLeft.ToString(),
                 WhiteKeyColorRight = WhiteKeyColorRight.ToString(),
