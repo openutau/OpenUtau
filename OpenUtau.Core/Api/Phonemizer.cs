@@ -71,7 +71,21 @@ namespace OpenUtau.Api {
             /// </summary>
             public PhonemeAttributes[] phonemeAttributes;
 
+            /// <summary>
+            /// The phonemizer instance owning this note.
+            /// Used for cross-phonemizer boundary delegation.
+            /// </summary>
+            public Phonemizer phonemizer;
+
             public override string ToString() => $"\"{lyric}\" pos:{position}";
+        }
+
+        /// <summary>
+        /// Exposes trailing acoustic context (last vowel and coda consonants)
+        /// to enable smooth cross-phonemizer transitions.
+        /// </summary>
+        public interface IPhonemizerEnding {
+            (string prevV, string[] cc)? GetEnding(Phonemizer.Note[] notes);
         }
 
         public struct PhonemeAttributes {
