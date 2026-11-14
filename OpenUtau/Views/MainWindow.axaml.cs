@@ -110,7 +110,7 @@ namespace OpenUtau.App.Views {
             autosaveTimer = new DispatcherTimer(
                 TimeSpan.FromSeconds(1),
                 DispatcherPriority.Normal,
-                (sender, args) => {
+                (_, _) => {
                     if ((DateTime.UtcNow - lastAutosave).TotalSeconds
                         < Math.Max(1, Preferences.Default.AutosaveIntervalSec)) {
                         return;

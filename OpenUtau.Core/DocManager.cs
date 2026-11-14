@@ -237,7 +237,7 @@ namespace OpenUtau.Core {
                 }
                 string dir = untitled
                     ? PathManager.Inst.BackupsPath
-                    : Path.GetDirectoryName(Project.FilePath);
+                    : Path.GetDirectoryName(Project.FilePath) ?? "";
                 string filename = untitled
                     ? "Untitled"
                     : Path.GetFileNameWithoutExtension(Project.FilePath);
@@ -250,52 +250,54 @@ namespace OpenUtau.Core {
             }
         }
 
-        private static readonly string[] recoverySuffixes = { "-autosave", "-backup" };
+        private static readonly string[] RecoveryPrefixes = ["autosave-", "backup-"];
+        private static readonly string[] RecoverySuffixes = ["-autosave", "-backup"];
 
-        private static AutosaveMode getAutosaveMode() {
+        private static AutosaveMode GetAutosaveMode() {
             return Enum.TryParse(Preferences.Default.Autosave, out AutosaveMode mode)
                 ? mode
                 : AutosaveMode.BackupFile;
         }
 
-        private string getAutosavePath() {
+        private string GetAutosavePath() {
             if (string.IsNullOrEmpty(Project.FilePath)) {
                 Directory.CreateDirectory(PathManager.Inst.BackupsPath);
-                return Path.Join(PathManager.Inst.BackupsPath, "Untitled-autosave.ustx");
+                return Path.Join(PathManager.Inst.BackupsPath, $"{RecoveryPrefixes[0]}Untitled.ustx");
             }
-            string dir = Path.GetDirectoryName(Project.FilePath);
+            string dir = Path.GetDirectoryName(Project.FilePath) ?? string.Empty;
             string filename = Path.GetFileNameWithoutExtension(Project.FilePath);
-            switch (getAutosaveMode()) {
+            switch (GetAutosaveMode()) {
                 case AutosaveMode.BackupsFolder:
                     Directory.CreateDirectory(PathManager.Inst.BackupsPath);
-                    return Path.Join(PathManager.Inst.BackupsPath, filename + "-autosave.ustx");
+                    return Path.Join(PathManager.Inst.BackupsPath, $"{RecoveryPrefixes[0]}{filename}.ustx");
                 case AutosaveMode.SaveInPlace:
                     return Project.FilePath;
                 case AutosaveMode.OverwriteAutosaveFile:
-                    if (recoverySuffixes.Any(suffix =>
-                            filename.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))) {
+                    if (RecoverySuffixes.Any(suffix => filename.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) ||
+                        RecoveryPrefixes.Any(prefix => filename.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))) {
                         return Project.FilePath;
                     }
-                    return Path.Join(dir, filename + "-autosave.ustx");
+
+                    return Path.Join(dir, $"{RecoveryPrefixes[0]}{filename}.ustx");
                 default:
-                    return Path.Join(dir, filename + "-autosave.ustx");
+                    return Path.Join(dir, $"{RecoveryPrefixes[0]}{filename}.ustx");
             }
         }
 
+        private bool IsAutoSaveFile(string filename) {
+            return RecoverySuffixes.Any(suffix => filename.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) ||
+                   RecoveryPrefixes.Any(prefix => filename.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        }
 
         public bool AutoSave() {
-            if (Project == null) {
-                return false;
-            }
-            if (getAutosaveMode() == AutosaveMode.Off) {
-                return true;
-            }
+            if (Project == null) return false;
+            if (GetAutosaveMode() == AutosaveMode.Off) return true;
             if (undoQueue.LastOrDefault() == autosavedPoint) {
                 Log.Information("Autosave skipped.");
                 return true;
             }
             try {
-                string backup = getAutosavePath();
+                string backup = GetAutosavePath();
                 Log.Information($"Autosave {backup}.");
                 Format.Ustx.AutoSave(backup, Project);
                 Log.Information($"Autosaved {backup}.");
