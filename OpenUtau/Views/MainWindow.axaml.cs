@@ -55,6 +55,7 @@ namespace OpenUtau.App.Views {
 
         private readonly DispatcherTimer timer;
         private readonly DispatcherTimer autosaveTimer;
+        private DateTime lastAutosave = DateTime.UtcNow;
         private bool forceClose;
 
         private bool shouldOpenPartsContextMenu;
@@ -107,9 +108,20 @@ namespace OpenUtau.App.Views {
             timer.Start();
 
             autosaveTimer = new DispatcherTimer(
-                TimeSpan.FromSeconds(30),
+                TimeSpan.FromSeconds(1),
                 DispatcherPriority.Normal,
-                (sender, args) => DocManager.Inst.AutoSave());
+                (_, _) => {
+                    if ((DateTime.UtcNow - lastAutosave).TotalSeconds
+                        < Math.Max(1, Preferences.Default.AutosaveIntervalSec)) {
+                        return;
+                    }
+                    lastAutosave = DateTime.UtcNow;
+
+                    var result = DocManager.Inst.AutoSave();
+                    if (!result) {
+                        DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", "Failed to autosave", "errors.failed.autosave"));
+                    }
+                });
             autosaveTimer.Start();
 
             notificationManager = new WindowNotificationManager(this) {
@@ -211,7 +223,7 @@ namespace OpenUtau.App.Views {
 
             return bpm;
         }
-        
+
         private void AddTempoChange(int tick) {
             var project = DocManager.Inst.Project;
             var dialog = new TypeInDialog {
@@ -1069,7 +1081,7 @@ namespace OpenUtau.App.Views {
                 .Where(i => i != null)
                 .Select(i => i.Path.LocalPath)
                 .ToArray() ?? new string[] { };
-            
+
             if (files.Length == 0) {
                 return;
             }
@@ -1420,12 +1432,12 @@ namespace OpenUtau.App.Views {
             if (sender is not Canvas canvas) {
                 return;
             }
-            
+
             var point = args.GetPosition(canvas);
             var visuals = canvas.GetVisualsAt(point);
             var hitPartControl = visuals
                 .Select(v => v.FindAncestorOfType<PartControl>(includeSelf: true))
-                .FirstOrDefault(pc => pc != null);    
+                .FirstOrDefault(pc => pc != null);
             if (hitPartControl?.part is UVoicePart) {
                 if (pianoRoll == null) {
                     LoadingWindow.BeginLoading(this);

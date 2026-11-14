@@ -582,6 +582,13 @@ OpenUtau стремится стать средой редактирования
   <system:String x:Key="prefs.advanced.lyricshelper">Текстовый помощник</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper.brackets">Добавить скобки в текстовом помощнике</system:String>
   <system:String x:Key="prefs.advanced.rememberfiletypes">Запомнить эти типы файлов в "Открыть недавние"</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode">Автосохранение</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.backupfile">Резервный файл рядом с проектом</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.backupsfolder">Резервный файл в папке Backups</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.overwriteautosavefile">Обновлять открытый файл автосохранения</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.saveinplace">Сохранять файл проекта напрямую</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.off">Отключено</system:String>
+  <system:String x:Key="prefs.advanced.autosave.interval">Интервал автосохранения</system:String>
   <system:String x:Key="prefs.advanced.resamplerlogging">Журналирование ресамплера</system:String>
   <system:String x:Key="prefs.advanced.resamplerlogging.warn">Сохраняет вывод ресамплера в файлах лога. Эта опция замедляет работу пользовательского интерфейса и рендеринга.</system:String>
   <system:String x:Key="prefs.advanced.stable">Стабильный</system:String>

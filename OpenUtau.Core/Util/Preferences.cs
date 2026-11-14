@@ -226,6 +226,9 @@ namespace OpenUtau.Core.Util {
             public int MetronomeVolume = 60;
             public int MetronomeHighFrequency = 2200;
             public int MetronomeLowFrequency = 1320;
+            public string Autosave = nameof(AutosaveMode.BackupFile);
+            public string AutosaveNotifier = nameof(AutosaveNotify.Footer);
+            public int AutosaveIntervalSec = 30;
             public int LockStartTime = 0;
             public int PlaybackAutoScroll = 2;
             public bool ReverseLogOrder = true;
@@ -347,5 +350,19 @@ namespace OpenUtau.Core.Util {
             public string Name { get; set; } = string.Empty;
             public Ustx.UMixFx Fx { get; set; } = new Ustx.UMixFx();
         }
+    }
+
+    public enum AutosaveMode {
+        BackupFile,
+        BackupsFolder,
+        OverwriteAutosaveFile,
+        SaveInPlace,
+        Off,
+    }
+
+    public enum AutosaveNotify {
+        Footer,
+        Toast,
+        Off
     }
 }

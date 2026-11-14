@@ -7,10 +7,44 @@ namespace OpenUtau.App.ViewModels {
     public class CultureNameConverter : IValueConverter {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
             if (value is CultureInfo cultureInfo) {
-                return cultureInfo == CultureInfo.InvariantCulture ? ThemeManager.GetString("languages.invariant") : cultureInfo.NativeName;
+
             }
             return string.Empty;
         }
+
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
+
+    public class AutosaveModeConverter : IValueConverter {
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+            if (value is string mode) {
+                return ThemeManager.GetString($"prefs.advanced.autosave.mode.{mode.ToLower()}");
+            }
+            return string.Empty;
+        }
+
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
+
+    public class AutosaveNotifyConverter : IValueConverter {
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+            if (value is string notify) {
+                return ThemeManager.GetString($"prefs.advanced.autosave.notify.mode.{notify.ToLower()}");
+            }
+            return string.Empty;
+        }
+
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
+
+    public class AutosaveIntervalConverter : IValueConverter {
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+            if (value is string seconds && int.TryParse(seconds, out int secs)) {
+                return secs < 60 ? $"{secs} s" : $"{secs / 60} min";
+            }
+            return string.Empty;
+        }
+
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
     }
 

@@ -177,6 +177,10 @@
   <system:String x:Key="dialogs.about.caption">About OpenUTAU</system:String>
   <system:String x:Key="dialogs.about.message">
 OpenUtau aims to be an open source editing environment for UTAU community, with a modern user experience and intelligent phonological support. Visit us on Github.</system:String>
+  <system:String x:Key="dialogs.autosave.success.toast">Autosaving...</system:String>
+  <system:String x:Key="dialogs.autosave.warning.caption">Autosave Warning</system:String>
+  <system:String x:Key="dialogs.autosave.warning.message">The project opened is an autosaved project.
+Make sure this is the project you want to open.</system:String>
   <system:String x:Key="dialogs.exitsave.caption">Exit OpenUtau</system:String>
   <system:String x:Key="dialogs.exitsave.message">The current project contains unsaved changes. Do you want to save it?</system:String>
   <system:String x:Key="dialogs.export.caption">Export</system:String>
@@ -249,6 +253,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.expression.marge">The following expressions have been merged due to duplicate flags</system:String>
   <system:String x:Key="errors.expression.min">Min must be smaller than max</system:String>
   <system:String x:Key="errors.expression.name">Name must be set</system:String>
+  <system:String x:Key="errors.failed.autosave">Could not autosave. Check your project file.</system:String>
   <system:String x:Key="errors.failed.export">Failed to export</system:String>
   <system:String x:Key="errors.failed.importaudio">Failed to import audio</system:String>
   <system:String x:Key="errors.failed.importfiles">Failed to import files</system:String>
@@ -778,6 +783,17 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper">Lyrics Helper</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper.brackets">Lyrics Helper Adds Brackets</system:String>
   <system:String x:Key="prefs.advanced.rememberfiletypes">Remember these file types in "Open Recent"</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode">Autosave</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.backupfile">Backup file next to the project</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.backupsfolder">Backup file in the Backups folder</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.overwriteautosavefile">Update an opened autosave file in place</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.saveinplace">Save the project file directly</system:String>
+  <system:String x:Key="prefs.advanced.autosave.mode.off">Disabled</system:String>
+  <system:String x:Key="prefs.advanced.autosave.interval">Autosave interval</system:String>
+  <system:String x:Key="prefs.advanced.autosave.notify">Autosave notification</system:String>
+  <system:String x:Key="prefs.advanced.autosave.notify.mode.footer">Footer</system:String>
+  <system:String x:Key="prefs.advanced.autosave.notify.mode.toast">Toast</system:String>
+  <system:String x:Key="prefs.advanced.autosave.notify.mode.off">Off</system:String>
   <system:String x:Key="prefs.advanced.resamplerlogging">Resampler Logging</system:String>
   <system:String x:Key="prefs.advanced.resamplerlogging.warn">Stores resampler output in log files. This option slows down UI and rendering.</system:String>
   <system:String x:Key="prefs.advanced.stable">Stable</system:String>
