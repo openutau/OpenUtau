@@ -284,9 +284,10 @@ namespace OpenUtau.Core {
             }
         }
 
-        private bool IsAutoSaveFile(string filename) {
-            return RecoverySuffixes.Any(suffix => filename.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) ||
-                   RecoveryPrefixes.Any(prefix => filename.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        public static bool IsAutoSaveFile(string filePath) {
+            string fileName = Path.GetFileName(filePath);
+            return RecoverySuffixes.Any(suffix => fileName.EndsWith(suffix + ".ustx", StringComparison.OrdinalIgnoreCase)) ||
+                   RecoveryPrefixes.Any(prefix => fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
         }
 
         public bool AutoSave() {

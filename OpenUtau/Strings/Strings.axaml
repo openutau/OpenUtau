@@ -177,6 +177,9 @@
   <system:String x:Key="dialogs.about.caption">About OpenUTAU</system:String>
   <system:String x:Key="dialogs.about.message">
 OpenUtau aims to be an open source editing environment for UTAU community, with a modern user experience and intelligent phonological support. Visit us on Github.</system:String>
+  <system:String x:Key="dialogs.autosave.warning.caption">Autosave Warning</system:String>
+  <system:String x:Key="dialogs.autosave.warning.message">The project opened is an autosaved project.
+Make sure this is the project you want to open.</system:String>
   <system:String x:Key="dialogs.exitsave.caption">Exit OpenUtau</system:String>
   <system:String x:Key="dialogs.exitsave.message">The current project contains unsaved changes. Do you want to save it?</system:String>
   <system:String x:Key="dialogs.export.caption">Export</system:String>
