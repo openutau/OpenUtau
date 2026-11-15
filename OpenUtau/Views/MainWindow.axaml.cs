@@ -152,6 +152,12 @@ namespace OpenUtau.App.Views {
                 TaskScheduler.FromCurrentSynchronizationContext());
             Log.Information("Created main window.");
             this.Cursor = null;
+
+            this.Closed += (_, _) => {
+                if (Preferences.Default.DeleteAutoSaveOnClose) {
+                    DocManager.Inst.DeleteAutoSave();
+                }
+            };
         }
 
         public void InitProject() {
@@ -2136,10 +2142,6 @@ namespace OpenUtau.App.Views {
             }
             e.Cancel = true;
             AskIfSaveAndContinue().ContinueWith(t => {
-                if (Preferences.Default.DeleteAutoSaveOnClose) {
-                    DocManager.Inst.DeleteAutoSave();
-                }
-
                 if (!t.Result) {
                     return;
                 }
