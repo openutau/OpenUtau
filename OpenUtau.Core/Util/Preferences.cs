@@ -229,6 +229,7 @@ namespace OpenUtau.Core.Util {
             public string Autosave = nameof(AutosaveMode.BackupFile);
             public string AutosaveNotifier = nameof(AutosaveNotify.Footer);
             public int AutosaveIntervalSec = 30;
+            public bool DeleteAutoSaveOnClose = false;
             public int LockStartTime = 0;
             public int PlaybackAutoScroll = 2;
             public bool ReverseLogOrder = true;

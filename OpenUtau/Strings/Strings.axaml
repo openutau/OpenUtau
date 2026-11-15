@@ -794,6 +794,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.advanced.autosave.notify.mode.footer">Footer</system:String>
   <system:String x:Key="prefs.advanced.autosave.notify.mode.toast">Toast</system:String>
   <system:String x:Key="prefs.advanced.autosave.notify.mode.off">Off</system:String>
+  <system:String x:Key="prefs.advanced.autosave.deleteautosave">Delete autosave file on clean exit</system:String>
   <system:String x:Key="prefs.advanced.resamplerlogging">Resampler Logging</system:String>
   <system:String x:Key="prefs.advanced.resamplerlogging.warn">Stores resampler output in log files. This option slows down UI and rendering.</system:String>
   <system:String x:Key="prefs.advanced.stable">Stable</system:String>

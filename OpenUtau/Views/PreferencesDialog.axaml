@@ -484,6 +484,10 @@
               </DataTemplate>
             </ComboBox.ItemTemplate>
           </ComboBox>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.advanced.autosave.deleteautosave}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding DeleteAutoSaveOnClose}" />
+          </Grid>
 
           <TextBlock Classes="restart" IsVisible="{OnPlatform Default=false, Linux=True}"/>
           <TextBlock Text="{DynamicResource prefs.advanced.winepath}" 

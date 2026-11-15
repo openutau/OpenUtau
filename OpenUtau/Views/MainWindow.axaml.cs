@@ -2136,6 +2136,10 @@ namespace OpenUtau.App.Views {
             }
             e.Cancel = true;
             AskIfSaveAndContinue().ContinueWith(t => {
+                if (Preferences.Default.DeleteAutoSaveOnClose) {
+                    DocManager.Inst.DeleteAutoSave();
+                }
+
                 if (!t.Result) {
                     return;
                 }

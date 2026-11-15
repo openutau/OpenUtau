@@ -178,6 +178,7 @@ namespace OpenUtau.App.ViewModels {
             nameof(AutosaveNotify.Off)
         };
         [Reactive] public partial int AutosaveNotifyIndex { get; set; }
+        [Reactive] public partial bool DeleteAutoSaveOnClose { get; set; }
 
 
 
@@ -217,6 +218,7 @@ namespace OpenUtau.App.ViewModels {
                 Preferences.Default.AutosaveNotifier));
             AutosaveIntervalIndex = Math.Max(0, AutosaveIntervals.IndexOf(
                 Preferences.Default.AutosaveIntervalSec.ToString()));
+            DeleteAutoSaveOnClose = Preferences.Default.DeleteAutoSaveOnClose;
             LockStartTime = Preferences.Default.LockStartTime;
             InstallToAdditionalSingersPath = Preferences.Default.InstallToAdditionalSingersPath;
             LoadDeepFolders = Preferences.Default.LoadDeepFolderSinger;
@@ -369,6 +371,8 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.AutosaveIntervalSec = int.Parse(AutosaveIntervals[index]);
                     Preferences.Save();
                 });
+            PersistOn(this.WhenAnyValue(vm => vm.DeleteAutoSaveOnClose),
+                deleteAutoSaveOnClose => Preferences.Default.DeleteAutoSaveOnClose = deleteAutoSaveOnClose);
             PersistOn(this.WhenAnyValue(vm => vm.LockStartTime),
                 lockStartTime => Preferences.Default.LockStartTime = lockStartTime);
             PersistOn(this.WhenAnyValue(vm => vm.InstallToAdditionalSingersPath),

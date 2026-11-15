@@ -290,6 +290,17 @@ namespace OpenUtau.Core {
                    RecoveryPrefixes.Any(prefix => fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
         }
 
+        public void DeleteAutoSave() {
+            try {
+                string backup = GetAutosavePath();
+                Log.Information($"Deleting autosave {backup}.");
+                File.Delete(backup);
+                Log.Information($"Deleted autosave {backup}.");
+            } catch (Exception e) {
+                Log.Error(e, "Autosave could not be deleted.");
+            }
+        }
+
         public bool AutoSave() {
             if (Project == null) return false;
             if (GetAutosaveMode() == AutosaveMode.Off) return true;
