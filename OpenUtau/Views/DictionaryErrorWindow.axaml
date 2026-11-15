@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        xmlns:ae="using:AvaloniaEdit"
+        x:Class="OpenUtau.App.Views.DictionaryErrorWindow"
+        x:DataType="vm:DictionaryErrorWindowViewModel"
+        Title="{Binding ErrorTitle}"
+        Width="760" Height="500" WindowStartupLocation="CenterOwner"
+        Icon="/Assets/open-utau.ico">
+
+    <Grid RowDefinitions="Auto, *, Auto, Auto" Margin="10">
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Spacing="5" Margin="0,0,0,10">
+            <TextBlock Text="{Binding ErrorTitle}" FontWeight="Bold" Foreground="{DynamicResource AccentColor2}" FontSize="16"/>
+            <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap"/>
+        </StackPanel>
+        
+        <!-- AvaloniaEdit Code Editor -->
+        <Border Grid.Row="1" BorderThickness="1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
+            <ae:TextEditor Name="Editor" ShowLineNumbers="True" FontSize="13" Padding="4,0,0,0"
+                           FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace"
+                           Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                           HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
+        </Border>
+
+        <!-- Problem List (Hidden by default) -->
+        <ListBox Name="ProblemList" Grid.Row="2" MaxHeight="100" IsVisible="False" Margin="0,5,0,0"
+                 BorderThickness="1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
+            <ListBox.Styles>
+                <Style Selector="ListBoxItem">
+                    <Setter Property="Padding" Value="8,2"/>
+                    <Setter Property="MinHeight" Value="0"/>
+                </Style>
+            </ListBox.Styles>
+        </ListBox>
+
+        <!-- Controls -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" Margin="0,10,0,0">
+            <TextBlock Name="StatusText" Grid.Column="0" VerticalAlignment="Center"/>
+            <Button Content="{DynamicResource dict.cancel}" Click="CloseButton_Click" Grid.Column="1" Width="100" Margin="0,0,10,0" HorizontalContentAlignment="Center"/>
+            <Button Name="SaveButton" Content="{DynamicResource dict.error.save.reload}" Click="SaveButton_Click" Grid.Column="2" Width="120" HorizontalContentAlignment="Center"/>
+        </Grid>
+        
+    </Grid>
+</Window>
