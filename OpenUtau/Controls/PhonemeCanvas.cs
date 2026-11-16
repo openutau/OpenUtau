@@ -130,8 +130,9 @@ namespace OpenUtau.App.Controls {
                 if (!phoneme.Error) {
                     if (!supportsEnvelope) {
                         double xRight = Math.Round(viewModel.TickToneToPoint(phoneme.End, 0).X) + 0.5;
+                        var penBar = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
                         var brushBar = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi;
-                        context.DrawRectangle(brushBar, null, new Rect(x, y, xRight - x, height));
+                        context.DrawRectangle(brushBar, penBar, new Rect(x, y, xRight - x, height+1));
                     } else {
                         double x0 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[0].X) - Part.position, 0).X;
                         double y0 = (1 - phoneme.envelope.data[0].Y / 100) * height;
