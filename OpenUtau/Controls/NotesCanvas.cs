@@ -172,7 +172,7 @@ namespace OpenUtau.App.Controls {
         private Geometry pointGeometry;
 
         private bool showGhostNotes = true;
-        private List<UPart> otherPartsInView = new List<UPart>();
+        private List<UPart> partsOnOtherTracks = new List<UPart>();
 
         public NotesCanvas() {
             ClipToBounds = true;
@@ -215,10 +215,9 @@ namespace OpenUtau.App.Controls {
             if (Part == null || !showGhostNotes) {
                 return;
             }
-            otherPartsInView = DocManager.Inst.Project.parts
-                .Where(other => other.trackNo != Part.trackNo &&
-                    other.position < Part.End &&
-                    Part.position < other.End)
+            // The piano roll scrolls over the whole track, so any part on another track can come into view.
+            partsOnOtherTracks = DocManager.Inst.Project.parts
+                .Where(other => other.trackNo != Part.trackNo)
                 .ToList();
         }
 
@@ -383,9 +382,13 @@ namespace OpenUtau.App.Controls {
                 UpdatePlaybackHighlight(seek);
 
                 if (showGhostNotes) {
-                foreach (UPart otherPart in otherPartsInView) {
+                foreach (UPart otherPart in partsOnOtherTracks) {
                     if (otherPart is UVoicePart otherVoicePart) {
                         var xOffset = otherVoicePart.position - Part.position;
+                        // Skip whole parts out of view rather than each of their notes.
+                        if (xOffset + otherVoicePart.Duration <= leftTick || rightTick <= xOffset) {
+                            continue;
+                        }
                         var brush = ThemeManager.NeutralAccentBrushSemi;
                         if (otherVoicePart.trackNo >= 0) {
                             var track = DocManager.Inst.Project.tracks[otherVoicePart.trackNo];
@@ -402,11 +405,13 @@ namespace OpenUtau.App.Controls {
                     }
                 }
 
+                RenderOutsideOpenPart(viewModel, context);
+                RenderOtherPartsOnTrack(viewModel, context, leftTick, rightTick);
                 foreach (var note in Part.notes) {
                     if (note.LeftBound >= rightTick || note.RightBound <= leftTick) {
                         continue;
                     }
-                    RenderNoteBody(note, viewModel, context);
+                    RenderNoteBody(note, Part, viewModel, context);
                 }
                 if (ShowFinalPitch && !hidePitch) {
                     RenderFinalPitch(leftTick, rightTick, viewModel, context);
@@ -533,7 +538,48 @@ namespace OpenUtau.App.Controls {
         private static float MoveTowards(float value, float target, float delta) =>
             Math.Abs(target - value) <= delta ? target : value + Math.Sign(target - value) * delta;
 
-        private void RenderNoteBody(UNote note, NotesViewModel viewModel, DrawingContext context) {
+        // Shades where the open part isn't, darker on a dark theme to show as much.
+        static readonly IBrush OutsideOpenPartLight = new SolidColorBrush(Avalonia.Media.Colors.Black, 0.12);
+        static readonly IBrush OutsideOpenPartDark = new SolidColorBrush(Avalonia.Media.Colors.Black, 0.35);
+        // How solid the notes of the other parts on the track are.
+        public const double OtherPartOpacity = 0.6;
+
+        /// <summary>Shades the piano roll before and after the open part, where its notes can't go.</summary>
+        private void RenderOutsideOpenPart(NotesViewModel viewModel, DrawingContext context) {
+            double start = viewModel.TickToneToPoint(0, 0).X;
+            double end = viewModel.TickToneToPoint(Part!.Duration, 0).X;
+            var brush = ThemeManager.IsDarkMode ? OutsideOpenPartDark : OutsideOpenPartLight;
+            if (start > 0) {
+                context.FillRectangle(brush, new Rect(0, 0, start, Bounds.Height));
+            }
+            if (end < Bounds.Width) {
+                context.FillRectangle(brush, new Rect(end, 0, Bounds.Width - end, Bounds.Height));
+            }
+        }
+
+        /// <summary>
+        /// Draws the notes of the other voice parts on the open part's track, as notes of the open part
+        /// look but see-through, under the open part's notes.
+        /// </summary>
+        private void RenderOtherPartsOnTrack(NotesViewModel viewModel, DrawingContext context, double leftTick, double rightTick) {
+            using var opacity = context.PushOpacity(OtherPartOpacity);
+            foreach (var other in viewModel.OtherPartsOnTrack) {
+                // Ticks of the other part, relative to the open part as the view's ticks are.
+                int offset = other.position - Part!.position;
+                if (other.position + other.Duration <= Part.position + leftTick || Part.position + rightTick <= other.position) {
+                    continue;
+                }
+                using var moved = context.PushTransform(Matrix.CreateTranslation(offset * TickWidth, 0));
+                foreach (var note in other.notes) {
+                    if (note.LeftBound + offset >= rightTick || note.RightBound + offset <= leftTick) {
+                        continue;
+                    }
+                    RenderNoteBody(note, other, viewModel, context);
+                }
+            }
+        }
+
+        private void RenderNoteBody(UNote note, UVoicePart part, NotesViewModel viewModel, DrawingContext context) {
             Point leftTop = viewModel.TickToneToPoint(note.position, note.AdjustedTone);
             leftTop = leftTop.WithX(leftTop.X + 1).WithY(Math.Round(leftTop.Y + 1));
             Size size = viewModel.TickToneToSize(note.duration, 1);
@@ -543,9 +589,9 @@ namespace OpenUtau.App.Controls {
             bool hasError = note.Error;
 
             // Check for Phoneme Errors (mimicking PhonemeCanvas behavior)
-            if (!hasError && Part != null && Part.phonemes != null) {
+            if (!hasError && part.phonemes != null) {
                 int phonemeCount = 0;
-                foreach (var p in Part.phonemes) {
+                foreach (var p in part.phonemes) {
                     if (p.Parent == note) {
                         phonemeCount++;
                         // If any attached phoneme has an error, the whole note is flagged

@@ -45,21 +45,36 @@ namespace OpenUtau.Core {
     public class SetMaskedCurveCommand : MaskedCurveCommand {
         readonly int x0, x1;
         readonly float y0, y1;
+        // The line lies outside the part, where values would have no effect.
+        readonly bool outside;
 
-        public SetMaskedCurveCommand(UVoicePart part, string abbr, int x0, float y0, int x1, float y1) : base(part, abbr) {
-            (this.x0, this.y0, this.x1, this.y1) = (x0, y0, x1, y1);
+        /// <param name="withinPart">
+        /// Cut the line to the part's ticks, as for drawing in the piano roll, which shows the track around the part.
+        /// </param>
+        public SetMaskedCurveCommand(UVoicePart part, string abbr, int x0, float y0, int x1, float y1, bool withinPart = false) : base(part, abbr) {
+            double clippedY0 = y0;
+            double clippedY1 = y1;
+            outside = withinPart && !part.ClipToPart(ref x0, ref clippedY0, ref x1, ref clippedY1);
+            (this.x0, this.y0, this.x1, this.y1) = (x0, (float)clippedY0, x1, (float)clippedY1);
         }
 
         public override string ToString() => "Edit masked curve";
-        protected override void Change(UMaskedCurve curve) => curve.Set(x0, y0, x1, y1);
+        protected override void Change(UMaskedCurve curve) {
+            if (!outside) {
+                curve.Set(x0, y0, x1, y1);
+            }
+        }
     }
 
     /// <summary>Sets values of a masked curve at their ticks.</summary>
     public class SetMaskedCurveValuesCommand : MaskedCurveCommand {
         readonly (int x, float y)[] values;
 
-        public SetMaskedCurveValuesCommand(UVoicePart part, string abbr, System.Collections.Generic.IEnumerable<(int x, float y)> values) : base(part, abbr) {
-            this.values = values.ToArray();
+        /// <param name="withinPart">
+        /// Leave out ticks outside the part, as for drawing in the piano roll, which shows the track around the part.
+        /// </param>
+        public SetMaskedCurveValuesCommand(UVoicePart part, string abbr, System.Collections.Generic.IEnumerable<(int x, float y)> values, bool withinPart = false) : base(part, abbr) {
+            this.values = values.Where(value => !withinPart || part.ContainsTick(value.x)).ToArray();
         }
 
         public override string ToString() => "Edit masked curve";

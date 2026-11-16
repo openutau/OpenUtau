@@ -244,22 +244,6 @@ namespace OpenUtau.App.Controls {
             // Safety net: never leave an undo group open if focus is lost while S is held
             AddHandler(LostFocusEvent, (s, e) => ReleaseSplitKey());
 
-            this.WhenAnyValue(x => x.ViewModel!.PlaybackViewModel!.PlayPosTick)
-                .Subscribe(tick => {
-                    var notesVm = ViewModel?.NotesViewModel;
-
-                    if (notesVm?.Part == null) return;
-                    if (tick < notesVm.Part.position || tick >= notesVm.Part.End) {
-                        var targetPart = notesVm.Project.parts
-                            .OfType<UVoicePart>()
-                            .FirstOrDefault(p => p.trackNo == notesVm.Part.trackNo && p.position <= tick && p.End > tick);
-
-                        if (targetPart != null) {
-                            DocManager.Inst.ExecuteCmd(new LoadPartNotification(targetPart, notesVm.Project, tick));
-                            AttachExpressions();
-                        }
-                    }
-                });
 
             MessageBus.Current.Listen<PianorollRefreshEvent>()
                 .Subscribe(e => {
@@ -783,6 +767,13 @@ namespace OpenUtau.App.Controls {
                     Cursor = null; 
                     return;
                 }
+            }
+            // Gestures with modifiers work on the open part, as selecting more of its notes.
+            bool pitchPointTool = ViewModel.EditTool.CurrentTool == EditTools.PitchPointTool;
+            if ((point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed) && args.KeyModifiers == KeyModifiers.None
+                && ViewModel.NotesViewModel.HitTest.HitTestOtherPartNote(point.Position, pitchPointTool) is UVoicePart otherPart) {
+                // The click goes on as on the open part's notes, now in the other part.
+                OpenOtherPart(otherPart);
             }
             if (point.Properties.IsLeftButtonPressed) {
                 NotesCanvasLeftPointerPressed(control, point, args);
@@ -1369,6 +1360,18 @@ namespace OpenUtau.App.Controls {
             }
         }
 
+        /// <summary>
+        /// Opens another part of the open part's track, keeping the view where it is, so a click on
+        /// that part's notes or phonemes in the piano roll goes on to edit them.
+        /// </summary>
+        void OpenOtherPart(UVoicePart part) {
+            var notesVm = ViewModel.NotesViewModel;
+            double viewStart = notesVm.Part!.position + notesVm.TickOffset;
+            DocManager.Inst.ExecuteCmd(new LoadPartNotification(part, notesVm.Project, (int)viewStart));
+            notesVm.TickOffset = notesVm.ClampTickOffset(viewStart - part.position);
+            AttachExpressions();
+        }
+
         public async void PhonemeCanvasPointerPressed(object sender, PointerPressedEventArgs args) {
             LyricBox?.EndEdit();
             if (ViewModel?.NotesViewModel?.Part == null) {
@@ -1378,6 +1381,11 @@ namespace OpenUtau.App.Controls {
             var point = args.GetCurrentPoint(control);
             if (editState != null) {
                 return;
+            }
+            if ((point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed) && args.KeyModifiers == KeyModifiers.None
+                && ViewModel.NotesViewModel.HitTest.HitTestOtherPartPhoneme(point.Position) is UVoicePart otherPart) {
+                // The click goes on as on the open part's phonemes, now in the other part.
+                OpenOtherPart(otherPart);
             }
             if (point.Properties.IsLeftButtonPressed) {
                 if (args.KeyModifiers == cmdKey) {
@@ -2046,7 +2054,7 @@ namespace OpenUtau.App.Controls {
                 case Key.A:
                     // scroll left
                     if (isNone) {
-                        notesVm.TickOffset = Math.Max(0, notesVm.TickOffset - snapUnit);
+                        notesVm.TickOffset = notesVm.ClampTickOffset(notesVm.TickOffset - snapUnit);
                         return true;
                     }
                     // select all
@@ -2058,7 +2066,7 @@ namespace OpenUtau.App.Controls {
                 case Key.D:
                     // scroll right
                     if (isNone) {
-                        notesVm.TickOffset = Math.Min(notesVm.TickOffset + snapUnit, notesVm.HScrollBarMax);
+                        notesVm.TickOffset = notesVm.ClampTickOffset(notesVm.TickOffset + snapUnit);
                         return true;
                     }
                     // select none
@@ -2135,7 +2143,7 @@ namespace OpenUtau.App.Controls {
                         if (!notesVm.Selection.IsEmpty) {
                             x = (notesVm.Selection.Head!.position - notesVm.TickOffset) / notesVm.ViewportTicks;
                             y = (ViewConstants.MaxTone - 1 - notesVm.Selection.Head.tone - notesVm.TrackOffset) / notesVm.ViewportTracks;
-                        } else if (notesVm.TickOffset != 0) {
+                        } else if (notesVm.TickOffset != notesVm.HScrollBarMin) {
                             x = 0.5;
                             y = 0.5;
                         }
@@ -2151,7 +2159,7 @@ namespace OpenUtau.App.Controls {
                         if (!notesVm.Selection.IsEmpty) {
                             x = (notesVm.Selection.Head!.position - notesVm.TickOffset) / notesVm.ViewportTicks;
                             y = (ViewConstants.MaxTone - 1 - notesVm.Selection.Head.tone - notesVm.TrackOffset) / notesVm.ViewportTracks;
-                        } else if (notesVm.TickOffset != 0) {
+                        } else if (notesVm.TickOffset != notesVm.HScrollBarMin) {
                             x = 0.5;
                             y = 0.5;
                         }

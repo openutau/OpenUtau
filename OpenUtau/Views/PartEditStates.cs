@@ -288,7 +288,7 @@ namespace OpenUtau.App.Views {
         }
         public override void Update(IPointer pointer, Point point) {
             double deltaTicks = (point.X - startPoint.X) / vm.TracksViewModel.TickWidth;
-            notesVm.TickOffset = Math.Clamp(startTickOffset + deltaTicks, 0, notesVm.HScrollBarMax);
+            notesVm.TickOffset = notesVm.ClampTickOffset(startTickOffset + deltaTicks);
         }
     }
 

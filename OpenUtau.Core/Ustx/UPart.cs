@@ -68,6 +68,35 @@ namespace OpenUtau.Core.Ustx {
             project.timeAxis.TickPosToBarBeat(endTicks, out int bar, out int beat, out int remainingTicks);
             return project.timeAxis.BarBeatToTickPos(bar, beat + 1) - position;
         }
+        /// <summary>
+        /// Limits a line of curve values from (x0, y0) to (x1, y1) to the ticks of the part, from its
+        /// start to its end, cutting the line where it crosses them. False when the line lies wholly
+        /// outside the part, where values would have no effect.
+        /// </summary>
+        public bool ClipToPart(ref int x0, ref double y0, ref int x1, ref double y1) {
+            int start = 0;
+            int end = Duration;
+            if (Math.Max(x0, x1) < start || Math.Min(x0, x1) > end) {
+                return false;
+            }
+            (int ax, double ay, int bx, double by) = (x0, y0, x1, y1);
+            double At(int x) => ax == bx ? ay : ay + (by - ay) * (x - ax) / (bx - ax);
+            if (x0 < start) {
+                (x0, y0) = (start, At(start));
+            } else if (x0 > end) {
+                (x0, y0) = (end, At(end));
+            }
+            if (x1 < start) {
+                (x1, y1) = (start, At(start));
+            } else if (x1 > end) {
+                (x1, y1) = (end, At(end));
+            }
+            return true;
+        }
+
+        /// <summary>Whether a tick of the part lies within it.</summary>
+        public bool ContainsTick(int x) => 0 <= x && x <= Duration;
+
         public int GetMinDurTickForNoteEdit(UProject project, int noteEnd) {
             project.timeAxis.TickPosToBarBeat(position + noteEnd - 1, out int bar, out int beat, out int remainingTicks);
             return project.timeAxis.BarBeatToTickPos(bar + 2, 0) - position;
