@@ -1130,12 +1130,11 @@ namespace OpenUtau.Plugin.Builtin {
         /// </summary>
         /// <param name="note"></param>
         /// <returns></returns>
-        protected virtual string[] GetSymbols(Note note) {
-            string[] getSymbolsRaw(string lyrics) {
-                if (string.IsNullOrEmpty(lyrics)) {
-                    return Array.Empty<string>();
-                }
+        protected virtual string[]? GetSymbols(Note note) {
+            if (note.phoneticHint != null) { return note.phoneticHint.Split(" "); }
+            if (string.IsNullOrEmpty(note.lyric)) { return Array.Empty<string>(); }
 
+            string[] getSymbolsRaw(string lyrics) {
                 // Fallback: standard space-delimited splitting
                 if (!EnablePhonemeTokenization) {
                     return lyrics.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -1157,10 +1156,6 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
             if (hasDictionary) {
-                if (!string.IsNullOrEmpty(note.phoneticHint)) {
-                    return getSymbolsRaw(note.phoneticHint);
-                }
-
                 var result = new List<string>();
                 foreach (var subword in note.lyric.Trim().Split(wordSeparators, StringSplitOptions.RemoveEmptyEntries)) {
                     // First try exact casing query in case dictionary has case distinctions
