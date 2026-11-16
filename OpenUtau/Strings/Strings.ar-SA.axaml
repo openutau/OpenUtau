@@ -1,5 +1,4 @@
-<!--DO NOT modify this file. It is managed autometically.-->
-<!--To contribute to OpenUtau's localization, visit https://crowdin.com/project/oxygen-dioxideopenutau -->
+<!--UI strings. Entries commented out are untranslated and fall back to en-US.-->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
