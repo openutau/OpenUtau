@@ -111,6 +111,9 @@ namespace OpenUtau.Core {
             } else {
                 part.trim -= deltaDur;
             }
+            // Commands are published before the deferred project validation.
+            // The next pointer event must see the updated resize boundaries.
+            part.UpdateDuration(project);
         }
         public override void Unexecute() {
             if (fromStart) {
@@ -119,6 +122,7 @@ namespace OpenUtau.Core {
             } else {
                 part.trim += deltaDur;
             }
+            part.UpdateDuration(project);
         }
     }
 
@@ -126,17 +130,21 @@ namespace OpenUtau.Core {
         public readonly new UWavePart part;
         readonly int fadeTick;
         readonly int oldFade;
+        readonly int oldOffset;
         public PartFadeInCommand(UProject project, UWavePart part, int fadeTick) : base(project, part) {
             this.part = part;
             this.fadeTick = fadeTick;
             this.oldFade = part.fadein;
+            this.oldOffset = part.fadeinOffset;
         }
         public override string ToString() => "Fade in part";
         public override void Execute() {
             part.fadein = fadeTick;
+            part.fadeinOffset = 0;
         }
         public override void Unexecute() {
             part.fadein = oldFade;
+            part.fadeinOffset = oldOffset;
         }
     }
 
@@ -144,17 +152,21 @@ namespace OpenUtau.Core {
         public readonly new UWavePart part;
         readonly int fadeTick;
         readonly int oldFade;
+        readonly int oldOffset;
         public PartFadeOutCommand(UProject project, UWavePart part, int fadeTick) : base(project, part) {
             this.part = part;
             this.fadeTick = fadeTick;
             this.oldFade = part.fadeout;
+            this.oldOffset = part.fadeoutOffset;
         }
         public override string ToString() => "Fade out part";
         public override void Execute() {
             part.fadeout = fadeTick;
+            part.fadeoutOffset = 0;
         }
         public override void Unexecute() {
             part.fadeout = oldFade;
+            part.fadeoutOffset = oldOffset;
         }
     }
 

@@ -247,6 +247,17 @@ public class RmvpeTranscriber : IDisposable {
             ?? Path.Combine(PathManager.Inst.DependencyPath, "rmvpe", "rmvpe.onnx");
     }
 
+    /// <summary>Infers only the part's visible source range, in part-local time.</summary>
+    public RmvpeResult? Infer(UProject project, UWavePart wavePart) {
+        return InferSamples(PrepareInput(project, wavePart));
+    }
+
+    internal static float[] PrepareInput(UProject project, UWavePart wavePart) {
+        var mono = WavePartAudio.GetMonoSamples(project, wavePart);
+        return mono.Length == 0 ? mono : ResampleTo16k(mono, wavePart.sampleRate);
+    }
+
+    /// <summary>Infers an explicit range in source-file milliseconds.</summary>
     public RmvpeResult? Infer(UWavePart wavePart, double startMs = 0, double endMs = 0) {
         int startSample = 0;
         int endSample = wavePart.Samples.Length / wavePart.channels;
@@ -264,8 +275,15 @@ public class RmvpeTranscriber : IDisposable {
         if (endSample <= startSample) {
             return null;
         }
-        var mono = ToMono(wavePart.Samples, startSample, endSample, wavePart.channels);
+        var mono = WavePartAudio.ToMono(wavePart.Samples, startSample, endSample, wavePart.channels);
         var resampled = ResampleTo16k(mono, wavePart.sampleRate);
+        return InferSamples(resampled);
+    }
+
+    RmvpeResult? InferSamples(float[] resampled) {
+        if (resampled.Length == 0) {
+            return null;
+        }
         var waveform = new DenseTensor<float>(new[] { 1, resampled.Length });
         for (int i = 0; i < resampled.Length; ++i) {
             waveform[0, i] = Math.Clamp(resampled[i], -1f, 1f);
@@ -375,22 +393,6 @@ public class RmvpeTranscriber : IDisposable {
                 string.Equals(name, "uv", StringComparison.OrdinalIgnoreCase))
             ?? session.OutputNames.ElementAtOrDefault(1)
             ?? throw new InvalidDataException("RMVPE model must expose a uv output.");
-    }
-
-    static float[] ToMono(float[] samples, int startSample, int endSample, int channels) {
-        if (channels == 1 && startSample == 0 && endSample == samples.Length) {
-            return samples;
-        }
-        var mono = new float[endSample - startSample];
-        for (int i = 0; i < mono.Length; ++i) {
-            float sum = 0;
-            var offset = (startSample + i) * channels;
-            for (int ch = 0; ch < channels; ++ch) {
-                sum += samples[offset + ch];
-            }
-            mono[i] = sum / channels;
-        }
-        return mono;
     }
 
     static float[] ResampleTo16k(float[] samples, int sourceSampleRate) {

@@ -203,7 +203,7 @@ namespace OpenUtau.App.Views {
                     : newPos - part.End;
                 var selectedWaveParts = selectedParts.Select(part => (UWavePart)part);
                 if (deltaDuration < 0) {
-                    int maxDurReduction = selectedWaveParts.Min(p => fromStart ? p.GetMaxPosiTick(project) - p.position : p.Duration - p.GetMinDurTick(project));
+                    int maxDurReduction = Math.Max(0, selectedWaveParts.Min(p => fromStart ? p.GetMaxPosiTick(project) - p.position : p.Duration - p.GetMinDurTick(project)));
                     deltaDuration = Math.Max(deltaDuration, -maxDurReduction);
                 } else if (deltaDuration > 0) {
                     int maxDurExtension = selectedWaveParts.Min(p => fromStart ? Math.Min(p.skip, p.position) : p.trim);
@@ -231,7 +231,8 @@ namespace OpenUtau.App.Views {
             var tracksVm = vm.TracksViewModel;
             int pointerTick = tracksVm.PointToTick(point);
             int fadeTick = Math.Max(0, pointerTick - part.position);
-            fadeTick = Math.Min(fadeTick, part.Duration - part.fadeout - 120);
+            int visibleFadeOut = Math.Clamp(part.fadeout - part.fadeoutOffset, 0, Math.Max(0, part.Duration));
+            fadeTick = Math.Min(fadeTick, Math.Max(0, part.Duration - visibleFadeOut - 120));
             DocManager.Inst.ExecuteCmd(new PartFadeInCommand(project, part, fadeTick));
         }
     }
@@ -248,7 +249,8 @@ namespace OpenUtau.App.Views {
             var tracksVm = vm.TracksViewModel;
             int pointerTick = tracksVm.PointToTick(point);
             int fadeTick = Math.Max(0, part.End - pointerTick);
-            fadeTick = Math.Min(fadeTick, part.Duration - part.fadein - 120);
+            int visibleFadeIn = Math.Clamp(part.fadein - part.fadeinOffset, 0, Math.Max(0, part.Duration));
+            fadeTick = Math.Min(fadeTick, Math.Max(0, part.Duration - visibleFadeIn - 120));
             DocManager.Inst.ExecuteCmd(new PartFadeOutCommand(project, part, fadeTick));
         }
     }
