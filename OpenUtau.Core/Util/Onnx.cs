@@ -346,8 +346,14 @@ namespace OpenUtau.Core {
             return webGpuDevices[index];
         }
 
+        private static SessionOptions getCpuSessionOptions() {
+            var options = new SessionOptions();
+            options.AddSessionConfigEntry("session.intra_op.allow_spinning", "0");
+            return options;
+        }
+
         private static SessionOptions getOnnxSessionOptions() {
-            SessionOptions options = new SessionOptions();
+            SessionOptions options = getCpuSessionOptions();
             string runner = getRunner();
             switch (runner) {
                 case "DirectML":
@@ -378,7 +384,8 @@ namespace OpenUtau.Core {
 
         public static InferenceSession getInferenceSession(byte[] model, OnnxRunnerChoice runnerChoice = OnnxRunnerChoice.Default) {
             if (runnerChoice == OnnxRunnerChoice.CPU) {
-                return new InferenceSession(model);
+                using var cpuOptions = getCpuSessionOptions();
+                return new InferenceSession(model, cpuOptions);
             }
             // The usings hold the SessionOptions alive across the native session creation: the
             // binding passes options.Handle as a raw pointer and never looks at options again,
@@ -389,19 +396,26 @@ namespace OpenUtau.Core {
                     using var options = getOnnxSessionOptions();
                     return new InferenceSession(model, options);
                 },
-                () => new InferenceSession(model));
+                () => {
+                    using var options = getCpuSessionOptions();
+                    return new InferenceSession(model, options);
+                });
         }
 
         public static InferenceSession getInferenceSession(string modelPath, OnnxRunnerChoice runnerChoice = OnnxRunnerChoice.Default) {
             if (runnerChoice == OnnxRunnerChoice.CPU) {
-                return new InferenceSession(modelPath);
+                using var cpuOptions = getCpuSessionOptions();
+                return new InferenceSession(modelPath, cpuOptions);
             }
             return createSession(
                 () => {
                     using var options = getOnnxSessionOptions();
                     return new InferenceSession(modelPath, options);
                 },
-                () => new InferenceSession(modelPath));
+                () => {
+                    using var options = getCpuSessionOptions();
+                    return new InferenceSession(modelPath, options);
+                });
         }
 
         public static void VerifyInputNames(InferenceSession session, IEnumerable<NamedOnnxValue> inputs) {
