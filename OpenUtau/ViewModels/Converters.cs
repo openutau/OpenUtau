@@ -7,7 +7,7 @@ namespace OpenUtau.App.ViewModels {
     public class CultureNameConverter : IValueConverter {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
             if (value is CultureInfo cultureInfo) {
-
+                return cultureInfo == CultureInfo.InvariantCulture ? ThemeManager.GetString("languages.invariant") : cultureInfo.NativeName;
             }
             return string.Empty;
         }
