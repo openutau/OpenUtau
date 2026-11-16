@@ -227,7 +227,6 @@ namespace OpenUtau.Core.Util {
             public int MetronomeHighFrequency = 2200;
             public int MetronomeLowFrequency = 1320;
             public string Autosave = nameof(AutosaveMode.BackupFile);
-            public string AutosaveNotifier = nameof(AutosaveNotify.Footer);
             public int AutosaveIntervalSec = 30;
             public bool DeleteAutoSaveOnClose = false;
             public int LockStartTime = 0;
@@ -359,11 +358,5 @@ namespace OpenUtau.Core.Util {
         OverwriteAutosaveFile,
         SaveInPlace,
         Off,
-    }
-
-    public enum AutosaveNotify {
-        Footer,
-        Toast,
-        Off
     }
 }

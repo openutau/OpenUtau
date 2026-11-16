@@ -309,19 +309,11 @@ namespace OpenUtau.Core {
                 string backup = GetAutosavePath();
                 Log.Information($"Autosave {backup}.");
                 Format.Ustx.AutoSave(backup, Project);
-                switch (Preferences.Default.AutosaveNotifier) {
-                    case (nameof(AutosaveNotify.Footer)):
-                        ExecuteCmd(new ProgressBarNotification(0, "Autosaving..."));
-                        new Task(async void (_) => {
-                            await Task.Delay(1500);
-                            ExecuteCmd(new ProgressBarNotification(0, ""));
-                        }, null).RunSynchronously();
-
-                        break;
-                    case (nameof(AutosaveNotify.Toast)):
-                        ExecuteCmd(new ToastNotification("MainWindow", "Autosave Successful", "dialogs.autosave.success.toast"));
-                        break;
-                }
+                ExecuteCmd(new ProgressBarNotification(0, "Autosaving..."));
+                new Task(async void (_) => {
+                    await Task.Delay(1500);
+                    ExecuteCmd(new ProgressBarNotification(0, ""));
+                }, null).RunSynchronously();
                 Log.Information($"Autosaved {backup}.");
                 autosavedPoint = undoQueue.LastOrDefault();
                 if (backup == Project.FilePath) {
