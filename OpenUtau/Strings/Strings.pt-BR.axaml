@@ -151,7 +151,7 @@ Sem permissões de administrador? Use %LOCALAPPDATA%\Programs\Common\VST3 (or ..
   <system:String x:Key="dawintegration.guide.scope.header">Limites</system:String>
   <system:String x:Key="dawintegration.guide.step1">1. Instale o plugin: clique um botão de instalação acima (confirme o pedido de administrador caso apareça), ou baixe-o manualmente e copie a pasta "OpenUtau Bridge.vst3" inteira na pasta de plugins do seu DAW:</system:String>
   <system:String x:Key="dawintegration.guide.step2">2. No seu DAW, adicione uma faixa de instrumento e insira "OpenUtau Bridge" (vendedor OpenUtau). Faça isso enquanto OpenUtau ainda está fechado — o DAW vem primeiro.</system:String>
-  <system:String x:Key="dawintegration.guide.step3">3. Abra OpenUtau, slave seu projeto, então volte aqui: Recarregar, selecione o plugin, Conectar.</system:String>
+  <system:String x:Key="dawintegration.guide.step3">3. Abra OpenUtau, salve seu projeto, então volte aqui: Recarregar, selecione o plugin, Conectar.</system:String>
   <system:String x:Key="dawintegration.guide.steps.header">Setup (três passos)</system:String>
   <system:String x:Key="dawintegration.guide.what">OpenUtau Bridge (ponte) é um plugin gratuito (VST3/CLAP) para o seu DAW. Ele recebe o projeto do OpenUtau e o áudio renderizado e os coloca na linha do tempo do DAW: continue escrevendo e sintonizando no OpenUtau, e mixe no seu DAW. Ele não faz som por si mesmo e não precisa de nehum setup extra dentro do OpenUtau.</system:String>
   <system:String x:Key="dawintegration.hint">Conecte com um plugin DAW ouvindo a essa máquina. A edição permanece no OpenUtau; o plugin recebe o projeto e o áudio rederizado.</system:String>
