@@ -250,8 +250,7 @@ namespace OpenUtau.Core {
             }
         }
 
-        private static readonly string[] RecoveryPrefixes = ["autosave-", "backup-"];
-        private static readonly string[] RecoverySuffixes = ["-autosave", "-backup"];
+        private static readonly string[] RecoverySuffixes = { "-autosave", "-backup" };
 
         private static AutosaveMode GetAutosaveMode() {
             return Enum.TryParse(Preferences.Default.Autosave, out AutosaveMode mode)
@@ -262,32 +261,30 @@ namespace OpenUtau.Core {
         private string GetAutosavePath() {
             if (string.IsNullOrEmpty(Project.FilePath)) {
                 Directory.CreateDirectory(PathManager.Inst.BackupsPath);
-                return Path.Join(PathManager.Inst.BackupsPath, $"{RecoveryPrefixes[0]}Untitled.ustx");
+                return Path.Join(PathManager.Inst.BackupsPath, "Untitled-autosave.ustx");
             }
             string dir = Path.GetDirectoryName(Project.FilePath) ?? string.Empty;
             string filename = Path.GetFileNameWithoutExtension(Project.FilePath);
             switch (GetAutosaveMode()) {
                 case AutosaveMode.BackupsFolder:
                     Directory.CreateDirectory(PathManager.Inst.BackupsPath);
-                    return Path.Join(PathManager.Inst.BackupsPath, $"{RecoveryPrefixes[0]}{filename}.ustx");
+                    return Path.Join(PathManager.Inst.BackupsPath, filename + "-autosave.ustx");
                 case AutosaveMode.SaveInPlace:
                     return Project.FilePath;
                 case AutosaveMode.OverwriteAutosaveFile:
-                    if (RecoverySuffixes.Any(suffix => filename.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) ||
-                        RecoveryPrefixes.Any(prefix => filename.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))) {
+                    if (RecoverySuffixes.Any(suffix =>
+                            filename.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))) {
                         return Project.FilePath;
                     }
-
-                    return Path.Join(dir, $"{RecoveryPrefixes[0]}{filename}.ustx");
+                    return Path.Join(dir, filename + "-autosave.ustx");
                 default:
-                    return Path.Join(dir, $"{RecoveryPrefixes[0]}{filename}.ustx");
+                    return Path.Join(dir, filename + "-autosave.ustx");
             }
         }
 
         public static bool IsAutoSaveFile(string filePath) {
             string fileName = Path.GetFileName(filePath);
-            return RecoverySuffixes.Any(suffix => fileName.EndsWith(suffix + ".ustx", StringComparison.OrdinalIgnoreCase)) ||
-                   RecoveryPrefixes.Any(prefix => fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+            return RecoverySuffixes.Any(suffix => fileName.EndsWith(suffix + ".ustx", StringComparison.OrdinalIgnoreCase));
         }
 
         public void DeleteAutoSave() {
