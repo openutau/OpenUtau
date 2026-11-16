@@ -269,15 +269,19 @@ namespace OpenUtau.Core {
             return RecoverySuffixes.Any(suffix => fileName.EndsWith(suffix + ".ustx", StringComparison.OrdinalIgnoreCase));
         }
 
-        public void DeleteAutoSave() {
+        public bool DeleteAutoSave(string filePath) {
             try {
                 string backup = GetAutosavePath();
+                if (filePath.Equals(backup)) return false; // do not delete the autosaved file if it is the project's filepath
+
                 Log.Information($"Deleting autosave {backup}.");
                 File.Delete(backup);
                 Log.Information($"Deleted autosave {backup}.");
             } catch (Exception e) {
                 Log.Error(e, "Autosave could not be deleted.");
             }
+
+            return true;
         }
 
         public bool AutoSave() {

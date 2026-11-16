@@ -166,7 +166,16 @@ namespace OpenUtau.App.Views {
 
             this.Closed += (_, _) => {
                 if (Preferences.Default.DeleteAutoSaveOnClose) {
-                    DocManager.Inst.DeleteAutoSave();
+                    string filePath = DocManager.Inst.Project.FilePath;
+
+                    if (filePath == null) {
+                        Log.Warning("Project filepath is null, preserving autosave file.");
+                        return;
+                    }
+
+                    if (!DocManager.Inst.DeleteAutoSave(filePath)) {
+                        Log.Warning("Project edited is autosaved file, preserving.");
+                    }
                 }
             };
         }
