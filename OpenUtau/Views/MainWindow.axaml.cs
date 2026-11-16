@@ -117,9 +117,20 @@ namespace OpenUtau.App.Views {
                     }
                     lastAutosave = DateTime.UtcNow;
 
-                    var result = DocManager.Inst.AutoSave();
-                    if (!result) {
-                        DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", "Failed to autosave", "errors.failed.autosave"));
+                    if (Preferences.Default.AutosaveInPlace) {
+                        viewModel.SaveProject();
+                        string message = ThemeManager.GetString("progress.saved");
+                        message = string.Format(message, DateTime.Now);
+                        DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, message));
+                    } else {
+                        var result = DocManager.Inst.AutoSave();
+                        if (result) {
+                            string message = ThemeManager.GetString("progress.autosaved");
+                            message = string.Format(message, DateTime.Now);
+                            DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, message));
+                        } else {
+                            DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", "Failed to autosave", "errors.failed.autosave"));
+                        }
                     }
                 });
             autosaveTimer.Start();

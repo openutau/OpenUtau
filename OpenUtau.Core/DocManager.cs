@@ -250,13 +250,7 @@ namespace OpenUtau.Core {
             }
         }
 
-        private static readonly string[] RecoverySuffixes = { "-autosave", "-backup" };
-
-        private static AutosaveMode GetAutosaveMode() {
-            return Enum.TryParse(Preferences.Default.Autosave, out AutosaveMode mode)
-                ? mode
-                : AutosaveMode.BackupFile;
-        }
+        private static readonly string[] RecoverySuffixes = ["-autosave", "-backup"];
 
         private string GetAutosavePath() {
             if (string.IsNullOrEmpty(Project.FilePath)) {
@@ -265,21 +259,9 @@ namespace OpenUtau.Core {
             }
             string dir = Path.GetDirectoryName(Project.FilePath) ?? string.Empty;
             string filename = Path.GetFileNameWithoutExtension(Project.FilePath);
-            switch (GetAutosaveMode()) {
-                case AutosaveMode.BackupsFolder:
-                    Directory.CreateDirectory(PathManager.Inst.BackupsPath);
-                    return Path.Join(PathManager.Inst.BackupsPath, filename + "-autosave.ustx");
-                case AutosaveMode.SaveInPlace:
-                    return Project.FilePath;
-                case AutosaveMode.OverwriteAutosaveFile:
-                    if (RecoverySuffixes.Any(suffix =>
-                            filename.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))) {
-                        return Project.FilePath;
-                    }
-                    return Path.Join(dir, filename + "-autosave.ustx");
-                default:
-                    return Path.Join(dir, filename + "-autosave.ustx");
-            }
+            return RecoverySuffixes.Any(suffix => filename.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                ? Project.FilePath
+                : Path.Join(dir, filename + "-autosave.ustx");
         }
 
         public static bool IsAutoSaveFile(string filePath) {
@@ -300,21 +282,16 @@ namespace OpenUtau.Core {
 
         public bool AutoSave() {
             if (Project == null) return false;
-            if (GetAutosaveMode() == AutosaveMode.Off) return true;
+            if (!Preferences.Default.AutosaveEnabled) return true;
             if (undoQueue.LastOrDefault() == autosavedPoint) {
                 Log.Information("Autosave skipped.");
                 return true;
             }
             try {
                 string backup = GetAutosavePath();
-                Log.Information($"Autosave {backup}.");
+                Log.Information("Autosave {backup}.", backup);
                 Format.Ustx.AutoSave(backup, Project);
-                ExecuteCmd(new ProgressBarNotification(0, "Autosaving..."));
-                new Task(async void (_) => {
-                    await Task.Delay(1500);
-                    ExecuteCmd(new ProgressBarNotification(0, ""));
-                }, null).RunSynchronously();
-                Log.Information($"Autosaved {backup}.");
+                Log.Information("Autosaved {backup}.", backup);
                 autosavedPoint = undoQueue.LastOrDefault();
                 if (backup == Project.FilePath) {
                     savedPoint = autosavedPoint;

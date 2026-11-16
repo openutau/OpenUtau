@@ -160,20 +160,18 @@ namespace OpenUtau.App.ViewModels {
         private readonly ObservableAsPropertyHelper<bool> themeEditable;
 
         public List<string> AutosaveModeOptions { get; } = new() {
-            nameof(AutosaveMode.BackupFile),
-            nameof(AutosaveMode.BackupsFolder),
-            nameof(AutosaveMode.OverwriteAutosaveFile),
-            nameof(AutosaveMode.SaveInPlace),
-            nameof(AutosaveMode.Off),
+            ThemeManager.GetString("prefs.advanced.autosave.mode.backupfile"),
+            ThemeManager.GetString("prefs.advanced.autosave.mode.saveinplace"),
+            ThemeManager.GetString("prefs.advanced.autosave.mode.off"),
         };
-        [Reactive] public partial string Autosave { get; set; }
-        public bool IsAutosaveEnabled => Autosave != nameof(AutosaveMode.Off);
+        [Reactive] public partial int AutosaveMode { get; set; }
+        public bool IsAutosaveEnabled => AutosaveMode != 2;
+
         public List<string> AutosaveIntervals { get; } = new() {
-            "10", "15", "30", "60", "120", "300", "600"
+            "1", "10", "15", "30", "60", "120", "300", "600"
         };
         [Reactive] public partial int AutosaveIntervalIndex { get; set; }
         [Reactive] public partial bool DeleteAutoSaveOnClose { get; set; }
-
 
 
         // WhenAnyValue emits the current value immediately on subscribe, not just on
@@ -205,9 +203,15 @@ namespace OpenUtau.App.ViewModels {
             MetronomeVolume = Preferences.Default.MetronomeVolume;
             MetronomeHighFrequency = Preferences.Default.MetronomeHighFrequency;
             MetronomeLowFrequency = Preferences.Default.MetronomeLowFrequency;
-            Autosave = AutosaveModeOptions.Contains(Preferences.Default.Autosave)
-                ? Preferences.Default.Autosave
-                : AutosaveModeOptions[0];
+            if (Preferences.Default.AutosaveEnabled) {
+                if (Preferences.Default.AutosaveInPlace) {
+                    AutosaveMode = 1;
+                } else {
+                    AutosaveMode = 0;
+                }
+            } else {
+                AutosaveMode = 2;
+            }
             AutosaveIntervalIndex = Math.Max(0, AutosaveIntervals.IndexOf(
                 Preferences.Default.AutosaveIntervalSec.ToString()));
             DeleteAutoSaveOnClose = Preferences.Default.DeleteAutoSaveOnClose;
@@ -339,20 +343,28 @@ namespace OpenUtau.App.ViewModels {
                 metronomeHighFrequency => Preferences.Default.MetronomeHighFrequency = metronomeHighFrequency);
             PersistOn(this.WhenAnyValue(vm => vm.MetronomeLowFrequency),
                 metronomeLowFrequency => Preferences.Default.MetronomeLowFrequency = metronomeLowFrequency);
-            this.WhenAnyValue(vm => vm.Autosave)
+            this.WhenAnyValue(vm => vm.AutosaveMode)
                 .Subscribe(mode => {
-                    Preferences.Default.Autosave = mode;
-                    Preferences.Save();
-                    this.RaisePropertyChanged(nameof(IsAutosaveEnabled));
-                });
-            this.WhenAnyValue(vm => vm.AutosaveIntervalIndex)
-                .Skip(1)
-                .Subscribe(index => {
-                    if (index < 0 || index >= AutosaveIntervals.Count) {
-                        return;
+                    switch (mode) {
+                        case 0: // Autosave to backup file
+                            Preferences.Default.AutosaveEnabled = true;
+                            Preferences.Default.AutosaveInPlace = false;
+                            break;
+                        case 1: // Trigger Save() function
+                            Preferences.Default.AutosaveEnabled = true;
+                            Preferences.Default.AutosaveInPlace = true;
+                            break;
+                        default: // Don't save
+                            Preferences.Default.AutosaveEnabled = false;
+                            break;
                     }
-                    Preferences.Default.AutosaveIntervalSec = int.Parse(AutosaveIntervals[index]);
+                    this.RaisePropertyChanged(nameof(IsAutosaveEnabled));
                     Preferences.Save();
+                });
+            PersistOn(this.WhenAnyValue(vm => vm.AutosaveIntervalIndex),
+                index => {
+                    if (index < 0 || index >= AutosaveIntervals.Count) return;
+                    Preferences.Default.AutosaveIntervalSec = int.Parse(AutosaveIntervals[index]);
                 });
             PersistOn(this.WhenAnyValue(vm => vm.DeleteAutoSaveOnClose),
                 deleteAutoSaveOnClose => Preferences.Default.DeleteAutoSaveOnClose = deleteAutoSaveOnClose);
@@ -612,7 +624,7 @@ namespace OpenUtau.App.ViewModels {
             Preferences.Save();
             this.RaisePropertyChanged(nameof(SetParamPath));
         }
-        
+
         public void SetUiFontPath(string path) {
             UiFontPath = path;
             UiFontFamily = UiFontManager.GetSuggestedFamilyName(path);

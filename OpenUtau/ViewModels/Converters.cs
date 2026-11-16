@@ -15,28 +15,6 @@ namespace OpenUtau.App.ViewModels {
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
     }
 
-    public class AutosaveModeConverter : IValueConverter {
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
-            if (value is string mode) {
-                return ThemeManager.GetString($"prefs.advanced.autosave.mode.{mode.ToLower()}");
-            }
-            return string.Empty;
-        }
-
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
-    }
-
-    public class AutosaveNotifyConverter : IValueConverter {
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
-            if (value is string notify) {
-                return ThemeManager.GetString($"prefs.advanced.autosave.notify.mode.{notify.ToLower()}");
-            }
-            return string.Empty;
-        }
-
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
-    }
-
     public class AutosaveIntervalConverter : IValueConverter {
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
             if (value is string seconds && int.TryParse(seconds, out int secs)) {
