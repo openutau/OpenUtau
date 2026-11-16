@@ -1332,7 +1332,7 @@ namespace OpenUtau.Plugin.Builtin {
                 }
                 int tone = (i == 0 && prevNeighbours != null && prevNeighbours.Length > 0)
                     ? prevNeighbours.Last().tone : notes[noteIndex].tone;
-                if (singer.TryGetMappedOto($"{phoneme1.phoneme}{alt}", note.tone + toneShift, color, out var oto)) {
+                if (singer.TryGetMappedOto($"{phoneme1.phoneme}{alt}", tone + toneShift, color, out var oto)) {
                     phoneme1.phoneme = oto.Alias;
                 }
                 phonemes[i] = phoneme1;
