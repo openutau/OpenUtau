@@ -342,6 +342,21 @@ namespace OpenUtau.Core {
                         Format.Ustx.Save(saveProjectNotif.Path, Project);
                     }
                 } else if (cmd is LoadProjectNotification notification) {
+                    if (Project != null) {
+                        if (Preferences.Default.DeleteAutoSaveOnClose) {
+                            string filePath = Project.FilePath;
+
+                            if (filePath == null) {
+                                Log.Warning("Project filepath is null, preserving autosave file.");
+                                return;
+                            }
+
+                            if (!DeleteAutoSave(filePath)) {
+                                Log.Warning("Project edited is autosaved file, preserving.");
+                            }
+                        }
+                    }
+
                     undoQueue.Clear();
                     redoQueue.Clear();
                     undoGroup = null;
