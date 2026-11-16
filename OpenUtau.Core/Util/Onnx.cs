@@ -1,6 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ML.OnnxRuntime;
@@ -39,22 +37,11 @@ namespace OpenUtau.Core {
                 .ToDictionary(x => x.index, x => x.device);
         }
 
-        // ---- WebGPU plugin execution provider ----------------------------------
-        // The native WebGPU EP ships as a plugin library that has to be registered
-        // with OrtEnv before its devices show up in GetEpDevices(). It is only
-        // packaged for macOS here, so every other platform reports it unavailable.
+        // ONNX Runtime 1.31 on macOS has the WebGPU EP built in.
+        // The EP.WebGpu plugin aborts the process from C# (microsoft/onnxruntime#33557).
 
-        /// <summary>EP name reported by the WebGPU plugin library.</summary>
         private const string WebGpuEpName = "WebGpuExecutionProvider";
-        /// <summary>Registration name is arbitrary, only used to unregister.</summary>
-        private const string WebGpuRegistrationName = "openutau_webgpu";
-        /// <summary>Name of the plugin library inside Microsoft.ML.OnnxRuntime.EP.WebGpu.</summary>
-        private const string WebGpuLibraryName = "libonnxruntime_providers_webgpu.dylib";
 
-        /// <summary>Minimum ONNX Runtime the plugin library actually works with. The
-        /// package advertises "1.24.4 or later", but its binary is built against ORT
-        /// API 30: 1.24.x kills the process natively while an InferenceSession is
-        /// created, and 1.26.x rejects the library outright, so both are unusable.</summary>
         private const int WebGpuMinMajor = 1;
         private const int WebGpuMinMinor = 30;
 
@@ -69,11 +56,11 @@ namespace OpenUtau.Core {
                     return;
                 }
                 webGpuInitialized = true;
-                webGpuReady = RegisterWebGpu();
+                webGpuReady = FindWebGpuDevices();
             }
         }
 
-        private static bool RegisterWebGpu() {
+        private static bool FindWebGpuDevices() {
             if (!OS.IsMacOS()) {
                 return false;
             }
@@ -85,66 +72,28 @@ namespace OpenUtau.Core {
                         WebGpuMinMajor, WebGpuMinMinor, version);
                     return false;
                 }
-                string? libraryPath = findWebGpuLibrary();
-                if (libraryPath == null) {
-                    Log.Information("WebGPU runner is not available: {Library} was not found next to the executable.",
-                        WebGpuLibraryName);
-                    return false;
-                }
-                env.RegisterExecutionProviderLibrary(WebGpuRegistrationName, libraryPath);
                 var found = env.GetEpDevices()
                     .Where(device => string.Equals(device.EpName, WebGpuEpName, StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 if (found.Count == 0) {
-                    Log.Warning("WebGPU runner loaded {Library} but it reported no devices.", libraryPath);
+                    Log.Information("WebGPU runner is not available: ONNX Runtime {Version} reported no WebGPU device.", version);
                     return false;
                 }
                 webGpuDevices = found;
                 Log.Information("WebGPU runner is ready with {Count} device(s).", found.Count);
                 for (int i = 0; i < found.Count; i++) {
-                    // Logged in full because a second entry can be the same physical GPU
-                    // enumerated twice, and picking it aborts the process (see getGpuInfo).
                     Log.Information("WebGPU device {Index}: {Description} [{Metadata}]", i,
                         describe(found[i]),
                         string.Join(", ", found[i].HardwareDevice.Metadata.Entries.Select(entry => $"{entry.Key}={entry.Value}")));
                 }
                 return true;
             } catch (Exception e) {
-                // Registration validates the plugin ABI, so a mismatched core fails
-                // here with a managed exception rather than at session creation.
-                Log.Error(e, "Failed to register the WebGPU execution provider.");
+                Log.Error(e, "Failed to enumerate WebGPU devices.");
                 return false;
             }
         }
 
-        /// <summary>Locates the plugin library in the places a framework dependent
-        /// build, an app bundle or a flat output directory put it.</summary>
-        private static string? findWebGpuLibrary() {
-            string baseDir = AppContext.BaseDirectory;
-            // The package ships the library with a "lib" prefix on macOS; keep the
-            // unprefixed name as a fallback so a packaging change does not silently
-            // disable the runner.
-            string[] names = { WebGpuLibraryName, "onnxruntime_providers_webgpu.dylib" };
-            var candidates = names
-                .SelectMany(name => new[] {
-                    Path.Combine(baseDir, name),
-                    Path.Combine(baseDir, "runtimes", "osx-arm64", "native", name),
-                    Path.Combine(baseDir, "..", "Resources", name),
-                });
-            foreach (var candidate in candidates) {
-                try {
-                    string full = Path.GetFullPath(candidate);
-                    if (File.Exists(full)) {
-                        return full;
-                    }
-                } catch (Exception) {
-                    // A malformed path is simply not a candidate.
-                }
-            }
-            return null;
-        }
-
-        /// <summary>Whether the WebGPU plugin EP is registered and reported a device.</summary>
+        /// <summary>Whether the built-in WebGPU EP reported a device.</summary>
         public static bool IsWebGpuAvailable() {
             EnsureWebGpuInitialized();
             return webGpuReady;
@@ -202,14 +151,6 @@ namespace OpenUtau.Core {
                 if (!IsWebGpuAvailable()) {
                     return new List<GpuInfo>();
                 }
-                // Every enumerated device is offered. Which index actually works is not
-                // stable across machines (there are reports of the second entry rendering
-                // while the first does not), so the picker must not assume index 0 is the
-                // good one. A device that cannot be used aborts the process inside the
-                // plugin (ep::adapter::CreateTensorFromApiValue -> std::terminate,
-                // microsoft/onnxruntime#33557), which no managed fallback can catch, so
-                // the list is logged in full - see RegisterWebGpu - to make the next
-                // report diagnosable.
                 return webGpuDevices
                     .Select((device, index) => new GpuInfo { deviceId = index, description = describe(device) })
                     .ToList();
