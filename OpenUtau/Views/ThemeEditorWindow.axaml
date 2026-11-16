@@ -112,6 +112,11 @@
         </Panel>
         <Separator Margin="0"/>
         <Panel>
+          <TextBlock VerticalAlignment="Center" Text="WarningColor"/>
+          <ColorPicker Color="{Binding WarningColor}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
+        </Panel>
+        <Separator Margin="0"/>
+        <Panel>
           <TextBlock VerticalAlignment="Center" Text="WhiteKeyColorLeft"/>
           <ColorPicker Color="{Binding WhiteKeyColorLeft}" ColorSpectrumShape="Ring" HorizontalAlignment="Right"/>
         </Panel>
