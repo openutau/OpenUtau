@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 using ReactiveUI;
 
 namespace OpenUtau.App.Controls {
@@ -110,12 +111,38 @@ namespace OpenUtau.App.Controls {
 
         void SingerButtonClicked(object sender, RoutedEventArgs args) {
             args.Handled = true;
-            ShowSingerFlyout(sender);
+            if (Preferences.Default.UseLegacySingerSelection) {
+                ShowSingerContextMenu(sender);
+            } else {
+                ShowSingerFlyout(sender);
+            }
         }
 
         void SingerButtonContextRequested(object sender, ContextRequestedEventArgs args) {
             args.Handled = true;
-            ShowSingerFlyout(sender);
+            if (Preferences.Default.UseLegacySingerSelection) {
+                ShowSingerContextMenu(sender);
+            } else {
+                ShowSingerFlyout(sender);
+            }
+        }
+
+        async void ShowSingerContextMenu(object sender) {
+            if (ViewModel == null) {
+                return;
+            }
+
+            try {
+                await ViewModel.RefreshSingersAsync();
+                Control anchor = SingerButton;
+                if (sender != SingerButton) {
+                    // Opened from the "⋯" flyout
+                    anchor = MoreButton;
+                }
+                SingersMenu.Open(anchor);
+            } catch (Exception e) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+            }
         }
 
         void ShowSingerFlyout(object sender) {
