@@ -14,6 +14,8 @@ namespace OpenUtau.Api {
             public string[] symbols;
         }
 
+        public bool CaseSensitive { get; } = true;
+        
         TrieNode root;
         Dictionary<string, bool> phonemeSymbols; // (phoneme, isVowel)
         HashSet<string> glideSymbols;
@@ -37,6 +39,9 @@ namespace OpenUtau.Api {
         }
 
         public string[] Query(string grapheme) {
+            if (!CaseSensitive) {
+                grapheme = grapheme.ToLowerInvariant();
+            }
             return QueryTrie(root, grapheme, 0);
         }
 

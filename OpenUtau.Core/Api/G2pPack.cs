@@ -16,6 +16,12 @@ namespace OpenUtau.Api {
         protected IG2p Dict { get; set; }
         protected InferenceSession Session { get; set; }
         protected Dictionary<string, string[]> PredCache { get; set; }
+        
+        /// <summary>
+        /// When true (default), graphemes are used as-is.
+        /// When false, graphemes are lowercased before dictionary lookup and prediction.
+        /// </summary>
+        public bool CaseSensitive { get; set; } = true;
 
         protected Tuple<IG2p, InferenceSession> LoadPack(
             byte[] data,
@@ -67,6 +73,9 @@ namespace OpenUtau.Api {
         public string[] Query(string grapheme) {
             if (grapheme.Length == 0 || kAllPunct.IsMatch(grapheme)) {
                 return null;
+            }
+            if (!CaseSensitive) {
+                grapheme = grapheme.ToLowerInvariant();
             }
             var phonemes = Dict.Query(grapheme);
             if (phonemes == null && !PredCache.TryGetValue(grapheme, out phonemes)) {

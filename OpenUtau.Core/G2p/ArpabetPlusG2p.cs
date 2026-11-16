@@ -43,6 +43,7 @@ namespace OpenUtau.Core.G2p {
                     session = tuple.Item2;
                 }
             }
+            CaseSensitive = false;
             Dict = dict;
             PredCache = predCache;
             GraphemeIndexes = graphemeIndexes;
