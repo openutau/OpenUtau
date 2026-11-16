@@ -785,8 +785,6 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.advanced.rememberfiletypes">Remember these file types in "Open Recent"</system:String>
   <system:String x:Key="prefs.advanced.autosave.mode">Autosave</system:String>
   <system:String x:Key="prefs.advanced.autosave.mode.backupfile">Backup file next to the project</system:String>
-  <system:String x:Key="prefs.advanced.autosave.mode.backupsfolder">Backup file in the Backups folder</system:String>
-  <system:String x:Key="prefs.advanced.autosave.mode.overwriteautosavefile">Update an opened autosave file in place</system:String>
   <system:String x:Key="prefs.advanced.autosave.mode.saveinplace">Save the project file directly</system:String>
   <system:String x:Key="prefs.advanced.autosave.mode.off">Disabled</system:String>
   <system:String x:Key="prefs.advanced.autosave.interval">Autosave interval</system:String>
