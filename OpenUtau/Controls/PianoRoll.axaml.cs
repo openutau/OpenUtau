@@ -1386,6 +1386,14 @@ namespace OpenUtau.App.Controls {
                         var singer = ViewModel.NotesViewModel.Project.tracks[ViewModel.NotesViewModel.Part.trackNo].Singer;
                         if (Preferences.Default.OtoEditor == 1 && !string.IsNullOrEmpty(Preferences.Default.VLabelerPath)) {
                             Integrations.VLabelerClient.Inst.GotoOto(singer, hitAliasInfo.phoneme.oto);
+                        } else if (Preferences.Default.OtoEditor == 2 && Integrations.SetParamClient.IsAvailable
+                            && hitAliasInfo.phoneme.oto != null) {
+                            try {
+                                await Integrations.SetParamClient.OpenAsync(
+                                    ViewModel.NotesViewModel.Project, singer, hitAliasInfo.phoneme.oto);
+                            } catch (Exception e) {
+                                _ = MessageBox.ShowError(RootWindow, e);
+                            }
                         } else {
                             if (MainWindow != null) {
                                 await MainWindow.OpenSingersWindowAsync();

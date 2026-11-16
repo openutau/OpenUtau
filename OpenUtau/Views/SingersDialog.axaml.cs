@@ -364,10 +364,9 @@ namespace OpenUtau.App.Views {
             }
         }*/
 
-        private void OpenInSetParam(USinger singer, UOto oto) {
-            string path = Core.Util.Preferences.Default.SetParamPath;
-            if (string.IsNullOrEmpty(path) || !File.Exists(path)) {
-                MessageBox.Show(
+        private async void OpenInSetParam(USinger singer, UOto oto) {
+            if (!Integrations.SetParamClient.IsAvailable) {
+                _ = MessageBox.Show(
                     this,
                     ThemeManager.GetString("singers.editoto.setsetparampath"),
                     ThemeManager.GetString("errors.caption"),
@@ -375,19 +374,9 @@ namespace OpenUtau.App.Views {
                 return;
             }
             try {
-                var tempFile = Path.Combine(PathManager.Inst.CachePath, "temp.tmp");
-                Ust.WriteForSetParam(DocManager.Inst.Project, tempFile, new List<UOto> { oto });
-
-                var startInfo = new ProcessStartInfo() {
-                    FileName = path,
-                    Arguments = $"\"{tempFile}\"",
-                    WorkingDirectory = Path.GetDirectoryName(path)
-                };
-                using (var process = Process.Start(startInfo)) {
-                    process!.WaitForExit();
-                }
+                await Integrations.SetParamClient.OpenAsync(DocManager.Inst.Project, singer, oto);
             } catch (Exception e) {
-                MessageBox.Show(
+                _ = MessageBox.Show(
                     this,
                     e.ToString(),
                     ThemeManager.GetString("errors.caption"),
