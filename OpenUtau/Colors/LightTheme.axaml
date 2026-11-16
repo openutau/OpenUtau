@@ -38,7 +38,7 @@
   <!--Keyboard Background-->
   <Color x:Key="WhiteKeyColorLeft">Transparent</Color>
   <Color x:Key="WhiteKeyColorRight">Transparent</Color>
-  <Color x:Key="WhiteKeyNameColor">#FF347c</Color>
+  <Color x:Key="WhiteKeyNameColor">#FF347C</Color>
 
   <Color x:Key="CenterKeyColorLeft">#FFDDE6</Color>
   <Color x:Key="CenterKeyColorRight">#FFCEDC</Color>
