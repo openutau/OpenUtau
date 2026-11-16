@@ -111,6 +111,8 @@ namespace OpenUtau.App.Views {
                 TimeSpan.FromSeconds(1),
                 DispatcherPriority.Normal,
                 (_, _) => {
+                    if (string.IsNullOrWhiteSpace(DocManager.Inst.Project.FilePath)) return;
+
                     if ((DateTime.UtcNow - lastAutosave).TotalSeconds
                         < Math.Max(1, Preferences.Default.AutosaveIntervalSec)) {
                         return;
@@ -168,8 +170,8 @@ namespace OpenUtau.App.Views {
                 if (Preferences.Default.DeleteAutoSaveOnClose) {
                     string filePath = DocManager.Inst.Project.FilePath;
 
-                    if (filePath == null) {
-                        Log.Warning("Project filepath is null, preserving autosave file.");
+                    if (string.IsNullOrWhiteSpace(filePath)) {
+                        Log.Warning("Project filepath is empty, preserving autosave file.");
                         return;
                     }
 
