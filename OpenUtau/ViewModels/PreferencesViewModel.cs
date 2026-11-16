@@ -168,7 +168,7 @@ namespace OpenUtau.App.ViewModels {
         public bool IsAutosaveEnabled => AutosaveMode != 2;
 
         public List<string> AutosaveIntervals { get; } = new() {
-            "1", "10", "15", "30", "60", "120", "300", "600"
+            "10", "15", "30", "60", "120", "300", "600", "900", "1800"
         };
         [Reactive] public partial int AutosaveIntervalIndex { get; set; }
         [Reactive] public partial bool DeleteAutoSaveOnClose { get; set; }
