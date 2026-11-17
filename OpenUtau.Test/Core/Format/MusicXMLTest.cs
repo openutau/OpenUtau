@@ -187,6 +187,14 @@ namespace OpenUtau.Core.Format {
         }
 
         [Fact]
+        public void SoundWithoutTempoTest() {
+            // <sound dynamics="..."/> without a tempo attribute must not set the tempo.
+            var project = MusicXML.LoadProject(Path.Join(basePath, "sound-dynamics-without-tempo.musicxml"));
+            var tempos = project.tempos.Select(t => (t.position, t.bpm)).ToArray();
+            Assert.Equal(new[] { (0, 100.0), (480 * 4 * 2, 80.0) }, tempos);
+        }
+
+        [Fact]
         public void LyricsTest(){
             var project = MusicXML.LoadProject(Path.Join(basePath, "61a-Lyrics.musicxml"));
             var part = project.parts.First() as UVoicePart;

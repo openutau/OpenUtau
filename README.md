@@ -26,7 +26,7 @@ It is **strongly recommended** that you read these Github wiki pages before usin
 Tried OpenUtau and not satisfied? Don't just walk away! You can help:
 - Report issues on our [Discord server](https://discord.gg/UfpMnqMmEM) or Github.
 - Suggest features on Discord or Github.
-- Add or update translations for your language on [Crowdin](https://crowdin.com/project/oxygen-dioxideopenutau).
+- Add or update translations for your language by editing the matching file in [OpenUtau/Strings](OpenUtau/Strings).
 
 Know how to code? Got an idea for an improvement? Don't keep it to yourself!
 - Contribute fixes via pull requests.

@@ -63,6 +63,30 @@
     <Style Selector="Border.singerTile:pointerover Border.favStar">
       <Setter Property="Opacity" Value="1"/>
     </Style>
+    <!-- Singer type filter: all chips lit while showing every type, one chip lit while filtered.
+         Plain buttons, since their lit state comes from the filter rather than from a click. -->
+    <Style Selector="Button.typeChip">
+      <Setter Property="Height" Value="20"/>
+      <Setter Property="Padding" Value="6,0"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource NeutralAccentBrushSemi}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="9"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi2}"/>
+      </Style>
+      <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
+      </Style>
+      <Style Selector="^.on /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi}"/>
+      </Style>
+      <Style Selector="^.on:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushPointerOver}"/>
+      </Style>
+    </Style>
     <!-- Edge grabbers lie over the grid. Shown only when there is more content on that side:
          a fade with a chevron marks the edge; hovering it scrolls that way. -->
     <Style Selector="Border.grabber">
@@ -158,6 +182,12 @@
             <Path Data="M12,12H14V10H16V12H18V14H16V16H14V14H12V12M22,8V18C22,19.11 21.11,20 20,20H4C2.89,20 2,19.11 2,18V6C2,4.89 2.89,4 4,4H10L12,6H20C21.11,6 22,6.89 22,8M20,8H4V18H20V8Z"/>
           </Canvas></Viewbox>
         </Button>
+        <Button Classes="footer" ToolTip.Tip="{DynamicResource tracks.clearsinger}" Command="{Binding ClearSinger}"
+                IsVisible="{Binding CanClearSinger}">
+          <Viewbox><Canvas>
+            <Path Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+          </Canvas></Viewbox>
+        </Button>
         <!-- mdi-refresh -->
         <Button Classes="footer" ToolTip.Tip="{DynamicResource singers.refresh}" Command="{Binding RefreshSingers}">
           <Viewbox><Canvas>
@@ -169,6 +199,21 @@
     <TextBox Name="SearchBox" DockPanel.Dock="Top" Height="24" Padding="4,3" Margin="0,0,0,4"
              Text="{Binding SearchText}" PlaceholderText="{DynamicResource tracks.searchsinger}"
              KeyDown="SearchBoxKeyDown"/>
+    <!-- Docked above the grid, which grows to fit it, so the row never wraps however many singers there are. -->
+    <ItemsControl Name="TypeChips" DockPanel.Dock="Top" Margin="0,0,0,4" HorizontalAlignment="Left"
+                  ItemsSource="{Binding TypeChips}" IsVisible="{Binding ShowTypeFilter}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Orientation="Horizontal" Spacing="4"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:SingerTypeChipViewModel">
+          <Button Classes="typeChip" Classes.on="{Binding IsOn}" Content="{Binding Label}"
+                  ToolTip.Tip="{Binding ToolTipText}" Click="TypeChipClicked"/>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
     <Panel>
       <TextBlock IsVisible="{Binding IsEmpty}" Margin="8" HorizontalAlignment="Center" VerticalAlignment="Center"
                  Text="{DynamicResource tracks.nosinger}"/>

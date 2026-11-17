@@ -1,5 +1,4 @@
-using Ignore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -14,7 +13,7 @@ namespace OpenUtau.Classic {
 
         public VoicebankPublisher(Action<double, string> progress, string? gitIgnore) {
             this.progress = progress;
-            if(gitIgnore != null) {
+            if (gitIgnore != null) {
                 ignore = new Ignore.Ignore();
                 ignore.Add(gitIgnore.Split("\n"));
             }
@@ -37,12 +36,11 @@ namespace OpenUtau.Classic {
             }
         }
 
-        private bool IsIgnored(string relativePath){
+        private bool IsIgnored(string relativePath) {
             return ignore?.IsIgnored(relativePath.Replace('\\', '/')) ?? false;
         }
 
-        private List<string> GetFilesToPack(string singerPath)
-        {
+        private List<string> GetFilesToPack(string singerPath) {
             List<string> fileList = Directory.EnumerateFiles(singerPath, "*.*", SearchOption.AllDirectories).ToList();
             List<string> packList = fileList.FindAll(x => !IsIgnored(System.IO.Path.GetRelativePath(singerPath, x)));
             return packList;
@@ -54,23 +52,25 @@ namespace OpenUtau.Classic {
         ///including utau, enunu and diffsinger.
         ///Vogen voicebanks aren't supported.
         ///</summary>
-        public void Publish(USinger singer, string outputFile){
+        public void Publish(USinger singer, string outputFile) {
             var location = singer.Location;
-            if(!Directory.Exists(location)){
+            if (!Directory.Exists(location)) {
                 return;
             }
             progress.Invoke(0, $"Publishing {singer.Name}");
             //Write singer type into character.yaml
             try {
-                ModifyConfig(singer, config => config.SingerType = singer.SingerType.ToString().ToLower());
-            } catch (Exception e) {  }
+                ModifyConfig(singer, config => {
+                    config.SingerType = SingerTypeUtils.SingerTypeNames.TryGetValue(singer.SingerType, out var name)
+                        ? name
+                        : singer.SingerType.ToString().ToLower();
+                });
+            } catch (Exception e) { }
             var packList = GetFilesToPack(location);
             int index = 0;
             int fileCount = packList.Count();
-            using(ZipArchive archive = new ZipArchive(File.Create(outputFile), ZipArchiveMode.Create))
-            {
-                foreach (var absFilePath in packList)
-                {
+            using (ZipArchive archive = new ZipArchive(File.Create(outputFile), ZipArchiveMode.Create)) {
+                foreach (var absFilePath in packList) {
                     index++;
                     progress.Invoke(100.0 * index / fileCount, $"Compressing {absFilePath}");
                     string reFilePath = Path.GetRelativePath(location, absFilePath).Replace('\\', '/');

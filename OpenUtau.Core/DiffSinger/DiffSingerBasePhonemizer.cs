@@ -303,11 +303,6 @@ namespace OpenUtau.Core.DiffSinger
             return wordPhonemes;
         }
 
-        int framesBetweenTickPos(double tickPos1, double tickPos2) {
-            return (int)(timeAxis.TickPosToMsPos(tickPos2)/frameMs) 
-                - (int)(timeAxis.TickPosToMsPos(tickPos1)/frameMs);
-        }
-
         public static IEnumerable<double> CumulativeSum(IEnumerable<double> sequence, double start = 0) {
             double sum = start;
             foreach (var item in sequence) {
@@ -403,9 +398,14 @@ namespace OpenUtau.Core.DiffSinger
             var word_div = phrasePhonemes.Take(phrasePhonemes.Count-1)
                 .Select(n => (Int64)n.Phonemes.Count)
                 .ToArray();
-            //Pairwise(phrasePhonemes)
-            var word_dur = phrasePhonemes
-                .Zip(phrasePhonemes.Skip(1), (a, b) => (long)framesBetweenTickPos(a.Position, b.Position))
+            // Frame budgets must use the same cumulative rounding as the training data
+            // (round(cumsum(ms) / frame + 0.5)), not floor(end) - floor(start).
+            var wordDurMs = phrasePhonemes
+                .Zip(phrasePhonemes.Skip(1),
+                    (a, b) => timeAxis.TickPosToMsPos(b.Position) - timeAxis.TickPosToMsPos(a.Position))
+                .ToArray();
+            var word_dur = DiffSingerUtils.DurationsMsToFrames(wordDurMs, frameMs)
+                .Select(x => (long)x)
                 .ToArray();
             //Call Diffsinger Linguistic Encoder model
             var linguisticInputs = new List<NamedOnnxValue>();

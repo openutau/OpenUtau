@@ -70,6 +70,7 @@
   <system:String x:Key="context.note.clearcache">Clear cache of phrase</system:String>
   <system:String x:Key="context.note.copy">Copy note</system:String>
   <system:String x:Key="context.note.delete">Delete note</system:String>
+  <system:String x:Key="context.note.merge">Merge notes</system:String>
   <system:String x:Key="context.note.pasteparameters">Select and paste parameters</system:String>
   <system:String x:Key="context.part.applypitch">Apply pitch from...</system:String>
   <system:String x:Key="context.part.delete">Delete part</system:String>
@@ -98,6 +99,7 @@
   <system:String x:Key="context.timeline.deltempo">Delete tempo change at {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Delete time signature change</system:String>
 
+  <system:String x:Key="dawintegration.bpmmismatch">The DAW project's tempo does not match this project's tempo. The two timelines will only agree in seconds, not in bars — align the tempos to keep them in sync.</system:String>
   <system:String x:Key="dawintegration.caption">DAW Integration</system:String>
   <system:String x:Key="dawintegration.col.apiversion">API</system:String>
   <system:String x:Key="dawintegration.col.compatibility">Status</system:String>
@@ -107,51 +109,26 @@
   <system:String x:Key="dawintegration.compatible">Compatible</system:String>
   <system:String x:Key="dawintegration.connect">Connect</system:String>
   <system:String x:Key="dawintegration.connected">Connected to {0}.</system:String>
+  <system:String x:Key="dawintegration.connected.count">Connected to {0} plugin(s).</system:String>
   <system:String x:Key="dawintegration.connecting">Connecting...</system:String>
   <system:String x:Key="dawintegration.disconnect">Disconnect</system:String>
   <system:String x:Key="dawintegration.disconnected">Not connected.</system:String>
-  <system:String x:Key="dawintegration.hint">Connect to a DAW plugin listening on this machine. Editing stays in OpenUtau; the plugin receives the project and the rendered audio.</system:String>
-  <system:String x:Key="dawintegration.incompatible">Unsupported API version</system:String>
-  <system:String x:Key="dawintegration.lost">Connection lost: {0}</system:String>
-  <system:String x:Key="dawintegration.none">No DAW plugin found. Load the OpenUtau Bridge plugin on an instrument track in your DAW, then refresh. New to this? Expand &quot;How to use&quot; above.</system:String>
-  <system:String x:Key="dawintegration.none.installed">The bridge plugin is installed, but no running instance was found. Load OpenUtau Bridge on an instrument track in your DAW, then click Refresh.</system:String>
-  <system:String x:Key="dawintegration.reconnecting">Reconnecting to {0}...</system:String>
-  <system:String x:Key="dawintegration.refresh">Refresh</system:String>
-  <system:String x:Key="dawintegration.unsavedproject">The project has not been saved yet. Save the project first, then connect the DAW plugin — an unsaved project cannot be sent to the DAW.</system:String>
-  <system:String x:Key="dawintegration.bpmmismatch">The DAW project's tempo does not match this project's tempo. The two timelines will only agree in seconds, not in bars — align the tempos to keep them in sync.</system:String>
-  <system:String x:Key="dawintegration.state.connected">Connected</system:String>
-  <system:String x:Key="dawintegration.state.connecting">Connecting</system:String>
-  <system:String x:Key="dawintegration.state.reconnecting">Reconnecting</system:String>
-  <system:String x:Key="dawintegration.state.free">Not connected</system:String>
-  <system:String x:Key="dawintegration.connected.count">Connected to {0} plugin(s).</system:String>
-  <system:String x:Key="dawintegration.guide.caption">How to use</system:String>
-  <system:String x:Key="dawintegration.guide.what">OpenUtau Bridge is a free plugin (VST3/CLAP) for your DAW. It receives OpenUtau's project and rendered audio and places them on the DAW's timeline: keep writing and tuning in OpenUtau, and mix in your DAW. It makes no sound by itself and needs no extra setup inside OpenUtau.</system:String>
-  <system:String x:Key="dawintegration.guide.caps.header">What it can do</system:String>
   <system:String x:Key="dawintegration.guide.caps.1">Automatically follows every edit — the project and each rendered part are sent to the plugin as you work.</system:String>
   <system:String x:Key="dawintegration.guide.caps.2">One plugin instance per DAW track; choose which OpenUtau track each instance plays from the plugin window or the DAW's automation panel.</system:String>
   <system:String x:Key="dawintegration.guide.caps.3">Playhead sync — the OpenUtau playhead follows your DAW's transport.</system:String>
   <system:String x:Key="dawintegration.guide.caps.4">Export-friendly — a DAW bounce waits for parts that are still rendering, so exports match playback.</system:String>
-  <system:String x:Key="dawintegration.guide.scope.header">Boundaries</system:String>
-  <system:String x:Key="dawintegration.guide.scope.1">The bridge works on one computer only, and your DAW needs to load VST3 or CLAP instruments (REAPER, Cubase, FL Studio, Studio One, Ableton Live, Bitwig, ...).</system:String>
-  <system:String x:Key="dawintegration.guide.scope.2">The two timelines align by absolute time — give both projects the same BPM to keep bars aligned.</system:String>
-  <system:String x:Key="dawintegration.guide.scope.3">OpenUtau delivers the vocals only: volume, pan, mute and effects live on the DAW mixer.</system:String>
-  <system:String x:Key="dawintegration.guide.steps.header">Setup (three steps)</system:String>
-  <system:String x:Key="dawintegration.guide.step1">1. Install the plugin: click an install button above (confirm the administrator prompt if it appears), or download it manually and copy the whole &quot;OpenUtau Bridge.vst3&quot; folder into your DAW's plugin folder:</system:String>
-  <system:String x:Key="dawintegration.guide.step2">2. In your DAW, add an instrument track and insert &quot;OpenUtau Bridge&quot; (vendor OpenUTAU). Do this while OpenUtau is still closed — the DAW comes first.</system:String>
-  <system:String x:Key="dawintegration.guide.step3">3. Open OpenUtau, save your project, then come back here: Refresh, select the plugin, Connect.</system:String>
-  <system:String x:Key="dawintegration.guide.paths.win">VST3: C:\Program Files\Common Files\VST3&#10;CLAP: C:\Program Files\Common Files\CLAP&#10;No administrator rights? Use %LOCALAPPDATA%\Programs\Common\VST3 (or ...\CLAP) instead.</system:String>
-  <system:String x:Key="dawintegration.guide.paths.mac">VST3: ~/Library/Audio/Plug-Ins/VST3&#10;CLAP: ~/Library/Audio/Plug-Ins/CLAP</system:String>
-  <system:String x:Key="dawintegration.guide.paths.linux">VST3: ~/.vst3&#10;CLAP: ~/.clap</system:String>
+  <system:String x:Key="dawintegration.guide.caps.header">What it can do</system:String>
+  <system:String x:Key="dawintegration.guide.caption">How to use</system:String>
   <system:String x:Key="dawintegration.guide.download">Download for {0}</system:String>
-  <system:String x:Key="dawintegration.guide.install.header">Install the plugin (detected on this machine)</system:String>
   <system:String x:Key="dawintegration.guide.install.clap">Install CLAP</system:String>
   <system:String x:Key="dawintegration.guide.install.clap.reinstall">Reinstall CLAP</system:String>
   <system:String x:Key="dawintegration.guide.install.done">Installed to {0}. Rescan plugins in your DAW, then click Refresh here.</system:String>
   <system:String x:Key="dawintegration.guide.install.downloading">Downloading... {0}%</system:String>
+  <system:String x:Key="dawintegration.guide.install.elevfail">The elevated copy failed ({0}), so the plugin went into the per-user folder {1} instead. Rescan plugins in your DAW, then click Refresh here.</system:String>
   <system:String x:Key="dawintegration.guide.install.extracting">Unpacking...</system:String>
   <system:String x:Key="dawintegration.guide.install.failed">Installation failed: {0}</system:String>
   <system:String x:Key="dawintegration.guide.install.fallback">Administrator approval was declined, so the plugin went into the per-user folder {1} instead. Rescan plugins in your DAW, then click Refresh here.</system:String>
-  <system:String x:Key="dawintegration.guide.install.elevfail">The elevated copy failed ({0}), so the plugin went into the per-user folder {1} instead. Rescan plugins in your DAW, then click Refresh here.</system:String>
+  <system:String x:Key="dawintegration.guide.install.header">Install the plugin (detected on this machine)</system:String>
   <system:String x:Key="dawintegration.guide.install.preparing">Preparing download...</system:String>
   <system:String x:Key="dawintegration.guide.install.vst3">Install VST3</system:String>
   <system:String x:Key="dawintegration.guide.install.vst3.reinstall">Reinstall VST3</system:String>
@@ -159,7 +136,35 @@
   <system:String x:Key="dawintegration.guide.installed.ok">Installed</system:String>
   <system:String x:Key="dawintegration.guide.manual">Full manual</system:String>
   <system:String x:Key="dawintegration.guide.manual.zh">使用手册（中文）</system:String>
+  <system:String x:Key="dawintegration.guide.paths.linux">VST3: ~/.vst3
+CLAP: ~/.clap</system:String>
+  <system:String x:Key="dawintegration.guide.paths.mac">VST3: ~/Library/Audio/Plug-Ins/VST3
+CLAP: ~/Library/Audio/Plug-Ins/CLAP</system:String>
+  <system:String x:Key="dawintegration.guide.paths.win">VST3: C:\Program Files\Common Files\VST3
+CLAP: C:\Program Files\Common Files\CLAP
+No administrator rights? Use %LOCALAPPDATA%\Programs\Common\VST3 (or ...\CLAP) instead.</system:String>
   <system:String x:Key="dawintegration.guide.releases">All releases</system:String>
+  <system:String x:Key="dawintegration.guide.scope.1">The bridge works on one computer only, and your DAW needs to load VST3 or CLAP instruments (REAPER, Cubase, FL Studio, Studio One, Ableton Live, Bitwig, ...).</system:String>
+  <system:String x:Key="dawintegration.guide.scope.2">The two timelines align by absolute time — give both projects the same BPM to keep bars aligned.</system:String>
+  <system:String x:Key="dawintegration.guide.scope.3">OpenUtau delivers the vocals only: volume, pan, mute and effects live on the DAW mixer.</system:String>
+  <system:String x:Key="dawintegration.guide.scope.header">Boundaries</system:String>
+  <system:String x:Key="dawintegration.guide.step1">1. Install the plugin: click an install button above (confirm the administrator prompt if it appears), or download it manually and copy the whole "OpenUtau Bridge.vst3" folder into your DAW's plugin folder:</system:String>
+  <system:String x:Key="dawintegration.guide.step2">2. In your DAW, add an instrument track and insert "OpenUtau Bridge" (vendor OpenUTAU). Do this while OpenUtau is still closed — the DAW comes first.</system:String>
+  <system:String x:Key="dawintegration.guide.step3">3. Open OpenUtau, save your project, then come back here: Refresh, select the plugin, Connect.</system:String>
+  <system:String x:Key="dawintegration.guide.steps.header">Setup (three steps)</system:String>
+  <system:String x:Key="dawintegration.guide.what">OpenUtau Bridge is a free plugin (VST3/CLAP) for your DAW. It receives OpenUtau's project and rendered audio and places them on the DAW's timeline: keep writing and tuning in OpenUtau, and mix in your DAW. It makes no sound by itself and needs no extra setup inside OpenUtau.</system:String>
+  <system:String x:Key="dawintegration.hint">Connect to a DAW plugin listening on this machine. Editing stays in OpenUtau; the plugin receives the project and the rendered audio.</system:String>
+  <system:String x:Key="dawintegration.incompatible">Unsupported API version</system:String>
+  <system:String x:Key="dawintegration.lost">Connection lost: {0}</system:String>
+  <system:String x:Key="dawintegration.none">No DAW plugin found. Load the OpenUtau Bridge plugin on an instrument track in your DAW, then refresh. New to this? Expand "How to use" above.</system:String>
+  <system:String x:Key="dawintegration.none.installed">The bridge plugin is installed, but no running instance was found. Load OpenUtau Bridge on an instrument track in your DAW, then click Refresh.</system:String>
+  <system:String x:Key="dawintegration.reconnecting">Reconnecting to {0}...</system:String>
+  <system:String x:Key="dawintegration.refresh">Refresh</system:String>
+  <system:String x:Key="dawintegration.state.connected">Connected</system:String>
+  <system:String x:Key="dawintegration.state.connecting">Connecting</system:String>
+  <system:String x:Key="dawintegration.state.free">Not connected</system:String>
+  <system:String x:Key="dawintegration.state.reconnecting">Reconnecting</system:String>
+  <system:String x:Key="dawintegration.unsavedproject">The project has not been saved yet. Save the project first, then connect the DAW plugin — an unsaved project cannot be sent to the DAW.</system:String>
 
   <system:String x:Key="debug.clear">Clear</system:String>
   <system:String x:Key="debug.copylog">Copy Log</system:String>
@@ -289,21 +294,10 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="exesetup.wavtool">Install as wavtool</system:String>
 
   <system:String x:Key="expressiongraph.category.input">Inputs</system:String>
+  <system:String x:Key="expressiongraph.category.logic">Logic</system:String>
   <system:String x:Key="expressiongraph.category.math">Math</system:String>
   <system:String x:Key="expressiongraph.category.output">Outputs</system:String>
   <system:String x:Key="expressiongraph.category.time">Time</system:String>
-  <system:String x:Key="expressiongraph.category.logic">Logic</system:String>
-  <system:String x:Key="expressiongraph.node.time">Project Time</system:String>
-  <system:String x:Key="expressiongraph.node.smooth">Smooth (Attack / Release)</system:String>
-  <system:String x:Key="expressiongraph.node.random_range">Random Range</system:String>
-  <system:String x:Key="expressiongraph.node.slew">Rate Limiter</system:String>
-  <system:String x:Key="expressiongraph.param.speed">Speed (units/s)</system:String>
-  <system:String x:Key="expressiongraph.param.easing">Easing</system:String>
-  <system:String x:Key="expressiongraph.node.compare">Compare</system:String>
-  <system:String x:Key="expressiongraph.node.and">AND</system:String>
-  <system:String x:Key="expressiongraph.node.or">OR</system:String>
-  <system:String x:Key="expressiongraph.node.not">NOT</system:String>
-  <system:String x:Key="expressiongraph.node.if_else">If / Else</system:String>
   <system:String x:Key="expressiongraph.copy">copy</system:String>
   <system:String x:Key="expressiongraph.copynodes">Copy</system:String>
   <system:String x:Key="expressiongraph.cycle">That link would make a loop.</system:String>
@@ -315,7 +309,6 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="expressiongraph.error">Not used, because</system:String>
   <system:String x:Key="expressiongraph.export">Export...</system:String>
   <system:String x:Key="expressiongraph.graph">graph</system:String>
-  <system:String x:Key="expressiongraph.hint">Right-click to add a node. Drag from a node's output to an input to link them.</system:String>
   <system:String x:Key="expressiongraph.help">How to use</system:String>
   <system:String x:Key="expressiongraph.help.add">Add a node</system:String>
   <system:String x:Key="expressiongraph.help.add.gesture">Right-click empty space</system:String>
@@ -334,6 +327,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="expressiongraph.help.unlink.gesture">Drag a linked input away and drop it</system:String>
   <system:String x:Key="expressiongraph.help.zoom">Zoom</system:String>
   <system:String x:Key="expressiongraph.help.zoom.gesture">Mouse wheel</system:String>
+  <system:String x:Key="expressiongraph.hint">Right-click to add a node. Drag from a node's output to an input to link them.</system:String>
   <system:String x:Key="expressiongraph.hint.nograph">Click New to create a graph for a renderer.</system:String>
   <system:String x:Key="expressiongraph.import">Import...</system:String>
   <system:String x:Key="expressiongraph.import.added">Added expressions</system:String>
@@ -346,11 +340,14 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="expressiongraph.new">New</system:String>
   <system:String x:Key="expressiongraph.node.abs">Abs</system:String>
   <system:String x:Key="expressiongraph.node.add">Add</system:String>
+  <system:String x:Key="expressiongraph.node.and">AND</system:String>
   <system:String x:Key="expressiongraph.node.clamp">Clamp</system:String>
+  <system:String x:Key="expressiongraph.node.compare">Compare</system:String>
   <system:String x:Key="expressiongraph.node.constant">Constant</system:String>
   <system:String x:Key="expressiongraph.node.curve_input">Curve</system:String>
   <system:String x:Key="expressiongraph.node.curve_output">Curve Output</system:String>
   <system:String x:Key="expressiongraph.node.divide">Divide</system:String>
+  <system:String x:Key="expressiongraph.node.if_else">If / Else</system:String>
   <system:String x:Key="expressiongraph.node.lfo">LFO</system:String>
   <system:String x:Key="expressiongraph.node.map_range">Map Range</system:String>
   <system:String x:Key="expressiongraph.node.masked_curve_input">Masked Curve</system:String>
@@ -358,16 +355,24 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="expressiongraph.node.min">Min</system:String>
   <system:String x:Key="expressiongraph.node.mix">Mix</system:String>
   <system:String x:Key="expressiongraph.node.multiply">Multiply</system:String>
+  <system:String x:Key="expressiongraph.node.not">NOT</system:String>
   <system:String x:Key="expressiongraph.node.note_envelope">Note Envelope</system:String>
   <system:String x:Key="expressiongraph.node.note_position">Position in Note</system:String>
-  <system:String x:Key="expressiongraph.node.phrase_notes">Phrase Note Counter</system:String>
+  <system:String x:Key="expressiongraph.node.or">OR</system:String>
   <system:String x:Key="expressiongraph.node.phoneme_input">Phoneme Expression</system:String>
   <system:String x:Key="expressiongraph.node.phoneme_output">Phoneme Expression Output</system:String>
+  <system:String x:Key="expressiongraph.node.phrase_notes">Phrase Note Counter</system:String>
   <system:String x:Key="expressiongraph.node.pitch_input">Pitch</system:String>
   <system:String x:Key="expressiongraph.node.pitch_output">Pitch Output</system:String>
+  <system:String x:Key="expressiongraph.node.random_range">Random Range</system:String>
+  <system:String x:Key="expressiongraph.node.slew">Rate Limiter</system:String>
+  <system:String x:Key="expressiongraph.node.smooth">Smooth (Attack / Release)</system:String>
   <system:String x:Key="expressiongraph.node.subtract">Subtract</system:String>
+  <system:String x:Key="expressiongraph.node.time">Project Time</system:String>
   <system:String x:Key="expressiongraph.noexpression">Choose an expression.</system:String>
   <system:String x:Key="expressiongraph.output">Out</system:String>
+  <system:String x:Key="expressiongraph.param.easing">Easing</system:String>
+  <system:String x:Key="expressiongraph.param.speed">Speed (units/s)</system:String>
   <system:String x:Key="expressiongraph.pastenodes">Paste</system:String>
   <system:String x:Key="expressiongraph.pitchcurve">Draw and load pitch into</system:String>
   <system:String x:Key="expressiongraph.pitchcurve.pitd">Pitch deviation (PITD)</system:String>
@@ -378,6 +383,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="expressiongraph.unknownnode">Unknown node: this version can't run it.</system:String>
   <system:String x:Key="expressiongraph.unused">No track uses this graph.</system:String>
   <system:String x:Key="expressiongraph.usedby">Used by</system:String>
+
   <system:String x:Key="exps.abbr">Abbreviation</system:String>
   <system:String x:Key="exps.caption">Expressions</system:String>
   <system:String x:Key="exps.defaultvalue">Default</system:String>
@@ -405,8 +411,8 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="languages.de">German</system:String>
   <system:String x:Key="languages.en">English</system:String>
   <system:String x:Key="languages.es">Spanish</system:String>
-  <system:String x:Key="languages.fil">Filipino</system:String>
   <system:String x:Key="languages.fi">Finnish</system:String>
+  <system:String x:Key="languages.fil">Filipino</system:String>
   <system:String x:Key="languages.fr">French</system:String>
   <system:String x:Key="languages.invariant">Not translating</system:String>
   <system:String x:Key="languages.it">Italian</system:String>
@@ -417,6 +423,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="languages.ru">Russian</system:String>
   <system:String x:Key="languages.th">Thai</system:String>
   <system:String x:Key="languages.tr">Turkish</system:String>
+  <system:String x:Key="languages.uk">Ukrainian</system:String>
   <system:String x:Key="languages.vi">Vietnamese</system:String>
   <system:String x:Key="languages.zh">Chinese</system:String>
   <system:String x:Key="languages.zh-yue">Cantonese</system:String>
@@ -707,26 +714,27 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">View Waveform (W)</system:String>
   <system:String x:Key="pianoroll.tool.curve.cursor">Cursor Tool
     Left click to select</system:String>
-  <system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
-    Left click to draw
+  <system:String x:Key="pianoroll.tool.curve.eraser">Eraser Tool
+    Click to reset</system:String>
+  <system:String x:Key="pianoroll.tool.curve.horizontalshift">Horizontal Shift Tool
+    Left click to move the curve horizontally
+    Right click to reset</system:String>
+  <system:String x:Key="pianoroll.tool.curve.horizontalstretch">Horizontal Stretch Tool
+    Left click to stretch the curve horizontally
     Right click to reset</system:String>
   <system:String x:Key="pianoroll.tool.curve.line">Line Tool
     Left click to draw (draw straight line)
     Hold Shift + Left click to draw (draw horizontal line)
     Right click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.curve.eraser">Eraser Tool
-    Click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.curve.verticalstretch">Vertical Stretch Tool
-    Left click to stretch the curve vertically
-    Right click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.curve.horizontalstretch">Horizontal Stretch Tool
-    Left click to stretch the curve horizontally
+  <system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
+    Left click to draw
+    Hold Shift + Left click to draw (draw horizontal line)
     Right click to reset</system:String>
   <system:String x:Key="pianoroll.tool.curve.verticalshift">Vertical Shift Tool
     Left click to move the curve vertically
     Right click to reset</system:String>
-  <system:String x:Key="pianoroll.tool.curve.horizontalshift">Horizontal Shift Tool
-    Left click to move the curve horizontally
+  <system:String x:Key="pianoroll.tool.curve.verticalstretch">Vertical Stretch Tool
+    Left click to stretch the curve vertically
     Right click to reset</system:String>
   <system:String x:Key="pianoroll.tool.drawpitch">Draw Pitch Tool (Shift + 1)
     Left click to draw
@@ -782,6 +790,11 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.advanced.wayland">Use Wayland</system:String>
   <system:String x:Key="prefs.advanced.winepath">Wine Path (set to enable wine for compatibility)</system:String>
   <system:String x:Key="prefs.appearance">Appearance</system:String>
+  <system:String x:Key="prefs.appearance.customfont">UI font</system:String>
+  <system:String x:Key="prefs.appearance.customfont.family">Font family</system:String>
+  <system:String x:Key="prefs.appearance.customfont.none">System default</system:String>
+  <system:String x:Key="prefs.appearance.customfont.notes">Use UI font for note text</system:String>
+  <system:String x:Key="prefs.appearance.customfont.select">Select a TrueType or OpenType font</system:String>
   <system:String x:Key="prefs.appearance.customtheme.create.empty">Theme name cannot be empty.</system:String>
   <system:String x:Key="prefs.appearance.customtheme.create.prompt">Enter Theme Name</system:String>
   <system:String x:Key="prefs.appearance.customtheme.create.title">Create Custom Theme</system:String>
@@ -798,10 +811,10 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.notehoverglow">Note hover glow</system:String>
   <system:String x:Key="prefs.appearance.playbacknotebounce">Bounce notes on playback</system:String>
   <system:String x:Key="prefs.appearance.playbacknotehighlight">Highlight notes on playback</system:String>
-  <system:String x:Key="prefs.appearance.showghostnotes">Show other tracks' notes on piano roll</system:String>
-  <system:String x:Key="prefs.appearance.showicon">Show icon on piano roll</system:String>
   <system:String x:Key="prefs.appearance.reduceanimations">Reduce animations</system:String>
   <system:String x:Key="prefs.appearance.renderbackground">Show render status in track background</system:String>
+  <system:String x:Key="prefs.appearance.showghostnotes">Show other tracks' notes on piano roll</system:String>
+  <system:String x:Key="prefs.appearance.showicon">Show icon on piano roll</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Show portrait on piano roll</system:String>
   <system:String x:Key="prefs.appearance.sortorder">Singer name display language</system:String>
   <system:String x:Key="prefs.appearance.theme">Theme</system:String>
@@ -819,6 +832,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.diffsinger">DiffSinger</system:String>
   <system:String x:Key="prefs.editing">Editing</system:String>
   <system:String x:Key="prefs.general">General</system:String>
+  <system:String x:Key="prefs.general.sinewhennosinger">Play sine tone when no singer is selected</system:String>
   <system:String x:Key="prefs.note.restart">Note: please restart OpenUtau after changing this item.</system:String>
   <system:String x:Key="prefs.otoeditor">Oto Editor</system:String>
   <system:String x:Key="prefs.otoeditor.select">Default Oto Editor</system:String>
@@ -829,6 +843,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.paths.detect">Detect</system:String>
   <system:String x:Key="prefs.paths.loaddeepfolders">Load all depth folders</system:String>
   <system:String x:Key="prefs.paths.singer">Singer Path</system:String>
+  <system:String x:Key="prefs.placeholdertext.none">(None)</system:String>
   <system:String x:Key="prefs.playback">Playback</system:String>
   <system:String x:Key="prefs.playback.autoscroll">Auto-Scroll</system:String>
   <system:String x:Key="prefs.playback.autoscrollmode">Auto-Scroll Mode</system:String>
@@ -846,9 +861,9 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.on">Move cursor and view position back to where you started playing</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.onlycursor">Move only cursor back to where you started playing</system:String>
   <system:String x:Key="prefs.playback.metronome">Metronome</system:String>
-  <system:String x:Key="prefs.playback.metronome.volume">Metronome Volume</system:String>
   <system:String x:Key="prefs.playback.metronome.highfrequency">Metronome High Frequency</system:String>
   <system:String x:Key="prefs.playback.metronome.lowfrequency">Metronome Low Frequency</system:String>
+  <system:String x:Key="prefs.playback.metronome.volume">Metronome Volume</system:String>
   <system:String x:Key="prefs.playback.systemdefault">Use system default device</system:String>
   <system:String x:Key="prefs.playback.test">Test</system:String>
   <system:String x:Key="prefs.rendering">Rendering</system:String>
@@ -875,7 +890,6 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.rendering.threads.numthreads">Maximum Render Threads</system:String>
   <system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>
   <system:String x:Key="prefs.utau">UTAU</system:String>
-  <system:String x:Key="prefs.placeholdertext.none">(None)</system:String>
 
   <system:String x:Key="progress.cachecleared">Cache cleared.</system:String>
   <system:String x:Key="progress.clearingcache">Clearing cache...</system:String>
@@ -1004,6 +1018,7 @@ Curve Type
     Ctrl + Box Select: Select more notes
     Up/Down: Transpose selected notes
     Ctrl + Up/Down: Transpose selected notes by octave
+    Ctrl + U: Merge selected notes
 Pen Tool
     Left Button Draw: Add note
     Right Click: Remove note
@@ -1018,9 +1033,16 @@ General
   <system:String x:Key="tip.notes.zoomy">Scroll here to zoom vertically ▶</system:String>
   <system:String x:Key="tip.playback.loop">Loop playback</system:String>
 
+  <system:String x:Key="tracks.clearsinger">Remove singer from this track</system:String>
   <system:String x:Key="tracks.duplicate">Duplicate Track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>
+  <system:String x:Key="tracks.expressiongraph">Expression Graph</system:String>
+  <system:String x:Key="tracks.expressiongraph.default">Renderer default</system:String>
+  <system:String x:Key="tracks.expressiongraph.none">none</system:String>
   <system:String x:Key="tracks.favorite">Favorites</system:String>
+  <system:String x:Key="tracks.filtertype.all">All</system:String>
+  <system:String x:Key="tracks.filtertype.all.tip">Show all singer types</system:String>
+  <system:String x:Key="tracks.filtertype.only">Show only {0} singers</system:String>
   <system:String x:Key="tracks.installsinger">Install singer</system:String>
   <system:String x:Key="tracks.mixfx">Track Polish...</system:String>
   <system:String x:Key="tracks.more">More</system:String>
@@ -1042,9 +1064,6 @@ General
   <system:String x:Key="tracks.searchterms">Search terms</system:String>
   <system:String x:Key="tracks.searchterms.edit">Edit search terms...</system:String>
   <system:String x:Key="tracks.searchterms.prompt">Extra words that find this singer, separated by commas.</system:String>
-  <system:String x:Key="tracks.expressiongraph">Expression Graph</system:String>
-  <system:String x:Key="tracks.expressiongraph.default">Renderer default</system:String>
-  <system:String x:Key="tracks.expressiongraph.none">none</system:String>
   <system:String x:Key="tracks.selectrenderer">Select Renderer</system:String>
   <system:String x:Key="tracks.selectsinger">Select Singer</system:String>
   <system:String x:Key="tracks.singerdefault">(Singer default) </system:String>
@@ -1069,6 +1088,7 @@ General
   <system:String x:Key="warning">Warning</system:String>
   <system:String x:Key="warning.asciipath">Your OpenUtau home path "{0}" contains non-ASCII character. Exe resamplers may not work.</system:String>
   <system:String x:Key="warning.renderer">No settings for this renderer.</system:String>
+
   <system:String x:Key="warnings">Warnings</system:String>
   <system:String x:Key="warnings.clear">Clear all</system:String>
   <system:String x:Key="warnings.dismiss">Dismiss</system:String>
@@ -1084,6 +1104,7 @@ Rename the ignored folder to load it.</system:String>
   <system:String x:Key="welcome.recent">Recent</system:String>
   <system:String x:Key="welcome.start">Start</system:String>
   <system:String x:Key="welcome.template">Template</system:String>
+
   <system:String x:Key="yamleditor.default">Default: {0}</system:String>
   <system:String x:Key="yamleditor.discarded">{0} has errors, so it can't be saved. Your changes to it were discarded.</system:String>
   <system:String x:Key="yamleditor.errors">Errors: {0}, warnings: {1}. OpenUtau could not load this file; fix the errors to save.</system:String>

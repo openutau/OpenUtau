@@ -16,8 +16,11 @@ namespace OpenUtau.App.Controls {
         const double TileHeight = 40;
         const int MinRows = 3;
         const double WheelStep = 60;
-        // Flyout presenter padding and border plus the search box and footer rows, around the tile grid.
+        // Flyout presenter padding and border plus the search box, the type filter row and the footer rows,
+        // around the tile grid.
         const double ChromeHeight = 78;
+        // The type filter row and its margin, on top of ChromeHeight while it is shown.
+        const double TypeChipsHeight = 24;
         // Flyout presenter padding and border left and right of the tile grid.
         const double ChromeWidth = 20;
         // Hover scroll speed in px/s, from the inner to the outer edge of a grabber.
@@ -48,8 +51,8 @@ namespace OpenUtau.App.Controls {
             sizeSubscription?.Dispose();
             sizeSubscription = null;
             if (DataContext is SingerFlyoutViewModel viewModel) {
-                // Sized for all singers, so searching doesn't resize the flyout.
-                sizeSubscription = viewModel.WhenAnyValue(x => x.AllTileCount)
+                // Sized for the singers the filter leaves, so searching doesn't resize the flyout.
+                sizeSubscription = viewModel.WhenAnyValue(x => x.GridTileCount)
                     .Subscribe(_ => UpdateSize());
                 tilesSubscription = viewModel.WhenAnyValue(x => x.Tiles)
                     .Subscribe(_ => UpdateTiles());
@@ -68,34 +71,47 @@ namespace OpenUtau.App.Controls {
         /// the anchor, or above it when there isn't room for even a few rows below.
         /// </summary>
         public void FitToScreen(Visual anchor) {
-            maxRows = int.MaxValue;
-            maxColumns = int.MaxValue;
+            int fitRows = int.MaxValue;
+            int fitColumns = int.MaxValue;
             var topLevel = TopLevel.GetTopLevel(anchor);
             var screen = topLevel?.Screens?.ScreenFromVisual(anchor);
             var anchorTop = anchor.PointToScreen(new Point(0, 0));
             var anchorBottom = anchor.PointToScreen(new Point(0, anchor.Bounds.Height));
             if (screen != null) {
                 var area = screen.WorkingArea;
-                int RowsFor(double pixels) => (int)((pixels / screen.Scaling - ChromeHeight) / TileHeight);
+                double chrome = ChromeHeight + (ShowTypeChips() ? TypeChipsHeight : 0);
+                int RowsFor(double pixels) => (int)((pixels / screen.Scaling - chrome) / TileHeight);
                 int below = RowsFor(area.Bottom - anchorBottom.Y);
                 int above = RowsFor(anchorTop.Y - area.Y);
-                maxRows = Math.Max(MinRows, below >= MinRows ? below : Math.Max(below, above));
+                fitRows = Math.Max(MinRows, below >= MinRows ? below : Math.Max(below, above));
                 int right = area.Right;
                 if (topLevel != null) {
                     right = Math.Min(right, topLevel.PointToScreen(new Point(topLevel.Bounds.Width, 0)).X);
                 }
                 double width = (right - anchorTop.X) / screen.Scaling - ChromeWidth;
-                maxColumns = Math.Max(1, (int)(width / TileWidth));
+                fitColumns = Math.Max(1, (int)(width / TileWidth));
             }
+            LimitGrid(fitRows, fitColumns);
+        }
+
+        public void LimitGrid(int maxRows, int maxColumns) {
+            this.maxRows = maxRows;
+            this.maxColumns = maxColumns;
             UpdateSize();
         }
 
+        bool ShowTypeChips() => (DataContext as SingerFlyoutViewModel)?.ShowTypeFilter ?? false;
+
         void UpdateSize() {
-            int count = (DataContext as SingerFlyoutViewModel)?.AllTileCount ?? 0;
+            int count = (DataContext as SingerFlyoutViewModel)?.GridTileCount ?? 0;
             rows = Math.Clamp(count, 1, Math.Max(1, maxRows));
             int columns = Math.Max(1, (count + rows - 1) / rows);
             TileScroller.Height = rows * TileHeight;
-            TileScroller.Width = Math.Min(columns, maxColumns) * TileWidth;
+            // At least wide enough for the tiles; the filter row widens the flyout beyond that when it is wider.
+            TileScroller.MinWidth = Math.Min(columns, maxColumns) * TileWidth;
+            // The flyout presenter measures its content with unlimited width, so without a cap
+            // the grid grows to fit every column and has nothing left to scroll.
+            TileScroller.MaxWidth = maxColumns * TileWidth;
             UpdateTiles();
         }
 
@@ -233,6 +249,15 @@ namespace OpenUtau.App.Controls {
             var menu = new ContextMenu() { ItemsSource = items };
             menu.Classes.Add("context");
             menu.Open(control);
+        }
+
+        // The chips are few, so a click handler is cheaper than a command on each of them.
+        void TypeChipClicked(object? sender, RoutedEventArgs e) {
+            if (sender is Control { DataContext: SingerTypeChipViewModel chip } &&
+                DataContext is SingerFlyoutViewModel viewModel) {
+                viewModel.ToggleTypeFilter(chip.Type);
+                e.Handled = true;
+            }
         }
 
         // Handled here so the press doesn't reach the tile and select the singer.

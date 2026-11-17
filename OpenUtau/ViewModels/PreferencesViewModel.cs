@@ -43,6 +43,7 @@ namespace OpenUtau.App.ViewModels {
         }
         // Release channel index: 0 = stable, 1 = beta, 2 = alpha.
         [Reactive] public partial int Channel { get; set; }
+        [Reactive] public partial bool PlaySineWhenNoSinger { get; set; }
 
         // Playback
         private List<AudioOutputDevice>? audioOutputDevices;
@@ -109,6 +110,10 @@ namespace OpenUtau.App.ViewModels {
 
         // Appearance
         [Reactive] public partial string ThemeName { get; set; }
+        [Reactive] public partial string UiFontPath { get; set; }
+        [Reactive] public partial string UiFontFamily { get; set; }
+        [Reactive] public partial bool UseUiFontForNotes { get; set; }
+        public List<string>  UiFontFamilies { get; private set; } = new();
         [Reactive] public partial int DegreeStyle { get; set; }
         [Reactive] public partial bool UseTrackColor { get; set; }
         [Reactive] public partial bool ShowPortrait { get; set; }
@@ -230,6 +235,10 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
+            UiFontPath = Preferences.Default.UiFontPath;
+            UiFontFamily = Preferences.Default.UiFontFamily;
+            UseUiFontForNotes = Preferences.Default.UseUiFontForNotes;
+            RefreshUiFontFamilies();
             DegreeStyle = Preferences.Default.DegreeStyle;
             UseTrackColor = Preferences.Default.UseTrackColor;
             ShowPortrait = Preferences.Default.ShowPortrait;
@@ -245,6 +254,7 @@ namespace OpenUtau.App.ViewModels {
                 "alpha" => 2,
                 _ => 0
             };
+            PlaySineWhenNoSinger = Preferences.Default.PlaySineWhenNoSinger;
             LyricsHelper = LyricsHelpers.FirstOrDefault(option => option.klass.Equals(ActiveLyricsHelper.Inst.GetPreferred()));
             LyricsHelperBrackets = Preferences.Default.LyricsHelperBrackets;
             RenderStatusInTrackBar = Preferences.Default.RenderStatusInTrackBar;
@@ -340,6 +350,29 @@ namespace OpenUtau.App.ViewModels {
                         App.SetTheme();
                     }
                 });
+            this.WhenAnyValue(vm => vm.UiFontPath)
+                .Skip(1)
+                .Subscribe(path => {
+                    Preferences.Default.UiFontPath = UiFontManager.IsSupportedFontPath(path) ? path : string.Empty;
+                    Preferences.Save();
+                    UiFontManager.Apply();
+                    RefreshUiFontFamilies();
+                });
+            this.WhenAnyValue(vm => vm.UiFontFamily)
+                .Skip(1)
+                .Subscribe(family => {
+                    Preferences.Default.UiFontFamily = family?.Trim() ?? string.Empty;
+                    Preferences.Save();
+                    UiFontManager.Apply();
+                });
+            this.WhenAnyValue(vm => vm.UseUiFontForNotes)
+                .Skip(1)
+                .Subscribe(useUiFont => {
+                    Preferences.Default.UseUiFontForNotes = useUiFont;
+                    Preferences.Save();
+                    OpenUtau.App.Controls.TextLayoutCache.Clear();
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                });
             this.WhenAnyValue(vm => vm.DegreeStyle)
                 .Skip(1)
                 .Subscribe(degreeStyle => {
@@ -409,6 +442,12 @@ namespace OpenUtau.App.ViewModels {
                     2 => "alpha",
                     _ => "stable"
                 };
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.PlaySineWhenNoSinger), playSine => {
+                Preferences.Default.PlaySineWhenNoSinger = playSine;
+                DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
+                DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                MessageBus.Current.SendMessage(new TracksRefreshEvent());
             });
             this.WhenAnyValue(vm => vm.LyricsHelper)
                 .Skip(1)
@@ -532,6 +571,25 @@ namespace OpenUtau.App.ViewModels {
             Preferences.Default.SetParamPath = path;
             Preferences.Save();
             this.RaisePropertyChanged(nameof(SetParamPath));
+        }
+        
+        public void SetUiFontPath(string path) {
+            UiFontPath = path;
+            UiFontFamily = UiFontManager.GetSuggestedFamilyName(path);
+        }
+
+        public void ResetUiFont() {
+            UiFontPath = string.Empty;
+            UiFontFamily = string.Empty;
+        }
+
+        private void RefreshUiFontFamilies() {
+            UiFontFamilies = UiFontManager.GetAvailableFontFamilies();
+            if (!string.IsNullOrWhiteSpace(UiFontFamily)
+                && !UiFontFamilies.Contains(UiFontFamily, StringComparer.OrdinalIgnoreCase)) {
+                UiFontFamilies.Insert(0, UiFontFamily);
+            }
+            this.RaisePropertyChanged(nameof(UiFontFamilies));
         }
 
         public void SetWinePath(string path) {
