@@ -161,10 +161,12 @@ namespace OpenUtau.App {
                 case "Light":
                     ApplyTheme(light);
                     Current.RequestedThemeVariant = ThemeVariant.Light;
+                    Current.Resources["ThemeTransparencyLevelHint"] = CustomTheme.ParseTransparency("Transparent");
                     break;
                 case "Dark":
                     ApplyTheme(dark);
                     Current.RequestedThemeVariant = ThemeVariant.Dark;
+                    Current.Resources["ThemeTransparencyLevelHint"] = CustomTheme.ParseTransparency("Transparent");
                     break;
                 default:
                     ApplyTheme(custom);

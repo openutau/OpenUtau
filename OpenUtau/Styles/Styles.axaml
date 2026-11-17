@@ -18,6 +18,7 @@
   <Style Selector="Window">
     <Setter Property="FontFamily" Value="{DynamicResource ui.fontfamily}"/>
     <Setter Property="Icon" Value="/Assets/open-utau.ico"/>
+    <Setter Property="TransparencyLevelHint" Value="{DynamicResource ThemeTransparencyLevelHint}"/>
   </Style>
   <Style Selector="Menu">
     <Setter Property="Height" Value="24"/>

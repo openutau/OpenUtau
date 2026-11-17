@@ -16,6 +16,16 @@
           <TextBlock VerticalAlignment="Center" Text="IsDarkMode"/>
           <ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding IsDarkMode}"/>
         </Panel>
+        <Panel>
+          <TextBlock VerticalAlignment="Center" Text="Transparency"/>
+          <ComboBox HorizontalAlignment="Right" SelectedItem="{Binding Transparency}">
+              <x:String>Transparent</x:String>
+              <x:String>None</x:String>
+              <x:String>Blur</x:String>
+              <x:String>AcrylicBlur</x:String>
+              <x:String>Mica</x:String>
+          </ComboBox>
+        </Panel>
         <Separator Margin="0"/>
         <Panel>
           <TextBlock VerticalAlignment="Center" Text="BackgroundColor"/>

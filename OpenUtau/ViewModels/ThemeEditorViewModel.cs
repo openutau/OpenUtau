@@ -20,6 +20,7 @@ namespace OpenUtau.App.ViewModels {
 
         private readonly string Name;
         [Reactive] public partial bool IsDarkMode { get; set; }
+        [Reactive] public partial string Transparency { get; set; }
         [Reactive] public partial Color BackgroundColor { get; set; }
         [Reactive] public partial Color BackgroundColorPointerOver { get; set; }
         [Reactive] public partial Color BackgroundColorPressed { get; set; }
@@ -71,6 +72,7 @@ namespace OpenUtau.App.ViewModels {
             }
 
             Name = themeYaml.Name;
+            Transparency = themeYaml.Transparency;
             IsDarkMode = themeYaml.IsDarkMode;
             BackgroundColor = Color.Parse(themeYaml.BackgroundColor);
             BackgroundColorPointerOver = Color.Parse(themeYaml.BackgroundColorPointerOver);
@@ -121,6 +123,10 @@ namespace OpenUtau.App.ViewModels {
                     }
                     ThemeManager.LoadTheme();
                 });
+            
+            this.WhenAnyValue(vm => vm.Transparency)
+                .Subscribe(v => Application.Current!.Resources["ThemeTransparencyLevelHint"] =
+                    CustomTheme.ParseTransparency(v));
 
             this.WhenAnyValue(vm => vm.BackgroundColor)
                 .Subscribe(v => Application.Current!.Resources["BackgroundColor"] = v);
@@ -227,6 +233,7 @@ namespace OpenUtau.App.ViewModels {
         public void Save() {
             var themeYaml = new CustomTheme.ThemeYaml {
                 Name = Name,
+                Transparency = Transparency,
                 IsDarkMode = IsDarkMode,
                 BackgroundColor = BackgroundColor.ToString(),
                 BackgroundColorPointerOver = BackgroundColorPointerOver.ToString(),
