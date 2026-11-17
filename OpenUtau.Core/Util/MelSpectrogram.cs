@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using FftFlat;
 using Serilog;
 
 namespace OpenUtau.Core.Util {
@@ -25,16 +26,13 @@ namespace OpenUtau.Core.Util {
 
         private const int ChunkFrames = 256;
 
-        // Window, FFT twiddles and mel filters for one (FftSize, Bands) pair.
+        // Window and mel filters for one (FftSize, Bands) pair.
         private sealed class Plan {
             private static readonly ConcurrentDictionary<(int, int), Plan> cache = new();
 
             public readonly int FftSize;
             public readonly int Bands;
-            public readonly float[] Window;
-            public readonly int[] BitReverse;
-            public readonly float[] Cos;
-            public readonly float[] Sin;
+            public readonly double[] Window;
             public readonly int[] FilterStart;
             public readonly float[][] FilterWeights;
             public readonly double PowerNorm;
@@ -45,35 +43,18 @@ namespace OpenUtau.Core.Util {
             private Plan(int fftSize, int bands) {
                 FftSize = fftSize;
                 Bands = bands;
-                Window = new float[fftSize];
-                BitReverse = new int[fftSize];
-                Cos = new float[fftSize / 2];
-                Sin = new float[fftSize / 2];
+                Window = new double[fftSize];
                 FilterStart = new int[bands];
                 FilterWeights = new float[bands][];
 
                 double sum = 0;
                 for (int i = 0; i < fftSize; ++i) {
-                    Window[i] = (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * i / fftSize));
+                    Window[i] = 0.5 - 0.5 * Math.Cos(2 * Math.PI * i / fftSize);
                     sum += Window[i];
                 }
                 // A full-scale sine then has a peak-bin power of 1.
                 PowerNorm = 1.0 / ((sum / 2) * (sum / 2));
 
-                int bits = (int)Math.Log2(fftSize);
-                for (int i = 0; i < fftSize; ++i) {
-                    int r = 0;
-                    for (int b = 0; b < bits; ++b) {
-                        if ((i & (1 << b)) != 0) {
-                            r |= 1 << (bits - 1 - b);
-                        }
-                    }
-                    BitReverse[i] = r;
-                }
-                for (int i = 0; i < fftSize / 2; ++i) {
-                    Cos[i] = (float)Math.Cos(2 * Math.PI * i / fftSize);
-                    Sin[i] = (float)-Math.Sin(2 * Math.PI * i / fftSize);
-                }
                 BuildFilters();
             }
 
@@ -210,107 +191,39 @@ namespace OpenUtau.Core.Util {
         public static void Compute(float[] samples, int channels, int fftSize, int hop, int bands,
                 int firstFrame, int frameCount, byte[] dest, int destOffset) {
             var plan = Plan.Get(fftSize, bands);
-            var re = new float[fftSize];
-            var im = new float[fftSize];
-            var power = new float[fftSize / 2 + 1];
-            for (int f = 0; f < frameCount; f += 2) {
-                bool pair = f + 1 < frameCount;
-                Load(plan, samples, channels, hop, firstFrame + f, re);
-                if (pair) {
-                    Load(plan, samples, channels, hop, firstFrame + f + 1, im);
-                } else {
-                    Array.Clear(im);
-                }
-                Fft(plan, re, im);
-                Quantize(plan, re, im, false, power, dest, destOffset + f * bands);
-                if (pair) {
-                    Quantize(plan, re, im, true, power, dest, destOffset + (f + 1) * bands);
-                }
-            }
-        }
-
-        // Windowed mono audio for one frame.
-        private static void Load(Plan plan, float[] samples, int channels, int hop, int frame, float[] target) {
-            int fftSize = plan.FftSize;
-            long start = (long)frame * hop - fftSize / 2;
+            var fft = new RealFourierTransform(fftSize);
+            var buffer = new double[fftSize + 2];
             int frames = samples.Length / channels;
-            for (int i = 0; i < fftSize; ++i) {
-                long s = start + i;
-                float v = 0;
-                if (s >= 0 && s < frames) {
-                    if (channels == 1) {
-                        v = samples[s];
-                    } else {
-                        float sum = 0;
+            for (int f = 0; f < frameCount; ++f) {
+                // Windowed mono audio for one frame.
+                long start = (long)(firstFrame + f) * hop - fftSize / 2;
+                for (int i = 0; i < fftSize; ++i) {
+                    long s = start + i;
+                    double v = 0;
+                    if (s >= 0 && s < frames) {
                         for (int c = 0; c < channels; ++c) {
-                            sum += samples[s * channels + c];
+                            v += samples[s * channels + c];
                         }
-                        v = sum / channels;
+                        v /= channels;
                     }
+                    buffer[i] = v * plan.Window[i];
                 }
-                target[i] = v * plan.Window[i];
-            }
-        }
+                var spectrum = fft.Forward(buffer);
 
-        // In-place radix-2 FFT of re + i * im.
-        private static void Fft(Plan plan, float[] re, float[] im) {
-            int fftSize = plan.FftSize;
-            var bitReverse = plan.BitReverse;
-            var cos = plan.Cos;
-            var sin = plan.Sin;
-            for (int i = 0; i < fftSize; ++i) {
-                int j = bitReverse[i];
-                if (j > i) {
-                    (re[i], re[j]) = (re[j], re[i]);
-                    (im[i], im[j]) = (im[j], im[i]);
-                }
-            }
-            for (int size = 2; size <= fftSize; size <<= 1) {
-                int half = size / 2;
-                int step = fftSize / size;
-                for (int start = 0; start < fftSize; start += size) {
-                    for (int k = 0, t = 0; k < half; ++k, t += step) {
-                        int a = start + k;
-                        int b = a + half;
-                        float tr = re[b] * cos[t] - im[b] * sin[t];
-                        float ti = re[b] * sin[t] + im[b] * cos[t];
-                        re[b] = re[a] - tr;
-                        im[b] = im[a] - ti;
-                        re[a] += tr;
-                        im[a] += ti;
+                // Filter, convert to dB and quantize.
+                int offset = destOffset + f * bands;
+                for (int b = 0; b < bands; ++b) {
+                    var weights = plan.FilterWeights[b];
+                    int first = plan.FilterStart[b];
+                    double sum = 0;
+                    for (int i = 0; i < weights.Length; ++i) {
+                        var bin = spectrum[first + i];
+                        sum += weights[i] * (bin.Real * bin.Real + bin.Imaginary * bin.Imaginary);
                     }
+                    double db = 10 * Math.Log10(sum * plan.PowerNorm + 1e-12);
+                    double t = Math.Clamp((db - MinDb) / -MinDb, 0, 1);
+                    dest[offset + b] = (byte)(1 + Math.Round(t * 254));
                 }
-            }
-        }
-
-        // Two real frames were packed as re and im; split their spectra back out, then
-        // filter, convert to dB and quantize one of them.
-        private static void Quantize(Plan plan, float[] re, float[] im, bool second, float[] power,
-                byte[] dest, int offset) {
-            int fftSize = plan.FftSize;
-            int bins = fftSize / 2 + 1;
-            for (int k = 0; k < bins; ++k) {
-                int m = (fftSize - k) & (fftSize - 1);
-                float xr, xi;
-                if (!second) {
-                    xr = 0.5f * (re[k] + re[m]);
-                    xi = 0.5f * (im[k] - im[m]);
-                } else {
-                    xr = 0.5f * (im[k] + im[m]);
-                    xi = -0.5f * (re[k] - re[m]);
-                }
-                power[k] = xr * xr + xi * xi;
-            }
-            for (int b = 0; b < plan.Bands; ++b) {
-                var weights = plan.FilterWeights[b];
-                int start = plan.FilterStart[b];
-                double sum = 0;
-                for (int i = 0; i < weights.Length; ++i) {
-                    sum += weights[i] * power[start + i];
-                }
-                double db = 10 * Math.Log10(sum * plan.PowerNorm + 1e-12);
-                double t = Math.Clamp((db - MinDb) / -MinDb, 0, 1);
-                dest[offset + b] = (byte)(1 + Math.Round(t * 254));
             }
         }
     }
