@@ -381,6 +381,9 @@ namespace OpenUtau.Core {
             }
             if (undoGroup == null) {
                 Log.Error($"No active UndoGroup {cmd}");
+                if (deepUndoGroup != null) {
+                    Log.Error("DeepUndoGroup {cmd} does not support commands", cmd);
+                }
                 return;
             }
             undoGroup.Commands.Add(cmd);
@@ -482,6 +485,17 @@ namespace OpenUtau.Core {
             }
         }
 
+        /// <summary>
+        /// Starts an undo group, taking commands from <see cref="ExecuteCmd"/>
+        /// and preserving them to be undone if requested.
+        /// </summary>
+        /// <remarks>
+        /// Wrap in a try finally { <see cref="EndUndoGroup"/> } block
+        /// to prevent open undo groups when exceptions occur.
+        /// </remarks>
+        /// <param name="nameKey">The translation key used to display the undo group.</param>
+        /// <param name="deferValidate">Delay validating commands until the undo group is terminated.</param>
+        /// <param name="isDeep">Starts a DeepUndoGroup, which take UndoGroups instead of commands.</param>
         public void StartUndoGroup(string? nameKey = null, bool deferValidate = false, bool isDeep = false) {
             if (undoGroup != null && !isDeep) {
                 if (deepUndoGroup == null) {
@@ -504,6 +518,10 @@ namespace OpenUtau.Core {
             Log.Debug("{0} {1} undoGroup started", nameKey, isDeep  ? "deep" : "");
         }
 
+        /// <summary>
+        /// Terminates an undo group, wrapping commands in an undo group,
+        /// or wrapping undo groups in a deep undo group.
+        /// </summary>
         public void EndUndoGroup() {
             if (undoGroup == null && deepUndoGroup != null) { // Terminating a deep group
                 // Deep groups do not support commands, only shallow groups.
