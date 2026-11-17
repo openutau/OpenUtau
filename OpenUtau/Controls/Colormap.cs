@@ -1,15 +1,58 @@
 ﻿using System;
+using OpenUtau.Core.Util;
 
 namespace OpenUtau.App.Controls {
-    public class Viridis {
-        public string Name => "Viridis";
+    public enum ColormapKind {
+        Viridis = 0, 
+        Magma = 1, 
+        Grayscale = 2 
+    }
 
-        public (byte r, byte g, byte b) GetRGB(byte value) {
-            byte[] bytes = BitConverter.GetBytes(rgb[value]);
-            return (bytes[2], bytes[1], bytes[0]);
+    /// <summary>Maps intensities to colors for the spectrogram views.</summary>
+    public static class Colormap {
+        /// <summary>The color of an intensity, 0..255.</summary>
+        public static (byte r, byte g, byte b) GetRGB(ColormapKind kind, byte value) {
+            switch (kind) {
+                case ColormapKind.Magma: {
+                    double pos = value / 255.0 * (MagmaStops.Length - 1);
+                    int i = Math.Min((int)pos, MagmaStops.Length - 2);
+                    double f = pos - i;
+                    var a = MagmaStops[i];
+                    var b = MagmaStops[i + 1];
+                    return ((byte)(a.r + (b.r - a.r) * f), (byte)(a.g + (b.g - a.g) * f),
+                        (byte)(a.b + (b.b - a.b) * f));
+                }
+                case ColormapKind.Grayscale:
+                    return (value, value, value);
+                default:
+                    byte[] bytes = BitConverter.GetBytes(ViridisRgb[value]);
+                    return (bytes[2], bytes[1], bytes[0]);
+            }
         }
 
-        private readonly int[] rgb = {
+        /// <summary>
+        /// A 256-entry table of RGBA pixels, little endian, for Rgba8888, for the stored values
+        /// of <see cref="MelSpectrogram"/>. Entry 0 (no data) is transparent; the rest span
+        /// minDb..maxDb.
+        /// </summary>
+        public static uint[] BuildTable(ColormapKind kind, double minDb, double maxDb, double opacity) {
+            var table = new uint[256];
+            double range = maxDb - minDb;
+            byte alpha = (byte)(opacity * 255);
+            for (int v = 1; v < 256; ++v) {
+                double t = Math.Clamp((MelSpectrogram.ByteToDb((byte)v) - minDb) / range, 0, 1);
+                var (r, g, b) = GetRGB(kind, (byte)(t * 255));
+                table[v] = r | ((uint)g << 8) | ((uint)b << 16) | ((uint)alpha << 24);
+            }
+            return table;
+        }
+
+        private static readonly (byte r, byte g, byte b)[] MagmaStops = {
+            (0, 0, 4), (40, 17, 89), (115, 31, 129), (183, 55, 121),
+            (241, 96, 93), (254, 159, 109), (252, 253, 191),
+        };
+
+        private static readonly int[] ViridisRgb = {
             04456788, 04457045, 04457303, 04523352, 04523610, 04524123, 04589916, 04590430,
             04590687, 04591201, 04656994, 04657507, 04657765, 04658278, 04658535, 04658793,
             04659306, 04725099, 04725356, 04725870, 04726127, 04726384, 04726897, 04727154,

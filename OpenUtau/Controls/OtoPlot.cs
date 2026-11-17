@@ -292,7 +292,6 @@ namespace OpenUtau.App.Controls {
             if (waveFile == null) {
                 return;
             }
-            var colormap = new Viridis();
             double[,] mel = GetMel(waveFile, ZoomInMel);
             double min = mel.Cast<double>().Min();
             double range = mel.Cast<double>().Max() - min;
@@ -303,7 +302,7 @@ namespace OpenUtau.App.Controls {
                     for (int j = 0; j < mel.GetLength(1); ++j) {
                         mel[i, j] = (mel[i, j] - min) / range;
                         byte intensity = (byte)Math.Clamp(mel[i, j] * 0xFF, 0, 0xFF);
-                        var (r, g, b) = colormap.GetRGB(intensity);
+                        var (r, g, b) = Colormap.GetRGB(ColormapKind.Viridis, intensity);
                         bitmapData[index++] = r;
                         bitmapData[index++] = g;
                         bitmapData[index++] = b;
