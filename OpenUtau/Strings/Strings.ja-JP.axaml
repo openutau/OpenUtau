@@ -1,4 +1,4 @@
-﻿<!--UI strings. Entries commented out are untranslated and fall back to en-US.-->
+<!--UI strings. Entries commented out are untranslated and fall back to en-US.-->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">

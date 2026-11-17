@@ -70,6 +70,7 @@
   <system:String x:Key="context.note.clearcache">Clear cache of phrase</system:String>
   <system:String x:Key="context.note.copy">Copy note</system:String>
   <system:String x:Key="context.note.delete">Delete note</system:String>
+  <system:String x:Key="context.note.merge">Merge notes</system:String>
   <system:String x:Key="context.note.pasteparameters">Select and paste parameters</system:String>
   <system:String x:Key="context.part.applypitch">Apply pitch from...</system:String>
   <system:String x:Key="context.part.delete">Delete part</system:String>
@@ -418,6 +419,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="languages.ru">Russian</system:String>
   <system:String x:Key="languages.th">Thai</system:String>
   <system:String x:Key="languages.tr">Turkish</system:String>
+  <system:String x:Key="languages.uk">Ukrainian</system:String>
   <system:String x:Key="languages.vi">Vietnamese</system:String>
   <system:String x:Key="languages.zh">Chinese</system:String>
   <system:String x:Key="languages.zh-yue">Cantonese</system:String>
@@ -784,6 +786,11 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.advanced.wayland">Use Wayland</system:String>
   <system:String x:Key="prefs.advanced.winepath">Wine Path (set to enable wine for compatibility)</system:String>
   <system:String x:Key="prefs.appearance">Appearance</system:String>
+  <system:String x:Key="prefs.appearance.customfont">UI font</system:String>
+  <system:String x:Key="prefs.appearance.customfont.family">Font family</system:String>
+  <system:String x:Key="prefs.appearance.customfont.none">System default</system:String>
+  <system:String x:Key="prefs.appearance.customfont.notes">Use UI font for note text</system:String>
+  <system:String x:Key="prefs.appearance.customfont.select">Select a TrueType or OpenType font</system:String>
   <system:String x:Key="prefs.appearance.customtheme.create.empty">Theme name cannot be empty.</system:String>
   <system:String x:Key="prefs.appearance.customtheme.create.prompt">Enter Theme Name</system:String>
   <system:String x:Key="prefs.appearance.customtheme.create.title">Create Custom Theme</system:String>
@@ -828,6 +835,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.diffsinger">DiffSinger</system:String>
   <system:String x:Key="prefs.editing">Editing</system:String>
   <system:String x:Key="prefs.general">General</system:String>
+  <system:String x:Key="prefs.general.sinewhennosinger">Play sine tone when no singer is selected</system:String>
   <system:String x:Key="prefs.note.restart">Note: please restart OpenUtau after changing this item.</system:String>
   <system:String x:Key="prefs.otoeditor">Oto Editor</system:String>
   <system:String x:Key="prefs.otoeditor.select">Default Oto Editor</system:String>
@@ -1026,10 +1034,14 @@ General
   <system:String x:Key="tip.notes.zoomx">◀ Scroll here to zoom horizontally ▶</system:String>
   <system:String x:Key="tip.notes.zoomy">Scroll here to zoom vertically ▶</system:String>
   <system:String x:Key="tip.playback.loop">Loop playback</system:String>
+  <system:String x:Key="tracks.clearsinger">Remove singer from this track</system:String>
 
   <system:String x:Key="tracks.duplicate">Duplicate Track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>
   <system:String x:Key="tracks.favorite">Favorites</system:String>
+  <system:String x:Key="tracks.filtertype.all">All</system:String>
+  <system:String x:Key="tracks.filtertype.all.tip">Show all singer types</system:String>
+  <system:String x:Key="tracks.filtertype.only">Show only {0} singers</system:String>
   <system:String x:Key="tracks.installsinger">Install singer</system:String>
   <system:String x:Key="tracks.mixfx">Track Polish...</system:String>
   <system:String x:Key="tracks.more">More</system:String>
