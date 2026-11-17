@@ -7,10 +7,10 @@ using OpenUtau.Core.Ustx;
 namespace OpenUtau.App.ViewModels {
     public partial class BatchEditProjectViewModel(UProject project) : ViewModelBase {
         public List<SelectableBatchEdit> ResetBatchEdits { get; set; } = [
-            new(new ResetAllExpressions(), false),
-            new(new ResetPitchBends(), false),
-            new(new ResetAliases(), false),
-            new(new ResetVibratos(), false)
+            new(new ResetAllExpressions()),
+            new(new ResetPitchBends()),
+            new(new ResetAliases()),
+            new(new ResetVibratos()),
         ];
 
 
@@ -53,6 +53,11 @@ namespace OpenUtau.App.ViewModels {
         public SelectableBatchEdit(BatchEdit edit, bool active) {
             Edit = edit;
             Active = active;
+        }
+
+        public SelectableBatchEdit(BatchEdit edit) {
+            Edit = edit;
+            Active = false;
         }
 
         public override string ToString() {
