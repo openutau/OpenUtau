@@ -122,8 +122,12 @@ public class CustomTheme {
     public static IReadOnlyList<WindowTransparencyLevel> ParseTransparency(string? value) {
         switch ((value ?? "").Trim().ToLowerInvariant()) {
             case "transparent":
-            case "":
                 return TransparentHint;
+            case "":
+                if (HasTransparentColors(Default)) {
+                    return TransparentHint;
+                }
+                return NoneHint;
             case "blur":
                 return BlurHint;
             case "acrylicblur":
@@ -138,6 +142,19 @@ public class CustomTheme {
         }
     }
 
+    private static bool HasTransparentColors(ThemeYaml theme) {
+        string[] colors = [
+            theme.BackgroundColor,
+            theme.TrackBackgroundAltColor,
+        ];
+        foreach (var c in colors) {
+            if (Color.TryParse(c, out var color) && color.A < 255) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     private static void SetResourceColor(string res, string colorStr) {
         if (Color.TryParse(colorStr, out var color)) {
             Application.Current!.Resources[res] = color;
