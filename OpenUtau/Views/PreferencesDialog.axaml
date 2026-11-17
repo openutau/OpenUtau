@@ -352,6 +352,37 @@
             <TextBlock Text="{DynamicResource prefs.appearance.detachpianoroll}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding DetachPianoRoll}"/>
           </Grid>
+          <TextBlock Text="{DynamicResource prefs.appearance.mel.colormap}" Margin="0,10,0,0"/>
+          <ComboBox SelectedIndex="{Binding MelColormap}">
+            <ComboBoxItem Content="Viridis"/>
+            <ComboBoxItem Content="Magma"/>
+            <ComboBoxItem Content="Grayscale"/>
+          </ComboBox>
+          <TextBlock Text="{DynamicResource prefs.appearance.mel.opacity}" Margin="0,10,0,0"/>
+          <Slider Classes="fader" Minimum="0.1" Maximum="1" Value="{Binding MelOpacity}"/>
+          <TextBlock Text="{DynamicResource prefs.appearance.mel.mindb}" Margin="0,5,0,0"/>
+          <Slider Classes="fader" Minimum="-100" Maximum="-10" Value="{Binding MelMinDb}"/>
+          <TextBlock Text="{DynamicResource prefs.appearance.mel.maxdb}" Margin="0,5,0,0"/>
+          <Slider Classes="fader" Minimum="-60" Maximum="0" Value="{Binding MelMaxDb}"/>
+          <TextBlock Text="{DynamicResource prefs.appearance.mel.fft}" Margin="0,10,0,0"/>
+          <ComboBox SelectedIndex="{Binding MelFftSizeIndex}">
+            <ComboBoxItem Content="1024"/>
+            <ComboBoxItem Content="2048"/>
+            <ComboBoxItem Content="4096"/>
+            <ComboBoxItem Content="8192"/>
+          </ComboBox>
+          <TextBlock Text="{DynamicResource prefs.appearance.mel.hop}" Margin="0,10,0,0"/>
+          <ComboBox SelectedIndex="{Binding MelHopIndex}">
+            <ComboBoxItem Content="10 ms"/>
+            <ComboBoxItem Content="5 ms"/>
+            <ComboBoxItem Content="2.5 ms"/>
+          </ComboBox>
+          <TextBlock Text="{DynamicResource prefs.appearance.mel.bands}" Margin="0,10,0,0"/>
+          <ComboBox SelectedIndex="{Binding MelBandsIndex}">
+            <ComboBoxItem Content="128"/>
+            <ComboBoxItem Content="256"/>
+            <ComboBoxItem Content="512"/>
+          </ComboBox>
         </StackPanel>
 
         <!-- UTAU -->

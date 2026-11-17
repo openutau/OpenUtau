@@ -242,6 +242,14 @@ namespace OpenUtau.Core.Util {
             public bool ShowPitch = true;
             public bool ShowFinalPitch = true;
             public bool ShowWaveform = true;
+            public bool ShowMel = true;
+            public int MelColormap = 0;
+            public double MelOpacity = 0.5;
+            public double MelMinDb = -80;
+            public double MelMaxDb = -10;
+            public int MelFftSize = MelSpectrogram.DefaultFftSize;
+            public int MelHop = MelSpectrogram.DefaultHop;
+            public int MelBands = MelSpectrogram.DefaultBands;
             public bool ShowPhoneme = true;
             public bool ShowExpressions = true;
             public bool ShowPhonemizerTags = true;
