@@ -179,7 +179,7 @@ namespace OpenUtau.App.ViewModels {
             }
             CanRedo = DocManager.Inst.GetRedoState(out string? redoNameKey);
             if (!string.IsNullOrWhiteSpace(redoNameKey)) {
-                RedoText = $"{ThemeManager.GetString("menu.edit.redo")}:  {ThemeManager.GetString(redoNameKey)}";
+                RedoText = $"{ThemeManager.GetString("menu.edit.redo")}: {ThemeManager.GetString(redoNameKey)}";
             } else {
                 RedoText = ThemeManager.GetString("menu.edit.redo");
             }
@@ -213,7 +213,7 @@ namespace OpenUtau.App.ViewModels {
                 HasRecovery = true;
                 return;
             }
-          
+
             var args = Environment.GetCommandLineArgs();
             if (args.Length == 2 && File.Exists(args[1])) {
                 try {
@@ -442,7 +442,7 @@ namespace OpenUtau.App.ViewModels {
         }
 
         /// <summary>
-        /// Remap the starting and ending positions of all the notes and parts in the whole project 
+        /// Remap the starting and ending positions of all the notes and parts in the whole project
         /// from the old time axis to the new time axis, without changing their absolute positions in ms.
         /// </summary>
         public void RemapTimeAxis(TimeAxis oldTimeAxis, TimeAxis newTimeAxis){
