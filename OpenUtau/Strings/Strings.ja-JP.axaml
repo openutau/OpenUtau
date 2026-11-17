@@ -85,6 +85,7 @@
   <system:String x:Key="context.part.replaceaudio">オーディオファイルを変更</system:String>
   <system:String x:Key="context.part.split">再生位置でパートを分割</system:String>
   <system:String x:Key="context.part.transcribe">オーディオを解析して音符に変換</system:String>
+  <system:String x:Key="context.part.showmel">メルスペクトログラムに表示する</system:String>
   <system:String x:Key="context.part.transcribing">音符に変換中</system:String>
   <system:String x:Key="context.pitch.easein">イーズイン</system:String>
   <system:String x:Key="context.pitch.easeinout">イーズイン/アウト</system:String>
@@ -700,6 +701,7 @@ OpenUtauはUTAUコミュニティのためのオープンソースなエディ�
   <system:String x:Key="pianoroll.toggle.hidepianoroll">ピアノロールを非表示</system:String>
   <system:String x:Key="pianoroll.toggle.livepitch.fast">ライブピッチ（高速）：編集後にDiffSingerのピッチを自動再生成</system:String>
   <system:String x:Key="pianoroll.toggle.livepitch.normal">ライブピッチ（通常）：編集後にDiffSingerのピッチを自動再生成</system:String>
+  <system:String x:Key="pianoroll.toggle.mel">メルスペクトログラムを表示 (G)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.mergephrases">Auto-merge nearby phrases (DiffSinger)</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">音符のプロパティを表示 (\)</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">ピッチ上書きモードを有効化</system:String>
@@ -807,6 +809,13 @@ OpenUtauはUTAUコミュニティのためのオープンソースなエディ�
   <system:String x:Key="prefs.appearance.degree.off">なし</system:String>
   <system:String x:Key="prefs.appearance.degree.solfege">Solfège (ドレミファソラシ)</system:String>
   <system:String x:Key="prefs.appearance.detachpianoroll">ピアノロールを別のウィンドウに分離</system:String>
+  <system:String x:Key="prefs.appearance.mel.colormap">メルスペクトログラムのカラーマップ</system:String>
+  <system:String x:Key="prefs.appearance.mel.opacity">メルスペクトログラムの不透明度</system:String>
+  <system:String x:Key="prefs.appearance.mel.mindb">メルスペクトログラムの下限レベル (dB)</system:String>
+  <system:String x:Key="prefs.appearance.mel.maxdb">メルスペクトログラムの上限レベル (dB)</system:String>
+  <system:String x:Key="prefs.appearance.mel.fft">メルスペクトログラムの FFT サイズ (大きいほど音高が細かく、時間はぼやける)</system:String>
+  <system:String x:Key="prefs.appearance.mel.hop">メルスペクトログラムの時間刻み (小さいほど時間が細かく、重くなる)</system:String>
+  <system:String x:Key="prefs.appearance.mel.bands">メルスペクトログラムの行数 (多いほど音高が細かく、メモリを使う)</system:String>
   <system:String x:Key="prefs.appearance.diffsingerlangcodehide">音素に併記される言語コードを非表示</system:String>
   <system:String x:Key="prefs.appearance.lang">言語</system:String>
   <system:String x:Key="prefs.appearance.notehoverglow">音符をマウスオーバーしたとき光らせる</system:String>

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using OpenUtau.App.Controls;
 using OpenUtau.Audio;
 using OpenUtau.Classic;
 using OpenUtau.Core;
@@ -124,6 +125,17 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool DetachPianoRoll { get; set; }
+        [Reactive] public partial int MelColormap { get; set; }
+        [Reactive] public partial double MelOpacity { get; set; }
+        [Reactive] public partial double MelMinDb { get; set; }
+        [Reactive] public partial double MelMaxDb { get; set; }
+        [Reactive] public partial int MelFftSizeIndex { get; set; }
+        [Reactive] public partial int MelHopIndex { get; set; }
+        [Reactive] public partial int MelBandsIndex { get; set; }
+        // Choices behind the Mel ComboBoxes, in the order of their items.
+        private static readonly int[] MelFftSizes = { 1024, 2048, 4096, 8192 };
+        private static readonly int[] MelHops = { 441, 220, 110 };
+        private static readonly int[] MelBandCounts = { 128, 256, 512 };
         public bool ThemeEditable => themeEditable.Value;
         public List<string> ThemeItems => ThemeManager.GetAvailableThemes();
         public bool IsThemeEditorOpen => Views.ThemeEditorWindow.IsOpen;
@@ -246,6 +258,13 @@ namespace OpenUtau.App.ViewModels {
             ShowGhostNotes = Preferences.Default.ShowGhostNotes;
             NoteHoverGlow = Preferences.Default.NoteHoverGlow;
             ReduceAnimations = Preferences.Default.ReduceAnimations;
+            MelColormap = Preferences.Default.MelColormap;
+            MelOpacity = Preferences.Default.MelOpacity;
+            MelMinDb = Preferences.Default.MelMinDb;
+            MelMaxDb = Preferences.Default.MelMaxDb;
+            MelFftSizeIndex = Array.IndexOf(MelFftSizes, Preferences.Default.MelFftSize);
+            MelHopIndex = Array.IndexOf(MelHops, Preferences.Default.MelHop);
+            MelBandsIndex = Array.IndexOf(MelBandCounts, Preferences.Default.MelBands);
             ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;
             ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
             DetachPianoRoll = Preferences.Default.DetachPianoRoll;
@@ -306,6 +325,44 @@ namespace OpenUtau.App.ViewModels {
                 index => Preferences.Default.AudioBackEnd = index);
             PersistOn(this.WhenAnyValue(vm => vm.ReduceAnimations),
                 reduceAnimations => Preferences.Default.ReduceAnimations = reduceAnimations);
+            PersistOn(this.WhenAnyValue(vm => vm.MelColormap), v => {
+                Preferences.Default.MelColormap = v;
+                MelOverlay.Inst.NotifySettingsChanged();
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.MelOpacity), v => {
+                Preferences.Default.MelOpacity = v;
+                MelOverlay.Inst.NotifySettingsChanged();
+            });
+            // Keep the minimum below the maximum; the clamped value comes back through here.
+            PersistOn(this.WhenAnyValue(vm => vm.MelMinDb), v => {
+                if (v > MelMaxDb - 1) {
+                    MelMinDb = MelMaxDb - 1;
+                    return;
+                }
+                Preferences.Default.MelMinDb = v;
+                MelOverlay.Inst.NotifySettingsChanged();
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.MelMaxDb), v => {
+                if (v < MelMinDb + 1) {
+                    MelMaxDb = MelMinDb + 1;
+                    return;
+                }
+                Preferences.Default.MelMaxDb = v;
+                MelOverlay.Inst.NotifySettingsChanged();
+            });
+            // Changing any of these recomputes the spectrogram.
+            PersistOn(this.WhenAnyValue(vm => vm.MelFftSizeIndex), v => {
+                Preferences.Default.MelFftSize = MelFftSizes[v];
+                MelOverlay.Inst.NotifySettingsChanged();
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.MelHopIndex), v => {
+                Preferences.Default.MelHop = MelHops[v];
+                MelOverlay.Inst.NotifySettingsChanged();
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.MelBandsIndex), v => {
+                Preferences.Default.MelBands = MelBandCounts[v];
+                MelOverlay.Inst.NotifySettingsChanged();
+            });
             PersistOn(this.WhenAnyValue(vm => vm.PlaybackAutoScroll),
                 autoScroll => Preferences.Default.PlaybackAutoScroll = autoScroll);
             PersistOn(this.WhenAnyValue(vm => vm.PlayPosMarkerMargin),
