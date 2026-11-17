@@ -1,4 +1,4 @@
-<!--UI strings. Entries commented out are untranslated and fall back to en-US.-->
+﻿<!--UI strings. Entries commented out are untranslated and fall back to en-US.-->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -701,9 +701,9 @@ OpenUtauはUTAUコミュニティのためのオープンソースなエディ�
   <system:String x:Key="pianoroll.toggle.hidepianoroll">ピアノロールを非表示</system:String>
   <system:String x:Key="pianoroll.toggle.livepitch.fast">ライブピッチ（高速）：編集後にDiffSingerのピッチを自動再生成</system:String>
   <system:String x:Key="pianoroll.toggle.livepitch.normal">ライブピッチ（通常）：編集後にDiffSingerのピッチを自動再生成</system:String>
+  <system:String x:Key="pianoroll.toggle.mel">メルスペクトログラムを表示 (G)</system:String>
   <!--<system:String x:Key="pianoroll.toggle.mergephrases">Auto-merge nearby phrases (DiffSinger)</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">音符のプロパティを表示 (\)</system:String>
-  <system:String x:Key="pianoroll.toggle.mel">メルスペクトログラムを表示 (G)</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">ピッチ上書きモードを有効化</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">音素を表示 (O)</system:String>
   <system:String x:Key="pianoroll.toggle.phonemizer">Phonemizerタグを表示</system:String>
