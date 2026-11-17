@@ -22,6 +22,7 @@ namespace OpenUtau.Core.Pipeline {
         public readonly int Tuning;
         public readonly float AdjustedTone;
         public readonly double DurationMs;
+        public readonly bool OverlapError;
         // Index into PhraseSource.Notes, or -1.
         public readonly int Prev;
         public readonly int Next;
@@ -42,6 +43,7 @@ namespace OpenUtau.Core.Pipeline {
             Tuning = note.tuning;
             AdjustedTone = note.AdjustedTone;
             DurationMs = axis.MsBetweenTickPos(partPosition + note.position, partPosition + note.End);
+            OverlapError = note.OverlapError;
             Prev = prev;
             Next = next;
             Extends = extends;
@@ -317,6 +319,45 @@ namespace OpenUtau.Core.Pipeline {
             }
         }
 
+        internal PhonemeSource(NoteSource note, TimeAxis axis, int partPosition, string phoneme) {
+            Position = note.Position;
+            Duration = note.Duration;
+            End = note.End;
+            PositionMs = axis.TickPosToMsPos(partPosition + note.Position);
+            EndMs = axis.TickPosToMsPos(partPosition + note.End);
+            DurationMs = EndMs - PositionMs;
+            Preutter = 0;
+            Overlap = 0;
+            TailIntrude = 0;
+            TailOverlap = 0;
+            Leading = 0;
+            PrevAdjacent = false;
+            NextAdjacent = false;
+
+            Phoneme = phoneme;
+            Tone = note.Tone;
+            NoteIndex = note.Index;
+            Tempos = axis.TemposBetweenTicks(partPosition + note.Position, partPosition + note.End);
+            NoteTempos = Tempos;
+            Tempo = Tempos.Length > 0 ? Tempos[0].bpm : 120;
+            AdjustedTempo = Tempo;
+
+            Resampler = null;
+            Flags = Array.Empty<Tuple<string, int?, string>>();
+            Suffix = string.Empty;
+            Suffix2 = null;
+            Volume = 1;
+            Velocity = 1;
+            Modulation = 0;
+            Direct = false;
+            ToneShift = 0;
+            Envelope = Array.Empty<Vector2>();
+            VelRaw = 100;
+            ModpRaw = 0;
+            Oto = null;
+            Oto2 = null;
+        }
+
         /// <summary>
         /// A copy with graph-driven values in place of the drawn ones, recomputing what they feed: volume, modulation,
         /// MOD+, the envelope's levels and the resampler flags. Unchanged values are computed as the snapshot did.
@@ -462,17 +503,36 @@ namespace OpenUtau.Core.Pipeline {
                     .ToDictionary(d => d.abbr);
             }
 
-            Phonemes = new PhonemeSource[phonemes.Count];
-            for (int i = 0; i < phonemes.Count; i++) {
-                var p = phonemes[i];
-                Phonemes[i] = new PhonemeSource(p,
-                    p.Parent != null ? noteIndexByNote[p.Parent] : -1,
-                    Axis, part.position, track, project, Resampler, XsyAvailable, FlagExpressions, graphExpressions);
+            bool sine = Renderer is SineRenderer;
+            if (sine) {
+                var sinePhonemes = new List<PhonemeSource>();
+                var phraseGroups = new List<(int Start, int End)>();
+                int groupStart = 0;
+                foreach (var note in Notes.Where(n => !n.OverlapError)) {
+                    if (note.Extends == -1 && sinePhonemes.Count > groupStart) {
+                        phraseGroups.Add((groupStart, sinePhonemes.Count));
+                        groupStart = sinePhonemes.Count;
+                    }
+                    sinePhonemes.Add(new PhonemeSource(note, Axis, part.position, "sine"));
+                }
+                if (sinePhonemes.Count > groupStart) {
+                    phraseGroups.Add((groupStart, sinePhonemes.Count));
+                }
+                Phonemes = sinePhonemes.ToArray();
+                PhraseGroups = phraseGroups.ToArray();
+            } else {
+                Phonemes = new PhonemeSource[phonemes.Count];
+                for (int i = 0; i < phonemes.Count; i++) {
+                    var p = phonemes[i];
+                    Phonemes[i] = new PhonemeSource(p,
+                        p.Parent != null ? noteIndexByNote[p.Parent] : -1,
+                        Axis, part.position, track, project, Resampler, XsyAvailable, FlagExpressions, graphExpressions);
+                }
+                PhraseGroups = groups;
             }
-            PhraseGroups = groups;
             PhraseNoteIndex = new Lazy<int[][]>(() => PhraseGroups
                 .Select(g => PhraseNotes(g.Start, g.End).ToArray()).ToArray());
-            if (ExpressionGraph != null) {
+            if (!sine && ExpressionGraph != null) {
                 // Options expressions are indices, not values; the graph neither reads nor drives them.
                 var numerical = graphExpressions!.Where(d => d.type == UExpressionType.Numerical).Select(d => d.abbr);
                 PhonemeAnchors = new ExpressionGraph.PhonemeAnchors(
@@ -491,29 +551,32 @@ namespace OpenUtau.Core.Pipeline {
             var phonemes = part.phonemes
                 .Where(phoneme => !phoneme.Error)
                 .ToList();
-            if (phonemes.Count == 0) {
+            var renderer = track.RendererSettings.Renderer;
+            bool sine = renderer is SineRenderer;
+            if (sine ? part.notes.Count == 0 : phonemes.Count == 0) {
                 return null;
             }
-            var renderer = track.RendererSettings.Renderer;
             float maxMergeMs = Preferences.Default.MergePhrasesSec * 1000;
             var groups = new List<(int, int)>();
-            int start = 0;
-            for (int i = 1; i < phonemes.Count; ++i) {
-                if (phonemes[i - 1].End == phonemes[i].position) {
-                    continue;   // No gap: same phrase
+            if (!sine) {
+                int start = 0;
+                for (int i = 1; i < phonemes.Count; ++i) {
+                    if (phonemes[i - 1].End == phonemes[i].position) {
+                        continue;   // No gap: same phrase
+                    }
+                    // A gap normally starts a new phrase, but the renderer may ask to keep
+                    // adjacent phrases together when their padded audio would overlap
+                    // (e.g. DiffSinger input padding). The merged phrase is capped so a run
+                    // of short gaps cannot chain into one huge render unit.
+                    bool merge = renderer.ShouldMergePhrases(project, track, phonemes[i - 1], phonemes[i])
+                        && (maxMergeMs <= 0 || phonemes[i].EndMs - phonemes[start].PositionMs <= maxMergeMs);
+                    if (!merge) {
+                        groups.Add((start, i));
+                        start = i;
+                    }
                 }
-                // A gap normally starts a new phrase, but the renderer may ask to keep
-                // adjacent phrases together when their padded audio would overlap
-                // (e.g. DiffSinger input padding). The merged phrase is capped so a run
-                // of short gaps cannot chain into one huge render unit.
-                bool merge = renderer.ShouldMergePhrases(project, track, phonemes[i - 1], phonemes[i])
-                    && (maxMergeMs <= 0 || phonemes[i].EndMs - phonemes[start].PositionMs <= maxMergeMs);
-                if (!merge) {
-                    groups.Add((start, i));
-                    start = i;
-                }
+                groups.Add((start, phonemes.Count));
             }
-            groups.Add((start, phonemes.Count));
             return new PhraseSource(
                 part.Id,
                 DocManager.Inst.Revision,

@@ -11,6 +11,10 @@
       <Thickness x:Key="ComboBoxDropdownContentMargin">0</Thickness>
     </Style.Resources>
   </Style>
+  <!-- Popups are separate top-levels in Avalonia and do not inherit Window.FontFamily. -->
+  <Style Selector="ContextMenu, FlyoutPresenter, Menu, MenuItem, ComboBox, ComboBoxItem">
+      <Setter Property="FontFamily" Value="{DynamicResource ui.fontfamily}"/>
+  </Style>
   <Style Selector="Window">
     <Setter Property="FontFamily" Value="{DynamicResource ui.fontfamily}"/>
     <Setter Property="Icon" Value="/Assets/open-utau.ico"/>

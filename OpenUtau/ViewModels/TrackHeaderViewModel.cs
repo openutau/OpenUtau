@@ -234,7 +234,7 @@ namespace OpenUtau.App.ViewModels {
                 } else if (!string.IsNullOrEmpty(selectedSinger.DefaultPhonemizer)) {
                     TryChangePhonemizer(targetTrack, selectedSinger.DefaultPhonemizer);
                 }
-                if (!selectedSinger.Found || selectedSinger.SingerType != targetTrack.RendererSettings.Renderer?.SingerType) {
+                if (!selectedSinger.Found || targetTrack.RendererSettings.Renderer is Core.Render.SineRenderer || selectedSinger.SingerType != targetTrack.RendererSettings.Renderer?.SingerType) {
                     var settings = new URenderSettings();
                     if (selectedSinger.Found) {
                         settings = new URenderSettings {

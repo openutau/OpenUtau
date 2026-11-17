@@ -1,5 +1,4 @@
-<!--DO NOT modify this file. It is managed autometically.-->
-<!--To contribute to OpenUtau's localization, visit https://crowdin.com/project/oxygen-dioxideopenutau -->
+<!--UI strings. Entries commented out are untranslated and fall back to en-US.-->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -24,10 +23,13 @@
   <system:String x:Key="command.exp.edit">표현 편집</system:String>
   <system:String x:Key="command.exp.paste">표현 커브 붙여넣기</system:String>
   <system:String x:Key="command.exp.reset">표현 재설정</system:String>
+  <!--<system:String x:Key="command.expressiongraph.edit">Edit expression graphs</system:String>-->
+  <!--<system:String x:Key="command.expressiongraph.import">Import expression graph</system:String>-->
   <system:String x:Key="command.import.audio">오디오 불러오기</system:String>
   <system:String x:Key="command.import.track">트랙 불러오기</system:String>
   <system:String x:Key="command.note.add">노트 추가</system:String>
   <system:String x:Key="command.note.delete">노트 삭제</system:String>
+  <!--<system:String x:Key="command.note.duplicate">Duplicate note(s)</system:String>-->
   <system:String x:Key="command.note.edit">노트 편집</system:String>
   <system:String x:Key="command.note.lyric">가사 편집</system:String>
   <system:String x:Key="command.note.move">노트 옮기기</system:String>
@@ -69,6 +71,7 @@
   <system:String x:Key="context.note.clearcache">이 소절의 캐시 지우기</system:String>
   <system:String x:Key="context.note.copy">노트 복사</system:String>
   <system:String x:Key="context.note.delete">노트 삭제</system:String>
+  <!--<system:String x:Key="context.note.merge">Merge notes</system:String>-->
   <system:String x:Key="context.note.pasteparameters">선택한 곳에 파라미터 붙여넣기</system:String>
   <system:String x:Key="context.part.applypitch">피치를 추출해 적용...</system:String>
   <system:String x:Key="context.part.delete">파트 삭제</system:String>
@@ -97,8 +100,83 @@
   <system:String x:Key="context.timeline.deltempo">[템포] 이곳의 변경값 삭제 ({0})</system:String>
   <system:String x:Key="context.timeline.deltimesig">[박자표] 이곳의 변경값 삭제</system:String>
 
+  <!--<system:String x:Key="dawintegration.bpmmismatch">The DAW project's tempo does not match this project's tempo. The two timelines will only agree in seconds, not in bars — align the tempos to keep them in sync.</system:String>-->
+  <!--<system:String x:Key="dawintegration.caption">DAW Integration</system:String>-->
+  <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
+  <!--<system:String x:Key="dawintegration.col.compatibility">Status</system:String>-->
+  <!--<system:String x:Key="dawintegration.col.name">Plugin</system:String>-->
+  <!--<system:String x:Key="dawintegration.col.port">Port</system:String>-->
+  <!--<system:String x:Key="dawintegration.col.state">Connection</system:String>-->
+  <!--<system:String x:Key="dawintegration.compatible">Compatible</system:String>-->
+  <!--<system:String x:Key="dawintegration.connect">Connect</system:String>-->
+  <!--<system:String x:Key="dawintegration.connected">Connected to {0}.</system:String>-->
+  <!--<system:String x:Key="dawintegration.connected.count">Connected to {0} plugin(s).</system:String>-->
+  <!--<system:String x:Key="dawintegration.connecting">Connecting...</system:String>-->
+  <!--<system:String x:Key="dawintegration.disconnect">Disconnect</system:String>-->
+  <!--<system:String x:Key="dawintegration.disconnected">Not connected.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.caps.1">Automatically follows every edit — the project and each rendered part are sent to the plugin as you work.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.caps.2">One plugin instance per DAW track; choose which OpenUtau track each instance plays from the plugin window or the DAW's automation panel.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.caps.3">Playhead sync — the OpenUtau playhead follows your DAW's transport.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.caps.4">Export-friendly — a DAW bounce waits for parts that are still rendering, so exports match playback.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.caps.header">What it can do</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.caption">How to use</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.download">Download for {0}</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.clap">Install CLAP</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.clap.reinstall">Reinstall CLAP</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.done">Installed to {0}. Rescan plugins in your DAW, then click Refresh here.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.downloading">Downloading... {0}%</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.elevfail">The elevated copy failed ({0}), so the plugin went into the per-user folder {1} instead. Rescan plugins in your DAW, then click Refresh here.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.extracting">Unpacking...</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.failed">Installation failed: {0}</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.fallback">Administrator approval was declined, so the plugin went into the per-user folder {1} instead. Rescan plugins in your DAW, then click Refresh here.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.header">Install the plugin (detected on this machine)</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.preparing">Preparing download...</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.vst3">Install VST3</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.install.vst3.reinstall">Reinstall VST3</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.installed.no">Not installed</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.installed.ok">Installed</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.manual">Full manual</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.manual.zh">使用手册（中文）</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.paths.linux">VST3: ~/.vst3
+CLAP: ~/.clap</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.paths.mac">VST3: ~/Library/Audio/Plug-Ins/VST3
+CLAP: ~/Library/Audio/Plug-Ins/CLAP</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.paths.win">VST3: C:\Program Files\Common Files\VST3
+CLAP: C:\Program Files\Common Files\CLAP
+No administrator rights? Use %LOCALAPPDATA%\Programs\Common\VST3 (or ...\CLAP) instead.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.releases">All releases</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.scope.1">The bridge works on one computer only, and your DAW needs to load VST3 or CLAP instruments (REAPER, Cubase, FL Studio, Studio One, Ableton Live, Bitwig, ...).</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.scope.2">The two timelines align by absolute time — give both projects the same BPM to keep bars aligned.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.scope.3">OpenUtau delivers the vocals only: volume, pan, mute and effects live on the DAW mixer.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.scope.header">Boundaries</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.step1">1. Install the plugin: click an install button above (confirm the administrator prompt if it appears), or download it manually and copy the whole "OpenUtau Bridge.vst3" folder into your DAW's plugin folder:</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.step2">2. In your DAW, add an instrument track and insert "OpenUtau Bridge" (vendor OpenUTAU). Do this while OpenUtau is still closed — the DAW comes first.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.step3">3. Open OpenUtau, save your project, then come back here: Refresh, select the plugin, Connect.</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.steps.header">Setup (three steps)</system:String>-->
+  <!--<system:String x:Key="dawintegration.guide.what">OpenUtau Bridge is a free plugin (VST3/CLAP) for your DAW. It receives OpenUtau's project and rendered audio and places them on the DAW's timeline: keep writing and tuning in OpenUtau, and mix in your DAW. It makes no sound by itself and needs no extra setup inside OpenUtau.</system:String>-->
+  <!--<system:String x:Key="dawintegration.hint">Connect to a DAW plugin listening on this machine. Editing stays in OpenUtau; the plugin receives the project and the rendered audio.</system:String>-->
+  <!--<system:String x:Key="dawintegration.incompatible">Unsupported API version</system:String>-->
+  <!--<system:String x:Key="dawintegration.lost">Connection lost: {0}</system:String>-->
+  <!--<system:String x:Key="dawintegration.none">No DAW plugin found. Load the OpenUtau Bridge plugin on an instrument track in your DAW, then refresh. New to this? Expand "How to use" above.</system:String>-->
+  <!--<system:String x:Key="dawintegration.none.installed">The bridge plugin is installed, but no running instance was found. Load OpenUtau Bridge on an instrument track in your DAW, then click Refresh.</system:String>-->
+  <!--<system:String x:Key="dawintegration.reconnecting">Reconnecting to {0}...</system:String>-->
+  <!--<system:String x:Key="dawintegration.refresh">Refresh</system:String>-->
+  <!--<system:String x:Key="dawintegration.state.connected">Connected</system:String>-->
+  <!--<system:String x:Key="dawintegration.state.connecting">Connecting</system:String>-->
+  <!--<system:String x:Key="dawintegration.state.free">Not connected</system:String>-->
+  <!--<system:String x:Key="dawintegration.state.reconnecting">Reconnecting</system:String>-->
+  <!--<system:String x:Key="dawintegration.unsavedproject">The project has not been saved yet. Save the project first, then connect the DAW plugin — an unsaved project cannot be sent to the DAW.</system:String>-->
+
   <system:String x:Key="debug.clear">비우기</system:String>
   <system:String x:Key="debug.copylog">로그 복사</system:String>
+  <!--<system:String x:Key="debug.filter">Filter</system:String>-->
+  <!--<system:String x:Key="debug.filter.level">Lowest level shown</system:String>-->
+  <!--<system:String x:Key="debug.livereload">Live Reload Packages</system:String>-->
+  <!--<system:String x:Key="debug.livereload.tooltip">While this window is open, reload JavaScript phonemizers and themes when a file in the Dependencies folder changes.</system:String>-->
+  <!--<system:String x:Key="debug.packages">Packages</system:String>-->
+  <!--<system:String x:Key="debug.packages.createphonemizer">Create New Phonemizer...</system:String>-->
+  <!--<system:String x:Key="debug.packages.createphonemizer.prompt">Package id, also its folder name in Dependencies.</system:String>-->
+  <!--<system:String x:Key="debug.packages.openlocation">Open Packages Location</system:String>-->
   <system:String x:Key="debug.reverselogorder">로그를 역순으로</system:String>
 
   <system:String x:Key="dialogs.about.caption">OpenUTAU란?</system:String>
@@ -188,12 +266,13 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="errors.failed.openfile">열기에 실패했어요</system:String>
   <system:String x:Key="errors.failed.openlocation">위치 열기에 실패했어요</system:String>
   <system:String x:Key="errors.failed.opennewerproject">프로그램의 버전이 프로젝트보다 낮아 파일을 열지 못했어요. OpenUtau를 업데이트해 주세요!</system:String>
-  <!--<system:String x:Key="errors.failed.prerender">Failed to render in the background.</system:String>-->
+  <system:String x:Key="errors.failed.prerender">백그라운드 렌더에 실패했어요.</system:String>
   <system:String x:Key="errors.failed.render">렌더링에 실패했어요</system:String>
   <system:String x:Key="errors.failed.runeditingmacro">매크로 실행에 실패했어요</system:String>
   <system:String x:Key="errors.failed.save">저장에 실패했어요</system:String>
   <system:String x:Key="errors.failed.savesingerconfig">가수 설정 파일 저장에 실패했어요</system:String>
   <system:String x:Key="errors.failed.searchsinger">가수 검색에 실패했어요</system:String>
+  <!--<system:String x:Key="errors.failed.synth.consonantexceedscutoff">Oto error: consonant exceeds cutoff</system:String>-->
   <system:String x:Key="errors.failed.synth.cutoffbeforeoffset">Oto 오류: 컷오프가 오프셋의 앞에 있어요</system:String>
   <system:String x:Key="errors.failed.synth.cutoffexceedduration">Oto 오류: 컷오프가 오디오의 길이를 초과한 위치에 있어요</system:String>
   <system:String x:Key="errors.failed.transcribe.rmvpe">RMVPE ONNX 모델을 불러오지 못했어요. 패키지 관리자를 통해 설치하거나, rmvpe.onnx를 {0}에 추가하세요.</system:String>
@@ -201,8 +280,9 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="errors.install.cpp">아래에서 Microsoft Visual C++ 재배포 가능 패키지를 설치해 주세요. https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170</system:String>
   <system:String x:Key="errors.lyrics.regex">정규식에 사용할 수 없는 문자에요</system:String>
   <system:String x:Key="errors.lyrics.regexpreview">- 정규식 오류 -</system:String>
-  <!--<system:String x:Key="errors.resampler.failed.message">Resampler failed to create output file(s). Resampler errors like this are often caused by oto.ini configuration issues. Consider generating a singer error report to check for such issues.</system:String>-->
-  <!--<system:String x:Key="errors.toast.details">(Click here for details)</system:String>-->
+  <system:String x:Key="errors.resampler.failed.message">리샘플러가 파일을 생성하지 못했어요.
+이러한 오류는 주로 oto.ini에 문제가 있어 발생합니다. '가수 목록' 에서 '가수 오류 보고서'를 생성해 문제를 확인해 보세요.</system:String>
+  <system:String x:Key="errors.toast.details">(세부사항을 보려면 여기를 클릭하세요)</system:String>
 
   <system:String x:Key="exesetup.installing">설치 중 "{0}"...</system:String>
   <system:String x:Key="exesetup.linux">Linux에서 exe 리샘플러나 웨이브툴을 사용하려면:
@@ -214,6 +294,97 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="exesetup.resampler">리샘플러로 설치하기</system:String>
   <system:String x:Key="exesetup.title">Exe 파일 설치 중...</system:String>
   <system:String x:Key="exesetup.wavtool">웨이브툴로 설치하기</system:String>
+
+  <!--<system:String x:Key="expressiongraph.category.input">Inputs</system:String>-->
+  <!--<system:String x:Key="expressiongraph.category.logic">Logic</system:String>-->
+  <!--<system:String x:Key="expressiongraph.category.math">Math</system:String>-->
+  <!--<system:String x:Key="expressiongraph.category.output">Outputs</system:String>-->
+  <!--<system:String x:Key="expressiongraph.category.time">Time</system:String>-->
+  <!--<system:String x:Key="expressiongraph.copy">copy</system:String>-->
+  <!--<system:String x:Key="expressiongraph.copynodes">Copy</system:String>-->
+  <!--<system:String x:Key="expressiongraph.cycle">That link would make a loop.</system:String>-->
+  <!--<system:String x:Key="expressiongraph.default">Default for this renderer</system:String>-->
+  <!--<system:String x:Key="expressiongraph.delete">Delete</system:String>-->
+  <!--<system:String x:Key="expressiongraph.deletenode">Delete Node</system:String>-->
+  <!--<system:String x:Key="expressiongraph.duplicate">Duplicate</system:String>-->
+  <!--<system:String x:Key="expressiongraph.duplicatenodes">Duplicate</system:String>-->
+  <!--<system:String x:Key="expressiongraph.error">Not used, because</system:String>-->
+  <!--<system:String x:Key="expressiongraph.export">Export...</system:String>-->
+  <!--<system:String x:Key="expressiongraph.graph">graph</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help">How to use</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.add">Add a node</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.add.gesture">Right-click empty space</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.copy">Copy / Cut / Paste</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.fit">Fit all nodes</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.link">Link</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.link.gesture">Drag from an output to an input</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.move">Move</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.move.gesture">Drag a node's title; selected nodes move together</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.pan">Pan</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.pan.gesture">Drag empty space, or middle-drag anywhere</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.select">Select several</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.select.gesture">Shift-drag empty space, or Shift-click a node's title</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.selectall">Select all / none</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.unlink">Unlink</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.unlink.gesture">Drag a linked input away and drop it</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.zoom">Zoom</system:String>-->
+  <!--<system:String x:Key="expressiongraph.help.zoom.gesture">Mouse wheel</system:String>-->
+  <!--<system:String x:Key="expressiongraph.hint">Right-click to add a node. Drag from a node's output to an input to link them.</system:String>-->
+  <!--<system:String x:Key="expressiongraph.hint.nograph">Click New to create a graph for a renderer.</system:String>-->
+  <!--<system:String x:Key="expressiongraph.import">Import...</system:String>-->
+  <!--<system:String x:Key="expressiongraph.import.added">Added expressions</system:String>-->
+  <!--<system:String x:Key="expressiongraph.import.conflicts">Already defined differently in this project, so the project's definitions were kept</system:String>-->
+  <!--<system:String x:Key="expressiongraph.import.invalid">Not an expression graph file</system:String>-->
+  <!--<system:String x:Key="expressiongraph.import.newer">This expression graph file was saved by a newer version of OpenUtau</system:String>-->
+  <!--<system:String x:Key="expressiongraph.input">In</system:String>-->
+  <!--<system:String x:Key="expressiongraph.missing">unavailable</system:String>-->
+  <!--<system:String x:Key="expressiongraph.name">Name</system:String>-->
+  <!--<system:String x:Key="expressiongraph.new">New</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.abs">Abs</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.add">Add</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.and">AND</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.clamp">Clamp</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.compare">Compare</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.constant">Constant</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.curve_input">Curve</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.curve_output">Curve Output</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.divide">Divide</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.if_else">If / Else</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.lfo">LFO</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.map_range">Map Range</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.masked_curve_input">Masked Curve</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.max">Max</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.min">Min</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.mix">Mix</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.multiply">Multiply</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.not">NOT</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.note_envelope">Note Envelope</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.note_position">Position in Note</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.or">OR</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.phoneme_input">Phoneme Expression</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.phoneme_output">Phoneme Expression Output</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.phrase_notes">Phrase Note Counter</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.pitch_input">Pitch</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.pitch_output">Pitch Output</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.random_range">Random Range</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.slew">Rate Limiter</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.smooth">Smooth (Attack / Release)</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.subtract">Subtract</system:String>-->
+  <!--<system:String x:Key="expressiongraph.node.time">Project Time</system:String>-->
+  <!--<system:String x:Key="expressiongraph.noexpression">Choose an expression.</system:String>-->
+  <!--<system:String x:Key="expressiongraph.output">Out</system:String>-->
+  <!--<system:String x:Key="expressiongraph.param.easing">Easing</system:String>-->
+  <!--<system:String x:Key="expressiongraph.param.speed">Speed (units/s)</system:String>-->
+  <!--<system:String x:Key="expressiongraph.pastenodes">Paste</system:String>-->
+  <!--<system:String x:Key="expressiongraph.pitchcurve">Draw and load pitch into</system:String>-->
+  <!--<system:String x:Key="expressiongraph.pitchcurve.pitd">Pitch deviation (PITD)</system:String>-->
+  <!--<system:String x:Key="expressiongraph.pitchcurve.pito">Pitch override (PITO)</system:String>-->
+  <!--<system:String x:Key="expressiongraph.renderer">Renderer</system:String>-->
+  <!--<system:String x:Key="expressiongraph.tab">Graphs</system:String>-->
+  <!--<system:String x:Key="expressiongraph.unavailable">Not available for this graph's renderer.</system:String>-->
+  <!--<system:String x:Key="expressiongraph.unknownnode">Unknown node: this version can't run it.</system:String>-->
+  <!--<system:String x:Key="expressiongraph.unused">No track uses this graph.</system:String>-->
+  <!--<system:String x:Key="expressiongraph.usedby">Used by</system:String>-->
 
   <system:String x:Key="exps.abbr">줄임말</system:String>
   <system:String x:Key="exps.caption">표현 설정</system:String>
@@ -230,16 +401,19 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="exps.sepbycomma">값은 쉼표(,)로 구분</system:String>
   <system:String x:Key="exps.skipoutput">시스템 기본값과 같다면, 플래그 출력 생략</system:String>
   <system:String x:Key="exps.systemdefault">시스템 기본값</system:String>
+  <!--<system:String x:Key="exps.tab">Expressions</system:String>-->
   <system:String x:Key="exps.track">트랙 표현식 (덮어쓰기)</system:String>
   <system:String x:Key="exps.trackdefault">트랙 기본값</system:String>
   <system:String x:Key="exps.type">유형</system:String>
   <system:String x:Key="exps.type.curve">커브형</system:String>
+  <!--<system:String x:Key="exps.type.maskedcurve">Masked Curve</system:String>-->
   <system:String x:Key="exps.type.numerical">숫자형</system:String>
   <system:String x:Key="exps.type.options">선택지형</system:String>
 
   <system:String x:Key="languages.de">독일어</system:String>
   <system:String x:Key="languages.en">영어</system:String>
   <system:String x:Key="languages.es">스페인어</system:String>
+  <!--<system:String x:Key="languages.fi">Finnish</system:String>-->
   <system:String x:Key="languages.fil">필리핀어</system:String>
   <system:String x:Key="languages.fr">프랑스어</system:String>
   <system:String x:Key="languages.invariant">번역하지 않음</system:String>
@@ -251,6 +425,7 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="languages.ru">러시아어</system:String>
   <system:String x:Key="languages.th">태국어</system:String>
   <system:String x:Key="languages.tr">터키어</system:String>
+  <!--<system:String x:Key="languages.uk">Ukrainian</system:String>-->
   <system:String x:Key="languages.vi">베트남어</system:String>
   <system:String x:Key="languages.zh">중국어</system:String>
   <system:String x:Key="languages.zh-yue">광둥어</system:String>
@@ -324,8 +499,9 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="menu.project.remaptimeaxis">템포 조정 (타이밍은 유지)</system:String>
   <system:String x:Key="menu.tools">도구</system:String>
   <system:String x:Key="menu.tools.clearcache">캐시 삭제</system:String>
+  <!--<system:String x:Key="menu.tools.dawintegration">DAW Integration...</system:String>-->
   <system:String x:Key="menu.tools.debugwindow">디버그 창</system:String>
-  <!--<system:String x:Key="menu.tools.dependency.install">Install Dependency (.oudep)...</system:String>-->
+  <system:String x:Key="menu.tools.dependency.install">의존 요소 설치(.oudep)...</system:String>
   <system:String x:Key="menu.tools.fullscreen">전체 화면</system:String>
   <system:String x:Key="menu.tools.layout">레이아웃</system:String>
   <system:String x:Key="menu.tools.layout.hsplit11">1:1 수평 배치</system:String>
@@ -453,7 +629,7 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="packages.unknownversion">알 수 없는 버전</system:String>
   <system:String x:Key="packages.update">업데이트</system:String>
 
-  <!--<system:String x:Key="phoneme.show.error">Alt + Click to view the full error</system:String>-->
+  <system:String x:Key="phoneme.show.error">오류의 전체 내용을 보려면 Alt + 클릭</system:String>
 
   <system:String x:Key="phoneticassistant.caption">음소 도우미</system:String>
   <system:String x:Key="phoneticassistant.copy">복사</system:String>
@@ -463,7 +639,7 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="pianoroll.menu.batch.running">일괄 수정 중...</system:String>
   <system:String x:Key="pianoroll.menu.external">외부</system:String>
   <system:String x:Key="pianoroll.menu.lyrics">가사 설정</system:String>
-  <!--<system:String x:Key="pianoroll.menu.lyrics.addphonetichints">Add Phonetic Hint</system:String>-->
+  <system:String x:Key="pianoroll.menu.lyrics.addphonetichints">[제거] 발음 힌트</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.dashtoplus">'-' -> '+'</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.dashtoplustilda">'-' -> '+~'</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.edit">가사 편집</system:String>
@@ -502,7 +678,7 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="pianoroll.menu.notes.reset.all">[재설정] 모든 노트</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.allparameters">[재설정] 모든 파라미터</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.exps">[재설정] 모든 표현</system:String>
-  <!--<system:String x:Key="pianoroll.menu.notes.reset.phonemetimings">Reset phoneme timings and envelopes</system:String>-->
+  <system:String x:Key="pianoroll.menu.notes.reset.phonemetimings">[재설정] 음소 타이밍 및 엔벨로프</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.pitchbends">[재설정] 피치선</system:String>
   <system:String x:Key="pianoroll.menu.notes.reset.vibratos">[재설정] 비브라토</system:String>
   <system:String x:Key="pianoroll.menu.part">파트</system:String>
@@ -522,9 +698,10 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="pianoroll.snapdiv">스냅 폭</system:String>
   <system:String x:Key="pianoroll.toggle.expressions">표현 보기 (L)</system:String>
   <system:String x:Key="pianoroll.toggle.finalpitch">렌더링된 피치 보기 (R)</system:String>
-  <!--<system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.livepitch.fast">Live Pitch (Fast): auto-regenerate DiffSinger pitch after edits (fastest)</system:String>-->
-  <!--<system:String x:Key="pianoroll.toggle.livepitch.normal">Live Pitch (Normal): auto-regenerate DiffSinger pitch after edits</system:String>-->
+  <system:String x:Key="pianoroll.toggle.hidepianoroll">피아노롤 숨기기</system:String>
+  <system:String x:Key="pianoroll.toggle.livepitch.fast">라이브 피치 (빠름): 편집 후 DiffSinger 피치를 자동으로 재생성합니다. (가장 빠름) </system:String>
+  <system:String x:Key="pianoroll.toggle.livepitch.normal">라이브 피치 (일반): 편집 후 DiffSinger 피치를 자동으로 재생성합니다.</system:String>
+  <!--<system:String x:Key="pianoroll.toggle.mergephrases">Auto-merge nearby phrases (DiffSinger)</system:String>-->
   <system:String x:Key="pianoroll.toggle.noteparams">노트 설정 열기 (\)</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">피치 덮어쓰기 모드 활성</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">음소 보기 (O)</system:String>
@@ -537,6 +714,30 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="pianoroll.toggle.tone">노트음 활성 (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">비브라토 보기(U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">파형 보기 (W)</system:String>
+  <!--<system:String x:Key="pianoroll.tool.curve.cursor">Cursor Tool
+    Left click to select</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.eraser">Eraser Tool
+    Click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.horizontalshift">Horizontal Shift Tool
+    Left click to move the curve horizontally
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.horizontalstretch">Horizontal Stretch Tool
+    Left click to stretch the curve horizontally
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.line">Line Tool
+    Left click to draw (draw straight line)
+    Hold Shift + Left click to draw (draw horizontal line)
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
+    Left click to draw
+    Hold Shift + Left click to draw (draw horizontal line)
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.verticalshift">Vertical Shift Tool
+    Left click to move the curve vertically
+    Right click to reset</system:String>-->
+  <!--<system:String x:Key="pianoroll.tool.curve.verticalstretch">Vertical Stretch Tool
+    Left click to stretch the curve vertically
+    Right click to reset</system:String>-->
   <system:String x:Key="pianoroll.tool.drawpitch">피치 그리기 펜 (Shift + 1)
     피치 그리기: 왼쪽 클릭
     피치 초기화: 오른쪽 클릭
@@ -559,10 +760,10 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
     직선 피치 그리기: 왼쪽 클릭
     피치 초기화: 오른쪽 클릭
     노트 선택: Ctrl + 클릭</system:String>
-  <!--<system:String x:Key="pianoroll.tool.pitchpoint">Pitch Point Tool (5)
-    Left click to add point
-    Drag to move only the point
-    Hold Ctrl to select</system:String>-->
+  <system:String x:Key="pianoroll.tool.pitchpoint">피치점 도구 (5)
+    피치점 추가: 왼쪽 클릭
+    피치점 이동: 드래그
+    피치점 선택: Ctrl + 클릭</system:String>
   <system:String x:Key="pianoroll.tool.pitchscurve">피치 S-커브 (Shift + 3)
     S-커브 그리기: 왼쪽 클릭, 조정 모드로 이동
     S-커브 강도 조정: 마우스 이동, 클릭해 적용
@@ -580,6 +781,7 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
 
   <system:String x:Key="prefs.advanced">고급</system:String>
   <system:String x:Key="prefs.advanced.beta">베타 버전 사용</system:String>
+  <!--<system:String x:Key="prefs.advanced.defaultsnapcurve">Snap curves by default</system:String>-->
   <system:String x:Key="prefs.advanced.lyricshelper">가사 입력 도우미</system:String>
   <system:String x:Key="prefs.advanced.lyricshelper.brackets">가사 입력 도우미의 대괄호 자동 추가</system:String>
   <system:String x:Key="prefs.advanced.rememberfiletypes">'최근 파일'에 표시할 파일 유형</system:String>
@@ -587,9 +789,14 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="prefs.advanced.resamplerlogging.warn">리샘플러의 결과물을 로그 파일에 저장합니다. UI 및 렌더링의 속도가 느려질 수 있어요.</system:String>
   <system:String x:Key="prefs.advanced.stable">안정화 버전</system:String>
   <system:String x:Key="prefs.advanced.vlabelerpath">vLabeler 설치 경로</system:String>
-  <!--<system:String x:Key="prefs.advanced.wayland">Use Wayland</system:String>-->
+  <system:String x:Key="prefs.advanced.wayland">Wayland 사용</system:String>
   <system:String x:Key="prefs.advanced.winepath">Wine 설치 경로 (호환성을 위해 wine을 사용할 시 설정해 주세요)</system:String>
   <system:String x:Key="prefs.appearance">외형</system:String>
+  <!--<system:String x:Key="prefs.appearance.customfont">UI font</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.customfont.family">Font family</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.customfont.none">System default</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.customfont.notes">Use UI font for note text</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.customfont.select">Select a TrueType or OpenType font</system:String>-->
   <system:String x:Key="prefs.appearance.customtheme.create.empty">테마 이름은 비워둘 수 없어요.</system:String>
   <system:String x:Key="prefs.appearance.customtheme.create.prompt">테마 이름 입력</system:String>
   <system:String x:Key="prefs.appearance.customtheme.create.title">커스텀 테마 만들기</system:String>
@@ -600,12 +807,14 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="prefs.appearance.degree.numbered">숫자매김 (1 2 3 4 5 6 7)</system:String>
   <system:String x:Key="prefs.appearance.degree.off">미사용</system:String>
   <system:String x:Key="prefs.appearance.degree.solfege">계이름 (do re mi fa sol la ti)</system:String>
-  <!--<system:String x:Key="prefs.appearance.detachpianoroll">Show piano roll in separate window</system:String>-->
+  <system:String x:Key="prefs.appearance.detachpianoroll">분리된 창으로 피아노롤 표시</system:String>
   <system:String x:Key="prefs.appearance.diffsingerlangcodehide">음소의 언어 접두사 숨기기</system:String>
   <system:String x:Key="prefs.appearance.lang">언어</system:String>
-  <!--<system:String x:Key="prefs.appearance.notehoverglow">Note hover glow</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.playbacknotebounce">Bounce notes on playback</system:String>-->
-  <!--<system:String x:Key="prefs.appearance.playbacknotehighlight">Highlight notes on playback</system:String>-->
+  <system:String x:Key="prefs.appearance.notehoverglow">노트 마우스오버 시 빛남</system:String>
+  <system:String x:Key="prefs.appearance.playbacknotebounce">재생 시 노트를 바운스</system:String>
+  <system:String x:Key="prefs.appearance.playbacknotehighlight">재생 시 노트에 강조 표시</system:String>
+  <!--<system:String x:Key="prefs.appearance.reduceanimations">Reduce animations</system:String>-->
+  <!--<system:String x:Key="prefs.appearance.renderbackground">Show render status in track background</system:String>-->
   <system:String x:Key="prefs.appearance.showghostnotes">피아노 롤에 다른 트랙의 노트 표시</system:String>
   <system:String x:Key="prefs.appearance.showicon">피아노 롤에 가수 아이콘 표시</system:String>
   <system:String x:Key="prefs.appearance.showportrait">피아노 롤에 가수 스탠딩 표시</system:String>
@@ -618,13 +827,14 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="prefs.cache.clearonquit">나갈 때 자동으로 캐시 삭제</system:String>
   <system:String x:Key="prefs.cache.diffsingertensorcache">DiffSinger 텐서 캐시</system:String>
   <system:String x:Key="prefs.caption">환경 설정</system:String>
-  <!--<system:String x:Key="prefs.channel">Release Channel</system:String>-->
-  <!--<system:String x:Key="prefs.channel.alpha">Alpha</system:String>-->
-  <!--<system:String x:Key="prefs.channel.beta">Beta</system:String>-->
-  <!--<system:String x:Key="prefs.channel.stable">Stable</system:String>-->
+  <system:String x:Key="prefs.channel">릴리즈 채널</system:String>
+  <system:String x:Key="prefs.channel.alpha">알파 버전</system:String>
+  <system:String x:Key="prefs.channel.beta">베타 버전</system:String>
+  <system:String x:Key="prefs.channel.stable">안정화 버전</system:String>
   <!--<system:String x:Key="prefs.diffsinger">DiffSinger</system:String>-->
   <system:String x:Key="prefs.editing">편집</system:String>
   <system:String x:Key="prefs.general">일반</system:String>
+  <!--<system:String x:Key="prefs.general.sinewhennosinger">Play sine tone when no singer is selected</system:String>-->
   <system:String x:Key="prefs.note.restart">참고: 설정을 반영하려면 OpenUtau를 재시작하세요.</system:String>
   <system:String x:Key="prefs.otoeditor">원음설정 에디터</system:String>
   <system:String x:Key="prefs.otoeditor.select">기본 원음설정 에디터</system:String>
@@ -635,6 +845,7 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="prefs.paths.detect">감지</system:String>
   <system:String x:Key="prefs.paths.loaddeepfolders">가수 로드 시, 안쪽 폴더까지 불러오기</system:String>
   <system:String x:Key="prefs.paths.singer">가수 경로</system:String>
+  <!--<system:String x:Key="prefs.placeholdertext.none">(None)</system:String>-->
   <system:String x:Key="prefs.playback">재생</system:String>
   <system:String x:Key="prefs.playback.autoscroll">자동 스크롤</system:String>
   <system:String x:Key="prefs.playback.autoscrollmode">자동 스크롤 모드</system:String>
@@ -651,17 +862,21 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="prefs.playback.lockstarttime.off">아무것도 안 함</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.on">재생을 시작했던 위치로 커서 옮기기</system:String>
   <system:String x:Key="prefs.playback.lockstarttime.onlycursor">재생을 시작했던 위치로 커서 옮기기 (스크롤 없이)</system:String>
+  <system:String x:Key="prefs.playback.metronome">메트로놈</system:String>
+  <system:String x:Key="prefs.playback.metronome.highfrequency">메트로놈 강박 음정</system:String>
+  <system:String x:Key="prefs.playback.metronome.lowfrequency">메트로놈 약박 음정</system:String>
+  <system:String x:Key="prefs.playback.metronome.volume">메트로놈 볼륨</system:String>
   <system:String x:Key="prefs.playback.systemdefault">시스템 기본값 사용</system:String>
   <system:String x:Key="prefs.playback.test">출력 테스트</system:String>
   <system:String x:Key="prefs.rendering">렌더링</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">기본 렌더러 (Classic 음원용)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger 렌더링 깊이(Depth)</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>-->
   <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger 렌더링 스텝 (Acoustic 모델용)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">DiffSinger 렌더링 스텝 (Pitch 모델용)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger 렌더링 스텝 (Variance 모델용)</system:String>
-  <!--<system:String x:Key="prefs.rendering.diffsingervariancelocalpitchpatch">DiffSinger Local Variance Update for Pitch Edits</system:String>-->
-  <!--<system:String x:Key="prefs.rendering.gamebackend">GAME Inference Backend</system:String>-->
+  <system:String x:Key="prefs.rendering.diffsingervariancelocalpitchpatch">DiffSinger 피치선 편집 시 Variance 재생성 (로컬)</system:String>
+  <system:String x:Key="prefs.rendering.gamebackend">GAME 추론 백엔드</system:String>
+  <!--<system:String x:Key="prefs.rendering.mergephrases">Phrase merge time (seconds)</system:String>-->
   <system:String x:Key="prefs.rendering.onnxgpu">그래픽 카드(GPU)</system:String>
   <system:String x:Key="prefs.rendering.onnxrunner">머신러닝 실행 장치</system:String>
   <system:String x:Key="prefs.rendering.phasecomp">위상 보정</system:String>
@@ -732,6 +947,7 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="singers.errorreport">가수 오류 보고서 생성</system:String>
   <system:String x:Key="singers.location">위치 열기</system:String>
   <system:String x:Key="singers.merge">다른 음원과 합치기</system:String>
+  <!--<system:String x:Key="singers.oto">Oto</system:String>-->
   <system:String x:Key="singers.otoview.moveleft">왼쪽으로</system:String>
   <system:String x:Key="singers.otoview.moveright">오른쪽으로</system:String>
   <system:String x:Key="singers.otoview.selectnext">다음</system:String>
@@ -782,8 +998,8 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="singersetup.textfileencoding.prompt">텍스트가 정상적으로 보이는 인코딩을 골라 주세요.</system:String>
   <system:String x:Key="singersetup.title">가수 설치</system:String>
 
-  <!--<system:String x:Key="themeeditor.cancel">Cancel</system:String>-->
-  <!--<system:String x:Key="themeeditor.save">Save</system:String>-->
+  <system:String x:Key="themeeditor.cancel">취소</system:String>
+  <system:String x:Key="themeeditor.save">저장</system:String>
   <system:String x:Key="themeeditor.title">테마 편집기</system:String>
 
   <system:String x:Key="tip.aliasbox">에일리어스 덮어쓰기</system:String>
@@ -816,11 +1032,18 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
     재생: 스페이스 바</system:String>
   <system:String x:Key="tip.notes.zoomx">◀ 수평 확대 시 여기서 스크롤 ▶</system:String>
   <system:String x:Key="tip.notes.zoomy">수직 확대 시 여기서 스크롤 ▶</system:String>
-  <!--<system:String x:Key="tip.playback.loop">Loop playback</system:String>-->
+  <system:String x:Key="tip.playback.loop">반복 재생</system:String>
 
+  <!--<system:String x:Key="tracks.clearsinger">Remove singer from this track</system:String>-->
   <system:String x:Key="tracks.duplicate">트랙 복제</system:String>
   <system:String x:Key="tracks.duplicatesettings">트랙 설정 복제</system:String>
+  <!--<system:String x:Key="tracks.expressiongraph">Expression Graph</system:String>-->
+  <!--<system:String x:Key="tracks.expressiongraph.default">Renderer default</system:String>-->
+  <!--<system:String x:Key="tracks.expressiongraph.none">none</system:String>-->
   <system:String x:Key="tracks.favorite">즐겨찾기</system:String>
+  <!--<system:String x:Key="tracks.filtertype.all">All</system:String>-->
+  <!--<system:String x:Key="tracks.filtertype.all.tip">Show all singer types</system:String>-->
+  <!--<system:String x:Key="tracks.filtertype.only">Show only {0} singers</system:String>-->
   <system:String x:Key="tracks.installsinger">가수 설치</system:String>
   <system:String x:Key="tracks.mixfx">트랙 효과...</system:String>
   <system:String x:Key="tracks.more">더보기</system:String>
@@ -831,10 +1054,17 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="tracks.mute.only">이 트랙만 뮤트</system:String>
   <system:String x:Key="tracks.mute.unmuteall">모든 뮤트 해제</system:String>
   <system:String x:Key="tracks.nosinger">가수가 없어요</system:String>
+  <!--<system:String x:Key="tracks.nosingermatch">No matching singer</system:String>-->
   <system:String x:Key="tracks.openaddsingers">가수 폴더(확장) 열기</system:String>
+  <!--<system:String x:Key="tracks.openlocation">Open location</system:String>-->
   <system:String x:Key="tracks.opensingers">가수 폴더(기본) 열기</system:String>
   <system:String x:Key="tracks.remove">트랙 제거</system:String>
+  <!--<system:String x:Key="tracks.removefromrecent">Remove from recent</system:String>-->
   <system:String x:Key="tracks.rename">트랙 이름 변경</system:String>
+  <!--<system:String x:Key="tracks.searchsinger">Search singers</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms">Search terms</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.edit">Edit search terms...</system:String>-->
+  <!--<system:String x:Key="tracks.searchterms.prompt">Extra words that find this singer, separated by commas.</system:String>-->
   <system:String x:Key="tracks.selectrenderer">렌더러 선택</system:String>
   <system:String x:Key="tracks.selectsinger">가수 선택</system:String>
   <system:String x:Key="tracks.singerdefault">(가수 기본값) </system:String>
@@ -860,6 +1090,14 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="warning.asciipath">OpenUtau 설치 경로 "{0}"에 비 ASCII 문자가 있어요. Exe 리샘플러가 작동하지 않을 수 있습니다.</system:String>
   <system:String x:Key="warning.renderer">이 렌더러에 대한 설정이 없습니다.</system:String>
 
+  <!--<system:String x:Key="warnings">Warnings</system:String>-->
+  <!--<system:String x:Key="warnings.clear">Clear all</system:String>-->
+  <!--<system:String x:Key="warnings.dismiss">Dismiss</system:String>-->
+  <!--<system:String x:Key="warnings.singers.duplicate">Duplicate voicebank folder "{0}"</system:String>-->
+  <!--<system:String x:Key="warnings.singers.duplicate.detail">Using: {1}
+Ignored: {2}
+Rename the ignored folder to load it.</system:String>-->
+
   <system:String x:Key="welcome.new">새 프로젝트...</system:String>
   <system:String x:Key="welcome.new.description">프로젝트를 만들어요</system:String>
   <system:String x:Key="welcome.open">열기...</system:String>
@@ -867,4 +1105,27 @@ OpenUtau(오픈우타우)는 세련된 사용자 경험과 유연한 음운 지�
   <system:String x:Key="welcome.recent">최근 기록들</system:String>
   <system:String x:Key="welcome.start">시작하기</system:String>
   <system:String x:Key="welcome.template">템플릿</system:String>
+
+  <!--<system:String x:Key="yamleditor.default">Default: {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.discarded">{0} has errors, so it can't be saved. Your changes to it were discarded.</system:String>-->
+  <!--<system:String x:Key="yamleditor.errors">Errors: {0}, warnings: {1}. OpenUtau could not load this file; fix the errors to save.</system:String>-->
+  <!--<system:String x:Key="yamleditor.noproblems">No problems found</system:String>-->
+  <!--<system:String x:Key="yamleditor.revert">Revert</system:String>-->
+  <!--<system:String x:Key="yamleditor.save">Save</system:String>-->
+  <!--<system:String x:Key="yamleditor.syntax">Not valid YAML: {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.bool">true or false</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.choice">one of {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.integer">whole number</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.list">list of {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.map">map of {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.number">number</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.section">section of keys</system:String>-->
+  <!--<system:String x:Key="yamleditor.type.text">text</system:String>-->
+  <!--<system:String x:Key="yamleditor.unknownkey">Unknown key "{0}", which OpenUtau ignores. Check the spelling.</system:String>-->
+  <!--<system:String x:Key="yamleditor.unsaved">Save changes to {0}?</system:String>-->
+  <!--<system:String x:Key="yamleditor.unsaved.caption">Unsaved changes</system:String>-->
+  <!--<system:String x:Key="yamleditor.unsaved.errors">{0} has errors, so it can't be saved. Discard your changes?</system:String>-->
+  <!--<system:String x:Key="yamleditor.value">Value: {0}</system:String>-->
+  <!--<system:String x:Key="yamleditor.warnings">Warnings: {0}. OpenUtau ignores these parts; you can still save.</system:String>-->
+  <!--<system:String x:Key="yamleditor.wrongtype">Expected {0}.</system:String>-->
 </ResourceDictionary>

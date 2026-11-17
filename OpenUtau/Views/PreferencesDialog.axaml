@@ -103,6 +103,10 @@
             </ComboBox>
           </Grid>
           <TextBlock Classes="restart"/>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.general.sinewhennosinger}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding PlaySineWhenNoSinger}"/>
+          </Grid>
         </StackPanel>
         
         <!-- Playback -->
@@ -305,6 +309,22 @@
                     Data="M8.43 3.33 a0.38 0.38 0 0 0 -0.38 0.38 v4.35 H3.7 a0.38 0.38 0 0 0 -0.38 0.38 v1.13 c0 0.23 0.19 0.38 0.38 0.38 h4.35 v4.35 c0 0.23 0.19 0.38 0.38 0.38 h1.13 a0.38 0.38 0 0 0 0.38 -0.38 V9.97 h4.35 a0.38 0.38 0 0 0 0.38 -0.38 v-1.13 a0.38 0.38 0 0 0 -0.38 -0.38 H9.97 V3.7 a0.38 0.38 0 0 0 -0.38 -0.38 h-1.13 z" />
               </Grid>
             </Button>
+          </Grid>
+          <TextBlock Text="{DynamicResource prefs.appearance.customfont}" Margin="0,10,0,0"/>
+          <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2,0,0">
+              <TextBlock Grid.Column="0" Text="{Binding UiFontPath}" TextWrapping="Wrap" VerticalAlignment="Center"
+                         Margin="4,0,6,0" IsVisible="{Binding UiFontPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+              <TextBlock Grid.Column="0" Text="{DynamicResource prefs.appearance.customfont.none}" VerticalAlignment="Center"
+                         Margin="4,0,6,0" IsVisible="{Binding UiFontPath, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+              <Button Grid.Column="1" Content="{DynamicResource button.select}" Click="SelectUiFont" Margin="0,0,5,0"/>
+              <Button Grid.Column="2" Content="{DynamicResource button.reset}" Click="ResetUiFont"/>
+          </Grid>
+          <TextBlock Text="{DynamicResource prefs.appearance.customfont.family}" Margin="0,4,0,0"/>
+          <ComboBox ItemsSource="{Binding UiFontFamilies}" SelectedItem="{Binding UiFontFamily}"
+                    Margin="0,2,0,0" MaxDropDownHeight="320"/>
+          <Grid Margin="0,5,0,0">
+              <TextBlock Text="{DynamicResource prefs.appearance.customfont.notes}" HorizontalAlignment="Left"/>
+              <ToggleSwitch IsChecked="{Binding UseUiFontForNotes}"/>
           </Grid>
           <TextBlock Text="{DynamicResource prefs.appearance.degree}" Margin="0,10,0,0"/>
           <ComboBox SelectedIndex="{Binding DegreeStyle}">
