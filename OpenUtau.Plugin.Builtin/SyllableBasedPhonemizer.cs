@@ -170,13 +170,13 @@ namespace OpenUtau.Plugin.Builtin {
         // YAML watcher
         private static int globalSbpGeneration = 0;
         private int localSbpGeneration = 0;
-        public static YamlWatcher singerYamlWatcher;
-        public static YamlWatcher pluginYamlWatcher;
-        public static string currentlyWatchedSingerDir;
-        public static string currentlyWatchedPluginDir;
+        public static YamlWatcher? singerYamlWatcher;
+        public static YamlWatcher? pluginYamlWatcher;
+        public static string? currentlyWatchedSingerDir;
+        public static string? currentlyWatchedPluginDir;
         private bool _singerLoaded = false;
 
-        private void SetupYamlWatchers(string singerDir, string pluginDir) {
+        private void SetupYamlWatchers(string? singerDir, string pluginDir) {
             if (!string.IsNullOrEmpty(singerDir) && currentlyWatchedSingerDir != singerDir) {
                 singerYamlWatcher?.Dispose();
                 singerYamlWatcher = null;
@@ -382,7 +382,7 @@ namespace OpenUtau.Plugin.Builtin {
             };
         }
 
-        protected virtual Phoneme[] AssignAllAffixes(List<Phoneme> phonemes, Note[] notes, Note[] prevs, List<PhonemeAttributes> dynamicAttributes = null) {
+        protected virtual Phoneme[] AssignAllAffixes(List<Phoneme> phonemes, Note[] notes, Note[] prevs, List<PhonemeAttributes>? dynamicAttributes = null) {
             int noteIndex = 0;
             for (int i = 0; i < phonemes.Count; i++) {
                 var attr = dynamicAttributes?.FirstOrDefault(a => a.index == i) 
@@ -392,7 +392,7 @@ namespace OpenUtau.Plugin.Builtin {
                 var phoneme = phonemes[i];
 
                 int? altValue = attr.alternate ?? GetParentAlternate();
-                string alt = altValue?.ToString();
+                string? alt = altValue?.ToString();
 
                 if (string.IsNullOrEmpty(alt) && phoneme.expressions != null) {
                     var altExpr = phoneme.expressions.FirstOrDefault(e => e.abbr == "alt");
@@ -477,7 +477,7 @@ namespace OpenUtau.Plugin.Builtin {
         private static string ReadVersionFast(TextReader reader) {
             if (reader == null) return string.Empty;
             try {
-                string line;
+                string? line;
                 while ((line = reader.ReadLine()) != null) {
                     var trimmed = line.Trim();
                     if (trimmed.StartsWith("version:", StringComparison.OrdinalIgnoreCase)) {
@@ -540,8 +540,8 @@ namespace OpenUtau.Plugin.Builtin {
                     if (string.IsNullOrEmpty(currentVersion)) {
                         string initialBaseline = YamlVersion ?? "1.0";
 
-                        if (System.Version.TryParse(targetVersion, out System.Version targetV) &&
-                            System.Version.TryParse(initialBaseline, out System.Version initV)) {
+                        if (System.Version.TryParse(targetVersion, out System.Version? targetV) &&
+                            System.Version.TryParse(initialBaseline, out System.Version? initV)) {
                             if (targetV > initV) {
                                 isOutdated = true; // Version bump detected in template
                             }
@@ -549,8 +549,8 @@ namespace OpenUtau.Plugin.Builtin {
                                 !string.Equals(targetVersion, initialBaseline, StringComparison.OrdinalIgnoreCase)) {
                             isOutdated = true;
                         }
-                    } else if (System.Version.TryParse(currentVersion, out System.Version currV) &&
-                            System.Version.TryParse(targetVersion, out System.Version targetV)) {
+                    } else if (System.Version.TryParse(currentVersion, out System.Version? currV) &&
+                            System.Version.TryParse(targetVersion, out System.Version? targetV)) {
                         if (currV < targetV) {
                             isOutdated = true;
                         }
@@ -563,8 +563,9 @@ namespace OpenUtau.Plugin.Builtin {
                 }
             } else if (isGlobal) {
                 // Initial creation of global template if missing
-                try {
-                    string dir = Path.GetDirectoryName(filePath);
+                #pragma warning disable
+                try { 
+                    string? dir = Path.GetDirectoryName(filePath);
                     if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                     File.WriteAllBytes(filePath, YamlTemplate);
                     Log.Information($"[YamlUpdate] Created new global template at '{filePath}' (v{targetVersion})");
@@ -580,6 +581,7 @@ namespace OpenUtau.Plugin.Builtin {
             if (!isOutdated) return; // Exits untouched if unversioned and targetVersion == initial baseline
             bool migrated = MigrateAndWriteYaml(filePath, currentVersion, targetVersion);
             if (migrated) return;
+            #pragma warning disable
             try {
                 string backupVersion = string.IsNullOrEmpty(currentVersion) ? "unversioned" : currentVersion;
                 string backupFile = Path.Combine(
@@ -590,6 +592,7 @@ namespace OpenUtau.Plugin.Builtin {
                 File.Copy(filePath, backupFile, overwrite: true);
                 File.WriteAllBytes(filePath, YamlTemplate);
                 Log.Information($"[YamlUpdate] Updated '{filePath}' to template version {targetVersion}");
+            #pragma warning restore
             } catch (Exception ex) {
                 Log.Error(ex, $"[YamlUpdate] Failed to update '{filePath}'");
             }
@@ -622,6 +625,7 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         private bool MigrateAndWriteYaml(string filePath, string currentVersion, string targetVersion) {
+            #pragma warning disable
             try {
                 if (YamlTemplate == null || YamlTemplate.Length == 0) return false;
 
@@ -724,6 +728,7 @@ namespace OpenUtau.Plugin.Builtin {
 
                 Log.Information($"[Migration] Successfully migrated '{filePath}' from v{currentVersion} to v{targetVersion}");
                 return true;
+            #pragma warning restore
             } catch (Exception ex) {
                 Log.Error(ex, $"[Migration] Failed migrating '{filePath}'.");
                 return false;
@@ -736,7 +741,7 @@ namespace OpenUtau.Plugin.Builtin {
             return $"{fromStr}:{r.where}";
         }
 
-        private static YAMLData LoadYamlCached(string filePath) {
+        private static YAMLData? LoadYamlCached(string filePath) {
             string fullPath = Path.GetFullPath(filePath);
             var lastWrite = File.GetLastWriteTimeUtc(fullPath);
 
@@ -744,6 +749,7 @@ namespace OpenUtau.Plugin.Builtin {
                 return cached.data;
             }
 
+            #pragma warning disable
             try {
                 using var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -773,13 +779,14 @@ namespace OpenUtau.Plugin.Builtin {
                 }
                 YamlCache[fullPath] = (lastWrite, parsed);
                 return parsed;
+            #pragma warning restore
             } catch (Exception ex) {
                 Log.Error(ex, $"Failed to deserialize YAML at '{fullPath}'");
                 return null;
             }
         }
 
-        public override void SetSinger(USinger singer) {
+        public override void SetSinger(USinger? singer) {
             if (_singerLoaded && this.singer == singer && localSbpGeneration == globalSbpGeneration) {
                 return;
             }
@@ -792,8 +799,9 @@ namespace OpenUtau.Plugin.Builtin {
                     _singerLoaded = false;
                     return;
                 }
-
-                string singerFolder = (!string.IsNullOrEmpty(singer.Location)) ? singer.Location : null;
+                #pragma warning disable CS8602 // if singer == null then this.singer == null
+                string? singerFolder = (!string.IsNullOrEmpty(singer.Location)) ? singer.Location : null;
+                #pragma warning restore CS8602
                 SetupYamlWatchers(singerFolder, PluginDir);
 
                 if (string.IsNullOrEmpty(YamlFileName)) {
@@ -820,7 +828,7 @@ namespace OpenUtau.Plugin.Builtin {
 
                 // file paths
                 string globalFile = Path.Combine(PluginDir, YamlFileName);
-                string singerFile = (singer != null && singer.Found && singer.Loaded && !string.IsNullOrEmpty(singer.Location)) 
+                string? singerFile = (singer != null && singer.Found && singer.Loaded && !string.IsNullOrEmpty(singer.Location)) 
                     ? Path.Combine(singer.Location, YamlFileName) 
                     : null;
 
@@ -873,6 +881,9 @@ namespace OpenUtau.Plugin.Builtin {
                 // parse the files sequentially (Singer configs seamlessly overwrite global configs)
                 foreach (var file in filesToParse) {
                     try {
+                        #pragma warning disable CS8619,CS8604 
+                        // disabling bc of the try/catch but I wanted to mark out
+                        // specifically what the warnings were anwyay
                         var data = LoadYamlCached(file);
                         if (data == null) continue;
                         
@@ -928,7 +939,7 @@ namespace OpenUtau.Plugin.Builtin {
                                 }
                             }
                         }
-                        
+                        #pragma warning disable CS8619,CS8604
                         if (data?.isglides != null) enableGlides = data.isglides.Value; 
 
                         // OVERRIDES & DICTIONARIES (Singer keys overwrite global keys)
@@ -1016,7 +1027,7 @@ namespace OpenUtau.Plugin.Builtin {
             _singerLoaded = true;
         }
 
-        protected USinger singer;
+        protected USinger? singer;
         protected bool hasDictionary => dictionaries.ContainsKey(GetType());
         protected IG2p dictionary => dictionaries[GetType()];
         protected bool isDictionaryLoading => dictionaries[GetType()] == null;
@@ -1071,7 +1082,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// simple alias to alias fallback
         /// </summary>
         /// <returns></returns>
-        protected virtual Dictionary<string, string> GetAliasesFallback() { return null; }
+        protected virtual Dictionary<string, string>? GetAliasesFallback() { return null; }
 
         /// <summary>
         /// Use to some custom init, if needed
@@ -1083,7 +1094,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// If missing or can't be read, phonetic input is used
         /// </summary>
         /// <returns></returns>
-        protected virtual string GetDictionaryName() { return null; }
+        protected virtual string? GetDictionaryName() { return null; }
 
         /// <summary>
         /// Greedy tokenization: identifies longest matching consonants/vowels first (e.g., "kwh", "sh", "dx")
@@ -1130,7 +1141,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// </summary>
         /// <param name="note"></param>
         /// <returns></returns>
-        protected virtual string[] GetSymbols(Note note) {
+        protected virtual string[]? GetSymbols(Note note) {
             string[] getSymbolsRaw(string lyrics) {
                 if (string.IsNullOrEmpty(lyrics)) {
                     return Array.Empty<string>();
@@ -1173,7 +1184,7 @@ namespace OpenUtau.Plugin.Builtin {
                     } else {
                         for (int i = 0; i < subResult.Length; i++) {
                             string phoneme = subResult[i];
-                            if (dictionaryReplacements.TryGetValue(phoneme, out string replaced)) {
+                            if (dictionaryReplacements.TryGetValue(phoneme, out string? replaced)) {
                                 subResult[i] = replaced;
                             }
                         }
@@ -1204,13 +1215,13 @@ namespace OpenUtau.Plugin.Builtin {
         protected virtual Dictionary<string, string> GetDictionaryPhonemesReplacement() {
             return dictionaryReplacements ?? new Dictionary<string, string>(StringComparer.Ordinal);
         }
-        private string[] backupVowels = null;
-        private string[] backupConsonants = null;
-        private Dictionary<string, string> backupDiphthongTails = null;
-        private Dictionary<string, string[]> backupDiphthongSplits = null;
-        private Dictionary<string, string> backupDictionaryReplacements = null;
+        private string[]? backupVowels = null;
+        private string[]? backupConsonants = null;
+        private Dictionary<string, string>? backupDiphthongTails = null;
+        private Dictionary<string, string[]>? backupDiphthongSplits = null;
+        private Dictionary<string, string>? backupDictionaryReplacements = null;
         protected Dictionary<string, (string sustain, double offset)> vowelSustains = new Dictionary<string, (string, double)>(StringComparer.Ordinal);
-        private Dictionary<string, (string sustain, double offset)> backupVowelSustains = null;
+        private Dictionary<string, (string sustain, double offset)>? backupVowelSustains = null;
 
         /// <summary>
         /// separates symbols to syllables, without an ending.
@@ -1218,7 +1229,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// <param name="inputNotes"></param>
         /// <param name="prevWord"></param>
         /// <returns></returns>
-        protected virtual Syllable[] MakeSyllables(Note[] inputNotes, Ending? prevEnding, Ending? nextEnding = null) {
+        protected virtual Syllable[]? MakeSyllables(Note[] inputNotes, Ending? prevEnding, Ending? nextEnding = null) {
             (var symbols, var vowelIds, var notes) = GetSymbolsAndVowels(inputNotes);
             if (symbols == null || vowelIds == null || notes == null) {
                 return null;
@@ -1391,7 +1402,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// </summary>
         /// <param name="word"></param>
         /// <returns></returns>
-        protected virtual string[] HandleWordNotFound(Note note) {
+        protected virtual string[]? HandleWordNotFound(Note note) {
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
             string alt = (attr.alternate ?? GetParentAlternate())?.ToString() ?? string.Empty;
             string color = attr.voiceColor ?? GetParentVoiceColor();
@@ -1440,7 +1451,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// If a token is in suppressedTokens (defined as from == to in YAML fallbacks),
         /// child implementations must not alter that token.
         /// </summary>
-        protected virtual string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+        protected virtual string? GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
             return null;
         }
 
@@ -1524,7 +1535,7 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
             // Child phonemizer-specific hardcoded/contextual fallbacks
-            string childFallback = GetHardcodedFallback(alias, tone, suppressedTokens);
+            string? childFallback = GetHardcodedFallback(alias, tone, suppressedTokens);
             if (!string.IsNullOrEmpty(childFallback) && !string.Equals(childFallback, alias, StringComparison.Ordinal)) {
                 if (HasOto(childFallback, tone)) {
                     return childFallback;
@@ -1845,9 +1856,9 @@ namespace OpenUtau.Plugin.Builtin {
         /// </summary>
         protected virtual bool EnablePhonemeTokenization => false;
 
-        protected virtual string YamlFileName => null;
-        protected virtual byte[] YamlTemplate => null;
-        protected virtual string YamlVersion => null;
+        protected virtual string? YamlFileName => null;
+        protected virtual byte[]? YamlTemplate => null;
+        protected virtual string? YamlVersion => null;
 
         protected string[] vowels = Array.Empty<string>();
         protected string[] consonants = Array.Empty<string>();
@@ -1870,7 +1881,7 @@ namespace OpenUtau.Plugin.Builtin {
         protected Dictionary<string, string[]> diphthongSplits = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
         public class YAMLData {
-            public string version { get; set; }
+            public string? version { get; set; }
             public bool? isglides { get; set; }
             public SymbolData[] symbols { get; set; } = Array.Empty<SymbolData>();
             public Replacement[] replacements { get; set; } = Array.Empty<Replacement>();
@@ -1887,10 +1898,10 @@ namespace OpenUtau.Plugin.Builtin {
             [YamlDotNet.Serialization.YamlIgnore]
             public Dictionary<string, object> ExtensionData { get; set; } = new Dictionary<string, object>(StringComparer.Ordinal);
 
-            public class SymbolData { public string symbol { get; set; } public string type { get; set; } }
+            public class SymbolData { public string? symbol { get; set; } public string? type { get; set; } }
             public class Timings { public string symbol { get; set; } public double value { get; set; } }
-            public class DiphthongData { public string from { get; set; } public string to { get; set; } }
-            public class VowelSustainData { public string symbol { get; set; } public string sustain { get; set; } public double offset { get; set; } }
+            public class DiphthongData { public string? from { get; set; } public string? to { get; set; } }
+            public class VowelSustainData { public string? symbol { get; set; } public string? sustain { get; set; } public double offset { get; set; } }
             public class EntryData { public string grapheme { get; set; } public string[] phonemes { get; set; } }
         }
 
@@ -2047,7 +2058,7 @@ namespace OpenUtau.Plugin.Builtin {
                                     // Split by + for concatenation
                                     string[] parts = toPh.Split('+');
                                     string[] cleanParts = new string[parts.Length];
-                                    string baseGroupTo = null;
+                                    string? baseGroupTo = null;
 
                                     for (int k = 0; k < parts.Length; k++) {
                                         // Strip parenthesis to find the base group cleanly
@@ -2113,7 +2124,7 @@ namespace OpenUtau.Plugin.Builtin {
                                 foreach(string toPh in toArray) {
                                     string[] parts = toPh.Split('+');
                                     string[] cleanParts = new string[parts.Length];
-                                    string baseGroupTo = null;
+                                    string? baseGroupTo = null;
 
                                     for (int k = 0; k < parts.Length; k++) {
                                         string partNoParens = parts[k].Trim('(', ')');
@@ -2344,7 +2355,7 @@ namespace OpenUtau.Plugin.Builtin {
             return vowelIds;
         }
         
-        private Phoneme[] MakePhonemes(List<string> phonemeSymbols, int containerLength, int position, bool isEnding, int tone = 0, PhonemeAttributes[] attributes = null, int globalStartIndex = 0) {
+        private Phoneme[] MakePhonemes(List<string> phonemeSymbols, int containerLength, int position, bool isEnding, int tone = 0, PhonemeAttributes[]? attributes = null, int globalStartIndex = 0) {
             var phonemes = new Phoneme[phonemeSymbols.Count];
             
             int[] trueLengths = new int[phonemeSymbols.Count];
@@ -2483,7 +2494,6 @@ namespace OpenUtau.Plugin.Builtin {
 
             return phonemes.Where(n => n.phoneme != null).ToArray();
         }
-
         string[] IG2pSymbols.GetSymbols(Note note) {
             return GetSymbols(note); // public API to allow access to internal plugins.
         }
