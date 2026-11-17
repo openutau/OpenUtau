@@ -19,9 +19,9 @@ namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Spanish Syllable-Based Phonemizer", "ES SYL", "Lotte V", language: "ES")]
     public class SpanishSyllableBasedPhonemizer : SyllableBasedPhonemizer {
 
-        private readonly string[] vowels = "a,e,i,o,u".Split(',');
-        private readonly string[] consonants = "b,ch,d,dz,f,g,h,hh,j,k,l,ll,m,n,nh,p,r,rr,s,sh,t,ts,w,y,z,zz,zh,I,U".Split(',');
-        private readonly Dictionary<string, string> dictionaryReplacements = ("a=a;e=e;i=i;o=o;u=u;" + "b=b;ch=ch;d=d;f=f;g=g;gn=nh;k=k;l=l;ll=j;m=m;n=n;p=p;r=r;rr=rr;s=s;t=t;w=w;x=h;y=y;z=z;I=I;U=U;B=b;D=d;G=g;Y=y").Split(';')
+        private new readonly string[] vowels = "a,e,i,o,u".Split(',');
+        private new readonly string[] consonants = "b,ch,d,dz,f,g,h,hh,j,k,l,ll,m,n,nh,p,r,rr,s,sh,t,ts,w,y,z,zz,zh,I,U".Split(',');
+        private new readonly Dictionary<string, string> dictionaryReplacements = ("a=a;e=e;i=i;o=o;u=u;" + "b=b;ch=ch;d=d;f=f;g=g;gn=nh;k=k;l=l;ll=j;m=m;n=n;p=p;r=r;rr=rr;s=s;t=t;w=w;x=h;y=y;z=z;I=I;U=U;B=b;D=d;G=g;Y=y").Split(';')
                 .Select(entry => entry.Split('='))
                 .Where(parts => parts.Length == 2)
                 .Where(parts => parts[0] != parts[1])
@@ -423,7 +423,7 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
-        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+        protected override string? GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
             string candidate = alias;
 
             // Helper to apply dictionary replacements with strict casing and YAML suppression checks

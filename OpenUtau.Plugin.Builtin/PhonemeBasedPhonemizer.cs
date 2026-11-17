@@ -70,7 +70,7 @@ namespace OpenUtau.Plugin.Builtin
                 return MakeSimpleResult(alias);
             }
             // Get the symbols of current note.
-            string[] symbols = GetSymbols(note);
+            string[]? symbols = GetSymbols(note);
             if (addTail && nextNeighbour == null) {
                 // Auto add tail "-".
                 symbols = symbols.Append("-").ToArray();

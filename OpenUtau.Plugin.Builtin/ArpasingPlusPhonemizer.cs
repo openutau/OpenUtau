@@ -80,8 +80,8 @@ namespace OpenUtau.Plugin.Builtin {
 
         private readonly string[] RomajiException = { "a", "e", "i", "o", "u" };
 
-        protected override string[] GetSymbols(Note note) {
-            string[] original = base.GetSymbols(note);
+        protected override string[]? GetSymbols(Note note) {
+            string[]? original = base.GetSymbols(note);
             phoneticHint = !string.IsNullOrEmpty(note.phoneticHint);
             if (original == null) {
                 return null;
@@ -112,7 +112,7 @@ namespace OpenUtau.Plugin.Builtin {
             return new IG2p[] { new ArpabetPlusG2p() };
         }
 
-        public override void SetSinger(USinger singer) {
+        public override void SetSinger(USinger? singer) {
             base.SetSinger(singer);
 
             if (this.singer != null && this.singer.Loaded) {
@@ -145,7 +145,7 @@ namespace OpenUtau.Plugin.Builtin {
             unotes = part?.notes.OrderBy(n => n.position).ToList() ?? new List<UNote>();
         }
 
-        private (UNote un, UNote unNext) UNoteAt(int absPos) {
+        private (UNote? un, UNote? unNext) UNoteAt(int absPos) {
             if (unotes.Count == 0) return (null, null);
             var un = unotes.LastOrDefault(n => n.position <= absPos) ?? unotes[0];
             int idx = unotes.IndexOf(un);
@@ -182,7 +182,7 @@ namespace OpenUtau.Plugin.Builtin {
             return cleanAlias.Trim();
         }
 
-        private bool TryGetMappedOtoAnyFormat(USinger singer, string baseAlias, int alt, int tone, string color, out UOto testOto) {
+        private bool TryGetMappedOtoAnyFormat(USinger singer, string baseAlias, int alt, int tone, string color, out UOto? testOto) {
             testOto = null;
             var formats = alt == 0
                 ? new[] { baseAlias }
@@ -221,9 +221,9 @@ namespace OpenUtau.Plugin.Builtin {
 
         private class AltCandidate {
             public int Alt;
-            public UOto Oto;
+            public UOto? Oto;
             public string WavNorm;
-            public string PaddedWav;
+            public string? PaddedWav;
             public bool IsPhonetic;
         }
 
@@ -262,7 +262,7 @@ namespace OpenUtau.Plugin.Builtin {
             return list;
         }
 
-        private int ScoreTransition(AltCandidate curr, AltCandidate prev, string currChunk, string prevChunk) {
+        private int ScoreTransition(AltCandidate? curr, AltCandidate? prev, string currChunk, string prevChunk) {
             if (curr == null) return 0;
             int score = 0;
 
@@ -294,7 +294,7 @@ namespace OpenUtau.Plugin.Builtin {
             return score;
         }
 
-        private UOto runningOto = null;
+        private UOto? runningOto = null;
 
         protected override void SyncAttributes(Note[] notes, List<string> phonemeSymbols, int startIndex, List<PhonemeAttributes> attrList) {
             if (singer == null || !singer.Loaded || phonemeSymbols.Count == 0 || notes == null || notes.Length == 0) return;
@@ -354,7 +354,7 @@ namespace OpenUtau.Plugin.Builtin {
                 }
             }
 
-            AltCandidate initialPrev = null;
+            AltCandidate? initialPrev = null;
             string initialPrevChunk = "";
             if (!isPhraseStart && runningOto != null) {
                 string norm = Path.GetFileNameWithoutExtension(runningOto.File ?? "").ToLower()
@@ -371,7 +371,7 @@ namespace OpenUtau.Plugin.Builtin {
                 initialPrevChunk = FormatForChunking(GetPureAlias(runningOto.Alias, singer));
             }
 
-            List<AltCandidate> nextNoteCandidates = null;
+            List<AltCandidate>? nextNoteCandidates = null;
             string nextNoteChunk = "";
             if (!isPhraseEnd && nextUN != null) {
                 var nextSymbols = base.GetSymbols(new Note { lyric = nextUN.lyric, tone = nextUN.tone });
@@ -1282,7 +1282,7 @@ namespace OpenUtau.Plugin.Builtin {
             return alias;
         }
 
-        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+        protected override string? GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
             // Apply Vowel-Only global fallbacks (skipping suppressed tokens)
             string vAlias = alias;
             if (missingVphonemes != null) {
@@ -1496,9 +1496,9 @@ namespace OpenUtau.Plugin.Builtin {
             { "zh", new[] { "jh", "ch"} },
         };
 
-        private string ApplyContextualFallbacks(string alias, int tone, HashSet<string> suppressedTokens = null) {
-            string p1 = null;
-            string p2 = null;
+        private string ApplyContextualFallbacks(string alias, int tone, HashSet<string>? suppressedTokens = null) {
+            string? p1 = null;
+            string? p2 = null;
             bool hasSpace = alias.Contains(' ');
 
             if (hasSpace) {
@@ -1569,7 +1569,7 @@ namespace OpenUtau.Plugin.Builtin {
             return FindValidCombination(p1, p2, dict1, dict2, tone, hasSpace) ?? alias;
         }
 
-        private string FindValidCombination(string part1, string part2, Dictionary<string, string[]> dict1, Dictionary<string, string[]> dict2, int tone, bool hasSpace) {
+        private string? FindValidCombination(string part1, string part2, Dictionary<string, string[]> dict1, Dictionary<string, string[]> dict2, int tone, bool hasSpace) {
             var p1Options = new List<string> { part1 };
             if (dict1.TryGetValue(part1, out var fallbacks1)) {
                 p1Options.AddRange(fallbacks1);

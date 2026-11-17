@@ -210,13 +210,13 @@ namespace OpenUtau.Plugin.Builtin {
             };
         }
 
-        (string Consonant, string Dipthong, string Vowel, string EndingConsonant) ParseInput(string input) {
+        (string? Consonant, string? Dipthong, string? Vowel, string? EndingConsonant) ParseInput(string input) {
             input = WordToPhonemes(input);
 
-            string consonant = null;
-            string diphthong = null;
-            string vowel = null;
-            string endingConsonant = null;
+            string? consonant = null;
+            string? diphthong = null;
+            string? vowel = null;
+            string? endingConsonant = null;
 
             if (input == null) {
                 return (null, null, null, null);

@@ -40,7 +40,7 @@ namespace OpenUtau.Plugin.Builtin {
             return new IG2p[] { new SpanishG2p() };
         }
 
-        protected override string[] GetSymbols(Note note) {
+        protected override string[]? GetSymbols(Note note) {
             string[] original = base.GetSymbols(note);
             if (original == null) {
                 return null;
@@ -352,7 +352,7 @@ namespace OpenUtau.Plugin.Builtin {
             }
             return phonemes;
         }
-        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+        protected override string? GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
             string candidate = alias;
 
             var rules = new Dictionary<string, string>(StringComparer.Ordinal) {

@@ -274,7 +274,7 @@ namespace Classic {
             MakePhonemeList();
         }
 
-        public bool TryGetLinesFromIniBrocks(List<IniBlock> blocks, string header, out List<IniLine> lines) {
+        public bool TryGetLinesFromIniBrocks(List<IniBlock> blocks, string header, out List<IniLine>? lines) {
             if (blocks.Any(block => block.header == header)) {
                 lines = blocks.Find(block => block.header == header).lines; // Count could be zero
                 return true;

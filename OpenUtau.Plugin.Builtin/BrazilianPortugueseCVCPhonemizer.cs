@@ -15,10 +15,10 @@ namespace OpenUtau.Plugin.Builtin {
         /// Supported Alias: -C, -V, C-, V-, -CV, VC-, CV, VC, V, VV, _V
         /// </summary>
 
-        private readonly string[] vowels = "a,oa,ah,ahn,ax,an,e,en,eh,ehn,ae,aen,i,in,i0,o,on,oh,ohn,u,un,u0".Split(",");
-        private readonly string[] consonants = "b,bv,ch,d,dj,f,g,gv,h,hr,k,l,l0,lh,m,n,ng,nh,p,r,rr,rw,s,sh,t,v,w,x,y,z,rh".Split(",");
+        private readonly new string[] vowels = "a,oa,ah,ahn,ax,an,e,en,eh,ehn,ae,aen,i,in,i0,o,on,oh,ohn,u,un,u0".Split(",");
+        private readonly new string[] consonants = "b,bv,ch,d,dj,f,g,gv,h,hr,k,l,l0,lh,m,n,ng,nh,p,r,rr,rw,s,sh,t,v,w,x,y,z,rh".Split(",");
         private readonly string[] burstConsonants = "b,ch,d,dj,g,k,p,t".Split(",");
-        private readonly Dictionary<string, string> dictionaryReplacements = ("a=a;e=e;i=i;o=o;u=u;E=eh;O=oh;a~=an;e~=en;i~=in;o~=on;u~=un;" +
+        private readonly new Dictionary<string, string> dictionaryReplacements = ("a=a;e=e;i=i;o=o;u=u;E=eh;O=oh;a~=an;e~=en;i~=in;o~=on;u~=un;" +
                 "b=b;tS=ch;d=d;dZ=dj;f=f;g=g;h=h;X=h;R=h;Z=j;k=k;l=l;L=lh;m=m;n=n;J=nh;p=p;r=r;s=s;S=sh;t=t;v=v;w=w;w~=w;j=y;j~=y;z=z").Split(';')
                 .Select(entry => entry.Split('='))
                 .Where(parts => parts.Length == 2)
@@ -40,7 +40,7 @@ namespace OpenUtau.Plugin.Builtin {
             string[] cc = syllable.cc;
             string v = syllable.v;
 
-            string basePhoneme;
+            string? basePhoneme;
             var phonemes = new List<string>();
             if (syllable.IsStartingV) {
                 basePhoneme = $"- {v}";

@@ -13,7 +13,7 @@ namespace OpenUtau.Core.Voicevox {
 
         protected VoicevoxSinger singer;
 
-        public override void SetSinger(USinger singer) {
+        public override void SetSinger(USinger? singer) {
             base.SetSinger(singer);
             this.singer = singer as VoicevoxSinger;
             if (this.singer != null) {
@@ -21,10 +21,10 @@ namespace OpenUtau.Core.Voicevox {
             }
         }
         protected override string[] GetVowels() => vowels;
-        private static readonly string[] vowels =
+        private static new readonly string[] vowels =
             "a i u e o ay ey oy ow aw".Split();
         protected override string[] GetConsonants() => consonants;
-        private static readonly string[] consonants =
+        private static new readonly string[] consonants =
             "b by ch d dh f g gy h hy j k ky l ly m my n ny ng p py r ry s sh t ts th v w y z zh".Split();
         protected override string GetDictionaryName() => "cmudict-0_7b.txt";
         protected override Dictionary<string, string> GetDictionaryPhonemesReplacement() => dictionaryPhonemesReplacement;
@@ -217,12 +217,12 @@ namespace OpenUtau.Core.Voicevox {
 
         private string[] affricates = "ts ch j".Split();
 
-        protected override string[] GetSymbols(Note note) {
+        protected override string[]? GetSymbols(Note note) {
             List<string> modified = new List<string>();
             if (VoicevoxUtils.phoneme_List.paus.TryGetValue(note.lyric,out string str)) {
                 modified.Add(str);
             } else {
-                string[] original = base.GetSymbols(note);
+                string[]? original = base.GetSymbols(note);
                 if (original == null) {
                     return null;
                 }

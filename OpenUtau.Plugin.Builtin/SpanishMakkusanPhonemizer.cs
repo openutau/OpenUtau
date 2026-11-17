@@ -15,9 +15,9 @@ namespace OpenUtau.Plugin.Builtin {
         /// Please make sure that the voicebank you want to use contains extra sounds for Spanish.
         /// </summary>
 
-        private readonly string[] vowels = "a,e,i,o,u,3,0".Split(',');
-        private readonly string[] consonants = "b,d,dz,dZ,f,g,gn,j,k,l,m,M,n,N,p,r,rr,s,S,t,ts,tS,v,w,y,z,B,D,G,h,T,x,Y,'".Split(',');
-        private readonly Dictionary<string, string> dictionaryReplacements = ("a=a;e=e;i=i;o=o;u=u;" +
+        private new readonly string[] vowels = "a,e,i,o,u,3,0".Split(',');
+        private new readonly string[] consonants = "b,d,dz,dZ,f,g,gn,j,k,l,m,M,n,N,p,r,rr,s,S,t,ts,tS,v,w,y,z,B,D,G,h,T,x,Y,'".Split(',');
+        private new readonly Dictionary<string, string> dictionaryReplacements = ("a=a;e=e;i=i;o=o;u=u;" +
                 "b=b;ch=tS;d=d;f=f;g=g;gn=gn;k=k;l=l;ll=Y;m=m;n=n;p=p;r=r;rr=rr;s=s;t=t;w=w;x=x;y=y;z=T;I=i;U=u;B=B;D=D;G=G;Y=Y").Split(';')
                 .Select(entry => entry.Split('='))
                 .Where(parts => parts.Length == 2)
@@ -37,7 +37,7 @@ namespace OpenUtau.Plugin.Builtin {
             string[] cc = syllable.cc;
             string v = syllable.v;
 
-            string basePhoneme;
+            string? basePhoneme;
             var phonemes = new List<string>();
             var lastC = cc.Length - 1;
             var firstC = 0;
@@ -221,7 +221,7 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
-        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+        protected override string? GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
             string candidate = alias;
 
             // Helper to apply single-token replacements with strict casing and YAML suppression checks

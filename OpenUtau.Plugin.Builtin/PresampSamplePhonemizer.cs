@@ -11,7 +11,7 @@ namespace OpenUtau.Plugin.Builtin {
     public class PresampSamplePhonemizer : Phonemizer {
         // Supporting: [VOWEL][CONSONANT][PRIORITY][REPLACE][ALIAS(VCPAD,VCVPAD)]
 
-        private USinger singer;
+        private USinger? singer;
         private Presamp presamp;
         public override void SetSinger(USinger singer) {
             if (this.singer == singer) {
