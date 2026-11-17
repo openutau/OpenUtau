@@ -66,6 +66,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool IsDiffSinger { get; set; }
         bool livePitchSyncing;
         [Reactive] public partial bool ShowWaveform { get; set; }
+        [Reactive] public partial bool ShowMel { get; set; }
         [Reactive] public partial bool ShowPhoneme { get; set; }
         [Reactive] public partial bool ShowNoteParams { get; set; }
         [Reactive] public partial bool ShowExpressions { get; set; }
@@ -293,6 +294,12 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(x => x.ShowWaveform)
             .Subscribe(showWaveform => {
                 Preferences.Default.ShowWaveform = showWaveform;
+                Preferences.Save();
+            });
+            ShowMel = Preferences.Default.ShowMel;
+            this.WhenAnyValue(x => x.ShowMel)
+            .Subscribe(showMel => {
+                Preferences.Default.ShowMel = showMel;
                 Preferences.Save();
             });
             ShowPhoneme = Preferences.Default.ShowPhoneme;

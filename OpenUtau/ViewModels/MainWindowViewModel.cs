@@ -23,6 +23,8 @@ namespace OpenUtau.App.ViewModels {
         public ReactiveCommand<UPart, RxVoid>? PartGotoFileCommand { get; set; }
         public ReactiveCommand<UPart, RxVoid>? PartReplaceAudioCommand { get; set; }
         public ReactiveCommand<UPart, RxVoid>? PartTranscribeCommand { get; set; }
+        public ReactiveCommand<UPart, RxVoid>? PartToggleMelCommand { get; set; }
+        public bool IsMelShown { get; set; }
         public ReactiveCommand<UPart, RxVoid>? PartMergeCommand { get; set; }
         public ReactiveCommand<UPart, RxVoid>? PartSplitCommand { get; set; }
         public IEnumerable<MenuItemViewModel> PartApplyPitchMenuItems { get; set; } = new List<MenuItemViewModel>();

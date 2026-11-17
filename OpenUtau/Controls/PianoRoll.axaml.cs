@@ -1989,6 +1989,13 @@ namespace OpenUtau.App.Controls {
                         return true;
                     }
                     break;
+                case Key.G:
+                    // toggle show mel spectrogram
+                    if (isNone) {
+                        notesVm.ShowMel = !notesVm.ShowMel;
+                        return true;
+                    }
+                    break;
                 case Key.W:
                     // toggle show waveform
                     if (isNone) {

@@ -83,6 +83,7 @@
   <system:String x:Key="context.part.replaceaudio">Reselect audio file</system:String>
   <system:String x:Key="context.part.split">Split part at playhead</system:String>
   <system:String x:Key="context.part.transcribe">Transcribe audio to create a note part</system:String>
+  <system:String x:Key="context.part.showmel">Show on mel spectrogram</system:String>
   <system:String x:Key="context.part.transcribing">Transcribing</system:String>
   <system:String x:Key="context.pitch.easein">Ease in</system:String>
   <system:String x:Key="context.pitch.easeinout">Ease in/out</system:String>
@@ -705,6 +706,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.tone">Toggle Note Tone (Y)</system:String>
   <system:String x:Key="pianoroll.toggle.vibrato">View Vibrato (U)</system:String>
   <system:String x:Key="pianoroll.toggle.waveform">View Waveform (W)</system:String>
+  <system:String x:Key="pianoroll.toggle.mel">View Mel Spectrogram (G)</system:String>
   <system:String x:Key="pianoroll.tool.curve.cursor">Cursor Tool
     Left click to select</system:String>
   <system:String x:Key="pianoroll.tool.curve.pen">Pen Tool
@@ -793,6 +795,13 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.degree.off">Off</system:String>
   <system:String x:Key="prefs.appearance.degree.solfege">Solfège (do re mi fa sol la ti)</system:String>
   <system:String x:Key="prefs.appearance.detachpianoroll">Show piano roll in separate window</system:String>
+  <system:String x:Key="prefs.appearance.mel.colormap">Mel spectrogram colormap</system:String>
+  <system:String x:Key="prefs.appearance.mel.opacity">Mel spectrogram opacity</system:String>
+  <system:String x:Key="prefs.appearance.mel.mindb">Mel spectrogram minimum level (dB)</system:String>
+  <system:String x:Key="prefs.appearance.mel.maxdb">Mel spectrogram maximum level (dB)</system:String>
+  <system:String x:Key="prefs.appearance.mel.fft">Mel spectrogram FFT size (larger: finer pitch, blurrier time)</system:String>
+  <system:String x:Key="prefs.appearance.mel.hop">Mel spectrogram time step (smaller: finer time, heavier)</system:String>
+  <system:String x:Key="prefs.appearance.mel.bands">Mel spectrogram rows (more: finer pitch, more memory)</system:String>
   <system:String x:Key="prefs.appearance.diffsingerlangcodehide">Hide language prefix from phoneme editor</system:String>
   <system:String x:Key="prefs.appearance.lang">Language</system:String>
   <system:String x:Key="prefs.appearance.notehoverglow">Note hover glow</system:String>

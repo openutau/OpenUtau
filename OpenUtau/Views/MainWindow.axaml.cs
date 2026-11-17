@@ -63,6 +63,7 @@ namespace OpenUtau.App.Views {
         private readonly ReactiveCommand<UPart, RxVoid> PartGotoFileCommand;
         private readonly ReactiveCommand<UPart, RxVoid> PartReplaceAudioCommand;
         private readonly ReactiveCommand<UPart, RxVoid> PartTranscribeCommand;
+        private readonly ReactiveCommand<UPart, RxVoid> PartToggleMelCommand;
         private readonly ReactiveCommand<UPart, RxVoid> PartMergeCommand;
         private readonly ReactiveCommand<UPart, RxVoid> PartSplitCommand;
 
@@ -121,6 +122,11 @@ namespace OpenUtau.App.Views {
             PartGotoFileCommand = ReactiveCommand.Create<UPart>(part => GotoFile(part));
             PartReplaceAudioCommand = ReactiveCommand.Create<UPart>(part => ReplaceAudio(part));
             PartTranscribeCommand = ReactiveCommand.Create<UPart>(part => Transcribe(part));
+            PartToggleMelCommand = ReactiveCommand.Create<UPart>(part => {
+                if (part is UWavePart wavePart) {
+                    MelOverlay.Inst.Toggle(wavePart);
+                }
+            });
             PartMergeCommand = ReactiveCommand.Create<UPart>(part => MergePart(part));
             PartSplitCommand = ReactiveCommand.Create<UPart>(async part =>  await SplitPart(part));
 
@@ -1329,6 +1335,8 @@ namespace OpenUtau.App.Views {
                             PartReplaceAudioCommand = PartReplaceAudioCommand,
                             PartRenameCommand = PartRenameCommand,
                             PartTranscribeCommand = PartTranscribeCommand,
+                            PartToggleMelCommand = PartToggleMelCommand,
+                            IsMelShown = MelOverlay.Inst.IsShown(hitPartControl.part),
                             PartMergeCommand = PartMergeCommand,
                             PartSplitCommand = PartSplitCommand
                         };

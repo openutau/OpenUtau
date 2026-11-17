@@ -449,6 +449,12 @@
                           IsVisible="{Binding IsWavePart}"
                           Command="{Binding PartTranscribeCommand}"
                           CommandParameter="{Binding Part}"/>
+                <MenuItem Header="{DynamicResource context.part.showmel}"
+                          IsVisible="{Binding IsWavePart}"
+                          ToggleType="CheckBox"
+                          IsChecked="{Binding IsMelShown, Mode=OneWay}"
+                          Command="{Binding PartToggleMelCommand}"
+                          CommandParameter="{Binding Part}"/>
                 <MenuItem Header="{DynamicResource context.part.rename}"
                           IsVisible="{Binding IsVoicePart}"
                           Command="{Binding PartRenameCommand}"

@@ -155,6 +155,13 @@
       <Canvas Name="PortraitCanvas" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" IsHitTestVisible="False">
         <Image Name="PortraitImage" Source="{Binding NotesViewModel.Portrait}" OpacityMask="{Binding NotesViewModel.PortraitMask}" Stretch="None"/>
       </Canvas>
+      <c:MelSpectrogramImage Grid.Row="3" Grid.Column="1" IsHitTestVisible="False"
+                             DataContext="{Binding NotesViewModel, Mode=OneWay}"
+                             TickWidth="{Binding TickWidth, Mode=OneWay}"
+                             TickOffset="{Binding TickOffset, Mode=OneWay}"
+                             TrackHeight="{Binding TrackHeight, Mode=OneWay}"
+                             TrackOffset="{Binding TrackOffset, Mode=OneWay}"
+                             ShowMel="{Binding ShowMel, Mode=OneWay}"/>
       <Border Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
               Margin="0,0,0,60" Height="60" IsHitTestVisible="False">
         <c:WaveformImage DataContext="{Binding NotesViewModel, Mode=OneWay}"
@@ -464,6 +471,19 @@
                     <TransformGroup>
                       <ScaleTransform ScaleX=".67" ScaleY=".67" />
                       <TranslateTransform X="-2" Y="-2"/>
+                    </TransformGroup>
+                  </Path.RenderTransform>
+                </Path>
+              </Grid>
+            </ToggleButton>
+            <ToggleButton Classes="toolbar" Margin="0" Padding="1" Height="20" Width="20" IsChecked="{Binding NotesViewModel.ShowMel}"
+                          ToolTip.Tip="{DynamicResource pianoroll.toggle.mel}">
+              <Grid Width="18" Height="18">
+                <Path Classes="filled" Data="M 11.94 1.93 C 10.15 -0.29 8.33 -0.45 6.23 1.46 C 5.46 2.17 4.42 3.24 3.3 3.35 C 2.16 3.46 1.08 2.42 0.33 1.7 C 0.09 1.51 -0.22 1.83 -0.03 2.07 C 0.88 2.95 2.17 4.08 3.54 3.83 C 4.66 3.63 5.65 2.69 6.45 1.95 C 7.03 1.42 7.83 0.86 8.63 0.69 C 9.82 0.43 10.86 1.41 11.54 2.25 C 11.76 2.44 12.08 2.19 11.94 1.93 Z M 11.99 3.4 C 10.17 1.14 8.32 0.96 6.18 2.91 C 5.43 3.59 4.37 4.68 3.29 4.78 C 2.19 4.89 1.25 3.96 0.52 3.26 C 0.17 2.93 -0.33 3.45 0.02 3.78 C 0.97 4.68 2.15 5.73 3.55 5.47 C 4.71 5.26 5.75 4.29 6.58 3.53 C 7.13 3.03 7.9 2.5 8.64 2.33 C 9.81 2.06 10.77 3.02 11.43 3.85 C 11.73 4.18 12.25 3.77 11.99 3.4 Z M 11.94 5.65 C 11.03 4.53 9.75 3.47 8.22 3.84 C 7.35 4.05 6.64 4.63 6 5.22 C 5.3 5.87 4.48 6.89 3.46 6.99 C 2.39 7.1 1.39 6.15 0.69 5.48 C 0.25 5.05 -0.4 5.71 0.04 6.14 C 1.04 7.11 2.4 8.21 3.9 7.85 C 4.95 7.6 5.73 6.75 6.49 6.04 C 7.08 5.49 7.78 4.84 8.61 4.71 C 9.7 4.53 10.6 5.46 11.22 6.23 C 11.61 6.71 12.33 6.13 11.94 5.65 Z M 11.98 9.27 C 10.13 6.98 8.27 6.75 6.08 8.73 C 5.38 9.37 4.45 10.52 3.43 10.59 C 2.38 10.67 1.41 9.76 0.72 9.1 C 0.24 8.77 -0.34 9.37 0.01 9.84 C 1.05 10.84 2.46 11.96 4.01 11.54 C 5.02 11.26 5.75 10.45 6.5 9.76 C 7.12 9.18 7.88 8.47 8.77 8.39 C 9.77 8.31 10.61 9.22 11.18 9.92 C 11.62 10.34 12.3 9.79 11.98 9.27 Z">
+                  <Path.RenderTransform>
+                    <TransformGroup>
+                      <ScaleTransform ScaleX="1" ScaleY="1" />
+                      <TranslateTransform X="3.5" Y="3.5"/>
                     </TransformGroup>
                   </Path.RenderTransform>
                 </Path>
