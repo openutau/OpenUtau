@@ -1695,9 +1695,8 @@ namespace OpenUtau.Plugin.Builtin {
             foreach (var line in dictionaryText.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries)) {
                 if (line.StartsWith(";;;")) continue;
                 var parts = line.Trim().Split(wordSeparator, StringSplitOptions.None);
-                if (parts.Length != 2) {
-                    continue;
-                }
+                if (parts.Length != 2) continue;
+
                 string key = parts[0];
                 var values = GetDictionaryWordPhonemes(parts[1]).Select(
                         n => replacements != null && replacements.ContainsKey(n) ? replacements[n] : n);
@@ -2023,83 +2022,84 @@ namespace OpenUtau.Plugin.Builtin {
                 
                 foreach (var rule in validRules) {
                     List<string> fromArray = rule.FromList;
+                    if (fromArray == null || fromArray.Count == 0 || idx + fromArray.Count > inputPhonemes.Count) continue;
                     
-                    if (fromArray != null && fromArray.Count > 0 && idx + fromArray.Count <= inputPhonemes.Count) {
-                        bool match = true;
-                        var captures = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+                    bool match = true;
+                    var captures = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+                    
+                    for (int j = 0; j < fromArray.Count; j++) {
+                        string rulePh = fromArray[j];
+                        string actualPh = inputPhonemes[idx + j];
                         
-                        for (int j = 0; j < fromArray.Count; j++) {
-                            string rulePh = fromArray[j];
-                            string actualPh = inputPhonemes[idx + j];
-                            
-                            string cleanRulePh = rulePh.Trim('(', ')');
-                            string baseRulePh = cleanRulePh.Split(new[] { '!', '=', '&' })[0];
-                            
-                            if (IsGroupKeyword(baseRulePh)) {
-                                if (IsGroupMatch(rulePh, actualPh)) {
-                                    if (!captures.ContainsKey(baseRulePh)) captures[baseRulePh] = new List<string>();
-                                    captures[baseRulePh].Add(actualPh);
-                                } else {
-                                    match = false; break;
-                                }
-                            } else if (!string.Equals(rulePh, actualPh, StringComparison.Ordinal)) {
-                                match = false; break;
-                            }
+                        string cleanRulePh = rulePh.Trim('(', ')');
+                        string baseRulePh = cleanRulePh.Split(['!', '=', '&'])[0];
+                        if (!IsGroupKeyword(baseRulePh) && !string.Equals(rulePh, actualPh, StringComparison.Ordinal)) {
+                            match = false; break;                            
                         }
-                        
-                        if (match) {
-                            List<string> toArray = rule.ToList;
 
-                            if (toArray != null && toArray.Count > 0) {
-                                var captureIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-                                
-                                foreach (string toPh in toArray) {
-                                    // Split by + for concatenation
-                                    string[] parts = toPh.Split('+');
-                                    string[] cleanParts = new string[parts.Length];
-                                    string? baseGroupTo = null;
+                        if (IsGroupKeyword(baseRulePh)) {
+                            if (!IsGroupMatch(rulePh, actualPh)) { match = false; break; }
+                            //IsGroupMatch
 
-                                    for (int k = 0; k < parts.Length; k++) {
-                                        // Strip parenthesis to find the base group cleanly
-                                        string partNoParens = parts[k].Trim('(', ')');
-                                        int cutoff = partNoParens.IndexOfAny(new[] { '!', '=', '&' });
-                                        string potentialGroup = cutoff >= 0 ? partNoParens.Substring(0, cutoff) : partNoParens;
-                                        
-                                        if (baseGroupTo == null && IsGroupKeyword(potentialGroup)) {
-                                            baseGroupTo = potentialGroup;
-                                            cleanParts[k] = potentialGroup; // Store just the base group name
-                                        } else {
-                                            cleanParts[k] = partNoParens; // Store literals
-                                        }
-                                    }
-
-                                    if (baseGroupTo != null && captures.ContainsKey(baseGroupTo) && captures[baseGroupTo].Count > 0) {
-                                        if (!captureIndices.ContainsKey(baseGroupTo)) captureIndices[baseGroupTo] = 0;
-                                        int cIdx = captureIndices[baseGroupTo];
-                                        if (cIdx >= captures[baseGroupTo].Count) cIdx = captures[baseGroupTo].Count - 1;
-                                        
-                                        string capturedPhoneme = captures[baseGroupTo][cIdx];
-                                        
-                                        string reconstructed = "";
-                                        for (int k = 0; k < cleanParts.Length; k++) {
-                                            if (string.Equals(cleanParts[k], baseGroupTo, StringComparison.Ordinal)) {
-                                                reconstructed += capturedPhoneme;
-                                            } else {
-                                                reconstructed += cleanParts[k]; 
-                                            }
-                                        }
-                                        finalPhonemes.Add(reconstructed);
-                                        captureIndices[baseGroupTo]++;
-                                    } else {
-                                        finalPhonemes.Add(string.Join("", cleanParts));
-                                    }
-                                }
-                            }
-                            
+                            if (!captures.ContainsKey(baseRulePh)) captures[baseRulePh] = new List<string>();
+                            captures[baseRulePh].Add(actualPh);
+                        }
+                    }
+                    
+                    if (match) {
+                        List<string> toArray = rule.ToList;
+                        if (toArray == null || toArray.Count == 0) {
                             idx += fromArray.Count;
                             replaced = true;
-                            break;
+                            break;                                
                         }
+                        var captureIndices = new Dictionary<string, int>(StringComparer.Ordinal);
+                        
+                        foreach (string toPh in toArray) {
+                            // Split by + for concatenation
+                            string[] parts = toPh.Split('+');
+                            string[] cleanParts = new string[parts.Length];
+                            string? baseGroupTo = null;
+
+                            for (int k = 0; k < parts.Length; k++) {
+                                // Strip parenthesis to find the base group cleanly
+                                string partNoParens = parts[k].Trim('(', ')');
+                                int cutoff = partNoParens.IndexOfAny(['!', '=', '&']);
+                                string potentialGroup = cutoff >= 0 ? partNoParens.Substring(0, cutoff) : partNoParens;
+                                
+                                if (baseGroupTo == null && IsGroupKeyword(potentialGroup)) {
+                                    baseGroupTo = potentialGroup;
+                                    cleanParts[k] = potentialGroup; // Store just the base group name
+                                } else {
+                                    cleanParts[k] = partNoParens; // Store literals
+                                }
+                            }
+                            if (baseGroupTo == null || !captures.TryGetValue(baseGroupTo, out var value) || value.Count <= 0) {
+                                finalPhonemes.Add(string.Join("", cleanParts));
+                                continue;                                
+                            }
+
+                            if (!captureIndices.ContainsKey(baseGroupTo)) captureIndices[baseGroupTo] = 0;
+                            int cIdx = captureIndices[baseGroupTo];
+                            if (cIdx >= captures[baseGroupTo].Count) cIdx = captures[baseGroupTo].Count - 1;
+                            
+                            string capturedPhoneme = captures[baseGroupTo][cIdx];
+                            
+                            string reconstructed = "";
+                            for (int k = 0; k < cleanParts.Length; k++) {
+                                if (string.Equals(cleanParts[k], baseGroupTo, StringComparison.Ordinal)) {
+                                    reconstructed += capturedPhoneme;
+                                } else {
+                                    reconstructed += cleanParts[k]; 
+                                }
+                            }
+                            finalPhonemes.Add(reconstructed);
+                            captureIndices[baseGroupTo]++;
+                        }
+                    
+                        idx += fromArray.Count;
+                        replaced = true;
+                        break;
                     }
                 }
 
@@ -2115,48 +2115,49 @@ namespace OpenUtau.Plugin.Builtin {
                         string cleanRulePh = rulePh.Trim('(', ')');
                         string baseRulePh = cleanRulePh.Split(['!', '=', '&'])[0];
 
-                        if (IsGroupKeyword(baseRulePh) ? IsGroupMatch(rulePh, currentPhoneme) : string.Equals(rulePh, currentPhoneme, StringComparison.Ordinal)) {
-                            
-                            List<string> toArray = rule.ToList;
+                        if (!IsGroupKeyword(baseRulePh) ? !IsGroupMatch(rulePh, currentPhoneme) : !string.Equals(rulePh, currentPhoneme, StringComparison.Ordinal)) continue;
+                        List<string> toArray = rule.ToList;
+                        if (toArray == null || toArray.Count == 0) continue;
 
-                            if (toArray != null && toArray.Count > 0) {
-                                foreach(string toPh in toArray) {
-                                    string[] parts = toPh.Split('+');
-                                    string[] cleanParts = new string[parts.Length];
-                                    string? baseGroupTo = null;
+                        foreach(string toPh in toArray) {
+                            string[] parts = toPh.Split('+');
+                            string[] cleanParts = new string[parts.Length];
+                            string? baseGroupTo = null;
 
-                                    for (int k = 0; k < parts.Length; k++) {
-                                        string partNoParens = parts[k].Trim('(', ')');
-                                        int cutoff = partNoParens.IndexOfAny(new[] { '!', '=', '&' });
-                                        string potentialGroup = cutoff >= 0 ? partNoParens.Substring(0, cutoff) : partNoParens;
-                                        
-                                        if (baseGroupTo == null && IsGroupKeyword(potentialGroup)) {
-                                            baseGroupTo = potentialGroup;
-                                            cleanParts[k] = potentialGroup;
-                                        } else {
-                                            cleanParts[k] = partNoParens;
-                                        }
-                                    }
-
-                                    if (baseGroupTo != null) {
-                                        string reconstructed = "";
-                                        for (int k = 0; k < cleanParts.Length; k++) {
-                                            if (string.Equals(cleanParts[k], baseGroupTo, StringComparison.Ordinal)) {
-                                                reconstructed += currentPhoneme;
-                                            } else {
-                                                reconstructed += cleanParts[k];
-                                            }
-                                        }
-                                        finalPhonemes.Add(reconstructed);
-                                    } else {
-                                        finalPhonemes.Add(string.Join("", cleanParts));
-                                    }
+                            for (int k = 0; k < parts.Length; k++) {
+                                string partNoParens = parts[k].Trim('(', ')');
+                                int cutoff = partNoParens.IndexOfAny(['!', '=', '&']);
+                                string potentialGroup = cutoff >= 0 ? partNoParens.Substring(0, cutoff) : partNoParens;
+                                
+                                if (baseGroupTo == null && IsGroupKeyword(potentialGroup)) {
+                                    baseGroupTo = potentialGroup;
+                                    cleanParts[k] = potentialGroup;
+                                } else {
+                                    cleanParts[k] = partNoParens;
                                 }
-                                singleReplaced = true;
-                                break;
                             }
+
+                            if (baseGroupTo == null) {
+                                finalPhonemes.Add(string.Join("", cleanParts));
+                            }
+
+                            string reconstructed = "";
+                            for (int k = 0; k < cleanParts.Length; k++) {
+                                if (string.Equals(cleanParts[k], baseGroupTo, StringComparison.Ordinal)) {
+                                    reconstructed += currentPhoneme;
+                                } else {
+                                    reconstructed += cleanParts[k];
+                                }
+                            }
+                            finalPhonemes.Add(reconstructed);
                         }
+
+                        singleReplaced = true;
+                        break;
                     }
+
+
+
                     if (!singleReplaced) finalPhonemes.Add(inputPhonemes[idx]);
                     idx++;
                 } else if (!replaced) {
@@ -2398,69 +2399,74 @@ namespace OpenUtau.Plugin.Builtin {
                 var globalIndex = globalStartIndex + phonemeI;
                 var validatedAlias = phonemeSymbols[phonemeI];
                 var pAttr = attributes?.FirstOrDefault(a => a.index == globalIndex) ?? default;
-
-                if (validatedAlias != null) {
-                    var exprList = new List<PhonemeExpression>();
-                    if (pAttr.consonantStretchRatio.HasValue) {
-                        float vel = (float)(100.0 - 100.0 * Math.Log2(pAttr.consonantStretchRatio.Value));
-                        exprList.Add(new PhonemeExpression { abbr = "vel", value = vel });
-                    }
-                    if (pAttr.alternate.HasValue && pAttr.alternate.Value > 0) {
-                        exprList.Add(new PhonemeExpression { abbr = "alt", value = pAttr.alternate.Value });
-                    }
-
-                    phonemes[phonemeI] = new Phoneme {
-                        phoneme = validatedAlias,
-                        index = globalIndex,
-                        expressions = exprList.Count > 0 ? exprList : null
-                    };
-                    
-                    if (i == 0) {
-                        if (isEnding) {
-                            double baseLengthMs;
-                            double stretch = pAttr.consonantStretchRatio ?? 1.0;
-                            
-                            double overrideRatio = phonemes[phonemeI].phoneme != null ? GetTransitionMultiplier(phonemes[phonemeI].phoneme) : 1.0;
-
-                            if (overrideRatio != 1.0) {
-                                // YAML Override active: Use the multiplier and bypass NoGap entirely
-                                baseLengthMs = GetTransitionBasicLengthMsByConstant();
-                                phonemes[phonemeI].position = MsToTick(baseLengthMs * stretch * overrideRatio);
-                            } else {
-                                // Default behavior
-                                baseLengthMs = GetTransitionBasicLengthMsByOto(phonemes[phonemeI].phoneme, tone, pAttr);
-
-                                if (NoGap) {
-                                    // Snapped mode: Use a visible 50-tick anchor capped at 1/3 of the note
-                                    int targetTicks = 50; 
-                                    int maxAllowed = containerLength / 3;
-                                    phonemes[phonemeI].position = System.Math.Min(targetTicks, maxAllowed);
-                                } else {
-                                    // Natural mode: Use the full Preutterance
-                                    phonemes[phonemeI].position = MsToTick(baseLengthMs);
-                                }
-                            }
-                        } else {
-                            int sum = 0;
-                            for (int k = 1; k <= anchorI; k++) {
-                                sum += trueLengths[k];
-                            }
-                            phonemes[phonemeI].position = -sum;
-                        }
-                    } else {
-                        // VC transitions keep their full stretched length
-                        phonemes[phonemeI].position = trueLengths[i];
-                    }
-                } else {
+                
+                if (validatedAlias == null) {
                     // Initialize empty slots properly to avoid null crashes
                     phonemes[phonemeI] = new Phoneme {
                         phoneme = null,
                         position = 0,
                         index = globalIndex
                     };
+                    continue;
                 }
-            }
-            
+                // validatedAlias != null
+
+                var exprList = new List<PhonemeExpression>();
+                if (pAttr.consonantStretchRatio.HasValue) {
+                    float vel = (float)(100.0 - 100.0 * Math.Log2(pAttr.consonantStretchRatio.Value));
+                    exprList.Add(new PhonemeExpression { abbr = "vel", value = vel });
+                }
+                if (pAttr.alternate.HasValue && pAttr.alternate.Value > 0) {
+                    exprList.Add(new PhonemeExpression { abbr = "alt", value = pAttr.alternate.Value });
+                }
+
+                phonemes[phonemeI] = new Phoneme {
+                    phoneme = validatedAlias,
+                    index = globalIndex,
+                    expressions = exprList.Count > 0 ? exprList : null
+                };
+
+                if (i != 0) {
+                    // VC transitions keep their full stretched length
+                    phonemes[phonemeI].position = trueLengths[i];
+                    continue;                    
+                }
+                // i = 0
+
+                if (!isEnding) {
+                    int sum = 0;
+                    for (int k = 1; k <= anchorI; k++) {
+                        sum += trueLengths[k];
+                    }
+                    phonemes[phonemeI].position = -sum;
+                    continue;
+                }
+                // isEnding
+
+                double baseLengthMs;
+                double stretch = pAttr.consonantStretchRatio ?? 1.0;
+                
+                double overrideRatio = phonemes[phonemeI].phoneme != null ? GetTransitionMultiplier(phonemes[phonemeI].phoneme) : 1.0;
+
+                if (overrideRatio != 1.0) {
+                    // YAML Override active: Use the multiplier and bypass NoGap entirely
+                    baseLengthMs = GetTransitionBasicLengthMsByConstant();
+                    phonemes[phonemeI].position = MsToTick(baseLengthMs * stretch * overrideRatio);
+                } else {
+                    // Default behavior
+                    baseLengthMs = GetTransitionBasicLengthMsByOto(phonemes[phonemeI].phoneme, tone, pAttr);
+
+                    if (NoGap) {
+                        // Snapped mode: Use a visible 50-tick anchor capped at 1/3 of the note
+                        int targetTicks = 50; 
+                        int maxAllowed = containerLength / 3;
+                        phonemes[phonemeI].position = System.Math.Min(targetTicks, maxAllowed);
+                        continue;
+                    }
+                    // Natural mode: Use the full Preutterance
+                    phonemes[phonemeI].position = MsToTick(baseLengthMs);
+                }
+            }            
             return ScalePhonemes(phonemes, position, isEnding ? phonemeSymbols.Count - 1 : phonemeSymbols.Count - 1, containerLength);
         }
 
