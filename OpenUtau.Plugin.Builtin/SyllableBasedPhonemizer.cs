@@ -1692,10 +1692,8 @@ namespace OpenUtau.Plugin.Builtin {
         /// <param name="builder"></param>
         protected virtual void ParseDictionary(string dictionaryText, G2pDictionary.Builder builder) {
             var replacements = GetDictionaryPhonemesReplacement();
-            foreach (var line in dictionaryText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)) {
-                if (line.StartsWith(";;;")) {
-                    continue;
-                }
+            foreach (var line in dictionaryText.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries)) {
+                if (line.StartsWith(";;;")) continue;
                 var parts = line.Trim().Split(wordSeparator, StringSplitOptions.None);
                 if (parts.Length != 2) {
                     continue;
@@ -2115,7 +2113,7 @@ namespace OpenUtau.Plugin.Builtin {
 
                         string rulePh = fromArray[0];
                         string cleanRulePh = rulePh.Trim('(', ')');
-                        string baseRulePh = cleanRulePh.Split(new[] { '!', '=', '&' })[0];
+                        string baseRulePh = cleanRulePh.Split(['!', '=', '&'])[0];
 
                         if (IsGroupKeyword(baseRulePh) ? IsGroupMatch(rulePh, currentPhoneme) : string.Equals(rulePh, currentPhoneme, StringComparison.Ordinal)) {
                             
