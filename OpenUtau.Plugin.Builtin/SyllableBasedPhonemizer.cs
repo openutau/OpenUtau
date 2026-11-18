@@ -939,7 +939,7 @@ namespace OpenUtau.Plugin.Builtin {
                                 }
                             }
                         }
-                        #pragma warning disable CS8619,CS8604
+                        #pragma warning restore CS8619,CS8604
                         if (data?.isglides != null) enableGlides = data.isglides.Value; 
 
                         // OVERRIDES & DICTIONARIES (Singer keys overwrite global keys)
