@@ -129,8 +129,8 @@ namespace OpenUtau.Plugin.Builtin {
             return new IG2p[] { new ArpabetG2p() };
         }
 
-        protected override string[] GetSymbols(Note note) {
-            string[] original = base.GetSymbols(note);
+        protected override string[]? GetSymbols(Note note) {
+            string[]? original = base.GetSymbols(note);
             if (tails.Contains(note.lyric)) {
                 return new string[] { note.lyric };
             }
@@ -300,14 +300,14 @@ namespace OpenUtau.Plugin.Builtin {
             return Math.Clamp(finalConvel, velMin, velMax);
         }
 
-        private (UNote un, UNote unNext) UNoteAt(int absPos) {
+        private (UNote? un, UNote? unNext) UNoteAt(int absPos) {
             if (unotes.Count == 0) return (null, null);
             int relPos = absPos - partPos;
             var un = unotes.LastOrDefault(n => n.position <= relPos) ?? unotes[0];
             int idx = unotes.IndexOf(un);
             return (un, idx + 1 < unotes.Count ? unotes[idx + 1] : null);
         }
-        
+                
         // Automatic convel
         public override Result Process(Note[] notes, Note? prev, Note? next, Note? prevNeighbour, Note? nextNeighbour, Note[] prevs) {
             var result = base.Process(notes, prev, next, prevNeighbour, nextNeighbour, prevs);
@@ -408,8 +408,9 @@ namespace OpenUtau.Plugin.Builtin {
             int prevWordConsonantsCount = syllable.prevWordConsonantsCount;
             int lastCPrevWord = syllable.prevWordConsonantsCount;
 
-            string basePhoneme = null;
+            string? basePhoneme = null;
             var phonemes = new List<string>();
+            
             // --------------------------- STARTING V ------------------------------- //
             if (syllable.IsStartingV) {
                 // if starting V -> -V
