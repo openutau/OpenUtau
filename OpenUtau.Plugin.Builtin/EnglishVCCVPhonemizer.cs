@@ -223,19 +223,19 @@ namespace OpenUtau.Plugin.Builtin {
             if (part != null && part.notes.Count > 0) {
                 partPos = part.position;
                 unotes = part.notes.OrderBy(n => n.position).ToList();
-            } else {
-                // Test fixture fallback: create synthetic UNotes from the passed Note[][]
-                partPos = 0;
-                unotes = notes.SelectMany(group => group)
-                              .Select(n => new UNote {
-                                  position = n.position,
-                                  duration = n.duration,
-                                  tone = n.tone,
-                                  lyric = n.lyric
-                              })
-                              .OrderBy(n => n.position)
-                              .ToList();
+                return;
             }
+            // Test fixture fallback: create synthetic UNotes from the passed Note[][]
+            partPos = 0;
+            unotes = notes.SelectMany(group => group)
+                            .Select(n => new UNote {
+                                position = n.position,
+                                duration = n.duration,
+                                tone = n.tone,
+                                lyric = n.lyric
+                            })
+                            .OrderBy(n => n.position)
+                            .ToList();
         }
         private (Regex pattern, string type)[] patterns;
 
@@ -357,29 +357,38 @@ namespace OpenUtau.Plugin.Builtin {
                     }
                 }
 
+                if (isManualOverride) {
+                    phoneme.expressions = new List<PhonemeExpression> {
+                        new PhonemeExpression { abbr = "vel", value = vel }
+                    };
+                    result.phonemes[i] = phoneme;
+
+                    // Transitions inherit this phoneme's velocity as their preceding anchor
+                    prevVel = vel;
+                    continue;    
+                }
+
                 // Automatic ConVel assignment
-                if (!isManualOverride) {
-                    string type = Classify(phoneme.phoneme);
-                    switch (type) {
-                        case "V C": case "VC": case "VC-":
-                        case "VCC": case "VCC-": case "codaCC": case "C C":
-                        case "VC C": case "V-": case "CC-": 
-                            var n = GetNoteForPhoneme(phoneme, notes);
-                            if (n.lyric == "+" || n.lyric == "+~" || n.lyric.StartsWith("+")) {
-                                vel = noteVel;
-                                break;
-                            }
-                            vel = prevVel ?? noteVel;
-                            break;
-
-                        case "onsetCC": case "-CC":
-                            vel = nextVel ?? noteVel;
-                            break;
-
-                        default:
+                string type = Classify(phoneme.phoneme);
+                switch (type) {
+                    case "V C": case "VC": case "VC-":
+                    case "VCC": case "VCC-": case "codaCC": case "C C":
+                    case "VC C": case "V-": case "CC-": 
+                        var n = GetNoteForPhoneme(phoneme, notes);
+                        if (n.lyric == "+" || n.lyric == "+~" || n.lyric.StartsWith("+")) {
                             vel = noteVel;
                             break;
-                    }
+                        }
+                        vel = prevVel ?? noteVel;
+                        break;
+
+                    case "onsetCC": case "-CC":
+                        vel = nextVel ?? noteVel;
+                        break;
+
+                    default:
+                        vel = noteVel;
+                        break;
                 }
 
                 phoneme.expressions = new List<PhonemeExpression> {
