@@ -57,6 +57,11 @@ namespace OpenUtau.Core.Voicevox {
         public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var task = Task.Run(() => {
                 lock (lockObj) {
+                    var singer = phrase.singer as VoicevoxSinger;
+                    var config = singer?.voicevoxConfig;
+                    if (config == null || singer == null) {
+                        return new RenderResult();
+                    }
                     if (cancellation.IsCancellationRequested) {
                         return new RenderResult();
                     }
@@ -67,13 +72,11 @@ namespace OpenUtau.Core.Voicevox {
                     phrase.AddCacheFile(wavPath);
                     var result = Layout(phrase);
                     if (!File.Exists(wavPath)) {
-                        var singer = phrase.singer as VoicevoxSinger;
-                        if (singer != null) {
                             if (VoicevoxUtils.dic == null) {
                                 VoicevoxUtils.Loaddic(singer);
                             }
                             try {
-                                VoicevoxSynthParams vsParams = PhraseToVoicevoxSynthParams(phrase, phrase.singer as VoicevoxSinger, false);
+                                VoicevoxSynthParams vsParams = PhraseToVoicevoxSynthParams(phrase, singer, false);
 
                                 int vvTotalFrames = 0;
                                 double frameMs = (1000d / VoicevoxUtils.fps);
@@ -139,7 +142,6 @@ namespace OpenUtau.Core.Voicevox {
                             if (cancellation.IsCancellationRequested) {
                                 return new RenderResult();
                             }
-                        }
                     }
                     progress.Complete(phrase.phones.Length, progressInfo);
                     if (File.Exists(wavPath)) {
@@ -325,7 +327,7 @@ namespace OpenUtau.Core.Voicevox {
                 if (singer != null) {
                     // TODO: Support Teacher Singer in the future
                     // string baseSingerID = VoicevoxUtils.getBaseSingerID(singer);
-                    VoicevoxSynthParams vsParams = PhraseToVoicevoxSynthParams(phrase, phrase.singer as VoicevoxSinger, true);
+                    VoicevoxSynthParams vsParams = PhraseToVoicevoxSynthParams(phrase, singer, true);
                     double frameMs = (1000d / VoicevoxUtils.fps);
                     int vvTotalFrames = 0;
                     vsParams.phonemes.ForEach(x => vvTotalFrames += x.frame_length);
