@@ -130,6 +130,7 @@ namespace OpenUtau.App.Views {
                             string message = ThemeManager.GetString("progress.autosaved");
                             message = string.Format(message, DateTime.Now);
                             DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, message));
+                            viewModel.RaisePropertyChanged(nameof(Title));
                         } else {
                             DocManager.Inst.ExecuteCmd(new ToastNotification("MainWindow", "Failed to autosave", "errors.failed.autosave"));
                         }
