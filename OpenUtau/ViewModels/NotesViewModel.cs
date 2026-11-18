@@ -75,7 +75,8 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial Rect ExpBounds { get; set; }
         [Reactive] public partial string PrimaryKey { get; set; }
         [Reactive] public partial bool PrimaryKeyNotSupported { get; set; }
-        [Reactive] public partial bool ShowCurveToolbar { get; set; }
+        [Reactive] public partial bool ShowToolbar { get; set; }
+        [Reactive] public partial bool ShowCurveTools { get; set; }
         [Reactive] public partial string SecondaryKey { get; set; }
         [Reactive] public partial double ExpTrackHeight { get; set; }
         [Reactive] public partial double ExpShadowOpacity { get; set; }
@@ -183,11 +184,12 @@ namespace OpenUtau.App.ViewModels {
                         } else {
                             ExpTrackHeight = 0;
                         }
-                        ShowCurveToolbar = descriptor.type == UExpressionType.Curve;
+                        ShowToolbar = descriptor.type != UExpressionType.Options && descriptor.type != UExpressionType.MaskedCurve;
+                        ShowCurveTools = descriptor.type == UExpressionType.Curve;
                     } else {
                         ExpTrackHeight = 0;
                         ExpShadowOpacity = 0.3;
-                        ShowCurveToolbar = false;
+                        ShowToolbar = false;
                     }
                 });
             this.WhenAnyValue(x => x.Project)

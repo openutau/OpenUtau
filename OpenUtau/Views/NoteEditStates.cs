@@ -1277,6 +1277,120 @@ namespace OpenUtau.App.Views {
         }
     }
 
+    abstract class PhonemeExpTransformState : NoteEditState {
+        protected readonly UExpressionDescriptor descriptor;
+        private readonly UTrack track;
+        private readonly List<(UPhoneme phoneme, int value)> targets = new List<(UPhoneme, int)>();
+
+        protected override bool ShowValueTip => true;
+        protected override string? commandNameKey => "command.exp.edit";
+
+        public PhonemeExpTransformState(
+            Control control,
+            PianoRollViewModel vm,
+            IValueTip valueTip,
+            UExpressionDescriptor descriptor) : base(control, vm, valueTip) {
+            this.descriptor = descriptor;
+            var notesVm = vm.NotesViewModel;
+            track = notesVm.Project.tracks[notesVm.Part!.trackNo];
+        }
+
+        public override void Begin(IPointer pointer, Point point) {
+            base.Begin(pointer, point);
+            targets.Clear();
+            var notesVm = vm.NotesViewModel;
+            if (notesVm.Part == null || notesVm.Selection.Count == 0) {
+                return;
+            }
+            foreach (var phoneme in notesVm.Part.phonemes) {
+                if (notesVm.Selection.Contains(phoneme.Parent)) {
+                    float value = phoneme.GetExpression(notesVm.Project, track, descriptor.abbr).Item1;
+                    targets.Add((phoneme, (int)value));
+                }
+            }
+            OnBegin(targets.Select(t => t.value).ToList());
+        }
+
+        public override void End(IPointer pointer, Point point) {
+            base.End(pointer, point);
+            targets.Clear();
+        }
+
+        public override void Update(IPointer pointer, Point point) {
+            var notesVm = vm.NotesViewModel;
+            if (notesVm.Part == null || targets.Count == 0) {
+                return;
+            }
+            double deltaValue = PointToValue(point) - PointToValue(startPoint);
+            foreach (var (phoneme, value) in targets) {
+                int newValue = (int)Math.Round(Math.Clamp(
+                    TransformValue(value, deltaValue), descriptor.min, descriptor.max));
+                int currentValue = (int)phoneme.GetExpression(notesVm.Project, track, descriptor.abbr).Item1;
+                if (newValue == currentValue) {
+                    continue;
+                }
+                DocManager.Inst.ExecuteCmd(new SetPhonemeExpressionCommand(
+                    notesVm.Project, track, notesVm.Part, phoneme, descriptor.abbr, newValue));
+            }
+            valueTip.UpdateValueTip(GetValueTip(deltaValue));
+        }
+
+        protected virtual void OnBegin(IReadOnlyList<int> values) { }
+        protected abstract double TransformValue(int value, double deltaValue);
+        protected abstract string GetValueTip(double deltaValue);
+
+        private double PointToValue(Point point) {
+            if (control.Bounds.Height <= 0) {
+                return descriptor.CustomDefaultValue;
+            }
+            return Math.Round(descriptor.min + (descriptor.max - descriptor.min) * (1 - point.Y / control.Bounds.Height));
+        }
+    }
+
+    class PhonemeExpVerticalShiftState : PhonemeExpTransformState {
+        public PhonemeExpVerticalShiftState(
+            Control control,
+            PianoRollViewModel vm,
+            IValueTip valueTip,
+            UExpressionDescriptor descriptor) : base(control, vm, valueTip, descriptor) {
+        }
+
+        protected override double TransformValue(int value, double deltaValue) => value + deltaValue;
+        protected override string GetValueTip(double deltaValue) => $"add:{deltaValue:0}";
+    }
+
+    class PhonemeExpVerticalStretchState : PhonemeExpTransformState {
+        private double center;
+
+        public PhonemeExpVerticalStretchState(
+            Control control,
+            PianoRollViewModel vm,
+            IValueTip valueTip,
+            UExpressionDescriptor descriptor) : base(control, vm, valueTip, descriptor) {
+        }
+
+        protected override void OnBegin(IReadOnlyList<int> values) {
+            center = values.Count == 0
+                ? descriptor.CustomDefaultValue
+                : (values.Min() + values.Max()) / 2;
+        }
+
+        protected override double TransformValue(int value, double deltaValue) {
+            double range = descriptor.max - descriptor.min;
+            if (range <= 0) {
+                return value;
+            }
+            double scale = 1.0 + deltaValue / range;
+            return center + (value - center) * scale;
+        }
+
+        protected override string GetValueTip(double deltaValue) {
+            double range = descriptor.max - descriptor.min;
+            double scale = range <= 0 ? 1.0 : 1.0 + deltaValue / range;
+            return $"scale:{scale:0.00}";
+        }
+    }
+
     class CurveHorizontalShiftState : CurveTransformState {
         public CurveHorizontalShiftState(
             Control control,
