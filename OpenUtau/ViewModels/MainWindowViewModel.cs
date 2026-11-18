@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using DynamicData.Binding;
 using OpenUtau.App.Views;
@@ -248,12 +250,23 @@ namespace OpenUtau.App.ViewModels {
 
 
 
-        public void OpenProject(string[] files) {
+        public async void OpenProject(string[] files) {
             if (files == null) {
                 return;
             }
+
             DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), true, "project"));
             try {
+                if (files.Any(DocManager.IsAutoSaveFile)) {
+                    var app = Application.Current;
+                    if (app?.ApplicationLifetime != null) {
+                        _ = await MessageBox.Show(
+                            ((IClassicDesktopStyleApplicationLifetime) app.ApplicationLifetime).MainWindow!,
+                            ThemeManager.GetString("dialogs.autosave.warning.message"),
+                            ThemeManager.GetString("dialogs.autosave.warning.caption"),
+                            MessageBox.MessageBoxButtons.Ok);
+                    };
+                }
 
                 Core.Format.Formats.LoadProject(files);
                 DocManager.Inst.ExecuteCmd(new VoiceColorRemappingNotification(-1, true));

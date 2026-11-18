@@ -226,6 +226,10 @@ namespace OpenUtau.Core.Util {
             public int MetronomeVolume = 60;
             public int MetronomeHighFrequency = 2200;
             public int MetronomeLowFrequency = 1320;
+            public bool AutosaveEnabled = true;
+            public bool AutosaveInPlace = true; //Autosave triggers save function else creates backup file.
+            public int AutosaveIntervalSec = 30;
+            public bool DeleteAutoSaveOnClose = false;
             public int LockStartTime = 0;
             public int PlaybackAutoScroll = 2;
             public bool ReverseLogOrder = true;

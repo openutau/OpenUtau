@@ -11,6 +11,18 @@ namespace OpenUtau.App.ViewModels {
             }
             return string.Empty;
         }
+
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
+
+    public class AutosaveIntervalConverter : IValueConverter {
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+            if (value is string seconds && int.TryParse(seconds, out int secs)) {
+                return secs < 60 ? $"{secs} s" : $"{secs / 60} min";
+            }
+            return string.Empty;
+        }
+
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
     }
 

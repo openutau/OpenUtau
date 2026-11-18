@@ -237,7 +237,7 @@ namespace OpenUtau.Core {
                 }
                 string dir = untitled
                     ? PathManager.Inst.BackupsPath
-                    : Path.GetDirectoryName(Project.FilePath);
+                    : Path.GetDirectoryName(Project.FilePath) ?? "";
                 string filename = untitled
                     ? "Untitled"
                     : Path.GetFileNameWithoutExtension(Project.FilePath);
@@ -250,34 +250,62 @@ namespace OpenUtau.Core {
             }
         }
 
-        public void AutoSave() {
-            if (Project == null) {
-                return;
+        private static readonly string[] RecoverySuffixes = ["-autosave", "-backup"];
+
+        private string GetAutosavePath() {
+            if (string.IsNullOrEmpty(Project.FilePath)) {
+                Directory.CreateDirectory(PathManager.Inst.BackupsPath);
+                return Path.Join(PathManager.Inst.BackupsPath, "Untitled-autosave.ustx");
             }
+            string dir = Path.GetDirectoryName(Project.FilePath) ?? string.Empty;
+            string filename = Path.GetFileNameWithoutExtension(Project.FilePath);
+            return RecoverySuffixes.Any(suffix => filename.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                ? Project.FilePath
+                : Path.Join(dir, filename + "-autosave.ustx");
+        }
+
+        public static bool IsAutoSaveFile(string filePath) {
+            string fileName = Path.GetFileName(filePath);
+            return RecoverySuffixes.Any(suffix => fileName.EndsWith(suffix + ".ustx", StringComparison.OrdinalIgnoreCase));
+        }
+
+        public bool DeleteAutoSave(string filePath) {
+            try {
+                string backup = GetAutosavePath();
+                if (filePath.Equals(backup)) return false; // do not delete the autosaved file if it is the project's filepath
+
+                Log.Information($"Deleting autosave {backup}.");
+                File.Delete(backup);
+                Log.Information($"Deleted autosave {backup}.");
+            } catch (Exception e) {
+                Log.Error(e, "Autosave could not be deleted.");
+            }
+
+            return true;
+        }
+
+        public bool AutoSave() {
+            if (Project == null) return false;
+            if (!Preferences.Default.AutosaveEnabled) return true;
             if (undoQueue.LastOrDefault() == autosavedPoint) {
                 Log.Information("Autosave skipped.");
-                return;
+                return true;
             }
             try {
-                bool untitled = string.IsNullOrEmpty(Project.FilePath);
-                if (untitled) {
-                    Directory.CreateDirectory(PathManager.Inst.BackupsPath);
-                }
-                string dir = untitled
-                    ? PathManager.Inst.BackupsPath
-                    : Path.GetDirectoryName(Project.FilePath);
-                string filename = untitled
-                    ? "Untitled"
-                    : Path.GetFileNameWithoutExtension(Project.FilePath);
-
-                string backup = Path.Join(dir, filename + "-autosave.ustx");
-                Log.Information($"Autosave {backup}.");
+                string backup = GetAutosavePath();
+                Log.Information("Autosave {backup}.", backup);
                 Format.Ustx.AutoSave(backup, Project);
-                Log.Information($"Autosaved {backup}.");
+                Log.Information("Autosaved {backup}.", backup);
                 autosavedPoint = undoQueue.LastOrDefault();
+                if (backup == Project.FilePath) {
+                    savedPoint = autosavedPoint;
+                    Project.Saved = true;
+                }
             } catch (Exception e) {
                 Log.Error(e, "Autosave failed.");
+                return false;
             }
+            return true;
         }
 
         // Every validate path: rebuild derived data, release unused singers,
@@ -314,6 +342,19 @@ namespace OpenUtau.Core {
                         Format.Ustx.Save(saveProjectNotif.Path, Project);
                     }
                 } else if (cmd is LoadProjectNotification notification) {
+                    if (Preferences.Default.DeleteAutoSaveOnClose) {
+                        string filePath = Project.FilePath;
+
+                        if (string.IsNullOrWhiteSpace(filePath)) {
+                            Log.Warning("Project filepath is empty, preserving autosave file.");
+                            return;
+                        }
+
+                        if (!DeleteAutoSave(filePath)) {
+                            Log.Warning("Project edited is autosaved file, preserving.");
+                        }
+                    }
+
                     undoQueue.Clear();
                     redoQueue.Clear();
                     undoGroup = null;

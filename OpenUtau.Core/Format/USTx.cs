@@ -127,10 +127,14 @@ namespace OpenUtau.Core.Format {
             try {
                 project.ustxVersion = kUstxVersion;
                 project.BeforeSave();
-                File.WriteAllText(filePath, Yaml.DefaultSerializer.Serialize(project), Encoding.UTF8);
+                string tempPath = filePath + ".tmp";
+                File.WriteAllText(tempPath, Yaml.DefaultSerializer.Serialize(project), Encoding.UTF8);
+                File.Move(tempPath, filePath, true);
                 project.AfterSave();
-                Preferences.Default.RecoveryPath = filePath;
-                Preferences.Save();
+                if (filePath != project.FilePath) {
+                    Preferences.Default.RecoveryPath = filePath;
+                    Preferences.Save();
+                }
             } catch (Exception ex) {
                 Log.Error(ex, $"Failed to autosave: {filePath}");
             }
