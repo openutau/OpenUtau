@@ -480,11 +480,12 @@ namespace OpenUtau.Plugin.Builtin {
                 string? line;
                 while ((line = reader.ReadLine()) != null) {
                     var trimmed = line.Trim();
-                    if (trimmed.StartsWith("version:", StringComparison.OrdinalIgnoreCase)) {
-                        var parts = trimmed.Split([':'], 2);
-                        if (parts.Length > 1) {
-                            return parts[1].Trim().Trim('"', '\'');
-                        }
+                    if (!trimmed.StartsWith("version:", StringComparison.OrdinalIgnoreCase)) {
+                        continue;
+                    }
+                    var parts = trimmed.Split([':'], 2);
+                    if (parts.Length > 1) {
+                        return parts[1].Trim().Trim('"', '\'');
                     }
                 }
             } catch {
@@ -532,49 +533,49 @@ namespace OpenUtau.Plugin.Builtin {
 
             bool isOutdated = false;
             string currentVersion = string.Empty;
+            bool filePathExists = File.Exists(filePath);
 
-            if (File.Exists(filePath)) {
-                try {
-                    currentVersion = ReadVersionFast(filePath);
-
-                    if (string.IsNullOrEmpty(currentVersion)) {
-                        string initialBaseline = YamlVersion ?? "1.0";
-
-                        if (System.Version.TryParse(targetVersion, out System.Version? targetV) &&
-                            System.Version.TryParse(initialBaseline, out System.Version? initV)) {
-                            if (targetV > initV) {
-                                isOutdated = true; // Version bump detected in template
-                            }
-                        } else if (!string.IsNullOrEmpty(targetVersion) && 
-                                !string.Equals(targetVersion, initialBaseline, StringComparison.OrdinalIgnoreCase)) {
-                            isOutdated = true;
-                        }
-                    } else if (System.Version.TryParse(currentVersion, out System.Version? currV) &&
-                            System.Version.TryParse(targetVersion, out System.Version? targetV)) {
-                        if (currV < targetV) {
-                            isOutdated = true;
-                        }
-                    } else if (!string.Equals(currentVersion, targetVersion, StringComparison.OrdinalIgnoreCase)) {
-                        isOutdated = true;
-                    }
-                } catch (Exception ex) {
-                    Log.Error(ex, $"[YamlUpdate] Syntax error in '{filePath}'. Skipping auto-update.");
-                    return;
-                }
-            } else if (isGlobal) {
+            if (!filePathExists && !isGlobal) return; //Singer files remain optional
+            if (!filePathExists) { // isGlobal
                 // Initial creation of global template if missing
-                #pragma warning disable
                 try { 
+                    #pragma warning disable //Warning is for intended error to catch
                     string? dir = Path.GetDirectoryName(filePath);
                     if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                     File.WriteAllBytes(filePath, YamlTemplate);
                     Log.Information($"[YamlUpdate] Created new global template at '{filePath}' (v{targetVersion})");
+                    #pragma warning restore
                 } catch (Exception ex) {
                     Log.Error(ex, $"[YamlUpdate] Failed to write global template to '{filePath}'");
                 }
-                return;
-            } else {
-                // Singer files remain optional
+                return;                
+            }
+
+            try { // filePathExists
+                currentVersion = ReadVersionFast(filePath);
+
+                if (string.IsNullOrEmpty(currentVersion)) {
+                    string initialBaseline = YamlVersion ?? "1.0";
+
+                    if (System.Version.TryParse(targetVersion, out System.Version? targetV) &&
+                        System.Version.TryParse(initialBaseline, out System.Version? initV)) {
+                        if (targetV > initV) {
+                            isOutdated = true; // Version bump detected in template
+                        }
+                    } else if (!string.IsNullOrEmpty(targetVersion) && 
+                            !string.Equals(targetVersion, initialBaseline, StringComparison.OrdinalIgnoreCase)) {
+                        isOutdated = true;
+                    }
+                } else if (System.Version.TryParse(currentVersion, out System.Version? currV) &&
+                        System.Version.TryParse(targetVersion, out System.Version? targetV)) {
+                    if (currV < targetV) {
+                        isOutdated = true;
+                    }
+                } else if (!string.Equals(currentVersion, targetVersion, StringComparison.OrdinalIgnoreCase)) {
+                    isOutdated = true;
+                }
+            } catch (Exception ex) {
+                Log.Error(ex, $"[YamlUpdate] Syntax error in '{filePath}'. Skipping auto-update.");
                 return;
             }
 
