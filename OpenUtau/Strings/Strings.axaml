@@ -485,6 +485,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.file.openrecent">Open Recent</system:String>
   <system:String x:Key="menu.file.save">Save</system:String>
   <system:String x:Key="menu.file.saveas">Save As...</system:String>
+  <system:String x:Key="menu.file.saveincremental">Save Incremental</system:String>
   <system:String x:Key="menu.file.savetemplate">Save Template...</system:String>
   <system:String x:Key="menu.help">Help</system:String>
   <system:String x:Key="menu.help.about">About OpenUtau</system:String>

@@ -213,7 +213,7 @@ namespace OpenUtau.App.ViewModels {
                 HasRecovery = true;
                 return;
             }
-          
+
             var args = Environment.GetCommandLineArgs();
             if (args.Length == 2 && File.Exists(args[1])) {
                 try {
@@ -292,6 +292,34 @@ namespace OpenUtau.App.ViewModels {
                 return;
             }
             DocManager.Inst.ExecuteCmd(new SaveProjectNotification(file));
+            this.RaisePropertyChanged(nameof(Title));
+        }
+
+        public void SaveIncremental() {
+            string file = DocManager.Inst.Project.FilePath;
+            if (string.IsNullOrWhiteSpace(file)) return;
+
+            string dir = Path.GetDirectoryName(file) ?? "";
+            string filename = Path.GetFileNameWithoutExtension(file);
+            string[] splitName = filename.Split('-');
+            int count = 0;
+            string leadingSpace = "";
+
+            try {
+                bool result = int.TryParse(splitName.Last(), out count);
+                if (result) {
+                    if (splitName.Last()[0] == ' ') {
+                        leadingSpace = " ";
+                    }
+                    splitName = splitName.SkipLast(1).ToArray();
+                }
+            } catch (Exception) { /* ignored */ }
+
+            filename = string.Join("-", splitName);
+            do count++; while (File.Exists(Path.Join(dir, $"{filename}-{leadingSpace}{count:D3}.ustx")));
+
+            string incremental = Path.Join(dir, $"{filename}-{leadingSpace}{count:D3}.ustx");
+            DocManager.Inst.ExecuteCmd(new SaveProjectNotification(incremental));
             this.RaisePropertyChanged(nameof(Title));
         }
 
