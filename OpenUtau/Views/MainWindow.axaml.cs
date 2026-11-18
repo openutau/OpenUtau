@@ -419,6 +419,19 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        async void OnMenuSaveIncremental(object sender, RoutedEventArgs args) => await SaveIncremental();
+
+        async Task SaveIncremental() {
+            if (!viewModel.ProjectSaved) {
+                await SaveAs();
+            } else {
+                viewModel.SaveIncremental();
+                string message = ThemeManager.GetString("progress.saved");
+                message = string.Format(message, DateTime.Now);
+                DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, message));
+            }
+        }
+
         void OnMenuSaveTemplate(object sender, RoutedEventArgs args) {
             var project = DocManager.Inst.Project;
             var dialog = new TypeInDialog();
@@ -1022,6 +1035,14 @@ namespace OpenUtau.App.Views {
                 switch (args.Key) {
                     case Key.Z: viewModel.Redo(); break;
                     case Key.S: _ = SaveAs(); break;
+                    default:
+                        args.Handled = false;
+                        break;
+                }
+            } else if (args.KeyModifiers == (cmdKey | KeyModifiers.Alt)) {
+                args.Handled = true;
+                switch (args.Key) {
+                    case Key.S: _ = SaveIncremental(); break;
                     default:
                         args.Handled = false;
                         break;
