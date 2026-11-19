@@ -63,7 +63,11 @@ namespace OpenUtau {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) {
                     return "win-arm64";
                 }
+#if ONNXRUNTIME_CUDA
+                return "win-x64-cuda";
+#else
                 return "win-x64";
+#endif
             } else if (IsMacOS()) {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) {
                     return "osx-arm64";

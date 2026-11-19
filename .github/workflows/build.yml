@@ -116,6 +116,7 @@ jobs:
       matrix:
         arch:
           - { name: win-x64, rid: win-x64, arch: x64, os: win, runs-on: windows-latest }
+          - { name: win-x64-cuda, rid: win-x64, arch: x64, os: win, runs-on: windows-latest, onnx_provider: CUDA }
           - { name: win-arm64, rid: win-arm64, arch: arm64, os: win, runs-on: windows-latest }
           - { name: osx-arm64, rid: osx-arm64, arch: arm64, os: osx, runs-on: macos-latest }
           - { name: linux-x64, rid: linux-x64, arch: x64, os: linux, runs-on: ubuntu-latest, linuxarch: x86_64}
@@ -148,10 +149,10 @@ jobs:
 
       # Build
       - name: Restore
-        run: dotnet restore OpenUtau -r ${{ matrix.arch.rid }}
+        run: dotnet restore OpenUtau -r ${{ matrix.arch.rid }} -p:OnnxRuntimeProvider=${{ matrix.arch.onnx_provider || 'DirectML' }}
 
       - name: Build (Windows and Linux)
-        run: dotnet publish OpenUtau -c Release -r ${{ matrix.arch.rid }} --self-contained true -o bin/${{ matrix.arch.name }}/
+        run: dotnet publish OpenUtau -c Release -r ${{ matrix.arch.rid }} --self-contained true -p:OnnxRuntimeProvider=${{ matrix.arch.onnx_provider || 'DirectML' }} -o bin/${{ matrix.arch.name }}/
         if: ${{ matrix.arch.os != 'osx' }}
 
       - name: Build (MacOS)
@@ -194,7 +195,7 @@ jobs:
           mkdir Microsoft.AI.DirectML
           tar -xf Microsoft.AI.DirectML.nupkg -C Microsoft.AI.DirectML
           copy /y Microsoft.AI.DirectML\bin\${{ matrix.arch.arch }}-${{ matrix.arch.os }}\DirectML.dll bin\${{ matrix.arch.name }}\
-        if: ${{ matrix.arch.os == 'win' }}
+        if: ${{ matrix.arch.os == 'win' && matrix.arch.onnx_provider != 'CUDA' }}
 
       - name: Set executable permission
         run: chmod +x bin/${{ matrix.arch.name }}/OpenUtau
@@ -222,7 +223,7 @@ jobs:
         uses: joncloud/makensis-action@v4.1
         with:
           script-file: OpenUtau.nsi
-          arguments: "-DPRODUCT_VERSION=${{ needs.next-version.outputs.version }} -DARCH=${{ matrix.arch.arch }}"
+          arguments: "-DPRODUCT_VERSION=${{ needs.next-version.outputs.version }} -DARCH=${{ matrix.arch.arch }} -DBUILD_DIR=bin/${{ matrix.arch.name }} -DOUTPUT_NAME=OpenUtau-${{ matrix.arch.name }}.exe"
         if: ${{ matrix.arch.os == 'win' }}
 
       # Create Dmg
@@ -308,6 +309,12 @@ jobs:
           name: OpenUtau-win-x64.exe
       - uses: actions/download-artifact@v4
         with:
+          name: OpenUtau-win-x64-cuda.zip
+      - uses: actions/download-artifact@v4
+        with:
+          name: OpenUtau-win-x64-cuda.exe
+      - uses: actions/download-artifact@v4
+        with:
           name: OpenUtau-win-arm64.zip
       - uses: actions/download-artifact@v4
         with:
@@ -333,6 +340,8 @@ jobs:
         run: |
           python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=windows -r=win-x64 -f=OpenUtau-win-x64.zip
           python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=windows -r=win-x64-installer -f=OpenUtau-win-x64.exe
+          python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=windows -r=win-x64-cuda -f=OpenUtau-win-x64-cuda.zip
+          python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=windows -r=win-x64-cuda-installer -f=OpenUtau-win-x64-cuda.exe
           python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=windows -r=win-arm64 -f=OpenUtau-win-arm64.zip
           python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=windows -r=win-arm64-installer -f=OpenUtau-win-arm64.exe
           python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=macos -r=osx-arm64 -f=OpenUtau-osx-arm64.dmg
@@ -360,6 +369,9 @@ jobs:
             See [Getting Started](https://github.com/stakira/OpenUtau/wiki/Getting-Started) for how to use.
 
             If you encountered issues, see [FAQ](https://github.com/stakira/OpenUtau/wiki/FAQ)
+
+            ## Windows CUDA build
+            `OpenUtau-win-x64-cuda` runs neural network inference on NVIDIA GPUs through CUDA instead of DirectML. It requires an NVIDIA driver with CUDA 12 support and cuDNN 9 installed. Other users should keep using the regular `win-x64` build.
 
             ## macOS says "This app is damaged"
             Open a terminal and run `xattr -rc /Applications/OpenUtau.app`. Try opening OpenUtau again.

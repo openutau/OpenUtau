@@ -212,6 +212,9 @@ namespace OpenUtau.App.ViewModels {
             OnnxRunnerOptions = Onnx.getRunnerOptions();
             OnnxRunner = String.IsNullOrEmpty(Preferences.Default.OnnxRunner) ?
                OnnxRunnerOptions[0] : Preferences.Default.OnnxRunner;
+            if (!OnnxRunnerOptions.Contains(OnnxRunner)) {
+                OnnxRunner = OnnxRunnerOptions[0];
+            }
             OnnxGpuOptions = Onnx.getGpuInfo();
             OnnxGpu = OnnxGpuOptions.Count > 0
                 ? OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0])

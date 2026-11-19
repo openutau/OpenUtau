@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ML.OnnxRuntime;
@@ -24,7 +25,12 @@ namespace OpenUtau.Core {
 
     public class Onnx {
 
+#if ONNXRUNTIME_CUDA
+        private static bool cudaAvailable = (OS.IsLinux() || OS.IsWindows())
+            && CudaGpuDetector.IsCudaAvailable() && CudaGpuDetector.IsCuDnnAvailable();
+#else
         private static bool cudaAvailable = OS.IsLinux() && CudaGpuDetector.IsCudaAvailable() && CudaGpuDetector.IsCuDnnAvailable();
+#endif
 
         private static readonly Dictionary<int, OrtEpDevice> devices = initializeDevices();
 
@@ -152,10 +158,16 @@ namespace OpenUtau.Core {
 
         public static List<string> getRunnerOptions() {
             if (OS.IsWindows()) {
+#if ONNXRUNTIME_CUDA
+                return cudaAvailable
+                    ? new List<string> { "CPU", "CUDA" }
+                    : new List<string> { "CPU" };
+#else
                 return new List<string> {
                 "CPU",
                 "DirectML"
                 };
+#endif
             } else if (OS.IsMacOS()) {
                 var options = new List<string> { "CPU" };
                 if (IsWebGpuAvailable()) {
@@ -376,9 +388,35 @@ namespace OpenUtau.Core {
             return options;
         }
 
+        private static string getCachedModelPath(byte[] model) {
+            Directory.CreateDirectory(PathManager.Inst.CachePath);
+            string hash = Convert.ToHexString(SHA256.HashData(model));
+            string modelPath = Path.Combine(PathManager.Inst.CachePath, $"onnx-{hash}.onnx");
+            if (File.Exists(modelPath)) {
+                return modelPath;
+            }
+            string tempPath = $"{modelPath}.{Guid.NewGuid():N}.tmp";
+            try {
+                File.WriteAllBytes(tempPath, model);
+                try {
+                    File.Move(tempPath, modelPath, false);
+                } catch (IOException) when (File.Exists(modelPath)) {
+                }
+            } finally {
+                if (File.Exists(tempPath)) {
+                    File.Delete(tempPath);
+                }
+            }
+            return modelPath;
+        }
+
         public static InferenceSession getInferenceSession(byte[] model, OnnxRunnerChoice runnerChoice = OnnxRunnerChoice.Default) {
             if (runnerChoice == OnnxRunnerChoice.CPU) {
                 return new InferenceSession(model);
+            }
+            if (getRunner() == "CUDA") {
+                using var cudaOptions = getOnnxSessionOptions();
+                return new InferenceSession(getCachedModelPath(model), cudaOptions);
             }
             // The usings hold the SessionOptions alive across the native session creation: the
             // binding passes options.Handle as a raw pointer and never looks at options again,
