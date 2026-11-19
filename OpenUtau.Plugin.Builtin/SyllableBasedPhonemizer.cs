@@ -352,7 +352,8 @@ namespace OpenUtau.Plugin.Builtin {
                 if (hasSustain) {
                     string mappedSustain = ValidateAliasIfNeeded(sustainData.sustain, bucket.tone);
                     if (HasOto(mappedSustain, bucket.tone) || HasOto(sustainData.sustain, bucket.tone)) {
-                        int offsetTicks = MsToTick(GetTransitionBasicLengthMsByConstant() * sustainData.offset);
+                        
+                        int offsetTicks = timeAxis.MsPosToTickPos(GetTransitionBasicLengthMsByConstant() * sustainData.offset);
                         madePhonemes.Add(new Phoneme {
                             phoneme = sustainData.sustain,
                             position = basePhoneme.position + offsetTicks,
@@ -423,6 +424,7 @@ namespace OpenUtau.Plugin.Builtin {
                 var validatedAlias = phoneme.phoneme;
                 if (validatedAlias != null) {
                     validatedAlias = ValidateAliasIfNeeded(validatedAlias, tone + toneShift);
+                    
                     string mapped = MapPhoneme(validatedAlias, tone + toneShift, color, alt, singer);
 
                     if (!string.IsNullOrEmpty(alt) && alt != "0" && string.Equals(mapped, validatedAlias, StringComparison.Ordinal)) {
@@ -444,7 +446,11 @@ namespace OpenUtau.Plugin.Builtin {
                         phoneme.expressions = exprList;
                     }
                 } else {
+                    #pragma warning disable CS8625 
+                    // a warning is being given for phoneme.phoneme being set to null
+                    // but it seems to work, sooooo....
                     phoneme.phoneme = null;
+                    #pragma warning restore CS8625 
                     phoneme.position = 0;
                 }
 
@@ -1401,6 +1407,7 @@ namespace OpenUtau.Plugin.Builtin {
         /// <param name="word"></param>
         /// <returns></returns>
         protected virtual string[]? HandleWordNotFound(Note note) {
+            if (singer == null) { error = "word not found"; return null; } // this gets the warning to shut up
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
             string alt = (attr.alternate ?? GetParentAlternate())?.ToString() ?? string.Empty;
             string color = attr.voiceColor ?? GetParentVoiceColor();
@@ -1733,10 +1740,11 @@ namespace OpenUtau.Plugin.Builtin {
         /// <param name="syllable"></param>
         /// <returns></returns>
         protected bool IsShort(Syllable syllable) {
-            return syllable.duration != -1 && TickToMs(syllable.duration) < GetTransitionBasicLengthMs() * 2;
+            
+            return syllable.duration != -1 && timeAxis.TickPosToMsPos(syllable.duration) < GetTransitionBasicLengthMs() * 2;
         }
         protected bool IsShort(Ending ending) {
-            return TickToMs(ending.duration) < GetTransitionBasicLengthMs() * 2;
+            return timeAxis.TickPosToMsPos(ending.duration) < GetTransitionBasicLengthMs() * 2;
         }
 
         /// <summary>
@@ -1891,15 +1899,15 @@ namespace OpenUtau.Plugin.Builtin {
             public Dictionary<string, object> ExtensionData { get; set; } = new Dictionary<string, object>(StringComparer.Ordinal);
 
             public class SymbolData { public string? symbol { get; set; } public string? type { get; set; } }
-            public class Timings { public string symbol { get; set; } public double value { get; set; } }
+            public class Timings { public required string symbol { get; set; } public required double value { get; set; } }
             public class DiphthongData { public string? from { get; set; } public string? to { get; set; } }
             public class VowelSustainData { public string? symbol { get; set; } public string? sustain { get; set; } public double offset { get; set; } }
-            public class EntryData { public string grapheme { get; set; } public string[] phonemes { get; set; } }
+            public class EntryData { public required string grapheme { get; set; } public required string[] phonemes { get; set; } }
         }
 
         public class Replacement {
-            public object from { get; set; }
-            public object to { get; set; }
+            public required object from { get; set; }
+            public required object to { get; set; }
             public string where { get; set; } = "inside";
 
             [YamlDotNet.Serialization.YamlIgnore]
@@ -2290,7 +2298,9 @@ namespace OpenUtau.Plugin.Builtin {
                 return;
             }
             try {
+                #pragma warning disable CS8604 // that what this is testing for yes
                 ReadDictionary(dictionaryName);
+                #pragma warning restore CS8604
                 Init();
             } catch (Exception ex) {
                 Log.Error(ex, $"Failed to read dictionary {dictionaryName}");
@@ -2385,8 +2395,7 @@ namespace OpenUtau.Plugin.Builtin {
                 } else {
                     baseLengthMs = GetTransitionBasicLengthMs(nextAlias, tone, nextPAttr);
                 }
-                
-                trueLengths[i] = MsToTick(baseLengthMs * stretch);
+                trueLengths[i] = (int)timeAxis.TickPosToMsPos(baseLengthMs * stretch);
             }
 
             // IsGlide
@@ -2407,7 +2416,10 @@ namespace OpenUtau.Plugin.Builtin {
                 if (validatedAlias == null) {
                     // Initialize empty slots properly to avoid null crashes
                     phonemes[phonemeI] = new Phoneme {
+                        #pragma warning disable CS8625
+                        // Don't fix what's not broken ig? (warns for phoneme = null)
                         phoneme = null,
+                        #pragma warning restore CS8625
                         position = 0,
                         index = globalIndex
                     };
@@ -2427,7 +2439,10 @@ namespace OpenUtau.Plugin.Builtin {
                 phonemes[phonemeI] = new Phoneme {
                     phoneme = validatedAlias,
                     index = globalIndex,
+                    #pragma warning disable CS8601
+                    // if it ain't broke...
                     expressions = exprList.Count > 0 ? exprList : null
+                    #pragma warning restore CS8601
                 };
 
                 if (i != 0) {
@@ -2455,7 +2470,7 @@ namespace OpenUtau.Plugin.Builtin {
                 if (overrideRatio != 1.0) {
                     // YAML Override active: Use the multiplier and bypass NoGap entirely
                     baseLengthMs = GetTransitionBasicLengthMsByConstant();
-                    phonemes[phonemeI].position = MsToTick(baseLengthMs * stretch * overrideRatio);
+                    phonemes[phonemeI].position = timeAxis.MsPosToTickPos(baseLengthMs * stretch * overrideRatio);
                     continue;
                 }
                 // Default behavior
@@ -2469,7 +2484,7 @@ namespace OpenUtau.Plugin.Builtin {
                     continue;
                 }
                 // Natural mode: Use the full Preutterance
-                phonemes[phonemeI].position = MsToTick(baseLengthMs);
+                phonemes[phonemeI].position = timeAxis.MsPosToTickPos(baseLengthMs);
             }            
             return ScalePhonemes(phonemes, position, isEnding ? phonemeSymbols.Count - 1 : phonemeSymbols.Count - 1, containerLength);
         }
@@ -2503,7 +2518,9 @@ namespace OpenUtau.Plugin.Builtin {
 
             return phonemes.Where(n => n.phoneme != null).ToArray();
         }
-        string[] IG2pSymbols.GetSymbols(Note note) {
+        #pragma warning disable CS8768 // disabled bc this matches the type of SBP's GetSymbols
+        // And not having ? gives a different warning so there's no winning here trust me
+        string[]? IG2pSymbols.GetSymbols(Note note) {
             return GetSymbols(note); // public API to allow access to internal plugins.
         }
 
