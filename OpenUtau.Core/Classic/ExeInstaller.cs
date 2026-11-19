@@ -12,7 +12,7 @@ namespace Classic {
 
             string destPath = exeType == ExeType.wavtool
                 ? PathManager.Inst.WavtoolsPath
-                : PathManager.Inst.ResamplersPath;
+                : PathManager.Inst.ResamplersInstallPath;
             string destName = Path.Combine(destPath, fileName);
             File.Copy(filePath, destName, true);
 

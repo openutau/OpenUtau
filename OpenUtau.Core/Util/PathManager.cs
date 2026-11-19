@@ -80,11 +80,17 @@ namespace OpenUtau.Core {
         public string SingersPathOld => Path.Combine(DataPath, "Content", "Singers");
         public string SingersPath => Path.Combine(DataPath, "Singers");
         public string AdditionalSingersPath => Preferences.Default.AdditionalSingerPath;
+        public string AdditionalResamplersPath => Preferences.Default.AdditionalResamplerPath;
         public string SingersInstallPath => Preferences.Default.InstallToAdditionalSingersPath
             && !string.IsNullOrEmpty(Preferences.Default.AdditionalSingerPath)
                 ? AdditionalSingersPath
                 : SingersPath;
         public string ResamplersPath => Path.Combine(DataPath, "Resamplers");
+        public string ResamplersInstallPath => Preferences.Default.InstallToAdditionalResamplersPath
+            && !string.IsNullOrEmpty(AdditionalResamplersPath)
+            && Directory.Exists(AdditionalResamplersPath)
+                ? AdditionalResamplersPath
+                : ResamplersPath;
         public string WavtoolsPath => Path.Combine(DataPath, "Wavtools");
         public string DependencyPath => Path.Combine(DataPath, "Dependencies");
         public string PluginsPath => Path.Combine(DataPath, "Plugins");
@@ -105,6 +111,16 @@ namespace OpenUtau.Core {
                 }
                 if (Directory.Exists(AdditionalSingersPath)) {
                     list.Add(AdditionalSingersPath);
+                }
+                return list.Distinct().ToList();
+            }
+        }
+
+        public List<string> ResamplersPaths {
+            get {
+                var list = new List<string> { ResamplersPath };
+                if (Directory.Exists(AdditionalResamplersPath)) {
+                    list.Add(AdditionalResamplersPath);
                 }
                 return list.Distinct().ToList();
             }
