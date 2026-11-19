@@ -24,7 +24,12 @@ namespace OpenUtau.Core {
 
     public class Onnx {
 
+#if ONNXRUNTIME_CUDA
+        private static bool cudaAvailable = (OS.IsLinux() || OS.IsWindows())
+            && CudaGpuDetector.IsCudaAvailable() && CudaGpuDetector.IsCuDnnAvailable();
+#else
         private static bool cudaAvailable = OS.IsLinux() && CudaGpuDetector.IsCudaAvailable() && CudaGpuDetector.IsCuDnnAvailable();
+#endif
 
         private static readonly Dictionary<int, OrtEpDevice> devices = initializeDevices();
 
@@ -152,10 +157,16 @@ namespace OpenUtau.Core {
 
         public static List<string> getRunnerOptions() {
             if (OS.IsWindows()) {
+#if ONNXRUNTIME_CUDA
+                return cudaAvailable
+                    ? new List<string> { "CPU", "CUDA" }
+                    : new List<string> { "CPU" };
+#else
                 return new List<string> {
                 "CPU",
                 "DirectML"
                 };
+#endif
             } else if (OS.IsMacOS()) {
                 var options = new List<string> { "CPU" };
                 if (IsWebGpuAvailable()) {
