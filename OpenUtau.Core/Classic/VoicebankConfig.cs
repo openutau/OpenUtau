@@ -55,8 +55,11 @@ namespace OpenUtau.Classic {
         public float PortraitOpacity = 0;
         [Description("Height in pixels the portrait is scaled to. 0 scales portraits taller than 800 pixels down to 800.")]
         public int PortraitHeight = 0;
+        [Description("Portrait height relative to pianoroll height, from 0 (invisibly small) to 1 (same as pianoroll).")]
         public int PortraitHeightCap = 0;
+        [Description("Vertical position of the portrait, from 0 (bottom) to 1 (top).")]
         public int PortraitVertPosition = -1;
+        [Description("Horizontal position of the portrait, from 0 (left) to 1 (right).")]
         public int PortraitHoriPosition = -1;
         [Description("Author of the voicebank.")]
         public string Author;
