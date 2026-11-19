@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,22 +22,23 @@ namespace OpenUtau.Core.DiffSinger {
         const string PEXP = DiffSingerUtils.PEXP;
         const string VoiceColorHeader = DiffSingerUtils.VoiceColorHeader;
 
+        // Curves the renderer itself reads. The voicebank's tunable parameters come
+        // from its DsParamRegistry (DsParamRegistry.IsKnownAbbr), which also covers the
+        // built-in ones once it is built; they stay listed here so a project opened
+        // without a voicebank keeps its curves.
         static readonly HashSet<string> supportedExp = new HashSet<string>(){
             Format.Ustx.DYN,
             Format.Ustx.PITD,
-            Format.Ustx.GENC,
             Format.Ustx.CLR,
+            Format.Ustx.SHFC,
+            Format.Ustx.GENC,
             Format.Ustx.BREC,
             Format.Ustx.VOIC,
             Format.Ustx.TENC,
             VELC,
             ENE,
             PEXP,
-            Format.Ustx.SHFC,
         };
-
-        private static readonly Dictionary<string, Func<float, float, float>> varianceDeltaFunctions =
-            DiffSingerUtils.VarianceDeltaFunctions;
 
         static readonly object lockObj = new object();
 
@@ -61,6 +62,7 @@ namespace OpenUtau.Core.DiffSinger {
 
         public bool SupportsExpression(UExpressionDescriptor descriptor) {
             return supportedExp.Contains(descriptor.abbr) ||
+                DsParamRegistry.IsKnownAbbr(descriptor.abbr) ||
                 (descriptor.abbr.StartsWith(VoiceColorHeader) && int.TryParse(descriptor.abbr.Substring(2), out int _));
         }
 
@@ -325,46 +327,21 @@ namespace OpenUtau.Core.DiffSinger {
                 var spkEmbedTensor = speakerEmbedManager.PhraseSpeakerEmbedByFrame(phrase, durations, frameMs, totalFrames, headFrames, tailFrames);
                 acousticInputs.Add(NamedOnnxValue.CreateFromTensor("spk_embed", spkEmbedTensor));
             }
-            //gender
-            //Definition of GENC: 100 = 12 semitones of formant shift, positive GENC means shift down
-            if (singer.dsConfig.useKeyShiftEmbed) {
-                var range = singer.dsConfig.augmentationArgs.randomPitchShifting.range;
-                var positiveScale = (range[1]==0) ? 0 : (12/range[1]/100);
-                var negativeScale = (range[0]==0) ? 0 : (-12/range[0]/100);
-                float[] gender = DiffSingerUtils.SampleCurve(phrase, phrase.gender,
-                    0, frameMs, totalFrames, headFrames, tailFrames,
-                    x=> (x<0)?(-x * positiveScale):(-x * negativeScale))
-                    .Select(f => (float)f).ToArray();
-                var genderTensor = new DenseTensor<float>(gender, new int[] { gender.Length })
-                    .Reshape(new int[] { 1, gender.Length });
-                acousticInputs.Add(NamedOnnxValue.CreateFromTensor("gender", genderTensor));
+            //Tunable parameters the acoustic model takes. Acoustic-only ones are the
+            //curve itself; variance ones are handled below, on top of their prediction.
+            var parameters = singer.paramRegistry;
+            foreach (var param in parameters.Acoustic) {
+                float[] values = DiffSingerParamInputs.Acoustic(
+                    phrase, param, frameMs, totalFrames, headFrames, tailFrames);
+                acousticInputs.Add(NamedOnnxValue.CreateFromTensor(param.Name,
+                    new DenseTensor<float>(values, new int[] { values.Length })
+                    .Reshape(new int[] { 1, values.Length })));
             }
 
-            //velocity
-            //Definition of VELC: logarithmic scale, Default value 100 = original speed,
-            //each 100 increase means speed x2
-            if (singer.dsConfig.useSpeedEmbed) {
-                var velocityCurve = phrase.curves.FirstOrDefault(curve => curve.Item1 == VELC);
-                float[] velocity;
-                if (velocityCurve != null) {
-                    velocity = DiffSingerUtils.SampleCurve(phrase, velocityCurve.Item2,
-                        1, frameMs, totalFrames, headFrames, tailFrames,
-                        x => Math.Pow(2, (x - 100) / 100))
-                        .Select(f => (float)f).ToArray();
-                } else {
-                    velocity = Enumerable.Repeat(1f, totalFrames).ToArray();
-                }
-                var velocityTensor = new DenseTensor<float>(velocity, new int[] { velocity.Length })
-                    .Reshape(new int[] { 1, velocity.Length });
-                acousticInputs.Add(NamedOnnxValue.CreateFromTensor("velocity", velocityTensor));
-            }
-
-            //Variance: Energy, Breathiness, Voicing and Tension
-            if(
-                singer.dsConfig.useBreathinessEmbed
-                || singer.dsConfig.useEnergyEmbed
-                || singer.dsConfig.useVoicingEmbed
-                || singer.dsConfig.useTensionEmbed) {
+            //Variance parameters: the variance model predicts each one, and the drawn
+            //curve is combined with the prediction before it reaches the acoustic model.
+            var varianceParams = parameters.Variance;
+            if (varianceParams.Count > 0) {
                 if(!singer.HasVariancePredictor){
                     throw new Exception(
                         "This singer has no variance predictor but its acoustic model requires one.");
@@ -377,91 +354,17 @@ namespace OpenUtau.Core.DiffSinger {
                     varianceResult = singer.getVariancePredictor().Process(phrase);
                 }
                 renderEvents?.ReportRealCurves(BuildRenderedRealCurves(phrase, varianceResult));
-                //TODO: let user edit variance curves
-                if(singer.dsConfig.useEnergyEmbed){
-                    var energyCurve = phrase.curves.FirstOrDefault(curve => curve.Item1 == ENE);
-                    IEnumerable<float> userEnergy;
-                    if(energyCurve!=null){
-                        userEnergy = DiffSingerUtils.SampleCurve(phrase, energyCurve.Item2,
-                            0, frameMs, totalFrames, headFrames, tailFrames,
-                            x => x).Select(x => (float) x);
-                    } else{
-                        userEnergy = Enumerable.Repeat(0f, totalFrames);
-                    }
-                    if (varianceResult.energy == null) {
+                foreach (var param in varianceParams) {
+                    if (varianceResult.Channel(param.Name) == null) {
                         throw new KeyNotFoundException(
-                            "The parameter \"energy\" required by acoustic model is not found in variance predictions.");
+                            $"The parameter \"{param.Name}\" required by the acoustic model is not found in the variance predictions.");
                     }
-                    var predictedEnergy = DiffSingerUtils.ResamplePaddedCurve(
-                        varianceResult.energy, totalFrames,
-                        varianceResult.headFrames, varianceResult.tailFrames,
-                        headFrames, tailFrames,
-                        varianceResult.frameMs, frameMs);
-                    var energy = predictedEnergy.Zip(userEnergy, (p, u) => DiffSingerUtils.ApplyVarianceDelta(ENE, p, u))
-                        .ToArray();
-                    acousticInputs.Add(NamedOnnxValue.CreateFromTensor("energy",
-                        new DenseTensor<float>(energy, new int[] { energy.Length })
-                        .Reshape(new int[] { 1, energy.Length })));
-                }
-                if(singer.dsConfig.useBreathinessEmbed){
-                    var userBreathiness = DiffSingerUtils.SampleCurve(phrase, phrase.breathiness,
-                        0, frameMs, totalFrames, headFrames, tailFrames,
-                        x => x).Select(x => (float) x);
-                    if (varianceResult.breathiness == null) {
-                        throw new KeyNotFoundException(
-                            "The parameter \"breathiness\" required by acoustic model is not found in variance predictions.");
-                    }
-                    var predictedBreathiness = DiffSingerUtils.ResamplePaddedCurve(
-                        varianceResult.breathiness, totalFrames,
-                        varianceResult.headFrames, varianceResult.tailFrames,
-                        headFrames, tailFrames,
-                        varianceResult.frameMs, frameMs);
-                    var breathiness = predictedBreathiness.Zip(userBreathiness,
-                            (p, u) => DiffSingerUtils.ApplyVarianceDelta(Format.Ustx.BREC, p, u))
-                        .ToArray();
-                    acousticInputs.Add(NamedOnnxValue.CreateFromTensor("breathiness",
-                        new DenseTensor<float>(breathiness, new int[] { breathiness.Length })
-                        .Reshape(new int[] { 1, breathiness.Length })));
-                }
-                if(singer.dsConfig.useVoicingEmbed){
-                    var userVoicing = DiffSingerUtils.SampleCurve(phrase, phrase.voicing,
-                        0, frameMs, totalFrames, headFrames, tailFrames,
-                        x => x).Select(x => (float) x);
-                    if (varianceResult.voicing == null) {
-                        throw new KeyNotFoundException(
-                            "The parameter \"voicing\" required by acoustic model is not found in variance predictions.");
-                    }
-                    var predictedVoicing = DiffSingerUtils.ResamplePaddedCurve(
-                        varianceResult.voicing, totalFrames,
-                        varianceResult.headFrames, varianceResult.tailFrames,
-                        headFrames, tailFrames,
-                        varianceResult.frameMs, frameMs);
-                    var voicing = predictedVoicing.Zip(userVoicing,
-                            (p, u) => DiffSingerUtils.ApplyVarianceDelta(Format.Ustx.VOIC, p, u))
-                        .ToArray();
-                    acousticInputs.Add(NamedOnnxValue.CreateFromTensor("voicing",
-                        new DenseTensor<float>(voicing, new int[] { voicing.Length })
-                        .Reshape(new int[] { 1, voicing.Length })));
-                }
-                if(singer.dsConfig.useTensionEmbed){
-                    var userTension = DiffSingerUtils.SampleCurve(phrase, phrase.tension,
-                        0, frameMs, totalFrames, headFrames, tailFrames,
-                        x => x).Select(x => (float) x);
-                    if (varianceResult.tension == null) {
-                        throw new KeyNotFoundException(
-                            "The parameter \"tension\" required by acoustic model is not found in variance predictions.");
-                    }
-                    var predictedTension = DiffSingerUtils.ResamplePaddedCurve(
-                        varianceResult.tension, totalFrames,
-                        varianceResult.headFrames, varianceResult.tailFrames,
-                        headFrames, tailFrames,
-                        varianceResult.frameMs, frameMs);
-                    var tension = predictedTension.Zip(userTension,
-                            (p, u) => DiffSingerUtils.ApplyVarianceDelta(Format.Ustx.TENC, p, u))
-                        .ToArray();
-                    acousticInputs.Add(NamedOnnxValue.CreateFromTensor("tension",
-                        new DenseTensor<float>(tension, new int[] { tension.Length })
-                        .Reshape(new int[] { 1, tension.Length })));
+                    float[] values = DiffSingerParamInputs.Variance(
+                        phrase, param, varianceResult.Channel(param.Name)!, varianceResult,
+                        frameMs, totalFrames, headFrames, tailFrames);
+                    acousticInputs.Add(NamedOnnxValue.CreateFromTensor(param.Name,
+                        new DenseTensor<float>(values, new int[] { values.Length })
+                        .Reshape(new int[] { 1, values.Length })));
                 }
             }
             Onnx.VerifyInputNames(acousticModel, acousticInputs);
@@ -613,11 +516,17 @@ namespace OpenUtau.Core.DiffSinger {
             }
         }
 
-        internal static bool ShouldRefreshRealCurvesOnCurveEdit(string abbr) {
-            return abbr == ENE ||
-                abbr == Format.Ustx.BREC ||
-                abbr == Format.Ustx.VOIC ||
-                abbr == Format.Ustx.TENC;
+        // The built-in variance parameters, for calls without a voicebank to ask.
+        static readonly HashSet<string> builtinVarianceExp = new HashSet<string>() {
+            ENE, Format.Ustx.BREC, Format.Ustx.VOIC, Format.Ustx.TENC,
+        };
+
+        internal static bool ShouldRefreshRealCurvesOnCurveEdit(USinger? singer, string abbr) {
+            var param = (singer as DiffSingerSinger)?.paramRegistry.ByAbbr(abbr);
+            if (param != null) {
+                return param.Category == DsParamCategory.Variance;
+            }
+            return singer == null && builtinVarianceExp.Contains(abbr);
         }
 
         private List<RenderRealCurveResult> BuildRenderedRealCurves(RenderPhrase phrase, VarianceResult result) {
@@ -625,51 +534,33 @@ namespace OpenUtau.Core.DiffSinger {
             var headFrames = result.headFrames;
             var tailFrames = result.tailFrames;
             var startMs = phrase.positionMs - headFrames * frameMs;
-            var realCurves = new (string, float[], float[], Func<float, float>)[] {
-                (
-                    ENE, result.energy ?? Array.Empty<float>(),
-                    phrase.curves.FirstOrDefault(curve => curve.Item1 == ENE)?.Item2
-                    ?? Array.Empty<float>(),
-                    x => Math.Clamp(x, -96f, 0f) / 96f + 1f
-                ),
-                (
-                    Format.Ustx.BREC, result.breathiness ?? Array.Empty<float>(), phrase.breathiness,
-                    x => Math.Clamp(x, -96f, 0f) / 96f + 1f
-                ),
-                (
-                    Format.Ustx.VOIC, result.voicing ?? Array.Empty<float>(), phrase.voicing,
-                    x => Math.Clamp(x, -96f, 0f) / 96f + 1f
-                ),
-                (
-                    Format.Ustx.TENC, result.tension ?? Array.Empty<float>(), phrase.tension,
-                    x => Math.Clamp(x, -10f, 10f) / 20f + 0.5f
-                ),
-            }.Select(t => {
-                var abbr = t.Item1;
-                var realCurve = t.Item2;
-                if (realCurve.Length == 0) {
-                    return new RenderRealCurveResult {
-                        abbr = abbr,
+            var parameters = (phrase.singer as DiffSingerSinger)?.paramRegistry.Variance
+                ?? Array.Empty<DsParam>();
+            var realCurves = new List<RenderRealCurveResult>(parameters.Count);
+            foreach (var param in parameters) {
+                var predicted = result.Channel(param.Name) ?? Array.Empty<float>();
+                if (predicted.Length == 0) {
+                    realCurves.Add(new RenderRealCurveResult {
+                        abbr = param.Abbr,
                         ticks = Array.Empty<float>(),
                         values = Array.Empty<float>(),
-                    };
+                    });
+                    continue;
                 }
                 var deltaCurve = DiffSingerUtils.SampleCurve(
-                    phrase, t.Item3, 0, frameMs, realCurve.Length,
-                    headFrames, tailFrames, x => x)
+                    phrase, param.CurveOf(phrase) ?? Array.Empty<float>(), param.NeutralCurve,
+                    frameMs, predicted.Length, headFrames, tailFrames, x => x)
                     .Select(x => (float)x)
                     .ToArray();
-                var normFunc = t.Item4;
-                return new RenderRealCurveResult {
-                    abbr = abbr,
-                    ticks = Enumerable.Range(0, realCurve.Length)
+                realCurves.Add(new RenderRealCurveResult {
+                    abbr = param.Abbr,
+                    ticks = Enumerable.Range(0, predicted.Length)
                         .Select(i => (float)phrase.timeAxis.MsPosToTickPos(startMs + i * frameMs) - phrase.position)
                         .ToArray(),
-                    values = realCurve.Zip(deltaCurve, varianceDeltaFunctions[abbr])
-                        .Select(normFunc)
+                    values = predicted.Zip(deltaCurve, (p, d) => param.Normalize(param.CombinedValue(p, d)))
                         .ToArray()
-                };
-            }).ToList();
+                });
+            }
             return realCurves;
         }
 
@@ -706,8 +597,18 @@ namespace OpenUtau.Core.DiffSinger {
                     isFlag = false
                 },
             };
-            //speakers
+            // The voicebank's own parameters, e.g. from params.yaml. The built-in ones
+            // are already in the project's default expressions, so suggestions skip them.
             var dsSinger = singer as DiffSingerSinger;
+            if (dsSinger != null) {
+                foreach (var param in dsSinger.paramRegistry.All) {
+                    if (result.Any(d => d.abbr == param.Abbr)) {
+                        continue;
+                    }
+                    result.Add(param.Descriptor);
+                }
+            }
+            //speakers
             if(dsSinger!=null && dsSinger.dsConfig.speakers != null) {
                 result.AddRange(Enumerable.Zip(
                     dsSinger.Subbanks,

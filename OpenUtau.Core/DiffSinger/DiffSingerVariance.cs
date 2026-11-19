@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,19 +13,50 @@ using OpenUtau.Core.Render;
 using OpenUtau.Core.Util;
 
 namespace OpenUtau.Core.DiffSinger{
-    public struct VarianceResult{
-        public float[]? energy;
-        public float[]? breathiness;
-        public float[]? voicing;
-        public float[]? tension;
+    /// <summary>
+    /// The variance model's predictions for one phrase: one channel per variance
+    /// parameter, in the order the model's heads come in. <see cref="names"/> and
+    /// <see cref="channels"/> are parallel, and a channel is null when the model did
+    /// not predict it.
+    /// </summary>
+    public sealed class VarianceResult {
+        public readonly string[] names;
+        public readonly float[]?[] channels;
         public float frameMs;
         public int headFrames;
         public int tailFrames;
         public int totalFrames;
+
+        public VarianceResult(
+            string[] names, float[]?[] channels,
+            float frameMs, int headFrames, int tailFrames, int totalFrames) {
+            this.names = names;
+            this.channels = channels;
+            this.frameMs = frameMs;
+            this.headFrames = headFrames;
+            this.tailFrames = tailFrames;
+            this.totalFrames = totalFrames;
+        }
+
+        /// <summary>The prediction of one parameter, or null when the model did not predict it.</summary>
+        public float[]? Channel(string name) {
+            for (int i = 0; i < names.Length && i < channels.Length; i++) {
+                if (string.Equals(names[i], name, StringComparison.OrdinalIgnoreCase)) {
+                    return channels[i];
+                }
+            }
+            return null;
+        }
+
+        public VarianceResult Clone() => new VarianceResult(
+            (string[])names.Clone(),
+            channels.Select(channel => channel?.ToArray()).ToArray(),
+            frameMs, headFrames, tailFrames, totalFrames);
     }
     public class DsVariance : IDisposable{
         string rootPath;
         DsConfig dsConfig;
+        readonly DsParamRegistry paramRegistry;
         Dictionary<string, int> languageIds = new Dictionary<string, int>();
         Dictionary<string, int> phonemeTokens;
         ulong linguisticHash;
@@ -41,19 +72,26 @@ namespace OpenUtau.Core.DiffSinger{
 
         public float FrameMs => frameMs;
 
-        public DsVariance(string rootPath)
+        /// <summary>
+        /// The variance parameters this predictor produces, in the order of the model's
+        /// heads. The singer passes its registry so the acoustic model and the variance
+        /// model agree on the channel layout; standalone users get one from dsconfig.
+        /// </summary>
+        public IReadOnlyList<DsParam> Params => paramRegistry.Variance;
+
+        public DsVariance(string rootPath, DsParamRegistry? registry = null)
         {
             this.rootPath = rootPath;
             var dsconfigPath = Path.Combine(rootPath, "dsconfig.yaml");
             try {
-                dsConfig = Yaml.DefaultDeserializer.Deserialize<DsConfig>(
-                    File.ReadAllText(dsconfigPath, Encoding.UTF8));
+                dsConfig = DsConfig.Load(rootPath);
             } catch (Exception e) {
                 throw new Exception($"Failed to load {dsconfigPath}", e);
             }
             if(dsConfig.variance == null){
                 throw new Exception("This voicebank doesn't contain a variance model");
             }
+            paramRegistry = registry ?? DsParamRegistry.From(dsConfig);
             //Load language id if needed
             if(dsConfig.use_lang_id){
                 if(dsConfig.languages == null){
@@ -85,6 +123,22 @@ namespace OpenUtau.Core.DiffSinger{
             var varianceModelBytes = File.ReadAllBytes(varianceModelPath);
             varianceHash = XXH64.DigestOf(varianceModelBytes);
             varianceModel = Onnx.getInferenceSession(varianceModelBytes);
+            // Every variance parameter has to be an input and a prediction of the model;
+            // a mismatch here is a config error, not something to discover mid-render.
+            var varianceInputNames = varianceModel.InputNames.ToHashSet();
+            var varianceOutputNames = varianceModel.OutputNames.ToHashSet();
+            foreach (var param in paramRegistry.Variance) {
+                if (!dsConfig.Predicts(param.Name)) {
+                    throw new InvalidDataException(
+                        $"The variance dsconfig.yaml of {rootPath} does not set predict_{param.Name}, " +
+                        $"but params.yaml declares \"{param.Name}\" as a variance parameter.");
+                }
+                if (!varianceInputNames.Contains(param.Name) || !varianceOutputNames.Contains(param.Name + "_pred")) {
+                    throw new InvalidDataException(
+                        $"The variance model of {rootPath} takes no \"{param.Name}\" input or does not output \"{param.Name}_pred\". " +
+                        "Check dsconfig.yaml and params.yaml.");
+                }
+            }
             frameMs = 1000f * dsConfig.hop_size / dsConfig.sample_rate;
             //Load g2p
             g2p = LoadG2p(rootPath);
@@ -206,37 +260,15 @@ namespace OpenUtau.Core.DiffSinger{
             AddVarianceInput(NamedOnnxValue.CreateFromTensor("pitch",
                 new DenseTensor<float>(pitch, new int[] { pitch.Length }, false)
                 .Reshape(new int[] { 1, totalFrames })), includeInPatchKey: false);
-            if (dsConfig.predict_energy) {
-                var energy = Enumerable.Repeat(0f, totalFrames).ToArray();
-                AddVarianceInput(NamedOnnxValue.CreateFromTensor("energy",
-                    new DenseTensor<float>(energy, new int[] { energy.Length }, false)
-                        .Reshape(new int[] { 1, totalFrames })));
-            }
-            if (dsConfig.predict_breathiness) {
-                var breathiness = Enumerable.Repeat(0f, totalFrames).ToArray();
-                AddVarianceInput(NamedOnnxValue.CreateFromTensor("breathiness",
-                    new DenseTensor<float>(breathiness, new int[] { breathiness.Length }, false)
-                        .Reshape(new int[] { 1, totalFrames })));
-            }
-            if (dsConfig.predict_voicing) {
-                var voicing = Enumerable.Repeat(0f, totalFrames).ToArray();
-                AddVarianceInput(NamedOnnxValue.CreateFromTensor("voicing",
-                    new DenseTensor<float>(voicing, new int[] { voicing.Length }, false)
-                        .Reshape(new int[] { 1, totalFrames })));
-            }
-            if (dsConfig.predict_tension) {
-                var tension = Enumerable.Repeat(0f, totalFrames).ToArray();
-                AddVarianceInput(NamedOnnxValue.CreateFromTensor("tension",
-                    new DenseTensor<float>(tension, new int[] { tension.Length }, false)
+            var varianceParams = paramRegistry.Variance;
+            foreach (var param in varianceParams) {
+                var zeros = Enumerable.Repeat(0f, totalFrames).ToArray();
+                AddVarianceInput(NamedOnnxValue.CreateFromTensor(param.Name,
+                    new DenseTensor<float>(zeros, new int[] { zeros.Length }, false)
                         .Reshape(new int[] { 1, totalFrames })));
             }
 
-            var numVariances = new[] {
-                dsConfig.predict_energy,
-                dsConfig.predict_breathiness,
-                dsConfig.predict_voicing,
-                dsConfig.predict_tension,
-            }.Sum(Convert.ToInt32);
+            var numVariances = varianceParams.Count;
             var retake = Enumerable.Repeat(true, totalFrames * numVariances).ToArray();
             AddVarianceInput(NamedOnnxValue.CreateFromTensor("retake",
                 new DenseTensor<bool>(retake, new int[] { retake.Length }, false)
@@ -291,19 +323,8 @@ namespace OpenUtau.Core.DiffSinger{
             VariancePatchState? previous = null;
             bool[]? retakeMask = null;
             if (variancePatchKey.HasValue && variancePatchStates.TryGetValue(variancePatchKey.Value, out var cachedState) &&
-                DiffSingerVariancePatch.IsMetadataCompatible(cachedState.result, new VarianceResult {
-                    frameMs = frameMs,
-                    headFrames = headFrames,
-                    tailFrames = tailFrames,
-                    totalFrames = totalFrames,
-                }) &&
-                DiffSingerVariancePatch.IsChannelLayoutCompatible(
-                    cachedState.result,
-                    totalFrames,
-                    dsConfig.predict_energy,
-                    dsConfig.predict_breathiness,
-                    dsConfig.predict_voicing,
-                    dsConfig.predict_tension)) {
+                DiffSingerVariancePatch.IsMetadataCompatible(cachedState.result, frameMs, headFrames, tailFrames, totalFrames) &&
+                DiffSingerVariancePatch.IsChannelLayoutCompatible(cachedState.result, varianceParams, totalFrames)) {
                 previous = cachedState;
                 var pitchMask = DiffSingerVariancePatch.BuildChangedFrameMask(cachedState.pitch, pitch, 1e-4f);
                 var speakerMask = DiffSingerVariancePatch.BuildChangedFrameMask(
@@ -335,40 +356,17 @@ namespace OpenUtau.Core.DiffSinger{
             }
             Onnx.VerifyInputNames(varianceModel, varianceInputs);
             var varianceOutputs = varianceModel.Run(varianceInputs).Cast<NamedOnnxValue>().ToList();
-            Tensor<float>? energy_pred = dsConfig.predict_energy
-                ? varianceOutputs
-                    .Where(o => o.Name == "energy_pred")
+            var channels = new float[]?[varianceParams.Count];
+            for (int i = 0; i < varianceParams.Count; i++) {
+                channels[i] = varianceOutputs
+                    .Where(o => o.Name == varianceParams[i].Name + "_pred")
                     .First()
                     .AsTensor<float>()
-                : null;
-            Tensor<float>? breathiness_pred = dsConfig.predict_breathiness
-                ? varianceOutputs
-                    .Where(o => o.Name == "breathiness_pred")
-                    .First()
-                    .AsTensor<float>()
-                : null;
-            Tensor<float>? voicing_pred = dsConfig.predict_voicing
-                ? varianceOutputs
-                    .Where(o => o.Name == "voicing_pred")
-                    .First()
-                    .AsTensor<float>()
-                : null;
-            Tensor<float>? tension_pred = dsConfig.predict_tension
-                ? varianceOutputs
-                    .Where(o => o.Name == "tension_pred")
-                    .First()
-                    .AsTensor<float>()
-                : null;
-            var result = new VarianceResult{
-                energy = energy_pred?.ToArray(),
-                breathiness = breathiness_pred?.ToArray(),
-                voicing = voicing_pred?.ToArray(),
-                tension = tension_pred?.ToArray(),
-                frameMs = frameMs,
-                headFrames = headFrames,
-                tailFrames = tailFrames,
-                totalFrames = totalFrames,
-            };
+                    .ToArray();
+            }
+            var result = new VarianceResult(
+                varianceParams.Select(param => param.Name).ToArray(), channels,
+                frameMs, headFrames, tailFrames, totalFrames);
             if (previous != null && retakeMask != null) {
                 var channelMask = DiffSingerVariancePatch.ExpandToChannels(retakeMask, numVariances);
                 result = DiffSingerVariancePatch.HardCompose(previous.result, result, channelMask, numVariances);
@@ -391,53 +389,44 @@ namespace OpenUtau.Core.DiffSinger{
             int headFrames,
             int tailFrames,
             int totalFrames) {
-            return new VarianceResult {
-                energy = dsConfig.predict_energy ? outputs.First(o => o.Name == "energy_pred").AsTensor<float>().ToArray() : null,
-                breathiness = dsConfig.predict_breathiness ? outputs.First(o => o.Name == "breathiness_pred").AsTensor<float>().ToArray() : null,
-                voicing = dsConfig.predict_voicing ? outputs.First(o => o.Name == "voicing_pred").AsTensor<float>().ToArray() : null,
-                tension = dsConfig.predict_tension ? outputs.First(o => o.Name == "tension_pred").AsTensor<float>().ToArray() : null,
-                frameMs = frameMs,
-                headFrames = headFrames,
-                tailFrames = tailFrames,
-                totalFrames = totalFrames,
-            };
+            var varianceParams = paramRegistry.Variance;
+            var channels = new float[]?[varianceParams.Count];
+            for (int i = 0; i < varianceParams.Count; i++) {
+                channels[i] = outputs.First(o => o.Name == varianceParams[i].Name + "_pred").AsTensor<float>().ToArray();
+            }
+            return new VarianceResult(
+                varianceParams.Select(param => param.Name).ToArray(), channels,
+                frameMs, headFrames, tailFrames, totalFrames);
         }
 
         List<NamedOnnxValue> BuildVarianceOutputs(VarianceResult result) {
             var outputs = new List<NamedOnnxValue>();
-            void Add(string name, float[]? values) {
-                if (values != null) {
-                    outputs.Add(NamedOnnxValue.CreateFromTensor(
-                        name,
-                        new DenseTensor<float>(values, new[] { values.Length }, false)
-                            .Reshape(new[] { 1, values.Length })));
+            for (int i = 0; i < result.names.Length; i++) {
+                var values = result.channels[i];
+                if (values == null) {
+                    continue;
                 }
+                outputs.Add(NamedOnnxValue.CreateFromTensor(
+                    result.names[i] + "_pred",
+                    new DenseTensor<float>(values, new[] { values.Length }, false)
+                        .Reshape(new[] { 1, values.Length })));
             }
-            Add("energy_pred", result.energy);
-            Add("breathiness_pred", result.breathiness);
-            Add("voicing_pred", result.voicing);
-            Add("tension_pred", result.tension);
             return outputs;
         }
 
         static void ReplaceVarianceInputsWithPrevious(
             List<NamedOnnxValue> inputs,
             VarianceResult previous) {
-            var channels = new[] {
-                ("energy", previous.energy),
-                ("breathiness", previous.breathiness),
-                ("voicing", previous.voicing),
-                ("tension", previous.tension),
-            };
-            foreach (var (name, values) in channels) {
+            for (int i = 0; i < previous.names.Length; i++) {
+                var values = previous.channels[i];
                 if (values == null) continue;
-                var input = inputs.FirstOrDefault(x => x.Name == name);
+                var input = inputs.FirstOrDefault(x => x.Name == previous.names[i]);
                 if (input == null) continue;
                 var current = input.AsTensor<float>().ToArray();
                 if (current.Length != values.Length) continue;
                 Array.Copy(values, current, values.Length);
                 inputs[inputs.IndexOf(input)] = NamedOnnxValue.CreateFromTensor(
-                    name,
+                    previous.names[i],
                     new DenseTensor<float>(current, new[] { current.Length }, false)
                         .Reshape(new[] { 1, current.Length }));
             }

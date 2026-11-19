@@ -13,6 +13,7 @@ using OpenUtau.Api;
 using OpenUtau.App.Views;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
 using ReactiveUI.Primitives;
@@ -29,6 +30,7 @@ namespace OpenUtau.App.ViewModels {
         // Singers loaded from a voicebank folder, which keep their settings in character.yaml.
         [Reactive] public partial bool HasCharacterYaml { get; set; }
         [Reactive] public partial bool HasDsConfig { get; set; }
+        [Reactive] public partial bool HasDsParams { get; set; }
         public bool IsClassic => Singer != null && Singer.SingerType == USingerType.Classic;
         public bool UseSearchAlias => Singer != null && (Singer.SingerType == USingerType.Classic || Singer.SingerType == USingerType.Enunu);
         public ObservableCollectionExtended<USubbank> Subbanks => subbanks;
@@ -96,6 +98,8 @@ namespace OpenUtau.App.ViewModels {
                         HasCharacterYaml = singer.SingerType is USingerType.Classic or USingerType.Enunu or USingerType.DiffSinger
                             && Directory.Exists(singer.Location);
                         HasDsConfig = HasCharacterYaml && File.Exists(Path.Combine(singer.Location, "dsconfig.yaml"));
+                        // The file may not exist yet; the tab is how a voicebank gets one.
+                        HasDsParams = Singer is DiffSingerSinger;
                         if (Singer is ClassicSinger cSinger) {
                             UseFilenameAsAlias = cSinger.UseFilenameAsAlias ?? false;
                         }
@@ -406,6 +410,7 @@ namespace OpenUtau.App.ViewModels {
             int index = SelectedIndex;
 
             Singer.Reload();
+            HasDsParams = Singer is DiffSingerSinger;
             Avatar = LoadAvatar(Singer);
             Otos.Clear();
             Otos.AddRange(Singer.Otos);

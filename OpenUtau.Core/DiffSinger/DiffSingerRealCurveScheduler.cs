@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -33,13 +33,14 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         static bool CanRefresh(UProject project, UVoicePart part, string abbr) {
-            if (!DiffSingerRenderer.ShouldRefreshRealCurvesOnCurveEdit(abbr) ||
-                !project.parts.Contains(part) ||
+            if (!project.parts.Contains(part) ||
                 part.trackNo < 0 ||
                 part.trackNo >= project.tracks.Count) {
                 return false;
             }
-            return project.tracks[part.trackNo].RendererSettings.Renderer is DiffSingerRenderer;
+            var track = project.tracks[part.trackNo];
+            return track.RendererSettings.Renderer is DiffSingerRenderer &&
+                DiffSingerRenderer.ShouldRefreshRealCurvesOnCurveEdit(track.Singer, abbr);
         }
 
         static void Schedule(UProject project, UVoicePart part) {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -487,10 +487,17 @@ namespace OpenUtau.Core {
                 properties[name] = SchemaFor(property.Type, visiting);
             }
             visiting.Remove(type);
-            return new JsonSchemaBuilder()
+            var builder = new JsonSchemaBuilder()
                 .Type(SchemaValueType.Object, SchemaValueType.Null)
-                .Properties(properties)
-                .AdditionalProperties(false);
+                .Properties(properties);
+            var patterns = type.GetCustomAttribute<YamlPatternKeysAttribute>()?.Patterns;
+            if (patterns != null && patterns.Length > 0) {
+                // Keys a voicebank defines itself, e.g. use_<name>_embed. They are booleans.
+                builder = builder.PatternProperties(patterns.ToDictionary(
+                    pattern => pattern,
+                    _ => new JsonSchemaBuilder().Type(SchemaValueType.Boolean, SchemaValueType.Null)));
+            }
+            return builder.AdditionalProperties(false);
         }
     }
 }

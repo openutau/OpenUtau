@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
+using System.Text;
+using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
 namespace OpenUtau.Core.DiffSinger {
@@ -25,6 +28,7 @@ namespace OpenUtau.Core.DiffSinger {
     }
 
     [Serializable]
+    [YamlPatternKeys(@"^use_[A-Za-z0-9_]+_embed$", @"^predict_[A-Za-z0-9_]+$")]
     public class DsConfig {
         [Description("Phoneme list of the models, relative to this folder.")]
         public string phonemes = "phonemes.txt";
@@ -38,6 +42,49 @@ namespace OpenUtau.Core.DiffSinger {
         public List<string> speakers;
         [Description("Size of the speaker embeddings. Must match the model.")]
         public int hiddenSize = 256;
+        /// <summary>
+        /// Whether the acoustic model takes the parameter of this name. The built-in
+        /// parameters use their typed flags; any other name uses
+        /// <c>use_&lt;name&gt;_embed</c>. The parameter must also be defined in params.yaml.
+        /// </summary>
+        public bool UsesEmbed(string name) {
+            if (dynamicFlags.TryGetValue("use_" + name + "_embed", out var enabled)) {
+                return enabled;
+            }
+            return name switch {
+                "gender" => useKeyShiftEmbed,
+                "velocity" => useSpeedEmbed,
+                "energy" => useEnergyEmbed,
+                "breathiness" => useBreathinessEmbed,
+                "voicing" => useVoicingEmbed,
+                "tension" => useTensionEmbed,
+                _ => false,
+            };
+        }
+        /// <summary>
+        /// Whether the variance model predicts the parameter of this name. The built-in
+        /// parameters use their typed flags; any other name uses <c>predict_&lt;name&gt;</c>.
+        /// </summary>
+        public bool Predicts(string name) {
+            if (dynamicFlags.TryGetValue("predict_" + name, out var predicted)) {
+                return predicted;
+            }
+            return name switch {
+                "energy" => predict_energy,
+                "breathiness" => predict_breathiness,
+                "voicing" => predict_voicing,
+                "tension" => predict_tension,
+                _ => false,
+            };
+        }
+        /// <summary>
+        /// The use_*_embed and predict_* flags dsconfig.yaml sets beyond the typed ones,
+        /// filled while loading.
+        /// </summary>
+        [YamlIgnore]
+        public Dictionary<string, bool> dynamicFlags = new Dictionary<string, bool>();
+        [YamlIgnore]
+        public DsParamsConfig paramDefinitions;
         [Description("The acoustic model takes a key shift input, which OpenUtau drives with the gender curve.")]
         public bool useKeyShiftEmbed = false;
         [Description("The acoustic model takes a speed input, which OpenUtau drives with the velocity curve.")]
@@ -122,6 +169,62 @@ namespace OpenUtau.Core.DiffSinger {
 
         public float frameMs() {
             return 1000f * hop_size / sample_rate;
+        }
+
+        /// <summary>
+        /// Reads dsconfig.yaml of a voicebank, the params.yaml beside it, and the
+        /// use_*_embed / predict_* flags that are not typed fields.
+        /// </summary>
+        public static DsConfig Load(string rootPath) {
+            string configPath = Path.Combine(rootPath, "dsconfig.yaml");
+            string text = File.ReadAllText(configPath, Encoding.UTF8);
+            var config = Yaml.DefaultDeserializer.Deserialize<DsConfig>(text);
+            config.ReadDynamicFlags(text);
+            config.LoadParamDefinitions(rootPath);
+            return config;
+        }
+
+        /// <summary>
+        /// Reads params.yaml, which sits beside dsconfig.yaml. Voicebanks without
+        /// custom parameters simply do not have the file, or leave it empty.
+        /// </summary>
+        public void LoadParamDefinitions(string rootPath) {
+            string path = Path.Combine(rootPath, "params.yaml");
+            if (!File.Exists(path)) {
+                return;
+            }
+            paramDefinitions = Yaml.DefaultDeserializer.Deserialize<DsParamsConfig>(
+                File.ReadAllText(path, Encoding.UTF8))
+                ?? new DsParamsConfig();
+        }
+
+        /// <summary>
+        /// Collects the top-level <c>use_&lt;name&gt;_embed</c> and <c>predict_&lt;name&gt;</c>
+        /// flags, which no typed field represents.
+        /// </summary>
+        void ReadDynamicFlags(string text) {
+            var stream = new YamlStream();
+            try {
+                stream.Load(new StringReader(text));
+            } catch (Exception) {
+                // The deserializer above already read the document; a style the
+                // representation model rejects leaves the typed configuration intact.
+                return;
+            }
+            if (stream.Documents.Count == 0
+                || stream.Documents[0].RootNode is not YamlMappingNode root) {
+                return;
+            }
+            foreach (var pair in root.Children) {
+                if (pair.Key is not YamlScalarNode key || key.Value is not string name
+                    || pair.Value is not YamlScalarNode value
+                    || (!name.StartsWith("use_") && !name.StartsWith("predict_"))) {
+                    continue;
+                }
+                if (bool.TryParse(value.Value, out bool flag)) {
+                    dynamicFlags[name] = flag;
+                }
+            }
         }
     }
 }

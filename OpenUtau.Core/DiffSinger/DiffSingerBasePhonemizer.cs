@@ -88,8 +88,7 @@ namespace OpenUtau.Core.DiffSinger
             //Load Config
             var configPath = Path.Join(rootPath, "dsconfig.yaml");
             try {
-                var configTxt = File.ReadAllText(configPath);
-                dsConfig = Yaml.DefaultDeserializer.Deserialize<DsConfig>(configTxt);
+                dsConfig = DsConfig.Load(rootPath);
             } catch(Exception e) {
                 Log.Error(e, $"failed to load dsconfig from {configPath}");
                 throw new Exception($"Failed to load {configPath}", e);

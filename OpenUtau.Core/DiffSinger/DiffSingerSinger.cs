@@ -12,7 +12,7 @@ using Serilog;
 using Microsoft.ML.OnnxRuntime;
 
 namespace OpenUtau.Core.DiffSinger {
-    class DiffSingerSinger : USinger {
+    public class DiffSingerSinger : USinger {
         public override string Id => voicebank.Id;
         public override string Name => voicebank.Name;
         public override Dictionary<string, string> LocalizedNames => voicebank.LocalizedNames;
@@ -48,6 +48,8 @@ namespace OpenUtau.Core.DiffSinger {
         Dictionary<string, int> phonemeTokens;
         public Dictionary<string, int> languageIds = new Dictionary<string, int>();
         public DsConfig dsConfig;
+        /// <summary>The tunable parameters dsconfig.yaml and params.yaml resolve to.</summary>
+        public DsParamRegistry paramRegistry = DsParamRegistry.Empty;
         public ulong acousticHash;
         public InferenceSession acousticSession = null;
         public DsVocoder vocoder = null;
@@ -65,6 +67,11 @@ namespace OpenUtau.Core.DiffSinger {
         public object SessionLock { get; } = new object();
         public bool HasPitchPredictor => File.Exists(Path.Join(Location, "dspitch", "dsconfig.yaml"));
         public bool HasVariancePredictor => File.Exists(Path.Join(Location,"dsvariance", "dsconfig.yaml"));
+        /// <summary>
+        /// Where the tunable parameter definitions live. The file may not exist yet:
+        /// the editor creates it, and a voicebank without one has no custom parameters.
+        /// </summary>
+        public string ParamsPath => Path.Combine(Location, "params.yaml");
 
         public DiffSingerSinger(Voicebank voicebank) {
             this.voicebank = voicebank;
@@ -95,18 +102,22 @@ namespace OpenUtau.Core.DiffSinger {
             bool dsConfigLoaded = false;
             if(configPath != null && File.Exists(configPath)){
                 try {
-                    dsConfig = Core.Yaml.DefaultDeserializer.Deserialize<DsConfig>(
-                        File.ReadAllText(configPath, Encoding.UTF8));
+                    dsConfig = DsConfig.Load(Location);
                     dsConfigLoaded = true;
                 } catch (Exception e) {
                     Log.Error(e, $"Failed to load dsconfig.yaml for {Name} from {configPath}");
                     errors.Add($"Failed to load dsconfig.yaml: {e.Message}");
                     dsConfig = new DsConfig();
+                    paramRegistry = DsParamRegistry.Empty;
+                }
+                if (dsConfigLoaded) {
+                    paramRegistry = BuildParamRegistry(dsConfig);
                 }
             } else {
                 Log.Error($"dsconfig.yaml not found for {Name} at {configPath}");
                 errors.Add($"dsconfig.yaml not found at {configPath}");
                 dsConfig = new DsConfig();
+                paramRegistry = DsParamRegistry.Empty;
             }
 
             if(dsConfigLoaded) {
@@ -235,6 +246,40 @@ namespace OpenUtau.Core.DiffSinger {
             }
         }
 
+        /// <summary>
+        /// Resolves the tunable parameters of the voicebank. A broken params.yaml keeps
+        /// the built-in parameters usable and reports the file instead of failing the
+        /// whole voicebank.
+        /// </summary>
+        DsParamRegistry BuildParamRegistry(DsConfig config) {
+            try {
+                return DsParamRegistry.From(config);
+            } catch (Exception e) {
+                Log.Error(e, $"Failed to load the parameters of {Name}");
+                errors.Add($"Failed to load params.yaml: {e.Message}");
+                return DsParamRegistry.From(config, includeDefinitions: false);
+            }
+        }
+
+        /// <summary>
+        /// Re-reads dsconfig.yaml and params.yaml after the singer dialog saves them.
+        /// The models keep their sessions: only the configuration they are driven by
+        /// changes.
+        /// </summary>
+        public override void Reload() {
+            // A reload replaces the previous one's verdict rather than piling up errors.
+            errors.RemoveAll(e => e.StartsWith("Failed to reload dsconfig.yaml:") || e.StartsWith("Failed to load params.yaml:"));
+            try {
+                var config = DsConfig.Load(Location);
+                var registry = BuildParamRegistry(config);
+                dsConfig = config;
+                paramRegistry = registry;
+            } catch (Exception e) {
+                Log.Error(e, $"Failed to reload the DiffSinger configuration of {Name}");
+                errors.Add($"Failed to reload dsconfig.yaml: {e.Message}");
+            }
+        }
+
         public DsPitch? getPitchPredictor(){
             // DirectML session creation, Run and disposal must not overlap.
             using var dmlScope = Onnx.EnterDmlScope();
@@ -264,7 +309,7 @@ namespace OpenUtau.Core.DiffSinger {
             lock (SessionLock) {
                 if(variancePredictor is null) {
                     if(HasVariancePredictor){
-                        variancePredictor = new DsVariance(Path.Join(Location, "dsvariance"));
+                        variancePredictor = new DsVariance(Path.Join(Location, "dsvariance"), paramRegistry);
                     }
                 }
                 return variancePredictor;

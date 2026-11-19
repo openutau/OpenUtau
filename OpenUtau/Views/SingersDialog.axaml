@@ -284,6 +284,9 @@
       <TabItem Name="DsConfigTab" Header="dsconfig.yaml" IsVisible="{Binding HasDsConfig}">
         <c:YamlEditor Name="DsConfigEditor" Margin="0,6,0,0"/>
       </TabItem>
+      <TabItem Name="DsParamsTab" Header="params.yaml" IsVisible="{Binding HasDsParams}">
+        <c:YamlEditor Name="DsParamsEditor" Margin="0,6,0,0"/>
+      </TabItem>
     </TabControl>
   </Grid>
 </Window>

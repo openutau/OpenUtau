@@ -43,6 +43,7 @@ namespace OpenUtau.App.Views {
         (YamlEditor editor, TabItem tab)[] YamlTabs => new[] {
             (CharacterYamlEditor, CharacterYamlTab),
             (DsConfigEditor, DsConfigTab),
+            (DsParamsEditor, DsParamsTab),
         };
 
         USinger? yamlSinger;
@@ -73,6 +74,11 @@ namespace OpenUtau.App.Views {
             }
             if (viewModel.HasDsConfig) {
                 DsConfigEditor.Load(Path.Combine(singer.Location, "dsconfig.yaml"), typeof(Core.DiffSinger.DsConfig), onSaved);
+            }
+            if (viewModel.HasDsParams && singer is Core.DiffSinger.DiffSingerSinger dsSinger) {
+                var paramsPath = dsSinger.ParamsPath;
+                DsParamsTab.Header = Path.GetFileName(paramsPath);
+                DsParamsEditor.Load(paramsPath, typeof(Core.DiffSinger.DsParamsConfig), onSaved);
             }
             if (Tabs.SelectedItem is TabItem { IsVisible: false }) {
                 Tabs.SelectedItem = OtoTab;

@@ -128,38 +128,18 @@ namespace OpenUtau.Core.DiffSinger {
             IReadOnlyList<bool> retakeMask,
             int channelCount) {
             if (!IsCompatible(previous, predicted) ||
-                retakeMask.Count != previous.totalFrames * channelCount) {
+                retakeMask.Count != predicted.totalFrames * channelCount) {
                 return CloneResult(predicted);
             }
-            int channel = 0;
-            var energy = ComposeEnabledChannel(previous.energy, predicted.energy, retakeMask, previous.totalFrames, ref channel, channelCount);
-            var breathiness = ComposeEnabledChannel(previous.breathiness, predicted.breathiness, retakeMask, previous.totalFrames, ref channel, channelCount);
-            var voicing = ComposeEnabledChannel(previous.voicing, predicted.voicing, retakeMask, previous.totalFrames, ref channel, channelCount);
-            var tension = ComposeEnabledChannel(previous.tension, predicted.tension, retakeMask, previous.totalFrames, ref channel, channelCount);
-            return new VarianceResult {
-                energy = energy,
-                breathiness = breathiness,
-                voicing = voicing,
-                tension = tension,
-                frameMs = predicted.frameMs,
-                headFrames = predicted.headFrames,
-                tailFrames = predicted.tailFrames,
-                totalFrames = predicted.totalFrames,
-            };
-        }
-
-        static float[]? ComposeEnabledChannel(
-            float[]? previous,
-            float[]? predicted,
-            IReadOnlyList<bool> mask,
-            int frameCount,
-            ref int channel,
-            int channelCount) {
-            if (previous == null && predicted == null) {
-                return null;
+            var channels = new float[]?[predicted.names.Length];
+            for (int channel = 0; channel < predicted.names.Length; channel++) {
+                channels[channel] = ComposeChannel(
+                    previous.channels[channel], predicted.channels[channel],
+                    retakeMask, predicted.totalFrames, channel, channelCount);
             }
-            int currentChannel = channel++;
-            return ComposeChannel(previous, predicted, mask, frameCount, currentChannel, channelCount);
+            return new VarianceResult(
+                (string[])predicted.names.Clone(), channels,
+                predicted.frameMs, predicted.headFrames, predicted.tailFrames, predicted.totalFrames);
         }
 
         static float[]? ComposeChannel(
@@ -184,53 +164,49 @@ namespace OpenUtau.Core.DiffSinger {
             return result;
         }
 
-        internal static bool IsMetadataCompatible(VarianceResult previous, VarianceResult current) {
-            return previous.totalFrames == current.totalFrames &&
-                previous.headFrames == current.headFrames &&
-                previous.tailFrames == current.tailFrames &&
-                Math.Abs(previous.frameMs - current.frameMs) < 1e-4f;
+        internal static bool IsMetadataCompatible(
+            VarianceResult previous, float frameMs, int headFrames, int tailFrames, int totalFrames) {
+            return previous.totalFrames == totalFrames &&
+                previous.headFrames == headFrames &&
+                previous.tailFrames == tailFrames &&
+                Math.Abs(previous.frameMs - frameMs) < 1e-4f;
         }
 
+        /// <summary>
+        /// Whether a stored result has exactly the channels the current parameters
+        /// expect: the retake mask and the predictions are positional, so a result
+        /// from another layout must not be composed with them.
+        /// </summary>
         internal static bool IsChannelLayoutCompatible(
             VarianceResult result,
-            int totalFrames,
-            bool predictEnergy,
-            bool predictBreathiness,
-            bool predictVoicing,
-            bool predictTension) {
-            return ChannelMatches(result.energy, predictEnergy, totalFrames) &&
-                ChannelMatches(result.breathiness, predictBreathiness, totalFrames) &&
-                ChannelMatches(result.voicing, predictVoicing, totalFrames) &&
-                ChannelMatches(result.tension, predictTension, totalFrames);
+            IReadOnlyList<DsParam> parameters,
+            int totalFrames) {
+            if (result.names.Length != parameters.Count || result.channels.Length != parameters.Count) {
+                return false;
+            }
+            for (int i = 0; i < parameters.Count; i++) {
+                if (!string.Equals(result.names[i], parameters[i].Name, StringComparison.OrdinalIgnoreCase)) {
+                    return false;
+                }
+                var channel = result.channels[i];
+                if (channel == null || channel.Length != totalFrames) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         internal static bool IsCompatible(VarianceResult previous, VarianceResult current) {
-            return IsMetadataCompatible(previous, current) &&
-                SameLength(previous.energy, current.energy) &&
-                SameLength(previous.breathiness, current.breathiness) &&
-                SameLength(previous.voicing, current.voicing) &&
-                SameLength(previous.tension, current.tension);
-        }
-
-        static bool ChannelMatches(float[]? values, bool enabled, int totalFrames) {
-            return enabled ? values?.Length == totalFrames : values == null;
+            return IsMetadataCompatible(previous, current.frameMs, current.headFrames, current.tailFrames, current.totalFrames) &&
+                previous.names.SequenceEqual(current.names, StringComparer.OrdinalIgnoreCase) &&
+                previous.channels.Length == current.channels.Length &&
+                previous.channels.Zip(current.channels).All(pair => SameLength(pair.First, pair.Second));
         }
 
         static bool SameLength(float[]? a, float[]? b) {
             return (a == null) == (b == null) && (a == null || a.Length == b!.Length);
         }
 
-        internal static VarianceResult CloneResult(VarianceResult result) {
-            return new VarianceResult {
-                energy = result.energy?.ToArray(),
-                breathiness = result.breathiness?.ToArray(),
-                voicing = result.voicing?.ToArray(),
-                tension = result.tension?.ToArray(),
-                frameMs = result.frameMs,
-                headFrames = result.headFrames,
-                tailFrames = result.tailFrames,
-                totalFrames = result.totalFrames,
-            };
-        }
+        internal static VarianceResult CloneResult(VarianceResult result) => result.Clone();
     }
 }

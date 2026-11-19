@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace OpenUtau.Core {
@@ -21,4 +21,17 @@ namespace OpenUtau.Core {
 
     /// <summary>A suggested value, with an optional description shown beside it.</summary>
     public record YamlValue(string Text, string? Description = null);
+
+    /// <summary>
+    /// Keys a YAML type accepts beyond its typed members, by regular expression,
+    /// e.g. DiffSinger's <c>use_&lt;name&gt;_embed</c>. Their values are booleans.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class)]
+    public class YamlPatternKeysAttribute : Attribute {
+        public YamlPatternKeysAttribute(params string[] patterns) {
+            Patterns = patterns;
+        }
+
+        public string[] Patterns { get; }
+    }
 }

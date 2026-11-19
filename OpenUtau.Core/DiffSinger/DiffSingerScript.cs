@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -118,24 +118,23 @@ namespace OpenUtau.Core.DiffSinger {
                     x => MusicMath.ToneToFreq(x * 0.01));
             }
 
-            //velc
-            var velocityCurve = phrase.curves.FirstOrDefault(curve => curve.Item1 == DiffSingerUtils.VELC);
-            if (velocityCurve != null) {
-                velocity = DiffSingerUtils.SampleCurve(phrase, velocityCurve.Item2,
-                    0, frameMs, totalFrames, headFrames, tailFrames,
-                    x=>Math.Pow(2, (x - 100) / 100));
-            }
-
             //voicebank specific features
             if(singer != null) {
-                //gender
-                if (singer.dsConfig.useKeyShiftEmbed) {
-                    var range = singer.dsConfig.augmentationArgs.randomPitchShifting.range;
-                    var positiveScale = (range[1] == 0) ? 0 : (12 / range[1] / 100);
-                    var negativeScale = (range[0] == 0) ? 0 : (-12 / range[0] / 100);
-                    gender = DiffSingerUtils.SampleCurve(phrase, phrase.gender, 0, frameMs, totalFrames, headFrames, tailFrames,
-                        x => (x < 0) ? (-x * positiveScale) : (-x * negativeScale))
+                //acoustic-only curves. The export format only carries the standard
+                //parameters, so other tunable parameters are not written.
+                foreach (var param in singer.paramRegistry.Acoustic) {
+                    if (param.Name != "gender" && param.Name != "velocity") {
+                        continue;
+                    }
+                    var values = DiffSingerUtils.SampleCurve(phrase, param.CurveOf(phrase) ?? Array.Empty<float>(),
+                        param.AcousticValue(param.Descriptor.defaultValue), frameMs, totalFrames, headFrames, tailFrames,
+                        x => param.AcousticValue((float)x))
                         .ToArray();
+                    if (param.Name == "gender") {
+                        gender = values;
+                    } else {
+                        velocity = values;
+                    }
                 }
 
                 //variance curves
@@ -146,33 +145,19 @@ namespace OpenUtau.Core.DiffSinger {
                     lock (singer.SessionLock) {
                         varianceResult = singer.getVariancePredictor().Process(phrase);
                     }
-                    if (varianceResult.energy != null) {
-                        energy = ComputeVarianceCurve(
-                            phrase, varianceResult.energy, varianceResult,
-                            phrase.curves.FirstOrDefault(c => c.Item1 == DiffSingerUtils.ENE)?.Item2,
-                            DiffSingerUtils.ENE,
+                    foreach (var param in singer.paramRegistry.Variance) {
+                        if (varianceResult.Channel(param.Name) == null) {
+                            continue;
+                        }
+                        var values = ComputeVarianceCurve(
+                            phrase, varianceResult.Channel(param.Name)!, varianceResult, param,
                             frameMs, totalFrames, headFrames, tailFrames);
-                    }
-                    if (varianceResult.breathiness != null) {
-                        breathiness = ComputeVarianceCurve(
-                            phrase, varianceResult.breathiness, varianceResult,
-                            phrase.breathiness,
-                            Format.Ustx.BREC,
-                            frameMs, totalFrames, headFrames, tailFrames);
-                    }
-                    if (varianceResult.voicing != null) {
-                        voicing = ComputeVarianceCurve(
-                            phrase, varianceResult.voicing, varianceResult,
-                            phrase.voicing,
-                            Format.Ustx.VOIC,
-                            frameMs, totalFrames, headFrames, tailFrames);
-                    }
-                    if (varianceResult.tension != null) {
-                        tension = ComputeVarianceCurve(
-                            phrase, varianceResult.tension, varianceResult,
-                            phrase.tension,
-                            Format.Ustx.TENC,
-                            frameMs, totalFrames, headFrames, tailFrames);
+                        switch (param.Name) {
+                            case "energy": energy = values; break;
+                            case "breathiness": breathiness = values; break;
+                            case "voicing": voicing = values; break;
+                            case "tension": tension = values; break;
+                        }
                     }
                 }
             }
@@ -182,7 +167,7 @@ namespace OpenUtau.Core.DiffSinger {
 
         private static double[] ComputeVarianceCurve(
                 RenderPhrase phrase, float[] predicted, VarianceResult varianceResult,
-                float[] userCurve, string abbr,
+                DsParam param,
                 double frameMs, int totalFrames, int headFrames, int tailFrames) {
             var resampled = DiffSingerUtils.ResamplePaddedCurve(
                 predicted, totalFrames,
@@ -190,10 +175,11 @@ namespace OpenUtau.Core.DiffSinger {
                 headFrames, tailFrames,
                 varianceResult.frameMs, (float)frameMs);
             var userSampled = DiffSingerUtils.SampleCurve(
-                phrase, userCurve, 0, frameMs, totalFrames, headFrames, tailFrames,
+                phrase, param.CurveOf(phrase) ?? Array.Empty<float>(), param.NeutralCurve,
+                frameMs, totalFrames, headFrames, tailFrames,
                 x => x).Select(x => (float)x).ToArray();
             return resampled.Zip(userSampled,
-                    (p, u) => DiffSingerUtils.ApplyVarianceDelta(abbr, p, u))
+                    (p, u) => param.CombinedValue(p, u))
                 .Select(x => (double)x).ToArray();
         }
 

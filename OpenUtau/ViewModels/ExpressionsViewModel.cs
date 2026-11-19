@@ -151,6 +151,8 @@ namespace OpenUtau.App.ViewModels {
 
         public IReadOnlyList<MenuItemViewModel>? AddMenuItems { get; set; }
         public ReactiveCommand<ExpressionBuilder, RxVoid> AddItemCommand { get; }
+        /// <summary>Adds the expressions the renderers suggest for the tracks' singers.</summary>
+        public ReactiveCommand<RxVoid, RxVoid> GetSuggestionsCommand { get; }
 
         private ReadOnlyObservableCollection<ExpressionBuilder> expressions;
         private ExpressionBuilder? expression;
@@ -187,6 +189,7 @@ namespace OpenUtau.App.ViewModels {
                 expressionsSourceTrack.Add(newExpression);
                 Expression = newExpression;
             });
+            GetSuggestionsCommand = ReactiveCommand.Create(GetSuggestions);
         }
 
         private void SetExpressionsList() {
@@ -309,7 +312,8 @@ namespace OpenUtau.App.ViewModels {
 
         public void GetSuggestions() {
             foreach (var track in DocManager.Inst.Project.tracks) {
-                if (track.RendererSettings.Renderer == null) {
+                // A track without a usable singer has no parameters to suggest.
+                if (track.RendererSettings.Renderer == null || track.Singer?.Found != true) {
                     continue;
                 }
                 var suggestions = track.RendererSettings.Renderer.GetSuggestedExpressions(track.Singer, track.RendererSettings);
