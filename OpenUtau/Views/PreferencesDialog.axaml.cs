@@ -73,6 +73,30 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        void OpenAddlResamplersFolder(object sender, RoutedEventArgs e) {
+            try {
+                if (Directory.Exists(viewModel!.AdditionalResamplersPath)) {
+                    OS.OpenFolder(viewModel.AdditionalResamplersPath);
+                }
+            } catch (Exception ex) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(ex));
+            }
+        }
+
+        void ResetAddlResamplersPath(object sender, RoutedEventArgs e) {
+            viewModel!.SetAddlResamplersPath(string.Empty);
+        }
+
+        async void SelectAddlResamplersPath(object sender, RoutedEventArgs e) {
+            var path = await FilePicker.OpenFolder(this, "prefs.paths.addlresampler", null);
+            if (string.IsNullOrEmpty(path)) {
+                return;
+            }
+            if (Directory.Exists(path)) {
+                viewModel!.SetAddlResamplersPath(path);
+            }
+        }
+
         async void ReloadSingers(object sender, RoutedEventArgs e) {
             LoadingWindow.BeginLoading(this);
             await Task.Run(() => {

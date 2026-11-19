@@ -80,6 +80,7 @@ namespace OpenUtau.Core {
         public string SingersPathOld => Path.Combine(DataPath, "Content", "Singers");
         public string SingersPath => Path.Combine(DataPath, "Singers");
         public string AdditionalSingersPath => Preferences.Default.AdditionalSingerPath;
+        public string AdditionalResamplersPath => Preferences.Default.AdditionalResamplerPath;
         public string SingersInstallPath => Preferences.Default.InstallToAdditionalSingersPath
             && !string.IsNullOrEmpty(Preferences.Default.AdditionalSingerPath)
                 ? AdditionalSingersPath
@@ -105,6 +106,16 @@ namespace OpenUtau.Core {
                 }
                 if (Directory.Exists(AdditionalSingersPath)) {
                     list.Add(AdditionalSingersPath);
+                }
+                return list.Distinct().ToList();
+            }
+        }
+
+        public List<string> ResamplersPaths {
+            get {
+                var list = new List<string> { ResamplersPath };
+                if (Directory.Exists(AdditionalResamplersPath)) {
+                    list.Add(AdditionalResamplersPath);
                 }
                 return list.Distinct().ToList();
             }

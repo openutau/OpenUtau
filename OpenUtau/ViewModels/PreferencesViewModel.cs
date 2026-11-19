@@ -70,6 +70,7 @@ namespace OpenUtau.App.ViewModels {
         // Paths
         public string SingerPath => PathManager.Inst.SingersPath;
         public string AdditionalSingersPath => PathManager.Inst.AdditionalSingersPath;
+        public string AdditionalResamplersPath => PathManager.Inst.AdditionalResamplersPath;
         [Reactive] public partial bool InstallToAdditionalSingersPath { get; set; }
         [Reactive] public partial bool LoadDeepFolders { get; set; }
 
@@ -559,6 +560,13 @@ namespace OpenUtau.App.ViewModels {
             Preferences.Default.AdditionalSingerPath = path;
             Preferences.Save();
             this.RaisePropertyChanged(nameof(AdditionalSingersPath));
+        }
+
+        public void SetAddlResamplersPath(string path) {
+            Preferences.Default.AdditionalResamplerPath = path;
+            Preferences.Save();
+            ToolsManager.Inst.SearchResamplers();
+            this.RaisePropertyChanged(nameof(AdditionalResamplersPath));
         }
 
         public void SetVLabelerPath(string path) {

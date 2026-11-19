@@ -212,6 +212,7 @@ namespace OpenUtau.Core.Util {
             public List<string> RecentFiles = new List<string>();
             public string SkipUpdate = string.Empty;
             public string AdditionalSingerPath = string.Empty;
+            public string AdditionalResamplerPath = string.Empty;
             public bool InstallToAdditionalSingersPath = true;
             public bool LoadDeepFolderSinger = true;
             public bool PreferCommaSeparator = false;

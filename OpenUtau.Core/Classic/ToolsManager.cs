@@ -74,26 +74,26 @@ namespace OpenUtau.Classic {
             resamplers.Add(new WorldlineResampler());
             resamplers.Add(new HifisamplerResampler());
             var builtInNames = resamplers.Select(r => r.ToString()).ToHashSet();
-            string basePath = PathManager.Inst.ResamplersPath;
-            try {
-                Directory.CreateDirectory(basePath);
-                foreach (var file in Directory.EnumerateFiles(basePath, "*", new EnumerationOptions() {
-                    RecurseSubdirectories = true
-                })) {
-                    var driver = LoadResampler(file, basePath);
-                    if (driver == null) {
-                        continue;
+            foreach (var basePath in PathManager.Inst.ResamplersPaths) {
+                try {
+                    Directory.CreateDirectory(basePath);
+                    foreach (var file in Directory.EnumerateFiles(basePath, "*", new EnumerationOptions() {
+                        RecurseSubdirectories = true
+                    })) {
+                        var driver = LoadResampler(file, basePath);
+                        if (driver == null) {
+                            continue;
+                        }
+                        // A file named like a built-in resampler would replace it in resamplersMap.
+                        if (builtInNames.Contains(driver.ToString())) {
+                            Log.Warning($"Skipped resampler {file}: name conflict.");
+                            continue;
+                        }
+                        resamplers.Add(driver);
                     }
-                    // A file named like a built-in resampler would replace it in resamplersMap.
-                    if (builtInNames.Contains(driver.ToString())) {
-                        Log.Warning($"Skipped resampler {file}: name conflict.");
-                        continue;
-                    }
-                    resamplers.Add(driver);
+                } catch (Exception e) {
+                    Log.Error(e, $"Failed to search resamplers at {basePath}.");
                 }
-            } catch (Exception e) {
-                Log.Error(e, "Failed to search resamplers.");
-                resamplers.Clear();
             }
             foreach (var resampler in resamplers) {
                 resamplersMap[resampler.ToString()] = resampler;
