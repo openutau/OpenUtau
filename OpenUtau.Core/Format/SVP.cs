@@ -110,21 +110,21 @@ namespace OpenUtau.Core.Format {
                             audioFile = string.IsNullOrEmpty(dir) ? Path.GetFullPath(audioFile) : Path.GetFullPath(Path.Combine(dir, audioFile));
                         }
 
-                        if (!File.Exists(audioFile)) continue;
-
+                        // A file that is absent or unreadable still becomes a part, so the
+                        // track keeps its place and shows as missing instead of vanishing.
                         long startBlickAudio = reference.blickAbsoluteBegin > 0 ? reference.blickAbsoluteBegin : reference.blickOffset;
                         int startTick = Math.Max(0, (int)Math.Round(startBlickAudio / blicksPerTick));
-                        double startMs = timeAxis.TickPosToMsPos(startTick);
-                        int endTick = timeAxis.MsPosToTickPos(startMs + (reference.audio.duration * 1000.0));
-                        int durTick = Math.Max(project.resolution * 4, endTick - startTick);
 
                         var wavePart = new UWavePart {
                             name = Path.GetFileName(audioFile),
                             FilePath = audioFile,
                             position = startTick,
-                            Duration = durTick,
+                            // The SVP records the audio length itself, so the part keeps its
+                            // length when the wave file can't be opened to measure it.
+                            fileDurationMs = reference.audio.duration * 1000.0,
                             trackNo = track.TrackNo
                         };
+                        wavePart.Load(project);
 
                         project.parts.Add(wavePart);
                         trackHasContent = true;

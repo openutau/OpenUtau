@@ -27,6 +27,10 @@ namespace OpenUtau.Core.DiffSinger
         IG2p g2p;
         Dictionary<string, int> phonemeTokens;
         DiffSingerSpeakerEmbedManager speakerEmbedManager;
+        private static int globalDsGeneration = 0;
+        private int localDsGeneration = 0;
+        private static YamlWatcher dsWatcher;
+        private static string currentlyWatchedDsDir;
 
         string defaultPause = "SP";
         protected virtual string GetDictionaryName()=>"dsdict.yaml";
@@ -35,12 +39,40 @@ namespace OpenUtau.Core.DiffSinger
         private bool _singerLoaded;
 
         public override void SetSinger(USinger singer) {
-            if (_singerLoaded && singer == this.singer) return;
+            if (_singerLoaded && singer == this.singer && localDsGeneration == globalDsGeneration) return;
             try {
+                localDsGeneration = globalDsGeneration;
                 _singerLoaded = _executeSetSinger(singer);
+                SetupYamlWatcher(rootPath);
             } catch {
                 _singerLoaded = false;
                 throw;
+            }
+        }
+
+        private void SetupYamlWatcher(string directory) {
+            if (string.IsNullOrEmpty(directory) || currentlyWatchedDsDir == directory) {
+                return;
+            }
+
+            if (dsWatcher != null) {
+                dsWatcher.Dispose();
+                dsWatcher = null;
+            }
+
+            currentlyWatchedDsDir = directory;
+
+            if (Directory.Exists(directory)) {
+                dsWatcher = new YamlWatcher(directory, () => {
+                    Log.Information($"[DiffSingerBasePhonemizer] Detected YAML change in {directory}. Reloading globally...");
+                    System.Threading.Thread.Sleep(200);
+                    globalDsGeneration++;
+
+                    // Signal OpenUtau to re-run the timeline runner
+                    if (this.singer != null) {
+                        OpenUtau.Core.SingerManager.Inst.ScheduleReload(this.singer);
+                    }
+                });
             }
         }
 
@@ -76,11 +108,11 @@ namespace OpenUtau.Core.DiffSinger
                 }
             }
             this.frameMs = dsConfig.frameMs();
-            //Load g2p
-            g2p = LoadG2p(rootPath, dsConfig.use_lang_id);
             //Load phonemes list
             string phonemesPath = Path.Combine(rootPath, dsConfig.phonemes);
             phonemeTokens = DiffSingerUtils.LoadPhonemes(phonemesPath);
+            //Load g2p
+            g2p = LoadG2p(rootPath, dsConfig.use_lang_id);
             //Load models
             var linguisticModelPath = Path.Join(rootPath, dsConfig.linguistic);
             try {
@@ -135,6 +167,12 @@ namespace OpenUtau.Core.DiffSinger
             g2pBuilder.AddSymbol("AP", true);
             g2ps.Add(g2pBuilder.Build());
             return new G2pFallbacks(g2ps.ToArray());
+        }
+
+        //Check if a symbol name is part of the voicebank's phoneme vocabulary (phonemes.txt).
+        //Only valid after the phoneme list has been loaded in SetSinger.
+        protected bool IsPhonemeSupported(string symbol) {
+            return phonemeTokens != null && phonemeTokens.ContainsKey(symbol);
         }
 
         //Check if the phoneme is supported. If unsupported, return an empty string.
@@ -265,11 +303,6 @@ namespace OpenUtau.Core.DiffSinger
             return wordPhonemes;
         }
 
-        int framesBetweenTickPos(double tickPos1, double tickPos2) {
-            return (int)(timeAxis.TickPosToMsPos(tickPos2)/frameMs) 
-                - (int)(timeAxis.TickPosToMsPos(tickPos1)/frameMs);
-        }
-
         public static IEnumerable<double> CumulativeSum(IEnumerable<double> sequence, double start = 0) {
             double sum = start;
             foreach (var item in sequence) {
@@ -312,6 +345,10 @@ namespace OpenUtau.Core.DiffSinger
             return token;
         }
         
+        /// <summary>
+        /// Runs the linguistic encoder and the duration predictor for one part,
+        /// then aligns the predicted durations to the note grid.
+        /// </summary>
         protected override void ProcessPart(Note[][] phrase) {
             float padding = 500f;//Padding time for consonants at the beginning of a sentence, ms
             float frameMs = dsConfig.frameMs();
@@ -361,21 +398,26 @@ namespace OpenUtau.Core.DiffSinger
             var word_div = phrasePhonemes.Take(phrasePhonemes.Count-1)
                 .Select(n => (Int64)n.Phonemes.Count)
                 .ToArray();
-            //Pairwise(phrasePhonemes)
-            var word_dur = phrasePhonemes
-                .Zip(phrasePhonemes.Skip(1), (a, b) => (long)framesBetweenTickPos(a.Position, b.Position))
+            // Frame budgets must use the same cumulative rounding as the training data
+            // (round(cumsum(ms) / frame + 0.5)), not floor(end) - floor(start).
+            var wordDurMs = phrasePhonemes
+                .Zip(phrasePhonemes.Skip(1),
+                    (a, b) => timeAxis.TickPosToMsPos(b.Position) - timeAxis.TickPosToMsPos(a.Position))
+                .ToArray();
+            var word_dur = DiffSingerUtils.DurationsMsToFrames(wordDurMs, frameMs)
+                .Select(x => (long)x)
                 .ToArray();
             //Call Diffsinger Linguistic Encoder model
             var linguisticInputs = new List<NamedOnnxValue>();
             linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("tokens",
                 new DenseTensor<Int64>(tokens, new int[] { tokens.Length }, false)
                 .Reshape(new int[] { 1, tokens.Length })));
-            linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_div",
-                new DenseTensor<Int64>(word_div, new int[] { word_div.Length }, false)
-                .Reshape(new int[] { 1, word_div.Length })));
-            linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_dur",
-                new DenseTensor<Int64>(word_dur, new int[] { word_dur.Length }, false)
-                .Reshape(new int[] { 1, word_dur.Length })));
+            var wordDivTensor = new DenseTensor<Int64>(word_div, new int[] { word_div.Length }, false)
+                .Reshape(new int[] { 1, word_div.Length });
+            var wordDurTensor = new DenseTensor<Int64>(word_dur, new int[] { word_dur.Length }, false)
+                .Reshape(new int[] { 1, word_dur.Length });
+            linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_div", wordDivTensor));
+            linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_dur", wordDurTensor));
             //Language id
             if(dsConfig.use_lang_id){
                 var langIdByPhone = phrasePhonemes
@@ -414,6 +456,16 @@ namespace OpenUtau.Core.DiffSinger
             durationInputs.Add(NamedOnnxValue.CreateFromTensor("ph_midi",
                 new DenseTensor<Int64>(ph_midi, new int[] { ph_midi.Length }, false)
                 .Reshape(new int[] { 1, ph_midi.Length })));
+            //Group-aware ("rel") duration models need word_div/word_dur; absolute ("abs") ones don't.
+            //When dsconfig leaves dur_type unspecified, probe the graph, so voicebanks that
+            //predate the key still work (interim attn voicebanks).
+            bool feedWordInputs = dsConfig.dur_type == "rel"
+                || (string.IsNullOrEmpty(dsConfig.dur_type)
+                    && durationModel.InputMetadata.ContainsKey("word_div"));
+            if (feedWordInputs) {
+                durationInputs.Add(NamedOnnxValue.CreateFromTensor("word_div", wordDivTensor));
+                durationInputs.Add(NamedOnnxValue.CreateFromTensor("word_dur", wordDurTensor));
+            }
             //Speaker
             if(dsConfig.speakers != null){
                 var speakerEmbedManager = getSpeakerEmbedManager();

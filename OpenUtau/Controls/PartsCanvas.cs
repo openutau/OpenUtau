@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using OpenUtau.App.ViewModels;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
 using ReactiveUI.Primitives;
@@ -38,6 +38,21 @@ namespace OpenUtau.App.Controls {
                 nameof(Items),
                 o => o.Items,
                 (o, v) => o.Items = v);
+        public static readonly DirectProperty<PartsCanvas, UPart?> PianoRollOpenPartProperty =
+            AvaloniaProperty.RegisterDirect<PartsCanvas, UPart?>(
+                nameof(PianoRollOpenPart),
+                o => o.PianoRollOpenPart,
+                (o, v) => o.PianoRollOpenPart = v);
+        public static readonly DirectProperty<PartsCanvas, double> PianoRollViewTickOffsetProperty =
+            AvaloniaProperty.RegisterDirect<PartsCanvas, double>(
+                nameof(PianoRollViewTickOffset),
+                o => o.PianoRollViewTickOffset,
+                (o, v) => o.PianoRollViewTickOffset = v);
+        public static readonly DirectProperty<PartsCanvas, double> PianoRollViewViewportTicksProperty =
+            AvaloniaProperty.RegisterDirect<PartsCanvas, double>(
+                nameof(PianoRollViewViewportTicks),
+                o => o.PianoRollViewViewportTicks,
+                (o, v) => o.PianoRollViewViewportTicks = v);
 
         public double TickWidth {
             get => tickWidth;
@@ -59,12 +74,41 @@ namespace OpenUtau.App.Controls {
             get => _items;
             set => SetAndRaise(ItemsProperty, ref _items, value);
         }
+        public UPart? PianoRollOpenPart {
+            get => _pianoRollOpenPart;
+            set {
+                if (SetAndRaise(PianoRollOpenPartProperty, ref _pianoRollOpenPart, value)) {
+                    foreach (var control in partControls.Values) {
+                        control.InvalidateVisual();
+                    }
+                }
+            }
+        }
+        public double PianoRollViewTickOffset {
+            get => _pianoRollViewTickOffset;
+            set {
+                if (SetAndRaise(PianoRollViewTickOffsetProperty, ref _pianoRollViewTickOffset, value)) {
+                    InvalidatePartViewport();
+                }
+            }
+        }
+        public double PianoRollViewViewportTicks {
+            get => _pianoRollViewViewportTicks;
+            set {
+                if (SetAndRaise(PianoRollViewViewportTicksProperty, ref _pianoRollViewViewportTicks, value)) {
+                    InvalidatePartViewport();
+                }
+            }
+        }
 
         private double tickWidth;
         private double trackHeight;
         private double tickOffset;
         private double trackOffset;
         private ObservableCollection<UPart>? _items;
+        private UPart? _pianoRollOpenPart;
+        private double _pianoRollViewTickOffset;
+        private double _pianoRollViewViewportTicks;
 
         Dictionary<UPart, PartControl> partControls = new Dictionary<UPart, PartControl>();
 
@@ -99,7 +143,7 @@ namespace OpenUtau.App.Controls {
             MessageBus.Current.Listen<TimeAxisChangedEvent>()
                 .Subscribe(e => {
                     foreach (var (part, control) in partControls) {
-                        control.InvalidateVisual();
+                        control.InvalidateWaveform();
                     }
                 });
             MessageBus.Current.Listen<ThemeChangedEvent>()
@@ -157,6 +201,74 @@ namespace OpenUtau.App.Controls {
             control.Dispose();
             partControls.Remove(part);
             Children.Remove(control);
+        }
+
+        public void HandlePhraseRenderStateEvent(UVoicePart part, int startTick, int endTick, bool rendered) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(part)) {
+                    control.Value.UpdateRenderStatus(startTick, endTick, rendered);
+                    return;
+                }
+            }
+        }
+
+        public void HandlePhraseRenderStateEvent(UVoicePart part, RenderPhrase phrase, bool rendered) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(part)) {
+                    control.Value.UpdateRenderStatus(phrase, rendered);
+                    return;
+                }
+            }
+        }
+
+        public void HandleRebuildPhraseBlocksEvent(UVoicePart part) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(part)) {
+                    if (control.Value.RebuildPhraseBlocks(part)) {
+                        control.Value.InvalidateVisual();
+                    }
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set the rendered status on all RenderPhrases in every part.
+        /// </summary>
+        public void SetAllRenderPhrases(bool state) {
+            foreach (var control in partControls) {
+                control.Value.SetAllBlocks(state);
+            }
+        }
+
+        /// <summary>
+        /// Set the rendered status on all RenderPhrases in UTrack.
+        /// </summary>
+        public void SetAllRenderPhrases(UTrack track, bool state) {
+            foreach (var control in partControls) {
+                if (control.Key.trackNo.Equals(track.TrackNo)) {
+                    control.Value.SetAllBlocks(state);
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set the rendered status on all RenderPhrases in UVoicePart.
+        /// </summary>
+        public void SetAllRenderPhrases(UVoicePart voicePart, bool state) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(voicePart)) {
+                    control.Value.SetAllBlocks(state);
+                    return;
+                }
+            }
+        }
+
+        void InvalidatePartViewport() {
+            if (_pianoRollOpenPart != null && partControls.TryGetValue(_pianoRollOpenPart, out var control)) {
+                control.InvalidateVisual();
+            }
         }
     }
 }

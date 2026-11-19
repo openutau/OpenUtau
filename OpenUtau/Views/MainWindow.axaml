@@ -5,7 +5,9 @@
         xmlns:vm="using:OpenUtau.App.ViewModels"
         xmlns:c="clr-namespace:OpenUtau.App.Controls"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="650"
+        x:DataType="vm:MainWindowViewModel"
         x:Class="OpenUtau.App.Views.MainWindow"
+        x:CompileBindings="True"
         Icon="/Assets/open-utau.ico"
         Title="{Binding Title}" MinWidth="300" MinHeight="200" Width="{Binding Width}" Height="{Binding Height}"
         Focusable="True" KeyDown="OnKeyDown" PointerPressed="OnPointerPressed" Closing="WindowClosing"
@@ -14,12 +16,20 @@
     <Style Selector="Button,ToggleButton">
       <Setter Property="Focusable" Value="False"/>
     </Style>
+    <Style Selector="FlyoutPresenter.warnings">
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
+      <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+    </Style>
   </Window.Styles>
   <Grid>
-    <Grid Name="MainGrid" Margin="{Binding $parent[1].WindowDecorationMargin}">
-      <Menu Grid.Row="0" Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Left" Height="24"
-                Opened="OnMainMenuOpened" Closed="OnMainMenuClosed" PointerExited="OnMainMenuPointerLeave"
-                ZIndex="1">
+    <Grid Name="MainGrid" Margin="{Binding $parent[Window].WindowDecorationMargin}">
+      <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Left"
+                  Height="24" ZIndex="1">
+        <Menu Height="24" Opened="OnMainMenuOpened" Closed="OnMainMenuClosed" PointerExited="OnMainMenuPointerLeave">
           <MenuItem Header="{DynamicResource menu.file}" IsEnabled="{Binding Page}">
             <MenuItem Header="{DynamicResource menu.file.new}" InputGesture="Ctrl+N" Click="OnMenuNew"/>
             <MenuItem Header="{DynamicResource menu.file.newfromtemplate}" ItemsSource="{Binding OpenTemplatesMenuItems}" Classes="MenuItemWithSubMenu"/>
@@ -69,7 +79,7 @@
             <MenuItem Header="{DynamicResource menu.tools.fullscreen}" InputGesture="F11" Click="OnMenuFullScreen"/>
             <MenuItem Header="{DynamicResource menu.tools.dawintegration}" Click="OnMenuDawIntegration"/>
             <MenuItem Header="{Binding ClearCacheHeader}" Click="OnMenuClearCache"/>
-            <MenuItem Header="{DynamicResource menu.tools.debugwindow}" Click="OnMenuDebugWindow"/>
+            <MenuItem Header="{DynamicResource menu.tools.debugwindow}" Click="OnMenuDeveloperWindow"/>
             <MenuItem Header="{DynamicResource phoneticassistant.caption}" Click="OnMenuPhoneticAssistant"/>
             <MenuItem Header="{DynamicResource menu.tools.singers}" Click="OnMenuSingers"/>
             <MenuItem Header="{DynamicResource menu.tools.singer.install}" Click="OnMenuInstallSinger"/>
@@ -84,6 +94,49 @@
             <MenuItem Header="{DynamicResource menu.help.logslocation}" Click="OnMenuLogsLocation"/>
           </MenuItem>
         </Menu>
+        <Button Name="WarningsButton" Classes="clear" Width="24" Height="24" Margin="0" Padding="0"
+                IsVisible="{Binding HasWarnings}" ToolTip.Tip="{DynamicResource warnings}">
+          <Path Width="14" Height="14" Stretch="Uniform" Fill="#E8A317"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Data="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+          <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedLeft" FlyoutPresenterClasses="warnings">
+              <StackPanel Width="380">
+                <Grid ColumnDefinitions="*,Auto" Margin="14,6,6,6">
+                  <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{DynamicResource warnings}"/>
+                  <Button Grid.Column="1" Classes="clear" Margin="0" Height="24" Padding="8,0"
+                          Content="{DynamicResource warnings.clear}" Click="OnClearWarnings"/>
+                </Grid>
+                <Border Height="1" Background="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
+                <ScrollViewer MaxHeight="360" HorizontalScrollBarVisibility="Disabled">
+                  <ItemsControl ItemsSource="{Binding Warnings}" Margin="0,4">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:WarningItem">
+                        <Grid ColumnDefinitions="Auto,*,Auto" Margin="14,8,6,8">
+                          <Path Width="14" Height="14" Margin="0,2,10,0" VerticalAlignment="Top" Stretch="Uniform" Fill="#E8A317"
+                                Data="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
+                          <StackPanel Grid.Column="1" Spacing="4">
+                            <SelectableTextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <SelectableTextBlock Text="{Binding Detail}" FontSize="12" TextWrapping="Wrap"
+                                                 Foreground="{DynamicResource ForegroundBrushSecondary}"
+                                                 IsVisible="{Binding Detail, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                          </StackPanel>
+                          <Button Grid.Column="2" Classes="clear" Width="24" Height="24" Margin="6,-3,0,0" Padding="0"
+                                  VerticalAlignment="Top" ToolTip.Tip="{DynamicResource warnings.dismiss}" Click="OnDismissWarning">
+                            <Path Width="8" Height="8" Stretch="Uniform" StrokeThickness="1.5"
+                                  Stroke="{DynamicResource ForegroundBrushSecondary}"
+                                  Data="M0,0 L8,8 M8,0 L0,8"/>
+                          </Button>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </StackPanel>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+      </StackPanel>
       <Carousel SelectedIndex="{Binding Page}" >
         <!--Welcome page-->
         <Grid Margin="60,50,60,40" RowDefinitions="Auto,Auto,Auto,*" ColumnDefinitions="*,*" KeyDown="OnCarouselPageKeyDown">
@@ -242,33 +295,33 @@
                 </TextBlock>
               </Grid>
             </Border>
-            <Border Classes="playback" Width="127" HorizontalAlignment="Center">
+            <Border Classes="playback" HorizontalAlignment="Center">
               <StackPanel Orientation="Horizontal">
                 <Button Command="{Binding PlaybackViewModel.SeekStart}" Height="18">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 0 0 L 2 0 L 2 9 L 0 9 Z M 2 4.5 L 7 0 L 7 9 Z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M5.35 4.3H7.44V13.7H5.35ZM7.44 9L12.65 4.3V13.7Z"/>
                 </Button>
                 <Button Click="OnPlayOrPause" Height="18">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 0 0.5 7 4.62 0 8.73 Z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M5.35 4.3L12.65 9.01L5.35 13.7Z"/>
                 </Button>
                 <Button Command="{Binding PlaybackViewModel.Pause}" Height="18">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 0 0 L 2 0 L 2 9 L 0 9 Z M 4 0 L 6 0 L 6 9 L 4 9 Z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M5.35 4.3H7.78V13.7H5.35ZM10.22 4.3H12.65V13.7H10.22Z"/>
                 </Button>
                 <Button Command="{Binding PlaybackViewModel.SeekEnd}" Height="18">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 0 0 L 5 4.5 L 0 9 Z M 5 0 L 7 0 L 7 9 L 5 9 Z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M5.35 4.3L10.56 9L5.35 13.7ZM10.56 4.3H12.65V13.7H10.56Z"/>
                 </Button>
                 <ToggleButton IsChecked="{Binding PlaybackViewModel.LoopPlayback}"
                               ToolTip.Tip="{DynamicResource tip.playback.loop}" Height="18">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 0.86 1.21 H 6.58 v -2 l 2.45 3 -2.45 3 v -2 H 1.68 v 2 H 0.04 v -2 c 0 -1.1 0.33 -2 0.82 -2 z m 7.36 8 h -5.73 v 2 l -2.45 -3 2.45 -3 v 2 h 4.91 v -2 H 9.04 v 2 c 0 1.1 -0.33 2 -0.82 2 z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M5.19 4.86H11.11V2.8l2.53 3.09-2.53 3.1V6.93H6.05V8.99H4.35V6.93c0-1.14.34-2.07.84-2.07ZM12.81 13.13H6.88v2.07L4.35 12.1l2.53-3.1V11.06h5.08V8.99H13.65v2.07c0 1.14-.34 2.07-.84 2.07Z"/>
                 </ToggleButton>
-                <ToggleButton IsChecked="{Binding PlaybackViewModel.Metronome}"
+                <ToggleButton IsChecked="{Binding PlaybackViewModel.Metronome}" Height="18"
                               ToolTip.Tip="{DynamicResource prefs.playback.metronome}">
-                  <Path Fill="{Binding $parent.Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center"
-                        Data="M 5 1 C 6 1 7 1 8 1 L 11 5 L 11 13 L 2 13 L 2 5 Z Z M 6.5 4 A 1.5 1.5 0 1 1 6.5 7 A 1.5 1.5 0 1 1 6.5 4 Z M 6.5 5 L 12.5 0 L 12.5 1 L 6.5 6 Z"/>
+                  <Path Fill="{Binding $parent[Window].Foreground}" VerticalAlignment="Center" HorizontalAlignment="Center" Height="18" Width="18"
+                        Data="M7.93 4.3a.43.34 0 0 0-.41.25L4.33 13.25a.43.34 0 0 0 .41.45h8.5a.43.34 0 0 0 .41-.45L12.32 9.65l-1.89 1.36c-.09.56-.7 1.02-1.42 1.02-.78 0-1.44-.54-1.44-1.18 0-.64.66-1.18 1.44-1.18.01 0 .02 0 .03 0l2.61-1.85-1.2-3.27a.43.34 0 0 0-.41-.25ZM14.65 6.13a.8.66 0 0 0-.48.16L9.13 9.92a1.17.95 0 0 0-1.17.95 1.17.95 0 0 0 1.17.95 1.17.95 0 0 0 1.16-.9l5.06-3.65a.8.66 0 0 0 .07-.92.8.66 0 0 0-.66-.22Z"/>
                 </ToggleButton>
               </StackPanel>
             </Border>
@@ -309,7 +362,7 @@
             <Canvas.ContextMenu>
               <ContextMenu Name="TimelineContextMenu" ItemsSource="{Binding TimelineContextMenuItems}">
                 <ContextMenu.Styles>
-                  <Style Selector="MenuItem">
+                  <Style Selector="MenuItem" x:DataType="vm:MenuItemViewModel">
                     <Setter Property="Header" Value="{Binding Header}"/>
                     <Setter Property="Command" Value="{Binding Command}"/>
                     <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
@@ -347,9 +400,13 @@
                         TrackHeight="{Binding TrackHeight}"
                         TickOffset="{Binding TickOffset}"
                         TrackOffset="{Binding TrackOffset}"
+                        PianoRollOpenPart="{Binding PianoRollOpenPart}"
+                        PianoRollViewTickOffset="{Binding PianoRollViewTickOffset}"
+                        PianoRollViewViewportTicks="{Binding PianoRollViewViewportTicks}"
                         Items="{Binding Parts}"
                         PointerPressed="PartsCanvasPointerPressed"
                         PointerMoved="PartsCanvasPointerMoved"
+                        PointerExited="PartsCanvasPointerExited"
                         PointerReleased="PartsCanvasPointerReleased"
                         DoubleTapped="PartsCanvasDoubleTapped"
                         PointerWheelChanged="MainPagePointerWheelChanged">
@@ -359,14 +416,14 @@
                       Canvas.Left="{Binding PlayPosHighlightX, Mode=OneWay}"
                       Canvas.Top="0"
                       Fill="{DynamicResource NeutralAccentBrushSemi2}"
-                      IsVisible="{Binding $parent[Window].DataContext.PlaybackViewModel.ShowPlayPosHighlight}"
+                      IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).PlaybackViewModel.ShowPlayPosHighlight}"
                       IsHitTestVisible="False"/>
             <Rectangle Name="PlayPosLine"
                        Canvas.Left="{Binding PlayPosX}"
                        Canvas.Top="0" Width="1"
                        Height="{Binding $parent.Bounds.Height, Mode=OneWay}"
                        ZIndex="99" IsHitTestVisible="False"
-                       IsVisible="{Binding $parent[Window].DataContext.PlaybackViewModel.IsPlaying}"
+                       IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).PlaybackViewModel.IsPlaying}"
                        Fill="{DynamicResource AccentBrush2}"/>
             <Rectangle Name="SelectionBox" StrokeThickness="2"
                       Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"
@@ -375,7 +432,8 @@
             <c:PartsCanvas.ContextMenu>
               <ContextMenu Name="PartsContextMenu"
                           Opening="PartsContextMenuOpening"
-                          Closing="PartsContextMenuClosing">
+                          Closing="PartsContextMenuClosing"
+                          x:DataType="vm:PartsContextMenuArgs">
                 <MenuItem Header="{DynamicResource context.part.delete}"
                           Command="{Binding PartDeleteCommand}"
                           CommandParameter="{Binding Part}"/>

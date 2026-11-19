@@ -174,6 +174,9 @@ namespace OpenUtau.Classic {
                     bank.LocalizedNames[kv.Key] = kv.Value;
                 }
             }
+            if (bankConfig.SearchTerms != null) {
+                bank.SearchTerms.AddRange(bankConfig.SearchTerms.Where(term => !string.IsNullOrWhiteSpace(term)));
+            }
             if (!string.IsNullOrWhiteSpace(bankConfig.Image)) {
                 bank.Image = bankConfig.Image;
             }

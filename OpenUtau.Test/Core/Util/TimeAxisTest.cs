@@ -191,5 +191,27 @@ namespace OpenUtau.Core {
             timeAxis.MsPosToNonExactTickPos(value);
             timeAxis.TickPosToMsPos(value);
         }
+
+        [Fact]
+        public void TemposBetweenTicksBeforeFirstSegmentTest() {
+            var timeAxis = new TimeAxis();
+            var project = new UProject();
+            timeAxis.BuildSegments(project);
+
+            var tempos = timeAxis.TemposBetweenTicks(-10, 0);
+            Assert.Single(tempos);
+            Assert.Equal(-10, tempos[0].position);
+            Assert.Equal(120, tempos[0].bpm);
+
+            tempos = timeAxis.TemposBetweenTicks(-100, -50);
+            Assert.Single(tempos);
+            Assert.Equal(-100, tempos[0].position);
+            Assert.Equal(120, tempos[0].bpm);
+
+            tempos = timeAxis.TemposBetweenTicks(-10, 5);
+            Assert.Single(tempos);
+            Assert.Equal(0, tempos[0].position);
+            Assert.Equal(120, tempos[0].bpm);
+        }
     }
 }

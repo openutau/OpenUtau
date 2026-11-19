@@ -1,0 +1,22 @@
+{
+  "version": 0,
+  "time": {
+    "meter": [ { "index": 0, "numerator": 4, "denominator": 4 } ],
+    "tempo": [ { "position": 0, "bpm": 120.0 } ]
+  },
+  "library": [],
+  "tracks": [
+    {
+      "name": "Audio",
+      "groups": [
+        {
+          "groupID": "instrumental-ref",
+          "blickOffset": 0,
+          "blickAbsoluteBegin": 0,
+          "isInstrumental": true,
+          "audio": { "filename": "missing.wav", "duration": 0.05 }
+        }
+      ]
+    }
+  ]
+}

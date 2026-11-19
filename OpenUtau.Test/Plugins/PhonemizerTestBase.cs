@@ -66,7 +66,6 @@ namespace OpenUtau.Plugins {
             timeAxis.BuildSegments(project);
 
             var phonemizer = CreatePhonemizer();
-            phonemizer.Testing = true;
             phonemizer.SetSinger(singer);
             phonemizer.SetTiming(timeAxis);
             phonemizer.SetUp(groups.ToArray(), project, track);

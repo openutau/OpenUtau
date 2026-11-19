@@ -2,7 +2,7 @@ on:
   schedule:
     # Daily alpha build. Skipped if master has no new commits since the
     # last alpha release (see the next-version job below).
-    - cron: '0 0 * * *'
+    - cron: '0 12 * * *'
   workflow_dispatch:
     inputs:
       channel:
@@ -133,15 +133,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install NSIS via Chocolatey
-        run: |
-          for ($i = 1; $i -le 3; $i++) {
-            choco install nsis --version=3.11 --no-progress
-            if ($LASTEXITCODE -eq 0) { exit 0 }
-            Write-Warning "choco install nsis failed (attempt $i/3, exit code $LASTEXITCODE)"
-            Start-Sleep -Seconds 10
-          }
-          exit $LASTEXITCODE
+      - uses: repolevedavaj/install-nsis@v1
+        with:
+          nsis-version: '3.11'
         if: ${{ matrix.arch.os == 'win' }}
       - uses: justalemon/VersionPatcher@v0.7.1
         with:
@@ -150,7 +144,7 @@ jobs:
 
       # Test
       - name: Test
-        run: dotnet test OpenUtau.Test
+        run: dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj
 
       # Build
       - name: Restore
@@ -172,6 +166,20 @@ jobs:
             bin/${{ matrix.arch.name }}/publish/OpenUtau.app \
             OpenUtau/Assets/OpenUtau.icon \
             OpenUtau
+        if: ${{ matrix.arch.os == 'osx' }}
+
+      # The macOS runner is a plugin execution provider: without its library in the
+      # bundle the app silently falls back to CPU, so fail the build here instead.
+      - name: Verify WebGPU execution provider is bundled (macOS)
+        run: |
+          app="bin/${{ matrix.arch.name }}/publish/OpenUtau.app"
+          lib=$(find "$app" -name 'libonnxruntime_providers_webgpu.dylib' -print -quit)
+          if [ -z "$lib" ]; then
+            echo "::error::libonnxruntime_providers_webgpu.dylib is missing from $app"
+            find "$app" -name '*onnxruntime*' -print
+            exit 1
+          fi
+          echo "WebGPU plugin library: $lib"
         if: ${{ matrix.arch.os == 'osx' }}
 
       - name: Write release channel info
@@ -330,6 +338,8 @@ jobs:
           python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=macos -r=osx-arm64 -f=OpenUtau-osx-arm64.dmg
           python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=linux -r=linux-x64 -f=OpenUtau-linux-x64.tar.gz
           python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=linux -r=linux-arm64 -f=OpenUtau-linux-arm64.tar.gz
+          python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=linux -r=linux-x64-appimage -f=OpenUtau-linux-x64.AppImage
+          python appcast.py -v=${{ needs.next-version.outputs.version }} --tag=${{ needs.next-version.outputs.tag }} -o=linux -r=linux-arm64-appimage -f=OpenUtau-linux-arm64.AppImage
 
       # Release
       - name: Release

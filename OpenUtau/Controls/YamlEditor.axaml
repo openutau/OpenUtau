@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ae="using:AvaloniaEdit"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="480"
+             x:Class="OpenUtau.App.Controls.YamlEditor">
+  <Grid RowDefinitions="*,auto,auto">
+    <Border Grid.Row="0" BorderThickness="1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
+      <ae:TextEditor Name="Editor" ShowLineNumbers="True" FontSize="13" Padding="4,0,0,0"
+                     FontFamily="Cascadia Mono,Consolas,Menlo,DejaVu Sans Mono,monospace"
+                     Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                     HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
+    </Border>
+    <ListBox Name="ProblemList" Grid.Row="1" MaxHeight="120" IsVisible="False"
+             BorderThickness="1,0,1,1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
+      <ListBox.Styles>
+        <Style Selector="ListBoxItem">
+          <Setter Property="Padding" Value="8,2"/>
+          <Setter Property="MinHeight" Value="0"/>
+        </Style>
+      </ListBox.Styles>
+    </ListBox>
+    <Grid Grid.Row="2" ColumnDefinitions="*,auto,auto" Margin="0,6,0,0">
+      <TextBlock Name="StatusText" Grid.Column="0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+      <Button Name="RevertButton" Grid.Column="1" Margin="4,0" MinWidth="80" IsEnabled="False"
+              Content="{DynamicResource yamleditor.revert}"/>
+      <Button Name="SaveButton" Grid.Column="2" Margin="4,0,0,0" MinWidth="80" IsEnabled="False"
+              Content="{DynamicResource yamleditor.save}"/>
+    </Grid>
+  </Grid>
+</UserControl>

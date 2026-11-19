@@ -13,9 +13,11 @@
     <PackageReference Include="Concentus.OggFile" Version="1.0.6" />
     <PackageReference Include="csharp-kana" Version="1.0.2" />
     <PackageReference Include="csharp-pinyin" Version="1.0.0" />
+    <PackageReference Include="FftFlat" Version="1.0.1" />
     <PackageReference Include="Ignore" Version="0.1.50" />
+    <PackageReference Include="Jint" Version="4.17.0" />
     <PackageReference Include="K4os.Hash.xxHash" Version="1.0.8" />
-    <PackageReference Include="Melanchall.DryWetMidi" Version="7.2.0" />
+    <PackageReference Include="Melanchall.DryWetMidi.Nativeless" Version="7.2.0" />
     <PackageReference Include="NAudio.Core" Version="2.2.1" />
     <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
     <PackageReference Include="NeoLua" Version="1.3.19" />
@@ -28,6 +30,8 @@
     <PackageReference Include="SDL3-CS.Windows" Version="3.4.14" />
     <PackageReference Include="Serilog" Version="4.1.0" />
     <PackageReference Include="SharpCompress" Version="0.48.1" />
+    <PackageReference Include="SharpJaad" Version="0.1.1" />
+    <PackageReference Include="SharpJaad.AAC" Version="0.1.1" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.3" />
     <PackageReference Include="System.IO.Packaging" Version="9.0.2" />
@@ -37,17 +41,36 @@
     <PackageReference Include="UTF.Unknown" Version="2.5.1" />
     <PackageReference Include="WanaKana-net" Version="1.0.0" />
     <PackageReference Include="YamlDotNet" Version="15.1.2" />
+    <!-- Pinned: 8.0.0 is the last MIT release; later versions use a different license.
+         Compile assets stay private: its root "Json" namespace would hide OpenUtau.Core.Json in referencing projects. -->
+    <PackageReference Include="JsonSchema.Net" Version="8.0.0" PrivateAssets="compile;contentfiles;analyzers;build" />
     <PackageReference Include="NetMQ" Version="4.0.1.13" />
   </ItemGroup>
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
+    <!-- Pinned to 1.23.0 on purpose: the 1.24.x DirectML build can kill the
+         process natively while an InferenceSession is being created - no managed
+         exception, nothing written to the log, which is exactly what happens when
+         switching singer. 1.23.0 and the CPU execution provider are both stable.
+         DirectML is in sustained engineering, so 1.24.4 is the last release and
+         any fix made after it will never ship as a package upgrade. Note this
+         package never had a 1.23.1/1.23.2, so the former "1.23.2" silently
+         resolved upward to 1.24.x through NU1603. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.23.0" />
   </ItemGroup>
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.24.4" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu.Linux" Version="1.24.4" />
   </ItemGroup>
   <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.4" />
+    <!-- 1.31.0 and the WebGPU plugin EP replace CoreML on macOS. The plugin library
+         is built against ONNX Runtime API 30 - the package only advertises
+         "1.24.4 or later", but 1.24.x kills the process natively while an
+         InferenceSession is created and 1.26.x rejects the library, so the core
+         has to be at least the version the plugin was built for.
+         NOTE: this package does not depend on the plugin, and the plugin does not
+         depend on it; both have to move together. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.EP.WebGpu" Version="0.4.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Analysis\Crepe\Resources.Designer.cs">
@@ -88,6 +111,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>VogenRes.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="Js\Template\*" LogicalName="Js.Template.%(Filename)%(Extension)" />
   </ItemGroup>
   <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">
     <DefineConstants>WINDOWS</DefineConstants>

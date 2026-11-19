@@ -3,18 +3,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using OpenUtau.Audio;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.SourceGenerators;
 using ReactiveUI.Primitives;
-using ReactiveUI.Avalonia;
-using OpenUtau.Core.Render;
 using ReactiveUI.Primitives.Concurrency;
+using ReactiveUI.SourceGenerators;
 using Serilog;
 
 namespace OpenUtau.App.ViewModels {
@@ -45,6 +43,7 @@ namespace OpenUtau.App.ViewModels {
         }
         // Release channel index: 0 = stable, 1 = beta, 2 = alpha.
         [Reactive] public partial int Channel { get; set; }
+        [Reactive] public partial bool PlaySineWhenNoSinger { get; set; }
 
         // Playback
         private List<AudioOutputDevice>? audioOutputDevices;
@@ -70,7 +69,7 @@ namespace OpenUtau.App.ViewModels {
 
         // Paths
         public string SingerPath => PathManager.Inst.SingersPath;
-        public string AdditionalSingersPath => !string.IsNullOrWhiteSpace(PathManager.Inst.AdditionalSingersPath) ? PathManager.Inst.AdditionalSingersPath : "(None)";
+        public string AdditionalSingersPath => PathManager.Inst.AdditionalSingersPath;
         [Reactive] public partial bool InstallToAdditionalSingersPath { get; set; }
         [Reactive] public partial bool LoadDeepFolders { get; set; }
 
@@ -82,6 +81,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial LyricsHelperOption? LyricsHelper { get; set; }
         [Reactive] public partial bool LyricsHelperBrackets { get; set; }
         [Reactive] public partial bool PenPlusDefault { get; set; }
+        [Reactive] public partial bool RenderStatusInTrackBar { get; set; }
 
         // Render
         [Reactive] public partial bool PreRender { get; set; }
@@ -101,12 +101,19 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial GpuInfo OnnxGpu { get; set; }
         public bool ShowOnnxGpu => showOnnxGpu.Value;
 
+        public List<string> MergePhrasesSecs { get; } = new List<string> { "Auto", "2.5", "5", "7.5", "10" };
+        [Reactive] public partial int MergePhrasesSecIndex { get; set; }
+
         // GAME backend (onnx / ggml)
         public List<string> GameBackendOptions { get; } = new() { "ONNX", "GGML" };
         [Reactive] public partial string GameBackend { get; set; }
 
         // Appearance
         [Reactive] public partial string ThemeName { get; set; }
+        [Reactive] public partial string UiFontPath { get; set; }
+        [Reactive] public partial string UiFontFamily { get; set; }
+        [Reactive] public partial bool UseUiFontForNotes { get; set; }
+        public List<string>  UiFontFamilies { get; private set; } = new();
         [Reactive] public partial int DegreeStyle { get; set; }
         [Reactive] public partial bool UseTrackColor { get; set; }
         [Reactive] public partial bool ShowPortrait { get; set; }
@@ -117,6 +124,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowIcon { get; set; }
         [Reactive] public partial bool ShowGhostNotes { get; set; }
         [Reactive] public partial bool NoteHoverGlow { get; set; }
+        [Reactive] public partial bool ReduceAnimations { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool DetachPianoRoll { get; set; }
@@ -142,7 +150,6 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool DiffSingerTensorCache { get; set; }
         [Reactive] public partial bool DiffSingerVarianceLocalPitchPatch { get; set; }
         [Reactive] public partial bool DiffSingerLangCodeHide { get; set; }
-        [Reactive] public partial bool DiffSingerLocalRetaking { get; set; }
 
         // Advanced
         [Reactive] public partial bool RememberMid { get; set; }
@@ -150,6 +157,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool RememberVsqx { get; set; }
         [Reactive] public partial bool Wayland { get; set; }
         public string WinePath => Preferences.Default.WinePath;
+        [Reactive] public partial bool DefaultSnapCurve { get; set; }
 
         private readonly ObservableAsPropertyHelper<bool> highThreads;
         private readonly ObservableAsPropertyHelper<bool> showOnnxGpu;
@@ -160,7 +168,7 @@ namespace OpenUtau.App.ViewModels {
         // means every subscription below would call Preferences.Save() once during
         // construction with the value that was just loaded from disk - Skip(1) drops
         // that redundant initial emission and keeps only real changes.
-        void PersistOn<T>(IObservable<T> source, Action<T> assign) {
+        void PersistOn<T>(IObservable<T> source, Action<T> assign) where T : notnull {
             source.Skip(1).Subscribe(v => {
                 assign(v);
                 Preferences.Save();
@@ -212,6 +220,10 @@ namespace OpenUtau.App.ViewModels {
             OnnxGpu = OnnxGpuOptions.Count > 0
                 ? OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0])
                 : new GpuInfo();
+            MergePhrasesSecIndex = Math.Max(0, MergePhrasesSecs.IndexOf(
+                Preferences.Default.MergePhrasesSec == 0
+                    ? "Auto"
+                    : Preferences.Default.MergePhrasesSec.ToString()));
             // GAME backend: ONNX is the default, GGML is available when installed.
             // The options list always includes both so the ComboBox UX is stable.
             GameBackend = Preferences.Default.GameBackend switch {
@@ -225,15 +237,19 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerTensorCache = Preferences.Default.DiffSingerTensorCache;
             DiffSingerVarianceLocalPitchPatch = Preferences.Default.DiffSingerVarianceLocalPitchPatch;
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
-            DiffSingerLocalRetaking = Preferences.Default.DiffSingerLocalRetaking;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
+            UiFontPath = Preferences.Default.UiFontPath;
+            UiFontFamily = Preferences.Default.UiFontFamily;
+            UseUiFontForNotes = Preferences.Default.UseUiFontForNotes;
+            RefreshUiFontFamilies();
             DegreeStyle = Preferences.Default.DegreeStyle;
             UseTrackColor = Preferences.Default.UseTrackColor;
             ShowPortrait = Preferences.Default.ShowPortrait;
             ShowIcon = Preferences.Default.ShowIcon;
             ShowGhostNotes = Preferences.Default.ShowGhostNotes;
             NoteHoverGlow = Preferences.Default.NoteHoverGlow;
+            ReduceAnimations = Preferences.Default.ReduceAnimations;
             ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;
             ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
             DetachPianoRoll = Preferences.Default.DetachPianoRoll;
@@ -242,12 +258,15 @@ namespace OpenUtau.App.ViewModels {
                 "alpha" => 2,
                 _ => 0
             };
+            PlaySineWhenNoSinger = Preferences.Default.PlaySineWhenNoSinger;
             LyricsHelper = LyricsHelpers.FirstOrDefault(option => option.klass.Equals(ActiveLyricsHelper.Inst.GetPreferred()));
             LyricsHelperBrackets = Preferences.Default.LyricsHelperBrackets;
+            RenderStatusInTrackBar = Preferences.Default.RenderStatusInTrackBar;
             OtoEditor = Preferences.Default.OtoEditor;
             RememberMid = Preferences.Default.RememberMid;
             RememberUst = Preferences.Default.RememberUst;
             RememberVsqx = Preferences.Default.RememberVsqx;
+            DefaultSnapCurve = Preferences.Default.DefaultSnapCurve;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
             PortraitHeightCap = Preferences.Default.PortraitHeightCap;
             PortraitVertPosition = Preferences.Default.PortraitVertPosition;
@@ -267,7 +286,7 @@ namespace OpenUtau.App.ViewModels {
                 .Select(n => n > SafeMaxThreadCount)
                 .ToProperty(this, vm => vm.HighThreads, out highThreads);
             this.WhenAnyValue(vm => vm.OnnxRunner)
-                .Select(runner => runner == "DirectML" || runner == "CUDA")
+                .Select(runner => runner == "DirectML" || runner == "CUDA" || runner == "WebGPU")
                 .ToProperty(this, vm => vm.ShowOnnxGpu, out showOnnxGpu);
             this.WhenAnyValue(vm => vm.ThemeName)
                 .Select(themeName => themeName != "Light" && themeName != "Dark" && !Colors.CustomTheme.IsPackageTheme(themeName))
@@ -293,6 +312,8 @@ namespace OpenUtau.App.ViewModels {
                 });
             PersistOn(this.WhenAnyValue(vm => vm.AudioBackEnd),
                 index => Preferences.Default.AudioBackEnd = index);
+            PersistOn(this.WhenAnyValue(vm => vm.ReduceAnimations),
+                reduceAnimations => Preferences.Default.ReduceAnimations = reduceAnimations);
             PersistOn(this.WhenAnyValue(vm => vm.PlaybackAutoScroll),
                 autoScroll => Preferences.Default.PlaybackAutoScroll = autoScroll);
             PersistOn(this.WhenAnyValue(vm => vm.PlayPosMarkerMargin),
@@ -336,6 +357,29 @@ namespace OpenUtau.App.ViewModels {
                         Preferences.Save();
                         App.SetTheme();
                     }
+                });
+            this.WhenAnyValue(vm => vm.UiFontPath)
+                .Skip(1)
+                .Subscribe(path => {
+                    Preferences.Default.UiFontPath = UiFontManager.IsSupportedFontPath(path) ? path : string.Empty;
+                    Preferences.Save();
+                    UiFontManager.Apply();
+                    RefreshUiFontFamilies();
+                });
+            this.WhenAnyValue(vm => vm.UiFontFamily)
+                .Skip(1)
+                .Subscribe(family => {
+                    Preferences.Default.UiFontFamily = family?.Trim() ?? string.Empty;
+                    Preferences.Save();
+                    UiFontManager.Apply();
+                });
+            this.WhenAnyValue(vm => vm.UseUiFontForNotes)
+                .Skip(1)
+                .Subscribe(useUiFont => {
+                    Preferences.Default.UseUiFontForNotes = useUiFont;
+                    Preferences.Save();
+                    OpenUtau.App.Controls.TextLayoutCache.Clear();
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.DegreeStyle)
                 .Skip(1)
@@ -431,6 +475,12 @@ namespace OpenUtau.App.ViewModels {
                     _ => "stable"
                 };
             });
+            PersistOn(this.WhenAnyValue(vm => vm.PlaySineWhenNoSinger), playSine => {
+                Preferences.Default.PlaySineWhenNoSinger = playSine;
+                DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
+                DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                MessageBus.Current.SendMessage(new TracksRefreshEvent());
+            });
             this.WhenAnyValue(vm => vm.LyricsHelper)
                 .Skip(1)
                 .OfType<LyricsHelperOption>()
@@ -441,6 +491,11 @@ namespace OpenUtau.App.ViewModels {
                 });
             PersistOn(this.WhenAnyValue(vm => vm.LyricsHelperBrackets),
                 brackets => Preferences.Default.LyricsHelperBrackets = brackets);
+            PersistOn(this.WhenAnyValue(vm => vm.RenderStatusInTrackBar),
+                renderStatus => {
+                    Preferences.Default.RenderStatusInTrackBar = renderStatus;
+                    MessageBus.Current.SendMessage(new TracksRefreshEvent());
+                });
             PersistOn(this.WhenAnyValue(vm => vm.OtoEditor),
                 index => Preferences.Default.OtoEditor = index);
             PersistOn(this.WhenAnyValue(vm => vm.NumRenderThreads),
@@ -451,6 +506,18 @@ namespace OpenUtau.App.ViewModels {
                 index => Preferences.Default.OnnxRunner = index);
             PersistOn(this.WhenAnyValue(vm => vm.OnnxGpu),
                 gpu => Preferences.Default.OnnxGpu = gpu.deviceId);
+            this.WhenAnyValue(vm => vm.MergePhrasesSecIndex)
+                .Skip(1)
+                .Subscribe(index => {
+                    if (index < 0 || index >= MergePhrasesSecs.Count) {
+                        return;
+                    }
+                    string item = MergePhrasesSecs[index];
+                    Preferences.Default.MergePhrasesSec = item == "Auto" ? 0 : float.Parse(item);
+                    Preferences.Save();
+                    DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
+                    DocManager.Inst.ExecuteCmd(new PreRenderNotification());
+                });
             PersistOn(this.WhenAnyValue(vm => vm.GameBackend),
                 backend => Preferences.Default.GameBackend = backend == "GGML" ? "ggml" : "onnx");
             PersistOn(this.WhenAnyValue(vm => vm.RememberMid),
@@ -459,6 +526,8 @@ namespace OpenUtau.App.ViewModels {
                 value => Preferences.Default.RememberUst = value);
             PersistOn(this.WhenAnyValue(vm => vm.RememberVsqx),
                 value => Preferences.Default.RememberVsqx = value);
+            PersistOn(this.WhenAnyValue(vm => vm.DefaultSnapCurve),
+                value => Preferences.Default.DefaultSnapCurve = value);
             PersistOn(this.WhenAnyValue(vm => vm.ClearCacheOnQuit),
                 value => Preferences.Default.ClearCacheOnQuit = value);
             PersistOn(this.WhenAnyValue(vm => vm.DiffSingerSteps),
@@ -475,8 +544,6 @@ namespace OpenUtau.App.ViewModels {
                 value => Preferences.Default.DiffSingerVarianceLocalPitchPatch = value);
             PersistOn(this.WhenAnyValue(vm => vm.DiffSingerLangCodeHide),
                 value => Preferences.Default.DiffSingerLangCodeHide = value);
-            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerLocalRetaking),
-                value => Preferences.Default.DiffSingerLocalRetaking = value);
             PersistOn(this.WhenAnyValue(vm => vm.SkipRenderingMutedTracks),
                 skipRenderingMutedTracks => Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks);
         }
@@ -536,6 +603,25 @@ namespace OpenUtau.App.ViewModels {
             Preferences.Default.SetParamPath = path;
             Preferences.Save();
             this.RaisePropertyChanged(nameof(SetParamPath));
+        }
+        
+        public void SetUiFontPath(string path) {
+            UiFontPath = path;
+            UiFontFamily = UiFontManager.GetSuggestedFamilyName(path);
+        }
+
+        public void ResetUiFont() {
+            UiFontPath = string.Empty;
+            UiFontFamily = string.Empty;
+        }
+
+        private void RefreshUiFontFamilies() {
+            UiFontFamilies = UiFontManager.GetAvailableFontFamilies();
+            if (!string.IsNullOrWhiteSpace(UiFontFamily)
+                && !UiFontFamilies.Contains(UiFontFamily, StringComparer.OrdinalIgnoreCase)) {
+                UiFontFamilies.Insert(0, UiFontFamily);
+            }
+            this.RaisePropertyChanged(nameof(UiFontFamilies));
         }
 
         public void SetWinePath(string path) {

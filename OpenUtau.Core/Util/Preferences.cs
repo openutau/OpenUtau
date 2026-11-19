@@ -117,8 +117,10 @@ namespace OpenUtau.Core.Util {
                         Default.Beta = false;
                     }
                     if (!new[] { "stable", "beta", "alpha" }.Contains(Default.Channel)) Default.Channel = "stable";
+                    if (Default.DefaultRenderer == "Classic") Default.DefaultRenderer = Renderers.CLASSIC;
                     if (!Renderers.getRendererOptions().Contains(Default.DefaultRenderer)) Default.DefaultRenderer = string.Empty;
                     if (!Onnx.getRunnerOptions().Contains(Default.OnnxRunner)) Default.OnnxRunner = string.Empty;
+                    if (OS.IsWindows()) Default.WinePath = string.Empty;
                     if (Default.Theme != null) {
                         Default.ThemeName = Default.Theme switch {
                             1 => "Dark",
@@ -172,6 +174,9 @@ namespace OpenUtau.Core.Util {
             public bool ShowPrefs = true;
             public bool ShowTips = true;
             public string ThemeName = "Light";
+            public string UiFontPath = string.Empty;
+            public string UiFontFamily = string.Empty;
+            public bool UseUiFontForNotes = false;
             public int DegreeStyle;
             public bool UseTrackColor = false;
             public bool ClearCacheOnQuit = false;
@@ -181,6 +186,7 @@ namespace OpenUtau.Core.Util {
             public int WorldlineR = 0;
             public string OnnxRunner = string.Empty;
             public int OnnxGpu = 0;
+            public float MergePhrasesSec = 0;
             /// <summary>
             /// GAME MIDI extractor backend preference: "onnx" (default) or "ggml".
             /// Affects which inference engine Game uses; see GameBackendFactory.
@@ -193,7 +199,12 @@ namespace OpenUtau.Core.Util {
             public bool DiffSingerTensorCache = true;
             public bool DiffSingerVarianceLocalPitchPatch = false;
             public bool DiffSingerLangCodeHide = false;
-            public bool DiffSingerLocalRetaking = false;
+            /// <summary>
+            /// Auto-merge nearby DiffSinger phrases (piano roll toggle). Off by
+            /// default: it changes how the model segments a passage and is still
+            /// being tuned.
+            /// </summary>
+            public bool DiffSingerMergeNearbyPhrases = false;
             public bool Metronome = false;
             public bool SkipRenderingMutedTracks = false;
             public string Language = string.Empty;
@@ -222,10 +233,12 @@ namespace OpenUtau.Core.Util {
             public bool ShowIcon = true;
             public bool ShowGhostNotes = true;
             public bool NoteHoverGlow = true;
+            public bool ReduceAnimations = false;
             public bool ShowPlaybackNoteHighlight = true;
             public bool ShowPlaybackNoteBounce = false;
             public EditTool EditTool = new EditTool();
             public bool PlayTone = true;
+            public bool PlaySineWhenNoSinger = true;
             /// <summary>Legacy; migrated to <see cref="RealTimePitchMode"/> on load.</summary>
             public bool RealTimePitchGeneration = false;
             public int RealTimePitchMode = (int)LivePitchMode.Off;
@@ -241,6 +254,7 @@ namespace OpenUtau.Core.Util {
             public Dictionary<string, string> DefaultWavtools = new Dictionary<string, string>();
             public string LyricHelper = string.Empty;
             public bool LyricsHelperBrackets = false;
+            public bool RenderStatusInTrackBar = true;
             public int OtoEditor = 0;
             public string VLabelerPath = string.Empty;
             public string SetParamPath = string.Empty;
@@ -255,6 +269,7 @@ namespace OpenUtau.Core.Util {
             public string WinePath = string.Empty;
             public bool UseWayland  = Environment.GetEnvironmentVariable("WAYLAND_DISPLAY") != null
                                          || Environment.GetEnvironmentVariable("XDG_SESSION_TYPE") == "wayland"; //Check for Wayland
+            public bool DefaultSnapCurve = true;
             public string PhoneticAssistant = string.Empty;
             public string RecentOpenSingerDirectory = string.Empty;
             public string RecentOpenProjectDirectory = string.Empty;

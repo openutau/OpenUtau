@@ -111,19 +111,5 @@ namespace OpenUtau.Plugin.Builtin {
 
         // Endings has 50 ticks gap
         protected override bool NoGap => true;
-        protected override string ValidateAlias(string alias, int tone = 0) {
-
-            // VALIDATE ALIAS DEPENDING ON METHOD
-            if (HasOto(alias, tone)) return alias;
-
-            string baseResolved = base.ValidateAlias(alias, tone);
-            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
-                if (HasOto(baseResolved, tone)) {
-                    return baseResolved;
-                }
-                alias = baseResolved;
-            }
-            return alias;
-        }
     }
 }

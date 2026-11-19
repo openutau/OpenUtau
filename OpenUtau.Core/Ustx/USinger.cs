@@ -13,9 +13,9 @@ namespace OpenUtau.Core.Ustx {
         public string Phonetic { get; private set; }
         public string Set { get; private set; }
         public USubbank[] Subbanks { get; private set; }
-        public string Color { get => string.Join(", ", Subbanks.Select(x => string.IsNullOrWhiteSpace(x.Color) ? "(main)" : x.Color)); }
-        public string Prefix { get => Subbanks.First().Prefix; }
-        public string Suffix { get => Subbanks.First().Suffix; }
+        public string Color { get => Subbanks == null ? string.Empty : string.Join(", ", Subbanks.Select(x => string.IsNullOrWhiteSpace(x.Color) ? "(main)" : x.Color)); }
+        public string Prefix { get => Subbanks?.First()?.Prefix ?? string.Empty; }
+        public string Suffix { get => Subbanks?.First()?.Suffix ?? string.Empty; }
         public string File { get; private set; }
         public string DisplayFile { get; private set; }
         public double Offset {
@@ -218,6 +218,7 @@ namespace OpenUtau.Core.Ustx {
         public virtual string Id { get; }
         public virtual string Name => name;
         public virtual Dictionary<string, string> LocalizedNames { get; }
+        public virtual IList<string> SearchTerms => Array.Empty<string>();
         public virtual USingerType SingerType { get; }
         public virtual string BasePath { get; }
         public virtual string Author { get; }

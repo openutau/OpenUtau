@@ -21,7 +21,11 @@ namespace OpenUtau.Core.DiffSinger {
             var kanaIndex = 0;
             for (int i = 0; i < lyricsArray.Length; i++) {
                 if (Kana.Kana.IsKana(lyricsArray[i])) {
-                    lyricsArray[i] = kanaResult[kanaIndex];
+                    if (lyricsArray[i].Equals("ん")) {
+                        lyricsArray[i] = "N";
+                    } else {
+                        lyricsArray[i] = kanaResult[kanaIndex];
+                    }
                     kanaIndex++;
                 }
             }

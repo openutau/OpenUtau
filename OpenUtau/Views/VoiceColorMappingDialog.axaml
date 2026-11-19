@@ -2,11 +2,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
         mc:Ignorable="d" MinWidth="200" MinHeight="200" Width="350" Height="350"
         x:Class="OpenUtau.App.Views.VoiceColorMappingDialog"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource dialogs.voicecolorremapping}"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        x:DataType="vm:VoiceColorMappingViewModel">
   <Grid RowDefinitions="40,1*,30" Margin="10">
     <StackPanel Grid.Row="0" >
       <TextBlock Text="{DynamicResource dialogs.voicecolorremapping.caption}" />

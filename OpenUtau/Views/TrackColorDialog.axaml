@@ -2,6 +2,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        xmlns:local="using:OpenUtau.App"
+        x:DataType="vm:TrackColorViewModel"
         mc:Ignorable="d" Width="450" Height="130"
         x:Class="OpenUtau.App.Views.TrackColorDialog" WindowStartupLocation="CenterOwner"
         Icon="/Assets/open-utau.ico"
@@ -21,10 +24,10 @@
         </ItemsPanelTemplate>
       </ListBox.ItemsPanel>
       <ListBox.Styles>
-        <Style Selector="ListBoxItem">
+        <Style Selector="ListBoxItem" x:DataType="local:TrackColor">
           <Setter Property="ToolTip.Tip" Value="{Binding Name}"/>
         </Style>
-        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter" x:DataType="local:TrackColor">
           <Setter Property="Background" Value="{Binding AccentColorLightSemi}"/>
         </Style>
       </ListBox.Styles>

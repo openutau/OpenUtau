@@ -3,7 +3,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:OpenUtau.App.ViewModels"
-             x:Class="OpenUtau.App.Controls.SearchBar" Focusable="False">
+             x:Class="OpenUtau.App.Controls.SearchBar"
+             x:DataType="vm:SearchNoteViewModel"
+             Focusable="False">
   <Grid ColumnDefinitions="Auto,Auto,100,40,28,28,28,28" Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
     <RadioButton Grid.Column="0" Content="{DynamicResource pianoroll.menu.searchnote.note}" Margin="2,0,0,0" IsChecked="{Binding NoteMode}"/>
     

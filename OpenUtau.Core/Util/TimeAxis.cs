@@ -274,11 +274,18 @@ namespace OpenUtau.Core {
         }
 
         public UTempo[] TemposBetweenTicks(int start, int end) {
-            var list = tempoSegments
-                .Where(tempo => start < tempo.tickEnd && tempo.tickPos < end)
-                .Select(tempo => new UTempo { position = tempo.tickPos, bpm = tempo.bpm })
-                .ToArray();
-            return list;
+            // A loop rather than LINQ: phrase snapshots call this twice for every phoneme.
+            var list = new List<UTempo>(1);
+            foreach (var tempo in tempoSegments) {
+                if (start < tempo.tickEnd && tempo.tickPos < end) {
+                    list.Add(new UTempo { position = tempo.tickPos, bpm = tempo.bpm });
+                }
+            }
+            if (list.Count == 0) {
+                var segment = TempoSegmentAtTick(start);
+                list.Add(new UTempo { position = start, bpm = segment.bpm });
+            }
+            return list.ToArray();
         }
 
         public UTimeSignature TimeSignatureAtTick(int tick) {

@@ -2,42 +2,155 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" Width="680" Height="400" MinWidth="520" MinHeight="320"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        x:DataType="vm:DawIntegrationViewModel"
+        mc:Ignorable="d" Width="680" Height="480" MinWidth="560" MinHeight="360"
         x:Class="OpenUtau.App.Views.DawIntegrationDialog"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource dawintegration.caption}"
         WindowStartupLocation="CenterOwner">
-  <Grid Margin="10" RowDefinitions="Auto,1*,Auto,Auto">
-    <TextBlock Grid.Row="0" Text="{DynamicResource dawintegration.hint}"
-               TextWrapping="Wrap" Margin="0,0,0,8"/>
+  <!-- Outer grid hosts the dialog content and, above it, the floating guide overlay. -->
+  <Grid>
+    <Grid Margin="10" RowDefinitions="Auto,1*,Auto,Auto">
+      <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+        <TextBlock Text="{DynamicResource dawintegration.hint}"
+                   TextWrapping="Wrap" VerticalAlignment="Center"/>
+        <Button Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Top"
+                Click="OnToggleGuide"
+                Content="{DynamicResource dawintegration.guide.caption}"/>
+      </Grid>
 
-    <DataGrid Grid.Row="1" ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServer}"
-              AutoGenerateColumns="False" CanUserSortColumns="False" IsReadOnly="True"
-              BorderThickness="1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
-      <DataGrid.Columns>
-        <DataGridTextColumn Header="{DynamicResource dawintegration.col.name}"
-                            Binding="{Binding Name}" Width="*"/>
-        <DataGridTextColumn Header="{DynamicResource dawintegration.col.port}"
-                            Binding="{Binding Port}" Width="70"/>
-        <DataGridTextColumn Header="{DynamicResource dawintegration.col.apiversion}"
-                            Binding="{Binding ApiVersion}" Width="Auto"/>
-        <DataGridTextColumn Header="{DynamicResource dawintegration.col.compatibility}"
-                            Binding="{Binding Compatibility}" Width="Auto"/>
-        <DataGridTextColumn Header="{DynamicResource dawintegration.col.state}"
-                            Binding="{Binding StateText}" Width="Auto"/>
-      </DataGrid.Columns>
-    </DataGrid>
+      <DataGrid Grid.Row="1" ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServer}"
+                AutoGenerateColumns="False" CanUserSortColumns="False" IsReadOnly="True"
+                BorderThickness="1" BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="{DynamicResource dawintegration.col.name}"
+                              Binding="{Binding Name}" Width="*"/>
+          <DataGridTextColumn Header="{DynamicResource dawintegration.col.port}"
+                              Binding="{Binding Port}" Width="70"/>
+          <DataGridTextColumn Header="{DynamicResource dawintegration.col.apiversion}"
+                              Binding="{Binding ApiVersion}" Width="Auto"/>
+          <DataGridTextColumn Header="{DynamicResource dawintegration.col.compatibility}"
+                              Binding="{Binding Compatibility}" Width="Auto"/>
+          <DataGridTextColumn Header="{DynamicResource dawintegration.col.state}"
+                              Binding="{Binding StateText}" Width="Auto"/>
+        </DataGrid.Columns>
+      </DataGrid>
 
-    <TextBlock Grid.Row="2" Text="{Binding Status}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+      <TextBlock Grid.Row="2" Text="{Binding Status}" TextWrapping="Wrap" Margin="0,8,0,0"/>
 
-    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="10" Margin="0,10,0,0"
-                HorizontalAlignment="Right">
-      <Button Content="{DynamicResource dawintegration.refresh}" Click="OnRefresh"
-              IsEnabled="{Binding !IsBusy}"/>
-      <Button Content="{DynamicResource dawintegration.connect}" Click="OnConnect"
-              IsEnabled="{Binding ConnectEnabled}"/>
-      <Button Content="{DynamicResource dawintegration.disconnect}" Click="OnDisconnect"
-              IsEnabled="{Binding DisconnectEnabled}"/>
-    </StackPanel>
+      <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="10" Margin="0,10,0,0"
+                  HorizontalAlignment="Right">
+        <Button Content="{DynamicResource dawintegration.refresh}" Click="OnRefresh"
+                IsEnabled="{Binding !IsBusy}"/>
+        <Button Content="{DynamicResource dawintegration.connect}" Click="OnConnect"
+                IsEnabled="{Binding ConnectEnabled}"/>
+        <Button Content="{DynamicResource dawintegration.disconnect}" Click="OnDisconnect"
+                IsEnabled="{Binding DisconnectEnabled}"/>
+      </StackPanel>
+    </Grid>
+
+    <!-- Floating guide: dims the dialog and floats a fixed-width card above it. The card is
+         plain layout (no flyout), so its width can never be clipped or re-centred by a
+         popup presenter. Opens from the header button or, once, on a first-run refresh. -->
+    <Grid IsVisible="{Binding IsGuideOpen}" Background="#66000000">
+      <Border Width="500" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+              Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+              BorderBrush="{DynamicResource SystemControlHighlightBaseMediumHighBrush}"
+              BorderThickness="1" CornerRadius="4" Padding="14">
+        <Grid RowDefinitions="Auto,*" MaxHeight="520">
+          <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+            <TextBlock FontWeight="Bold" VerticalAlignment="Center"
+                       Text="{DynamicResource dawintegration.guide.caption}"/>
+            <Button Grid.Column="1" Content="×" Padding="8,0" Margin="8,0,0,0"
+                    Background="Transparent" BorderThickness="0"
+                    Click="OnCloseGuide"/>
+          </Grid>
+          <ScrollViewer Grid.Row="1" Margin="0,6,0,0"
+                        HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="6">
+              <TextBlock Text="{DynamicResource dawintegration.guide.what}" TextWrapping="Wrap"/>
+
+              <TextBlock FontWeight="Bold" Margin="0,4,0,0"
+                         Text="{DynamicResource dawintegration.guide.install.header}"/>
+              <StackPanel Orientation="Horizontal" Spacing="16">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                  <TextBlock Text="VST3:"/>
+                  <TextBlock Text="{Binding Vst3StateText}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                  <TextBlock Text="CLAP:"/>
+                  <TextBlock Text="{Binding ClapStateText}"/>
+                </StackPanel>
+              </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="{Binding Vst3ButtonText}"
+                            Click="OnInstallVst3" IsEnabled="{Binding Vst3InstallEnabled}"/>
+                    <Button Content="{Binding ClapButtonText}"
+                            Click="OnInstallClap" IsEnabled="{Binding ClapInstallEnabled}"/>
+                  </StackPanel>
+              <TextBlock Text="{Binding InstallStatus}" TextWrapping="Wrap"/>
+
+              <TextBlock FontWeight="Bold" Margin="0,4,0,0"
+                         Text="{DynamicResource dawintegration.guide.caps.header}"/>
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="•" Margin="0,0,6,0"/>
+                <TextBlock Grid.Column="1" TextWrapping="Wrap"
+                           Text="{DynamicResource dawintegration.guide.caps.1}"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="•" Margin="0,0,6,0"/>
+                <TextBlock Grid.Column="1" TextWrapping="Wrap"
+                           Text="{DynamicResource dawintegration.guide.caps.2}"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="•" Margin="0,0,6,0"/>
+                <TextBlock Grid.Column="1" TextWrapping="Wrap"
+                           Text="{DynamicResource dawintegration.guide.caps.3}"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="•" Margin="0,0,6,0"/>
+                <TextBlock Grid.Column="1" TextWrapping="Wrap"
+                           Text="{DynamicResource dawintegration.guide.caps.4}"/>
+              </Grid>
+
+              <TextBlock FontWeight="Bold" Margin="0,4,0,0"
+                         Text="{DynamicResource dawintegration.guide.scope.header}"/>
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="•" Margin="0,0,6,0"/>
+                <TextBlock Grid.Column="1" TextWrapping="Wrap"
+                           Text="{DynamicResource dawintegration.guide.scope.1}"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="•" Margin="0,0,6,0"/>
+                <TextBlock Grid.Column="1" TextWrapping="Wrap"
+                           Text="{DynamicResource dawintegration.guide.scope.2}"/>
+              </Grid>
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="•" Margin="0,0,6,0"/>
+                <TextBlock Grid.Column="1" TextWrapping="Wrap"
+                           Text="{DynamicResource dawintegration.guide.scope.3}"/>
+              </Grid>
+
+              <TextBlock FontWeight="Bold" Margin="0,4,0,0"
+                         Text="{DynamicResource dawintegration.guide.steps.header}"/>
+              <TextBlock TextWrapping="Wrap" Text="{DynamicResource dawintegration.guide.step1}"/>
+              <TextBlock TextWrapping="Wrap" Margin="12,0,0,0"
+                         FontFamily="Consolas, Menlo, monospace"
+                         Text="{Binding GuideInstallPaths}"/>
+              <TextBlock TextWrapping="Wrap" Text="{DynamicResource dawintegration.guide.step2}"/>
+              <TextBlock TextWrapping="Wrap" Text="{DynamicResource dawintegration.guide.step3}"/>
+
+              <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+                <Button Content="{DynamicResource dawintegration.guide.manual}" Click="OnGuideManual"/>
+                <Button Content="{DynamicResource dawintegration.guide.manual.zh}" Click="OnGuideManualZh"/>
+                <Button Content="{DynamicResource dawintegration.guide.releases}" Click="OnGuideReleases"/>
+                <Button Content="{Binding GuideDownloadText}" Click="OnGuideDownload"/>
+              </StackPanel>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+    </Grid>
   </Grid>
 </Window>

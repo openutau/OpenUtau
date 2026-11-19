@@ -1,0 +1,272 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
+using OpenUtau.App.ViewModels;
+using ReactiveUI;
+using ReactiveUI.Primitives;
+
+namespace OpenUtau.App.Controls {
+    public partial class SingerFlyout : UserControl {
+        const double TileWidth = 180;
+        const double TileHeight = 40;
+        const int MinRows = 3;
+        const double WheelStep = 60;
+        // Flyout presenter padding and border plus the search box, the type filter row and the footer rows,
+        // around the tile grid.
+        const double ChromeHeight = 78;
+        // The type filter row and its margin, on top of ChromeHeight while it is shown.
+        const double TypeChipsHeight = 24;
+        // Flyout presenter padding and border left and right of the tile grid.
+        const double ChromeWidth = 20;
+        // Hover scroll speed in px/s, from the inner to the outer edge of a grabber.
+        const double MinHoverSpeed = 150;
+        const double MaxHoverSpeed = 1200;
+
+        private int maxRows = int.MaxValue;
+        private int maxColumns = int.MaxValue;
+        private int rows = 1;
+        private IDisposable? tilesSubscription;
+        private IDisposable? sizeSubscription;
+        private readonly DispatcherTimer hoverTimer;
+        private readonly Stopwatch hoverClock = new Stopwatch();
+        private Control? hoveredGrabber;
+        private double hoverSpeed;
+        private Control? pressedTile;
+
+        public SingerFlyout() {
+            InitializeComponent();
+            TileScroller.AddHandler(PointerWheelChangedEvent, TileScrollerWheel, RoutingStrategies.Tunnel);
+            hoverTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(16), DispatcherPriority.Render, HoverTick);
+        }
+
+        protected override void OnDataContextChanged(EventArgs e) {
+            base.OnDataContextChanged(e);
+            tilesSubscription?.Dispose();
+            tilesSubscription = null;
+            sizeSubscription?.Dispose();
+            sizeSubscription = null;
+            if (DataContext is SingerFlyoutViewModel viewModel) {
+                // Sized for the singers the filter leaves, so searching doesn't resize the flyout.
+                sizeSubscription = viewModel.WhenAnyValue(x => x.GridTileCount)
+                    .Subscribe(_ => UpdateSize());
+                tilesSubscription = viewModel.WhenAnyValue(x => x.Tiles)
+                    .Subscribe(_ => UpdateTiles());
+            }
+        }
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) {
+            base.OnAttachedToVisualTree(e);
+            // Once the flyout is open, so typing searches right away.
+            Dispatcher.UIThread.Post(() => SearchBox.Focus(), DispatcherPriority.Input);
+        }
+
+        /// <summary>
+        /// Lets columns grow down to the screen edge the flyout opens towards, and the grid grow right
+        /// to the edge of the window (or the screen, whichever is nearer). The flyout opens below
+        /// the anchor, or above it when there isn't room for even a few rows below.
+        /// </summary>
+        public void FitToScreen(Visual anchor) {
+            int fitRows = int.MaxValue;
+            int fitColumns = int.MaxValue;
+            var topLevel = TopLevel.GetTopLevel(anchor);
+            var screen = topLevel?.Screens?.ScreenFromVisual(anchor);
+            var anchorTop = anchor.PointToScreen(new Point(0, 0));
+            var anchorBottom = anchor.PointToScreen(new Point(0, anchor.Bounds.Height));
+            if (screen != null) {
+                var area = screen.WorkingArea;
+                double chrome = ChromeHeight + (ShowTypeChips() ? TypeChipsHeight : 0);
+                int RowsFor(double pixels) => (int)((pixels / screen.Scaling - chrome) / TileHeight);
+                int below = RowsFor(area.Bottom - anchorBottom.Y);
+                int above = RowsFor(anchorTop.Y - area.Y);
+                fitRows = Math.Max(MinRows, below >= MinRows ? below : Math.Max(below, above));
+                int right = area.Right;
+                if (topLevel != null) {
+                    right = Math.Min(right, topLevel.PointToScreen(new Point(topLevel.Bounds.Width, 0)).X);
+                }
+                double width = (right - anchorTop.X) / screen.Scaling - ChromeWidth;
+                fitColumns = Math.Max(1, (int)(width / TileWidth));
+            }
+            LimitGrid(fitRows, fitColumns);
+        }
+
+        public void LimitGrid(int maxRows, int maxColumns) {
+            this.maxRows = maxRows;
+            this.maxColumns = maxColumns;
+            UpdateSize();
+        }
+
+        bool ShowTypeChips() => (DataContext as SingerFlyoutViewModel)?.ShowTypeFilter ?? false;
+
+        void UpdateSize() {
+            int count = (DataContext as SingerFlyoutViewModel)?.GridTileCount ?? 0;
+            rows = Math.Clamp(count, 1, Math.Max(1, maxRows));
+            int columns = Math.Max(1, (count + rows - 1) / rows);
+            TileScroller.Height = rows * TileHeight;
+            // At least wide enough for the tiles; the filter row widens the flyout beyond that when it is wider.
+            TileScroller.MinWidth = Math.Min(columns, maxColumns) * TileWidth;
+            // The flyout presenter measures its content with unlimited width, so without a cap
+            // the grid grows to fit every column and has nothing left to scroll.
+            TileScroller.MaxWidth = maxColumns * TileWidth;
+            UpdateTiles();
+        }
+
+        void UpdateTiles() {
+            if (DataContext is SingerFlyoutViewModel viewModel) {
+                SectionDividers.Update(TileWidth, TileHeight, rows, viewModel.Tiles.Count, viewModel.SectionStarts);
+            }
+            TileScroller.Offset = new Vector(0, 0);
+            UpdateGrabbers();
+        }
+
+        void UpdateGrabbers() {
+            double offset = TileScroller.Offset.X;
+            double max = TileScroller.Extent.Width - TileScroller.Viewport.Width;
+            LeftGrabber.IsVisible = offset > 0.5;
+            RightGrabber.IsVisible = offset < max - 0.5;
+            if (hoveredGrabber != null && !hoveredGrabber.IsVisible) {
+                // Reached the end in that direction.
+                StopHoverScroll();
+            }
+        }
+
+        void TileScrollerScrollChanged(object? sender, ScrollChangedEventArgs e) {
+            UpdateGrabbers();
+        }
+
+        void TileScrollerWheel(object? sender, PointerWheelEventArgs e) {
+            double delta = Math.Abs(e.Delta.X) > Math.Abs(e.Delta.Y) ? e.Delta.X : e.Delta.Y;
+            ScrollTo(TileScroller.Offset.X - delta * WheelStep);
+            e.Handled = true;
+        }
+
+        void ScrollTo(double x) {
+            double max = Math.Max(0, TileScroller.Extent.Width - TileScroller.Viewport.Width);
+            TileScroller.Offset = new Vector(Math.Clamp(x, 0, max), 0);
+        }
+
+        // Hovering over an edge grabber scrolls towards it, faster nearer the outer edge.
+        void GrabberPointerMoved(object? sender, PointerEventArgs e) {
+            if (sender is not Control grabber) {
+                return;
+            }
+            double width = Math.Max(1, grabber.Bounds.Width);
+            double x = Math.Clamp(e.GetPosition(grabber).X / width, 0, 1);
+            double depth = grabber == LeftGrabber ? 1 - x : x;
+            double speed = MinHoverSpeed + (MaxHoverSpeed - MinHoverSpeed) * depth;
+            hoverSpeed = grabber == LeftGrabber ? -speed : speed;
+            if (hoveredGrabber != grabber) {
+                hoveredGrabber = grabber;
+                hoverClock.Restart();
+                hoverTimer.Start();
+            }
+        }
+
+        void GrabberPointerExited(object? sender, PointerEventArgs e) {
+            if (sender == hoveredGrabber) {
+                StopHoverScroll();
+            }
+        }
+
+        void HoverTick(object? sender, EventArgs e) {
+            double seconds = hoverClock.Elapsed.TotalSeconds;
+            hoverClock.Restart();
+            ScrollTo(TileScroller.Offset.X + hoverSpeed * seconds);
+        }
+
+        void StopHoverScroll() {
+            hoveredGrabber = null;
+            hoverTimer.Stop();
+            hoverClock.Reset();
+        }
+
+        void SearchBoxKeyDown(object? sender, KeyEventArgs e) {
+            if (DataContext is not SingerFlyoutViewModel viewModel) {
+                return;
+            }
+            if (e.Key == Key.Enter) {
+                viewModel.SelectFirst();
+                e.Handled = true;
+            } else if (e.Key == Key.Escape && !string.IsNullOrEmpty(viewModel.SearchText)) {
+                // Clears the search first; the next Escape closes the flyout.
+                viewModel.SearchText = string.Empty;
+                e.Handled = true;
+            }
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) {
+            StopHoverScroll();
+            base.OnDetachedFromVisualTree(e);
+        }
+
+        // Tiles are plain Borders, so they implement click themselves: press, then release over the same tile.
+        void TilePressed(object? sender, PointerPressedEventArgs e) {
+            if (sender is Control tile && e.GetCurrentPoint(tile).Properties.IsLeftButtonPressed) {
+                pressedTile = tile;
+                e.Pointer.Capture(tile);
+                e.Handled = true;
+            }
+        }
+
+        void TileReleased(object? sender, PointerReleasedEventArgs e) {
+            if (sender is not Control tile || tile != pressedTile || e.InitialPressMouseButton != MouseButton.Left) {
+                return;
+            }
+            pressedTile = null;
+            e.Pointer.Capture(null);
+            e.Handled = true;
+            if (new Rect(tile.Bounds.Size).Contains(e.GetPosition(tile)) &&
+                tile.DataContext is SingerTileViewModel tileViewModel &&
+                DataContext is SingerFlyoutViewModel viewModel) {
+                viewModel.Select(tileViewModel);
+            }
+        }
+
+        void TileContextRequested(object? sender, ContextRequestedEventArgs e) {
+            e.Handled = true;
+            if (sender is not Control { DataContext: SingerTileViewModel tile } control ||
+                DataContext is not SingerFlyoutViewModel viewModel || tile.IsMissing) {
+                return;
+            }
+            // Built on demand, so the many tiles don't each carry a menu.
+            MenuItem Item(string header, Action onClick) {
+                var item = new MenuItem() { Header = this.FindResource(header) };
+                item.Classes.Add("context");
+                item.Click += (_, _) => onClick();
+                return item;
+            }
+            var items = new List<MenuItem> {
+                Item("tracks.openlocation", () => viewModel.OpenLocation(tile)),
+                Item("tracks.searchterms.edit", () => viewModel.EditSearchTerms(tile)),
+            };
+            if (viewModel.IsRecent(tile)) {
+                items.Add(Item("tracks.removefromrecent", () => viewModel.RemoveFromRecent(tile)));
+            }
+            var menu = new ContextMenu() { ItemsSource = items };
+            menu.Classes.Add("context");
+            menu.Open(control);
+        }
+
+        // The chips are few, so a click handler is cheaper than a command on each of them.
+        void TypeChipClicked(object? sender, RoutedEventArgs e) {
+            if (sender is Control { DataContext: SingerTypeChipViewModel chip } &&
+                DataContext is SingerFlyoutViewModel viewModel) {
+                viewModel.ToggleTypeFilter(chip.Type);
+                e.Handled = true;
+            }
+        }
+
+        // Handled here so the press doesn't reach the tile and select the singer.
+        void FavStarPressed(object? sender, PointerPressedEventArgs e) {
+            if (sender is Control { DataContext: SingerTileViewModel tile } star &&
+                e.GetCurrentPoint(star).Properties.IsLeftButtonPressed) {
+                tile.IsFavourite = !tile.IsFavourite;
+                e.Handled = true;
+            }
+        }
+    }
+}

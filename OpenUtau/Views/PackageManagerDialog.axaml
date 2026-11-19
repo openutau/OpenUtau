@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:OpenUtau.App.ViewModels"
+        x:DataType="vm:PackageManagerViewModel"
         mc:Ignorable="d"
         x:Class="OpenUtau.App.Views.PackageManagerDialog"
         Icon="/Assets/open-utau.ico"

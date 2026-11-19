@@ -1,5 +1,6 @@
 #include "effects.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <numeric>
@@ -9,43 +10,32 @@
 
 namespace worldline {
 
+// Output bin i samples the input envelope at bin i * ratio, linearly
+// interpolating between indexes[i] and indexes[i] + 1 with weights[i].
 static void GenderWeights(std::vector<int>& indexes,
                           std::vector<double>& weights, int width,
                           double ratio) {
   for (int i = 0; i < width; ++i) {
-    double p = i * ratio;
-    int i1 = std::clamp(static_cast<int>(std::floor(p)), 0, width - 1);
-    int i2 = std::clamp(static_cast<int>(std::ceil(p)), 0, width - 1);
-    if (i1 == i2) {
-      if (i1 == 0) {
-        indexes[i] = i1 + 1;
-        weights[i] = 1;
-      } else {
-        indexes[i] = i1;
-        weights[i] = 0;
-      }
-    } else {
-      double p = i * ratio;
-      int i1 = std::clamp(static_cast<int>(std::floor(p)), 0, width - 1);
-      indexes[i] = i1;
-      weights[i] = p - std::floor(p);
-    }
+    double p = std::min(i * ratio, width - 1.0);
+    int i1 = std::min(static_cast<int>(std::floor(p)), width - 2);
+    indexes[i] = i1;
+    weights[i] = p - i1;
   }
 }
 
 void ShiftGender(std::vector<std::vector<double>>& sp, int value) {
   double ratio = std::pow(2, value * 0.01);
-  if (ratio == 1 || ratio <= 0) {
+  int width = sp.empty() ? 0 : sp[0].size();
+  if (ratio == 1 || ratio <= 0 || width < 2) {
     return;
   }
-  int width = sp[0].size();
   std::vector<int> indexes(width);
   std::vector<double> weights(width);
   GenderWeights(indexes, weights, width, ratio);
   for (auto& frame : sp) {
     std::vector<double> buffer = frame;
     for (int i = 0; i < width; ++i) {
-      int i1 = indexes[i] - 1;
+      int i1 = indexes[i];
       double t = weights[i];
       frame[i] = buffer[i1] * (1 - t) + buffer[i1 + 1] * t;
     }
@@ -54,7 +44,7 @@ void ShiftGender(std::vector<std::vector<double>>& sp, int value) {
 
 void ShiftGender(double* sp, int width, int value) {
   double ratio = std::pow(2, value * 0.01);
-  if (ratio == 1 || ratio <= 0) {
+  if (ratio == 1 || ratio <= 0 || width < 2) {
     return;
   }
   std::vector<int> indexes(width);
@@ -63,7 +53,7 @@ void ShiftGender(double* sp, int width, int value) {
   std::vector<double> temp(width);
   std::copy(sp, sp + width, temp.begin());
   for (int i = 0; i < width; ++i) {
-    int i1 = indexes[i] - 1;
+    int i1 = indexes[i];
     double t = weights[i];
     sp[i] = temp[i1] * (1 - t) + temp[i1 + 1] * t;
   }

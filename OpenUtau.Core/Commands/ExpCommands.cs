@@ -386,6 +386,14 @@ namespace OpenUtau.Core {
         readonly int[] newXs;
         readonly int[] newYs;
         readonly bool setReal;
+        // Curve-only edit: same options as the SetCurveCommand it replaces in batch writes.
+        public override ValidateOptions ValidateOptions
+            => new ValidateOptions {
+                SkipTiming = true,
+                Part = Part,
+                SkipPhonemizer = true,
+                SkipPhoneme = true,
+            };
         public MergedSetCurveCommand(UProject project, UVoicePart part,
             string abbr, int[] oldXs, int[] oldYs, int[] newXs, int[] newYs, bool setReal = false) : base(part) {
             this.project = project;

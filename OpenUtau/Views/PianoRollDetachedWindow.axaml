@@ -6,6 +6,7 @@
         xmlns:api="using:OpenUtau.Api"
         xmlns:c="clr-namespace:OpenUtau.App.Controls"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="650"
+        x:DataType="vm:PianoRollViewModel"
         x:Class="OpenUtau.App.Views.PianoRollDetachedWindow"
         Icon="/Assets/open-utau.ico"
         Title="{Binding NotesViewModel.WindowTitle}" MinWidth="300" MinHeight="200" Width="{Binding Width}" Height="{Binding Height}"

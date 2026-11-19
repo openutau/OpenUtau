@@ -3,7 +3,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:OpenUtau.App.ViewModels"
-             x:Class="OpenUtau.App.Controls.NotePropertyExpression">
+             x:Class="OpenUtau.App.Controls.NotePropertyExpression"
+             x:DataType="vm:NotePropertyExpViewModel">
   <Grid ColumnDefinitions="143,7,50,20,*">
     <Label Content="{Binding Name}" Grid.Column="0" VerticalAlignment="Center" FontWeight="{Binding NameFontWeight}"/>
     <TextBox Text="{Binding Value, Mode=OneWay}" Grid.Column="2" IsVisible="{Binding IsNumerical}" VerticalAlignment="Center" IsEnabled="{Binding IsNoteSelected}"

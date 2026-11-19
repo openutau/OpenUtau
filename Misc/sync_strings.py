@@ -1,8 +1,24 @@
+import codecs
 import os
-import re
+import sys
 import xml.etree.ElementTree as ET
-import xml.dom.minidom as MD
-import json
+
+# Element tags are written back with the prefix their namespace is declared
+# with, so a typed resource such as system:Double stays valid XAML.
+PREFIXES = {
+    'https://github.com/avaloniaui': '',
+    'clr-namespace:System;assembly=mscorlib': 'system:',
+    'http://schemas.microsoft.com/winfx/2006/xaml': 'x:',
+}
+TEXT = 'system:String'
+
+
+def tag_name(tag):
+    if not tag.startswith('{'):
+        return tag
+    ns, _, local = tag[1:].partition('}')
+    return PREFIXES.get(ns, '') + local
+
 
 def register_all_namespaces(filename):
     namespaces = dict(
@@ -12,22 +28,24 @@ def register_all_namespaces(filename):
 
 
 def file_to_dict(filename):
-    tag_class = re.compile(r"\{.*\}")
     with open(filename, "r", encoding='utf8') as f:
         src_etree = ET.parse(f)
     return {
         child.get('{http://schemas.microsoft.com/winfx/2006/xaml}Key'):
-        (tag_class.sub('', child.tag), child.text)
+        (tag_name(child.tag), child.text)
         for child in src_etree.getroot()[:]
         if (child.text != "" and child.text is not None)
     }
 
 
 def dict_to_file(filename, dict, en_dict):
-    with open(filename, "w", encoding='utf8') as f:
+    # utf-8-sig keeps the byte order mark that Strings.axaml is stored with.
+    with open(filename, "rb") as f:
+        encoding = "utf-8-sig" if f.read(3) == codecs.BOM_UTF8 else "utf8"
+    with open(filename, "w", encoding=encoding) as f:
         if(not filename.endswith("Strings.axaml")):
-            f.write('<!--DO NOT modify this file. It is managed autometically.-->\n')
-            f.write("<!--To contribute to OpenUtau's localization, visit https://crowdin.com/project/oxygen-dioxideopenutau -->\n")
+            f.write(
+                '<!--UI strings. Entries commented out are untranslated and fall back to en-US.-->\n')
         f.write('<ResourceDictionary xmlns="https://github.com/avaloniaui"\n')
         f.write(
             '                    xmlns:system="clr-namespace:System;assembly=mscorlib"\n')
@@ -42,9 +60,7 @@ def dict_to_file(filename, dict, en_dict):
             if last_section != section:
                 f.write('\n')
             last_section = section
-            tag = dict[key][0]
-            if tag == 'String':
-                tag = 'system:String'
+            tag = en_dict[key][0] if en_dict else dict[key][0]
             text = dict[key][1]
             line = '<%s x:Key="%s">%s</%s>' % (
                 tag, key, text, tag)
@@ -67,16 +83,19 @@ if __name__ == "__main__":
     register_all_namespaces(src_file)
     en_dict = file_to_dict(src_file)
     dict_to_file(src_file, en_dict, None)
-    
-    #strings unhandled by crowdin
-    unhandled_strings = json.load(open(os.path.join(dir, "unhandled_strings.json"), "r", encoding='utf8'))
+
+    # Typed resources such as the per-language ui.fontfamily are values, not
+    # translatable text, and an entry equal to en-US gets commented out. Keep
+    # the language's own value from ever disappearing that way.
+    typed = {k for k, (tag, _) in en_dict.items() if tag != TEXT}
 
     for dst_file in dst_files:
-        language = os.path.basename(dst_file).split('.')[1]
         dst_dict = file_to_dict(dst_file)
-        for (key, item) in unhandled_strings.items():
-            if(language in item["translations"]):
-                dst_dict[key] = (item["tag"], item["translations"][language])
+        clash = {k: v[1] for k, v in dst_dict.items()
+                 if k in typed and v[1] == en_dict[k][1]}
+        if clash:
+            sys.exit(f"{dst_file}: typed resources {clash} match en-US and would be "
+                     f"commented out; delete them to fall back to en-US")
         to_remove = set(dst_dict.keys()) - set(en_dict.keys())
         to_add = set(en_dict.keys()) - set(dst_dict.keys())
         [dst_dict.pop(k) for k in to_remove]

@@ -57,7 +57,7 @@ namespace OpenUtau.Core.Pipeline {
         /// an extended ("+") note, a gap that splits a second phrase, and the
         /// pitd / dyn / xsy / custom curves.
         /// </summary>
-        static (UProject project, UTrack track, UVoicePart part) BuildFixture() {
+        internal static (UProject project, UTrack track, UVoicePart part) BuildFixture(IRenderer renderer = null) {
             var project = new UProject();
             project.RegisterExpression(new UExpressionDescriptor("engine", "eng", 0, 100, 0) {
                 options = new[] { "" },
@@ -88,7 +88,7 @@ namespace OpenUtau.Core.Pipeline {
 
             var track = project.tracks[0];
             track.Singer = new FixtureSinger(UOto.OfDummy("A"));
-            track.RendererSettings.Renderer = new FixtureRenderer();
+            track.RendererSettings.Renderer = renderer ?? new FixtureRenderer();
             track.RendererSettings.resampler = null;
             track.RendererSettings.wavtool = null;
 

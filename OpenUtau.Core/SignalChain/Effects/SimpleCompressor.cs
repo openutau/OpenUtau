@@ -34,7 +34,11 @@ namespace OpenUtau.Core.SignalChain.Effects {
 
         public void Configure(double thresholdDb, double ratio, double attackMs, double releaseMs, double makeupDb, double kneeDb = 6.0) {
             // Off when ratio ≤ 1 (no compression) and no makeup gain.
+            bool wasBypassed = bypassed;
             bypassed = ratio <= 1.0001 && Math.Abs(makeupDb) < 0.01;
+            if (wasBypassed && !bypassed) {
+                Reset();
+            }
             this.thresholdDb = thresholdDb;
             this.ratio = Math.Max(1.0, ratio);
             this.atkCoef = Math.Exp(-1.0 / (Math.Max(0.05, attackMs)  * 0.001 * sampleRate));
@@ -45,6 +49,26 @@ namespace OpenUtau.Core.SignalChain.Effects {
 
         public void Reset() {
             envDb = 0;
+        }
+
+        /// <summary>
+        /// Gain (dB, ≤ 0, before makeup) the static curve applies to a steady
+        /// input at <paramref name="inputDb"/>.  For UI curve display.
+        /// </summary>
+        public static double CurveGainDb(double inputDb, double thresholdDb, double ratio, double kneeDb = 6.0) {
+            return StaticGainDb(inputDb - thresholdDb, (1.0 / Math.Max(1.0, ratio)) - 1.0, kneeDb);
+        }
+
+        // Static curve: piecewise quadratic soft knee.
+        private static double StaticGainDb(double above, double slope, double kneeDb) {
+            if (above <= -kneeDb / 2.0) {
+                return 0;
+            }
+            if (above >= kneeDb / 2.0) {
+                return slope * above;
+            }
+            double k = above + kneeDb / 2.0;
+            return slope * (k * k) / (2.0 * kneeDb);
         }
 
         public void Process(float[] buffer, int offset, int count) {
@@ -73,19 +97,7 @@ namespace OpenUtau.Core.SignalChain.Effects {
                 double det = peak + 1e-12;
                 double detDb = 20.0 * Math.Log10(det);
 
-                // Static curve: piecewise quadratic soft knee
-                double above = detDb - T;
-                double gainDb;
-                double kneeLo = -W / 2.0;
-                double kneeHi =  W / 2.0;
-                if (above <= kneeLo) {
-                    gainDb = 0;
-                } else if (above >= kneeHi) {
-                    gainDb = slope * above;
-                } else {
-                    double k = above + W / 2.0;
-                    gainDb = slope * (k * k) / (2.0 * W);
-                }
+                double gainDb = StaticGainDb(detDb - T, slope, W);
 
                 // Smooth in log domain (attack when GR has to increase, i.e. gainDb more negative)
                 double coef = gainDb < env ? atk : rel;

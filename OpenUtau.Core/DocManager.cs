@@ -36,8 +36,16 @@ namespace OpenUtau.Core {
         public int rangeStartTick = 0;
         public int rangeEndTick = 0;
 
+        private readonly List<WarningNotification> warnings = new List<WarningNotification>();
+        public IReadOnlyList<WarningNotification> Warnings => warnings;
+
         public TaskScheduler MainScheduler => mainScheduler;
         public Action<Action> PostOnUIThread { get; set; }
+        /// <summary>
+        /// Set by the app to run an action at the start of the next frame, so
+        /// commands validate once per frame (see <see cref="QueueValidate"/>).
+        /// </summary>
+        public Action<Action>? RequestFrame { get; set; }
 
         /// <summary>
         /// Monotonic revision of the mutable document; bumped by every
@@ -154,10 +162,38 @@ namespace OpenUtau.Core {
                     PhonemizerFactory.Get(type);
                 }
             }
+            try {
+                Js.JsPhonemizerFactory.RegisterInstalled();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to search JavaScript phonemizers.");
+            }
             PhonemizerFactory.BuildList();
             stopWatch.Stop();
             Log.Information($"Search all plugins: {stopWatch.Elapsed}");
         }
+
+        /// <summary>
+        /// Loads the JavaScript phonemizers of the installed packages again, and gives the tracks
+        /// using one a new instance, so edits to a script take effect without a restart.
+        /// A track whose phonemizer no longer loads keeps its old instance.
+        /// </summary>
+        private void ReloadJsPhonemizers() {
+            try {
+                Js.JsPhonemizerFactory.RegisterInstalled();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to search JavaScript phonemizers.");
+            }
+            PhonemizerFactory.BuildList();
+            foreach (var track in Project.tracks) {
+                if (track.Phonemizer is Js.JsPhonemizer && PhonemizerFactory.Get(track.Phonemizer.Id) is PhonemizerFactory factory) {
+                    track.Phonemizer = factory.Create();
+                }
+            }
+            foreach (var part in Project.parts.OfType<UVoicePart>()) {
+                part.ResetOverridePhonemizers();
+            }
+        }
+
         private void SearchPluginInternal(string path, List<string> result) {
             if (Directory.EnumerateFiles(path, "plugin.txt", SearchOption.TopDirectoryOnly).Any()) {
                 return;
@@ -174,6 +210,8 @@ namespace OpenUtau.Core {
         readonly Deque<UCommandGroup> undoQueue = new Deque<UCommandGroup>();
         readonly Deque<UCommandGroup> redoQueue = new Deque<UCommandGroup>();
         UCommandGroup? undoGroup = null;
+        // Validation owed by the commands since the last frame, merged into one.
+        ValidateOptions? pendingValidate;
         UCommandGroup? savedPoint = null;
         UCommandGroup? autosavedPoint = null;
         public bool Recovered { get; set; } = false; // Flag to not overwrite backup file
@@ -245,6 +283,8 @@ namespace OpenUtau.Core {
         // Every validate path: rebuild derived data, release unused singers,
         // mark the render projections stale.
         private void ValidateAndRefresh() {
+            // A full validate covers anything pending.
+            pendingValidate = null;
             Project.ValidateFull();
             SingerManager.Inst.ReleaseSingersNotInUse(Project);
             RenderView.Inst.InvalidateAll();
@@ -256,7 +296,7 @@ namespace OpenUtau.Core {
                 return;
             }
             if (mainThread != Thread.CurrentThread) {
-                if (!(cmd is ProgressBarNotification)) {
+                if (!(cmd is ProgressBarNotification or PhraseRenderStateNotification)) {
                     Log.Warning($"{cmd} not on main thread");
                 }
                 PostOnUIThread(() => ExecuteCmd(cmd));
@@ -277,6 +317,7 @@ namespace OpenUtau.Core {
                     undoQueue.Clear();
                     redoQueue.Clear();
                     undoGroup = null;
+                    pendingValidate = null;
                     savedPoint = null;
                     autosavedPoint = null;
                     Project = notification.project;
@@ -297,6 +338,11 @@ namespace OpenUtau.Core {
                 } else if (cmd is SetRangeSelectionNotification setRange) {
                     rangeStartTick = setRange.startTick;
                     rangeEndTick = setRange.endTick;
+                } else if (cmd is WarningNotification warning) {
+                    warnings.RemoveAll(w => w.Key == warning.Key);
+                    warnings.Add(warning);
+                } else if (cmd is ClearWarningsNotification clearWarnings) {
+                    warnings.RemoveAll(w => clearWarnings.key == null || w.Key == clearWarnings.key);
                 } else if (cmd is RealCurvesUpdatedNotification realCurvesNotif) {
                     if (realCurvesNotif.part is UVoicePart voicePart) {
                         RealCurveUpdater.Apply(Project, voicePart, realCurvesNotif.updates);
@@ -308,6 +354,9 @@ namespace OpenUtau.Core {
                 } else if (cmd is SingersChangedNotification) {
                     SingerManager.Inst.SearchAllSingers();
                     SingerManager.Inst.ReleaseSingersNotInUse(Project);
+                } else if (cmd is PackagesChangedNotification) {
+                    ReloadJsPhonemizers();
+                    ValidateAndRefresh();
                 } else if (cmd is ValidateProjectNotification) {
                     ValidateAndRefresh();
                 } else if (cmd is SingersRefreshedNotification || cmd is OtoChangedNotification) {
@@ -338,14 +387,72 @@ namespace OpenUtau.Core {
                 cmd.Execute();
             }
             if (!cmd.Silent) {
-                Log.Information($"ExecuteCmd {cmd}");
+                // A drag runs one command per pointer move; EndUndoGroup logs the
+                // group once at Information level.
+                Log.Debug("ExecuteCmd {Command}", cmd);
             }
             Publish(cmd);
             if (!undoGroup.DeferValidate) {
                 Pipeline.DocumentSnapshotStore.Inst.Invalidate(cmd.Impact);
-                Project.Validate(cmd.ValidateOptions);
+                QueueValidate(cmd.ValidateOptions);
                 ScheduleRealCurveRefresh(cmd);
             }
+        }
+
+        /// <summary>
+        /// The commands of a group in order of first appearance, with repeats
+        /// counted, e.g. "Move 1 notes x85, Change 1 notes duration x3".
+        /// </summary>
+        static string DescribeCommands(List<UCommand> commands) {
+            var counts = new Dictionary<string, int>();
+            var order = new List<string>();
+            foreach (var cmd in commands) {
+                string name = cmd.ToString() ?? cmd.GetType().Name;
+                if (counts.TryGetValue(name, out int n)) {
+                    counts[name] = n + 1;
+                } else {
+                    counts[name] = 1;
+                    order.Add(name);
+                }
+            }
+            return string.Join(", ", order.Select(name => counts[name] > 1 ? $"{name} x{counts[name]}" : name));
+        }
+
+        /// <summary>
+        /// Validates after a command at the start of the next frame, together with
+        /// any other commands before it. A drag runs a command on every pointer move,
+        /// often faster than the screen refreshes, and validating costs far more than
+        /// the command itself, so validating once per frame keeps the UI responsive.
+        /// </summary>
+        void QueueValidate(ValidateOptions options) {
+            if (RequestFrame == null) {
+                Project.Validate(options);
+                return;
+            }
+            if (pendingValidate is ValidateOptions pending) {
+                pendingValidate = Merge(pending, options);
+            } else {
+                pendingValidate = options;
+                RequestFrame(FlushValidation);
+            }
+        }
+
+        /// <summary>Runs the validation owed by queued commands, if any.</summary>
+        public void FlushValidation() {
+            if (pendingValidate is ValidateOptions options) {
+                pendingValidate = null;
+                Project.Validate(options);
+            }
+        }
+
+        /// <summary>Validation that covers both: skip a step only if both skip it.</summary>
+        static ValidateOptions Merge(ValidateOptions a, ValidateOptions b) {
+            return new ValidateOptions {
+                SkipTiming = a.SkipTiming && b.SkipTiming,
+                Part = a.Part == b.Part ? a.Part : null,
+                SkipPhonemizer = a.SkipPhonemizer && b.SkipPhonemizer,
+                SkipPhoneme = a.SkipPhoneme && b.SkipPhoneme,
+            };
         }
 
         void InvalidateGroup(IEnumerable<UCommand> commands) {
@@ -380,7 +487,7 @@ namespace OpenUtau.Core {
                 EndUndoGroup();
             }
             undoGroup = new UCommandGroup(nameKey, deferValidate);
-            Log.Information("undoGroup started");
+            Log.Debug("undoGroup started");
         }
 
         public void EndUndoGroup() {
@@ -388,6 +495,7 @@ namespace OpenUtau.Core {
                 Log.Error("No active undoGroup to end.");
                 return;
             }
+            FlushValidation();
             if (undoGroup.Commands.Count > 0) {
                 // The group is committed: bump the document revision. Regular
                 // groups already invalidated per command before their
@@ -405,10 +513,12 @@ namespace OpenUtau.Core {
                 InvalidateGroup(undoGroup.Commands);
                 ValidateAndRefresh();
             }
+            if (undoGroup.Commands.Count > 0) {
+                Log.Information("Undo group {Name}: {Commands}", undoGroup.NameKey, DescribeCommands(undoGroup.Commands));
+            }
             undoGroup.Merge();
             ScheduleRealCurveRefresh(undoGroup.Commands);
             undoGroup = null;
-            Log.Information("undoGroup ended");
             ExecuteCmd(new PreRenderNotification());
         }
 
@@ -463,6 +573,7 @@ namespace OpenUtau.Core {
         }
 
         public void Undo() {
+            FlushValidation();
             if (undoQueue.Count == 0) {
                 return;
             }
@@ -483,6 +594,7 @@ namespace OpenUtau.Core {
         }
 
         public void Redo() {
+            FlushValidation();
             if (redoQueue.Count == 0) {
                 return;
             }

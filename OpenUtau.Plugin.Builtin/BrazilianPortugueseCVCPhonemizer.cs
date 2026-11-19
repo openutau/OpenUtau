@@ -109,6 +109,8 @@ namespace OpenUtau.Plugin.Builtin {
         // change rh V -> r V
         // since rh is a VC only alias, r is used as their natural approximant to make CV connections, if it happens
         protected override string ValidateAlias(string alias, int tone = 0) {
+            if (HasOto(alias, tone)) return alias;
+
             string baseResolved = base.ValidateAlias(alias, tone);
             if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
                 if (HasOto(baseResolved, tone)) {

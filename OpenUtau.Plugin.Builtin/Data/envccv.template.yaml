@@ -1,7 +1,8 @@
 %YAML 1.2
 ---
-version: 1.2
+version: 1.3
 useconvel: true
+basebpm: 120
 
 symbols:
   #CZsampa standard vowels

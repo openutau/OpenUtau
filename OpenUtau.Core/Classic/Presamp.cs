@@ -10,31 +10,29 @@ using Serilog;
 namespace Classic {
     public partial class Presamp {
         // presamp.ini specification https://delta-kimigatame.hatenablog.jp/entry/ar483589
-        // I am not confident in my coding skills! There may be a better way.
 
         public bool FileExists { get; private set; } = false;
-        public Dictionary<string, PresampVowel> Vowels { get; set; } // def: lower of this file
-        public Dictionary<string, PresampConsonant> Consonants { get; set; } // def: lower of this file
-        public List<string> Priorities { get; set; } = new List<string> { "k", "ky", "g", "gy", "t", "ty", "d", "dy", "ch", "ts", "b", "by", "p", "py", "r", "ry" };
-        public Dictionary<string, string> Replace { get; set; } // def: lower of this file
+        public Dictionary<string, PresampVowel> Vowels { get; set; }
+        public Dictionary<string, PresampConsonant> Consonants { get; set; }
+        public List<string> Priorities { get; set; } = new List<string>();
+        public Dictionary<string, string> Replace { get; set; }
         public PresampAliasRules AliasRules { get; set; } = new PresampAliasRules();
-        public List<string> Prefixs { get; set; } = new List<string>(); // def: empty
-        public List<string> SuffixOrder { get; set; } = new List<string> { "%num%", "%append%", "%pitch%" };
-        public List<string> Nums { get; set; } // def: lower of this file
-        public List<string> Appends { get; set; } // def: lower of this file
-        public List<string> Pitches { get; set; } // def: lower of this file
-        public List<string> AliasPriorityDefault { get; set; } = new List<string> { "VCV", "CVVC", "CROSS_CV", "CV", "BEGINING_CV" };
-        public List<string> AliasPriorityDifAppend { get; set; } = new List<string> { "CVVC", "VCV", "CROSS_CV", "CV", "BEGINING_CV" };
-        public List<string> AliasPriorityDifPitch { get; set; } = new List<string> { "CVVC", "VCV", "CROSS_CV", "CV", "BEGINING_CV" };
-        public bool Split { get; set; } = true;
-        public bool MustVC { get; set; } = false;
-        public string CFlags { get; set; } = "p0";
-        public bool VCLengthFromCV { get; set; } = true;
-        /** <summary>
-                0: not 1: add ending note 2: convert last note
-            </summary>
-        */
-        public int AddEnding { get; set; } = 1;
+        public List<string> Prefixs { get; set; } = new List<string>();
+        public List<string> SuffixOrder { get; set; } = new List<string>();
+        public List<string> Nums { get; set; }
+        public List<string> Appends { get; set; }
+        public List<string> Pitches { get; set; }
+        public List<string> AliasPriorityDefault { get; set; } = new List<string>();
+        public List<string> AliasPriorityDifAppend { get; set; } = new List<string>();
+        public List<string> AliasPriorityDifPitch { get; set; } = new List<string>();
+        public bool Split { get; set; }
+        public bool MustVC { get; set; }
+        public string CFlags { get; set; }
+        public bool VCLengthFromCV { get; set; }
+        /// <summary>
+        ///     0: not 1: add ending note 2: convert last note
+        /// </summary>
+        public int AddEnding { get; set; }
 
         public Dictionary<string, PresampPhoneme> PhonemeList { get; set; } = new Dictionary<string, PresampPhoneme>();
 
@@ -44,7 +42,7 @@ namespace Classic {
             Priorities = new List<string> { "k", "ky", "g", "gy", "t", "ty", "d", "dy", "ch", "ts", "b", "by", "p", "py", "r", "ry" };
             Replace = new Dictionary<string, string>(defReplace);
             AliasRules = new PresampAliasRules();
-            Prefixs = new List<string>(); 
+            Prefixs = new List<string>(); // def: empty
             SuffixOrder = new List<string> { "%num%", "%append%", "%pitch%" };
             Nums = new List<string>(defNums);
             Appends = new List<string>(defAppends);
@@ -112,51 +110,54 @@ namespace Classic {
                 // Bypasses OpenUtau's native Ini.ReadBlocks which forces lowercase
                 string[] lines = File.ReadAllLines(iniPath, encoding);
                 string currentBlock = "";
-                
-                var vowelLines = new List<string>();
-                var consonantLines = new List<string>();
 
-                foreach (var rawLine in lines) {
-                    string line = rawLine.Trim();
-                    if (string.IsNullOrEmpty(line) || line.StartsWith(";")) continue;
+                List<string>? vowelLines = null;
+                List<string>? consonantLines = null;
 
+                foreach (var line in lines) {
+                    if (line.StartsWith(";")) continue;
                     if (line.StartsWith("[") && line.EndsWith("]")) {
                         currentBlock = line.ToUpper();
                         
                         // Clear lists upon entering block to prepare for custom data overriding defaults
-                        if (currentBlock == "[NUM]") Nums.Clear();
+                        if (currentBlock == "[VOWEL]") Vowels.Clear();
+                        else if (currentBlock == "[CONSONANT]") Consonants.Clear();
+                        else if (currentBlock == "[PRIORITY]") Priorities.Clear();
+                        else if (currentBlock == "[REPLACE]") Replace.Clear();
+                        else if (currentBlock == "[PRE]") Prefixs.Clear();
+                        else if (currentBlock == "[NUM]") Nums.Clear();
                         else if (currentBlock == "[APPEND]") Appends.Clear();
                         else if (currentBlock == "[PITCH]") Pitches.Clear();
-                        else if (currentBlock == "[PRE]") Prefixs.Clear();
                         else if (currentBlock == "[ALIAS_PRIORITY]") AliasPriorityDefault.Clear();
                         else if (currentBlock == "[ALIAS_PRIORITY_DIFAPPEND]") AliasPriorityDifAppend.Clear();
                         else if (currentBlock == "[ALIAS_PRIORITY_DIFPITCH]") AliasPriorityDifPitch.Clear();
-                        else if (currentBlock == "[REPLACE]") Replace.Clear();
+                        else if (currentBlock == "[CFLAGS]") CFlags = string.Empty;
                         continue;
                     }
 
                     try {
                         switch (currentBlock) {
                             case "[VOWEL]":
+                                if (vowelLines == null) vowelLines = new List<string>();
                                 vowelLines.Add(line);
                                 break;
                             case "[CONSONANT]":
+                                if (consonantLines == null) consonantLines = new List<string>();
                                 consonantLines.Add(line);
                                 break;
                             case "[PRIORITY]":
-                                Priorities.Clear();
                                 Priorities.AddRange(line.Split(','));
                                 break;
                             case "[REPLACE]":
-                                var s = rawLine.Split(new char[] { '=' }, 2);
+                                var s = line.Split(new char[] { '=' }, 2);
                                 if (s.Length >= 2) {
-                                    Replace[s[0].Trim()] = s[1];
+                                    Replace[s[0]] = s[1];
                                 }
                                 break;
                             case "[ALIAS]":
-                                var parts = rawLine.Split(new char[] { '=' }, 2);
+                                var parts = line.Split(new char[] { '=' }, 2);
                                 if (parts.Length < 2) break;
-                                switch (parts[0].Trim().ToUpper()) {
+                                switch (parts[0].ToUpper()) {
                                     case "VCV": AliasRules.VCV = parts[1]; break;
                                     case "BEGINING_CV": AliasRules.BEGINING_CV = parts[1]; break;
                                     case "CROSS_CV": AliasRules.CROSS_CV = parts[1]; break;
@@ -164,8 +165,10 @@ namespace Classic {
                                     case "CV": AliasRules.CV = parts[1]; break;
                                     case "C": AliasRules.C = parts[1]; break;
                                     case "LONG_V": AliasRules.LONG_V = parts[1]; break;
-                                    case "VCPAD": AliasRules.VCPAD = parts[1]; break;
-                                    case "VCVPAD": AliasRules.VCVPAD = parts[1]; break;
+                                    case "VCPAD":
+                                        if (!string.IsNullOrEmpty(parts[1])) AliasRules.VCPAD = parts[1]; break;
+                                    case "VCVPAD":
+                                        if (!string.IsNullOrEmpty(parts[1])) AliasRules.VCVPAD = parts[1]; break;
                                     case "ENDING1": AliasRules.ENDING1 = parts[1]; break;
                                     case "ENDING2": AliasRules.ENDING2 = parts[1]; break;
                                 }
@@ -177,16 +180,21 @@ namespace Classic {
                             case "[ENDTYPE2]":
                                 AliasRules.ENDING2 = line;
                                 break;
+                            case "[VCPAD]":
+                                if (!string.IsNullOrEmpty(line)) AliasRules.VCPAD = line;
+                                break;
                             case "[PRE]":
                                 if(!Prefixs.Contains(line)) Prefixs.Add(line);
                                 break;
                             case "[SU]":
+                                if (!line.Contains("%num%") || !line.Contains("%append%") || !line.Contains("%pitch%")) break;
+                                string pattern = @"^(?:%num%|%append%|%pitch%)+$";
+                                if (!Regex.IsMatch(line, pattern)) break;
+
+                                MatchCollection matches = Regex.Matches(line, @"%num%|%append%|%pitch%");
                                 SuffixOrder.Clear();
-                                string str = line;
-                                for (int i = 1; i < 3 && str != ""; i++) {
-                                    if (str.StartsWith("%num%")) { SuffixOrder.Add("%num%"); str = str.Replace("%num%", ""); }
-                                    if (str.StartsWith("%append%")) { SuffixOrder.Add("%append%"); str = str.Replace("%append%", ""); }
-                                    if (str.StartsWith("%pitch%")) { SuffixOrder.Add("%pitch%"); str = str.Replace("%pitch%", ""); }
+                                foreach (Match match in matches) {
+                                    SuffixOrder.Add(match.Value);
                                 }
                                 break;
                             case "[NUM]":
@@ -205,16 +213,22 @@ namespace Classic {
                                 }
                                 break;
                             case "[ALIAS_PRIORITY]":
-                                if(AliasPriorityDefault.Count >= 5) AliasPriorityDefault.Clear(); // default count is 5
-                                AliasPriorityDefault.Add(line);
+                                if (AliasPriorityDefault.Count >= 5) { // default count is 5
+                                    AliasPriorityDefault.Clear();
+                                    AliasPriorityDefault.Add(line);
+                                }
                                 break;
                             case "[ALIAS_PRIORITY_DIFAPPEND]":
-                                if(AliasPriorityDifAppend.Count >= 5) AliasPriorityDifAppend.Clear();
-                                AliasPriorityDifAppend.Add(line);
+                                if(AliasPriorityDifAppend.Count >= 5) {
+                                    AliasPriorityDifAppend.Clear();
+                                    AliasPriorityDifAppend.Add(line);
+                                }
                                 break;
                             case "[ALIAS_PRIORITY_DIFPITCH]":
-                                if(AliasPriorityDifPitch.Count >= 5) AliasPriorityDifPitch.Clear();
-                                AliasPriorityDifPitch.Add(line);
+                                if(AliasPriorityDifPitch.Count >= 5) {
+                                    AliasPriorityDifPitch.Clear();
+                                    AliasPriorityDifPitch.Add(line);
+                                }
                                 break;
                             case "[SPLIT]":
                                 if (line == "0") Split = false;
@@ -236,12 +250,22 @@ namespace Classic {
                                     AddEnding = result;
                                 }
                                 break;
+                            case "[VERSION]":
+                            case "[LOCALE]":
+                            case "[RESAMP]":
+                            case "[TOOL]":
+                            case "[BATNUM]":
+                                // Not for voicebanks
+                                break;
                         }
-                    } catch { }
+                    } catch (Exception e) {
+                        Log.Error(e, "failed to load presamp.ini block");
+                        continue;
+                    }
                 }
 
-                if (vowelLines.Count > 0) SetVowels(vowelLines);
-                if (consonantLines.Count > 0) SetConsonants(consonantLines);
+                if (vowelLines != null) SetVowels(vowelLines);
+                if (consonantLines != null) SetConsonants(consonantLines);
 
             } catch (Exception e) {
                 Log.Error(e, "failed to load presamp.ini");
@@ -310,14 +334,12 @@ namespace Classic {
             }
         }
 
-
-        /** <summary>
-                Break down lyric.
-            </summary>
-            <returns>
-                string[] containing 0:preVowel, 1:phoneme, 2:suffix
-            </returns>
-        */
+        /// <summary>
+        ///     Break down lyric.
+        /// </summary>
+        /// <returns>
+        ///     string[] containing 0:preVowel, 1:phoneme, 2:suffix
+        /// </returns>
         public string[] ParseAlias(string lyric) {
             string preVowel = "";
             string phoneme = lyric;
@@ -325,14 +347,14 @@ namespace Classic {
 
             if (!string.IsNullOrEmpty(AliasRules.VCPAD) && phoneme.Contains(AliasRules.VCPAD)) {
                 var split = phoneme.Split(new string[] { AliasRules.VCPAD }, StringSplitOptions.None);
-                preVowel = split[0];
                 if (split.Length > 1) {
+                    preVowel = split[0];
                     phoneme = split[1];
                 }
             } else if (!string.IsNullOrEmpty(AliasRules.VCVPAD) && phoneme.Contains(AliasRules.VCVPAD)) {
                 var split = phoneme.Split(new string[] { AliasRules.VCVPAD }, StringSplitOptions.None);
-                preVowel = split[0];
                 if (split.Length > 1) {
+                    preVowel = split[0];
                     phoneme = split[1];
                 }
             }
@@ -379,7 +401,6 @@ namespace Classic {
             foreach (var line in list) {
                 var parts = line.Split('=');
 
-                // FIX: Allow length >= 3 to support omitted volume parameter
                 if (parts.Length >= 3) {
                     var vowel = new PresampVowel();
                     vowel.VowelLower = parts[0];
@@ -393,7 +414,7 @@ namespace Classic {
                     }
                     
                     // Assign via indexer to bypass Duplicate Key crashes
-                    dict[vowel.VowelLower] = vowel; 
+                    dict[vowel.VowelLower] = vowel;
                 }
             }
             Vowels = dict;
@@ -407,7 +428,6 @@ namespace Classic {
             foreach (var line in list) {
                 var parts = line.Split('=');
 
-                // FIX: Allow length >= 2 to support omitted crossfade parameter (e.g. N=N,nn,NN)
                 if (parts.Length >= 2) {
                     var consonant = new PresampConsonant();
                     consonant.Consonant = parts[0];

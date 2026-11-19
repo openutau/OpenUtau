@@ -19,11 +19,13 @@ namespace OpenUtau.Core {
             .WithEventEmitter(next => new FlowEmitter(next))
             .DisableAliases()
             .WithQuotingNecessaryStrings()
+            .WithTypeConverter(new ExpressionGraph.UGraphNodeYamlConverter())
             .Build();
 
         private readonly IDeserializer deserializer = new DeserializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .IgnoreUnmatchedProperties()
+            .WithTypeConverter(new ExpressionGraph.UGraphNodeYamlConverter())
             .Build();
 
         private readonly object serializerLock = new object();
@@ -52,6 +54,12 @@ namespace OpenUtau.Core {
                 return deserializer.Deserialize<T>(input);
             }
         }
+
+        public object? Deserialize(string input, System.Type type) {
+            lock (deserializerLock) {
+                return deserializer.Deserialize(input, type);
+            }
+        }
     }
 
     public class FlowEmitter : ChainedEventEmitter {
@@ -59,12 +67,17 @@ namespace OpenUtau.Core {
         public override void Emit(MappingStartEventInfo eventInfo, IEmitter emitter) {
             if (eventInfo.Source.Type == typeof(PitchPoint) ||
                 eventInfo.Source.Type == typeof(UVibrato) ||
-                eventInfo.Source.Type == typeof(UExpression)) {
+                eventInfo.Source.Type == typeof(UExpression) ||
+                eventInfo.Source.Type == typeof(ExpressionGraph.UGraphLink) ||
+                eventInfo.Source.Type == typeof(UMaskedRun)) {
                 eventInfo.Style = MappingStyle.Flow;
             }
             base.Emit(eventInfo, emitter);
         }
         public override void Emit(SequenceStartEventInfo eventInfo, IEmitter emitter) {
+            if (eventInfo.Source.Type == typeof(float[])) {
+                eventInfo.Style = SequenceStyle.Flow;
+            }
             base.Emit(eventInfo, emitter);
         }
     }

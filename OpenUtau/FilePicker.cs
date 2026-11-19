@@ -43,7 +43,10 @@ namespace OpenUtau.App {
             Patterns = new[] { "*.svp" },
         };
         public static FilePickerFileType AudioFiles { get; } = new("Audio Files") {
-            Patterns = new[] { "*.wav", "*.mp3", "*.ogg", "*.opus", "*.flac" },
+            Patterns = new[] { "*.wav", "*.mp3", "*.ogg", "*.opus", "*.flac", "*.m4a" },
+        };
+        public static FilePickerFileType FontFiles { get; } = new("Font Files") {
+            Patterns = new[] { "*.ttf", "*.otf" },
         };
         public static FilePickerFileType WAV { get; } = new("WAV") {
             Patterns = new[] { "*.wav" },
@@ -70,6 +73,9 @@ namespace OpenUtau.App {
         };
         public static FilePickerFileType DS { get; } = new("DS") {
             Patterns = new[] { "*.ds" },
+        };
+        public static FilePickerFileType ExpressionGraph { get; } = new("Expression Graph") {
+            Patterns = new[] { "*.ougraph" },
         };
         public static FilePickerFileType OUDEP { get; } = new("OpenUtau dependency") {
             Patterns = new[] { "*.oudep" },

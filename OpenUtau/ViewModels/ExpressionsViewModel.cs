@@ -83,6 +83,9 @@ namespace OpenUtau.App.ViewModels {
             if (string.IsNullOrWhiteSpace(Abbr)) {
                 return new string[] { "Abbreviation must be set.", "<translate:errors.expression.abbrset>" };
             }
+            if ((ExpressionType is (int)UExpressionType.Curve or (int)UExpressionType.MaskedCurve) && Min >= Max) {
+                return new string[] { "Min must be smaller than max.", $"<translate:errors.expression.min>: {Name}" };
+            }
             if (ExpressionType == 0) { // Numerical
                 if (Abbr.Trim().Length < 1 || Abbr.Trim().Length > 4) {
                     return new string[] { "Abbreviation must be between 1 and 4 characters long.", $"<translate:errors.expression.abbrlong>: {Name}" };
@@ -110,6 +113,11 @@ namespace OpenUtau.App.ViewModels {
                     return new UExpressionDescriptor(Name.Trim(), Abbr.Trim().ToLower(), Min, Max, DefaultValue) {
                         type = UExpressionType.Curve,
                     };
+                case UExpressionType.MaskedCurve:
+                    // No default: a masked curve has no value where none is set. Min and max scale its lane.
+                    return new UExpressionDescriptor(Name.Trim(), Abbr.Trim().ToLower(), Min, Max, Min) {
+                        type = UExpressionType.MaskedCurve,
+                    };
             }
             throw new Exception("Unexpected expression type");
         }
@@ -120,6 +128,12 @@ namespace OpenUtau.App.ViewModels {
     public partial class ExpressionsViewModel : ViewModelBase {
         [Reactive] public partial string WindowTitle { get; set; } = "Expressions";
         [Reactive] public partial bool IsTrackOverride { get; set; }
+        /// <summary>The window's page: <see cref="ProjectPage"/>, <see cref="TrackPage"/> or <see cref="GraphsPage"/>.</summary>
+        [Reactive] public partial int Page { get; set; }
+        public bool IsGraphsPage => Page == GraphsPage;
+        public const int ProjectPage = 0;
+        public const int TrackPage = 1;
+        public const int GraphsPage = 2;
         [Reactive] public partial string CustomDefaultLabel { get; set; } = ThemeManager.GetString("exps.projectdefault");
 
         public ReadOnlyObservableCollection<ExpressionBuilder> Expressions => expressions;
@@ -145,21 +159,29 @@ namespace OpenUtau.App.ViewModels {
         private ObservableCollectionExtended<ExpressionBuilder> expressionsSourceTrack;
         private UTrack? track;
 
-        public ExpressionsViewModel(UTrack? track = null) {
+        /// <param name="page">The page to show; by default a track's expressions, or the project's without a track.</param>
+        public ExpressionsViewModel(UTrack? track = null, int? page = null) {
             selectexpressions = new ObservableCollection<ExpressionBuilder>();
             expressionsSourceProject = new ObservableCollectionExtended<ExpressionBuilder>();
             expressionsSourceProject.AddRange(DocManager.Inst.Project.expressions.Select(pair => new ExpressionBuilder(pair.Value)));
             expressionsSourceTrack = new ObservableCollectionExtended<ExpressionBuilder>();
             if (track != null) {
                 IsSwitchVisible = true;
-                IsTrackOverride = true;
                 this.track = track;
                 expressionsSourceTrack.AddRange(track.TrackExpressions.Select(descriptor => new ExpressionBuilder(descriptor)));
             }
             expressionsSourceProject.ToObservableChangeSet()
                 .Bind(out expressions)
                 .Subscribe();
-            SetExpressionsList();
+            Page = page == TrackPage && track == null ? ProjectPage : page ?? (track != null ? TrackPage : ProjectPage);
+            // The expression pages share one editor, showing the project's or the track's expressions.
+            this.WhenAnyValue(x => x.Page).Subscribe(p => {
+                this.RaisePropertyChanged(nameof(IsGraphsPage));
+                if (p != GraphsPage) {
+                    IsTrackOverride = p == TrackPage;
+                    SetExpressionsList();
+                }
+            });
             AddItemCommand = ReactiveCommand.Create<ExpressionBuilder>(exp => {
                 var newExpression = new ExpressionBuilder(exp.Build());
                 expressionsSourceTrack.Add(newExpression);
@@ -300,22 +322,6 @@ namespace OpenUtau.App.ViewModels {
                         expressionsSourceProject.Add(new ExpressionBuilder(suggestion));
                     }
                 }
-            }
-        }
-
-        public void OnClickProject() {
-            if (!IsTrackOverride) { // track -> project
-                SetExpressionsList();
-            } else {
-                IsTrackOverride = false;
-            }
-        }
-
-        public void OnClickTrack() {
-            if (IsTrackOverride) { // project -> track
-                SetExpressionsList();
-            } else {
-                IsTrackOverride = true;
             }
         }
     }

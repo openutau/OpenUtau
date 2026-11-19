@@ -206,6 +206,13 @@ namespace OpenUtau.Core.Format
                                     prevPosTick = currPosTick;
                                 }
                                 break;
+                            case MusicXMLSchema.Attributes attributes: {
+                                    // Divisions may change in the middle of a part, even mid-measure.
+                                    if (attributes.DivisionsSpecified && attributes.Divisions > 0) {
+                                        divisions = (int)attributes.Divisions;
+                                    }
+                                }
+                                break;
                         }
                     }
                 }
@@ -237,7 +244,12 @@ namespace OpenUtau.Core.Format
         static public double? MeasureBPM(MusicXMLSchema.ScorePartwisePartMeasure measure)
         {
             foreach (var direction in measure.Directions) {
-                if (direction.Sound != null) { return (double)direction.Sound.Tempo; }
+                // A <sound> element may carry only other attributes, such as dynamics.
+                // Without a tempo attribute (or with tempo 0) it does not set the tempo.
+                var sound = direction.Sound;
+                if (sound != null && sound.TempoSpecified && sound.Tempo > 0) {
+                    return (double)sound.Tempo;
+                }
             }
             return null;
         }

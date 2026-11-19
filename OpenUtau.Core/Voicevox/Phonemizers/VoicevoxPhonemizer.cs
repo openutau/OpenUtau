@@ -36,7 +36,7 @@ namespace OpenUtau.Core.Voicevox {
                 vNotes[i] = new VoicevoxNote() {
                     lyric = currentLyric,
                     positionMs = timeAxis.TickPosToMsPos(notes[i][0].position),
-                    durationMs = timeAxis.TickPosToMsPos(notes[i][0].duration),
+                    durationMs = timeAxis.TickPosToMsPos(notes[i][0].position + notes[i][0].duration) - timeAxis.TickPosToMsPos(notes[i][0].position),
                     tone = notes[i][0].tone + (notes[i][0].phonemeAttributes.FirstOrDefault().toneShift ?? 0)
                 };
             }
@@ -76,7 +76,9 @@ namespace OpenUtau.Core.Voicevox {
                         break;
                     } else if (VoicevoxUtils.phoneme_List.consonants.Contains(list[0].phoneme)) {
                         double consonantMs = (list[0].frame_length / VoicevoxUtils.fps) * 1000;
-                        int tickOffset = (int)timeAxis.MsPosToTickPos(consonantMs);
+                        //Note positions are absolute ticks, so convert the duration relative to the note.
+                        int notePos = noteGroup[0].position;
+                        int tickOffset = notePos - timeAxis.MsPosToTickPos(timeAxis.TickPosToMsPos(notePos) - consonantMs);
                         phoneme.Add(new Phoneme() {
                             phoneme = list[0].phoneme,
                             position = noteGroup[0].position - tickOffset

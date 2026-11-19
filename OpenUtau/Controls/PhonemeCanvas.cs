@@ -108,9 +108,9 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             context.DrawRectangle(Background, null, Bounds.WithX(0).WithY(0));
-            // DiffSinger ignores envelope handles (preutter/attack/release/overlap), so draw
-            // each phoneme as a plain bar instead of the envelope shape.
-            bool diffSinger = PhonemeUIRender.IsDiffSinger(Part);
+            // Renderers that do not use envelopes ignore the envelope handles (Preutter/Attack/Release/Overlap),
+            // so they draw each phoneme as a simple rectangle (bar) rather than drawing the shape of the envelope.
+            bool supportsEnvelope = PhonemeUIRender.SupportsPhonemeEnvelope(Part);
             double leftTick = TickOffset - 480;
             double rightTick = TickOffset + Bounds.Width / TickWidth + 480;
             bool raiseText = false;
@@ -128,10 +128,11 @@ namespace OpenUtau.App.Controls {
                 double x = Math.Round(viewModel.TickToneToPoint(phoneme.position, 0).X) + 0.5;
                 double posMs = phoneme.PositionMs;
                 if (!phoneme.Error) {
-                    if (diffSinger) {
+                    if (!supportsEnvelope) {
                         double xRight = Math.Round(viewModel.TickToneToPoint(phoneme.End, 0).X) + 0.5;
+                        var penBar = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.AccentPen2 : ThemeManager.AccentPen1;
                         var brushBar = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.AccentBrush2Semi : ThemeManager.AccentBrush1Semi;
-                        context.DrawRectangle(brushBar, null, new Rect(x, y, xRight - x, height));
+                        context.DrawRectangle(brushBar, penBar, new Rect(x, y, xRight - x, height+1));
                     } else {
                         double x0 = viewModel.TickToneToPoint(timeAxis.MsPosToTickPos(posMs + phoneme.envelope.data[0].X) - Part.position, 0).X;
                         double y0 = (1 - phoneme.envelope.data[0].Y / 100) * height;

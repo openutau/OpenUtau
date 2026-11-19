@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using OpenUtau.Core.Ustx;
 using Serilog;
 using WanaKanaNet;
@@ -14,6 +13,7 @@ namespace OpenUtau.Classic {
         public override string Id => voicebank.Id;
         public override string Name => voicebank.Name;
         public override Dictionary<string, string> LocalizedNames => voicebank.LocalizedNames;
+        public override IList<string> SearchTerms => voicebank.SearchTerms;
         public override USingerType SingerType => voicebank.SingerType;
         public override string BasePath => voicebank.BasePath;
         public override string Author => voicebank.Author;
@@ -22,7 +22,7 @@ namespace OpenUtau.Classic {
         public override string Web => voicebank.Web;
         public override string Version => voicebank.Version;
         public override string OtherInfo => voicebank.OtherInfo;
-        public override IList<string> Errors => errors;
+        public override IList<string> Errors => data.errors;
         public override string Avatar => voicebank.Image == null ? null : Path.Combine(Location, voicebank.Image);
         public override byte[] AvatarData => avatarData;
         public override string Portrait => voicebank.Portrait == null ? null : Path.Combine(Location, voicebank.Portrait);
@@ -34,17 +34,27 @@ namespace OpenUtau.Classic {
         public override string DefaultPhonemizer => voicebank.DefaultPhonemizer;
         public override string Sample => voicebank.Sample == null ? null : Path.Combine(Location, voicebank.Sample);
         public override Encoding TextFileEncoding => voicebank.TextFileEncoding;
-        public override IList<USubbank> Subbanks => subbanks;
-        public override IList<UOto> Otos => otos;
+        public override IList<USubbank> Subbanks => data.subbanks;
+        public override IList<UOto> Otos => data.otos;
         public object SessionLock { get; } = new object();
 
+        /// <summary>
+        /// Everything Load() produces, published as one immutable unit so readers on
+        /// other threads (phonemizer, renderers, UI) never see a half-built oto map
+        /// during a reload. Readers copy the reference once per call.
+        /// </summary>
+        sealed class OtoData {
+            public static readonly OtoData Empty = new OtoData();
+            public readonly List<UOtoSet> otoSets = new List<UOtoSet>();
+            public readonly List<USubbank> subbanks = new List<USubbank>();
+            public readonly List<UOto> otos = new List<UOto>();
+            public readonly Dictionary<string, UOto> otoMap = new Dictionary<string, UOto>();
+            public readonly List<string> errors = new List<string>();
+        }
+
         Voicebank voicebank;
-        List<string> errors = new List<string>();
         byte[] avatarData;
-        List<UOtoSet> otoSets = new List<UOtoSet>();
-        List<USubbank> subbanks = new List<USubbank>();
-        List<UOto> otos = new List<UOto>();
-        Dictionary<string, UOto> otoMap = new Dictionary<string, UOto>();
+        volatile OtoData data = OtoData.Empty;
         OtoWatcher otoWatcher;
 
         public bool? UseFilenameAsAlias { get => voicebank.UseFilenameAsAlias; set => voicebank.UseFilenameAsAlias = value; }
@@ -97,26 +107,21 @@ namespace OpenUtau.Classic {
                 Log.Error("Avatar can't be found");
             }
 
-            subbanks.Clear();
-            subbanks.AddRange(voicebank.Subbanks
+            var d = new OtoData();
+            d.subbanks.AddRange(voicebank.Subbanks
                 .OrderByDescending(subbank => subbank.Prefix.Length + subbank.Suffix.Length)
                 .Select(subbank => new USubbank(subbank)));
-            var groups = subbanks.GroupBy(subbank => $"^{Regex.Escape(subbank.Prefix)}(.*){Regex.Escape(subbank.Suffix)}$")
+            var groups = d.subbanks.GroupBy(subbank => $"^{Regex.Escape(subbank.Prefix)}(.*){Regex.Escape(subbank.Suffix)}$")
                 .Select(group => new KeyValuePair<Regex, USubbank[]>(new Regex(group.Key), group.ToArray()));
 
             var dummy = new USubbank[] { new USubbank(new Subbank()) };
-            otoSets.Clear();
-            otos.Clear();
-            otoMap.Clear();
-            errors.Clear();
-            
             foreach (var otoSet in voicebank.OtoSets) {
                 var uSet = new UOtoSet(otoSet, voicebank.BasePath);
-                otoSets.Add(uSet);
+                d.otoSets.Add(uSet);
                 foreach (var oto in otoSet.Otos) {
                     if (!oto.IsValid) {
                         if (!string.IsNullOrEmpty(oto.Error)) {
-                            errors.Add(oto.Error);
+                            d.errors.Add(oto.Error);
                         }
                         continue;
                     }
@@ -132,25 +137,24 @@ namespace OpenUtau.Classic {
                     if (uOto == null) {
                         uOto = new UOto(oto, uSet, dummy);
                     }
-                    otos.Add(uOto);
-                    if (!otoMap.ContainsKey(oto.Alias)) {
-                        otoMap.Add(oto.Alias, uOto);
+                    d.otos.Add(uOto);
+                    if (!d.otoMap.ContainsKey(oto.Alias)) {
+                        d.otoMap.Add(oto.Alias, uOto);
                     } else {
                         //Errors.Add($"oto conflict {Otos[oto.Alias].Set}/{oto.Alias} and {otoSet.Name}/{oto.Alias}");
                     }
                 }
             }
 
-            Task.Run(() => {
-                otoMap.Values
-                    .ToList()
-                    .ForEach(oto => {
-                        oto.SearchTerms.Add(oto.Alias.ToLowerInvariant().Replace(" ", ""));
-                        try {
-                            oto.SearchTerms.Add(WanaKana.ToRomaji(oto.Alias).ToLowerInvariant().Replace(" ", ""));
-                        } catch { }
-                    });
-            });
+            foreach (var oto in d.otoMap.Values) {
+                oto.SearchTerms.Add(oto.Alias.ToLowerInvariant().Replace(" ", ""));
+                try {
+                    oto.SearchTerms.Add(WanaKana.ToRomaji(oto.Alias).ToLowerInvariant().Replace(" ", ""));
+                } catch { }
+            }
+
+            // Single atomic publish: readers see either the old snapshot or this one.
+            data = d;
         }
 
         public override void Save() {
@@ -174,37 +178,34 @@ namespace OpenUtau.Classic {
             Log.Information($"Freeing memory for singer {Id}");
             lock (SessionLock) {
                 Dispose();
-                subbanks.Clear();
-                otoSets.Clear();
-                otos.Clear();
-                otoMap.Clear();
-                errors.Clear();
+                data = OtoData.Empty;
+                loaded = false;
             }
         }
 
         public override bool TryGetOto(string phoneme, out UOto oto) {
-            if (otoMap.TryGetValue(phoneme, out oto)) {
-                return true;
-            }
-            return false;
+            return data.otoMap.TryGetValue(phoneme, out oto);
         }
 
         public override bool TryGetMappedOto(string phoneme, int tone, out UOto oto) {
-            oto = default;
-            var subbank = subbanks.Find(subbank => string.IsNullOrEmpty(subbank.Color) && subbank.toneSet.Contains(tone));
-            if (subbank != null && otoMap.TryGetValue($"{subbank.Prefix}{phoneme}{subbank.Suffix}", out oto)) {
-                return true;
-            }
-            return TryGetOto(phoneme, out oto);
+            return TryGetMappedOto(data, phoneme, tone, out oto);
         }
 
         public override bool TryGetMappedOto(string phoneme, int tone, string color, out UOto oto) {
-            oto = default;
-            var subbank = subbanks.Find(subbank => subbank.Color == color && subbank.toneSet.Contains(tone));
-            if (subbank != null && otoMap.TryGetValue($"{subbank.Prefix}{phoneme}{subbank.Suffix}", out oto)) {
+            var d = data;
+            var subbank = d.subbanks.Find(subbank => subbank.Color == color && subbank.toneSet.Contains(tone));
+            if (subbank != null && d.otoMap.TryGetValue($"{subbank.Prefix}{phoneme}{subbank.Suffix}", out oto)) {
                 return true;
             }
-            return TryGetMappedOto(phoneme, tone, out oto);
+            return TryGetMappedOto(d, phoneme, tone, out oto);
+        }
+
+        static bool TryGetMappedOto(OtoData d, string phoneme, int tone, out UOto oto) {
+            var subbank = d.subbanks.Find(subbank => string.IsNullOrEmpty(subbank.Color) && subbank.toneSet.Contains(tone));
+            if (subbank != null && d.otoMap.TryGetValue($"{subbank.Prefix}{phoneme}{subbank.Suffix}", out oto)) {
+                return true;
+            }
+            return d.otoMap.TryGetValue(phoneme, out oto);
         }
 
         public override Dictionary<string, UOto> GetSuggestions(string text, bool isAlias) {
@@ -212,7 +213,7 @@ namespace OpenUtau.Classic {
                 text = text.ToLowerInvariant().Replace(" ", "");
             }
             bool all = string.IsNullOrEmpty(text);
-            var filtered = otoMap.Values
+            var filtered = data.otoMap.Values
                 .Where(oto => all || oto.SearchTerms.Exists(term => term.Contains(text)))
                 .ToList();
 

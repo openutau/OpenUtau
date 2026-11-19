@@ -6,7 +6,7 @@
         x:Class="OpenUtau.App.Views.TypeInDialog"
         Icon="/Assets/open-utau.ico"
         Title="TypeInDialog" Height="120" Width="320" WindowStartupLocation="CenterOwner">
-  <StackPanel VerticalAlignment="Center" Margin="{Binding $parent.WindowDecorationMargin}">
+  <StackPanel VerticalAlignment="Center" Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <TextBlock Margin="20" Name="Prompt" IsVisible="False" TextWrapping="Wrap" MaxWidth="560"/>
     <TextBox Name="TextBox" Margin="4"/>
     <Button Name="OkButton" Content="OK" Margin="4" HorizontalAlignment="Stretch"/>

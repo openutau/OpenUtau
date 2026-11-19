@@ -20,6 +20,9 @@
                    Color="{DynamicResource ForegroundColorDisabled}" />
   <SolidColorBrush x:Key="SystemControlForegroundBaseMediumBrush"
                    Color="{DynamicResource BorderColor}" />
+  <!--secondary text, e.g. hints and details; SystemControlForegroundBaseMediumBrush is a border colour here-->
+  <SolidColorBrush x:Key="ForegroundBrushSecondary"
+                   Color="{DynamicResource ForegroundColor}" Opacity="0.65" />
   <SolidColorBrush x:Key="SystemControlHighlightBaseMediumHighBrush"
                    Color="{DynamicResource BorderColorPointerOver}" />
   <SolidColorBrush x:Key="SystemControlDisabledBaseMediumLowBrush"
@@ -73,8 +76,44 @@
                    Color="{DynamicResource ForegroundColorPressed}" Opacity="0.25" />
   <SolidColorBrush x:Key="ButtonBackgroundDisabled"
                    Color="{DynamicResource BackgroundColorDisabled}" />
+  <SolidColorBrush x:Key="ButtonForeground"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                   Color="{DynamicResource ForegroundColorPointerOver}" />
+  <SolidColorBrush x:Key="ToggleButtonForeground"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ToggleButtonForegroundPointerOver"
+                   Color="{DynamicResource ForegroundColorPointerOver}" />
+  <SolidColorBrush x:Key="ComboBoxForeground"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ComboBoxBorderBrush"
+                   Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver"
+                   Color="{DynamicResource BorderColorPointerOver}" />
+  <SolidColorBrush x:Key="ComboBoxItemForeground"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ComboBoxItemForegroundPointerOver"
+                   Color="{DynamicResource ForegroundColorPointerOver}" />
+  <SolidColorBrush x:Key="ToggleSwitchContentForeground"
+                   Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ToggleSwitchStrokeOff"
+                   Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver"
+                   Color="{DynamicResource BorderColorPointerOver}" />
+  <SolidColorBrush x:Key="ToggleSwitchKnobFillOff"
+                   Color="{DynamicResource BorderColorPointerOver}" />
+  <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver"
+                   Color="{DynamicResource ForegroundColorPointerOver}" />
   <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush"
                    Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUnchecked"
+                   Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedPointerOver"
+                   Color="{DynamicResource BorderColorPointerOver}" />
+  <SolidColorBrush x:Key="TextControlBorderBrush"
+                   Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                   Color="{DynamicResource BorderColorPointerOver}" />
 
   <SolidColorBrush x:Key="TickLineBrush"
                    Color="{DynamicResource TickLineColor}" />

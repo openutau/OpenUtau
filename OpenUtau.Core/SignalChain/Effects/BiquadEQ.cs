@@ -39,15 +39,35 @@ namespace OpenUtau.Core.SignalChain.Effects {
         public void Configure(double lowDb, double midFreq, double midQ, double midDb, double highDb) {
             // If every gain is zero we can short-circuit the whole effect.
             const double Eps = 0.01;
+            bool wasBypassed = bypassed;
             bypassed = Math.Abs(lowDb) < Eps && Math.Abs(midDb) < Eps && Math.Abs(highDb) < Eps;
             if (bypassed) {
                 return;
+            }
+            if (wasBypassed) {
+                // Filter memory went stale while bypassed (it can be
+                // reconfigured live during playback).
+                Reset();
             }
             for (int c = 0; c < channels; c++) {
                 stages[StageLowShelf,  c].SetLowShelf(sampleRate, 200.0, lowDb);
                 stages[StagePeak,      c].SetPeak     (sampleRate, midFreq, midQ, midDb);
                 stages[StageHighShelf, c].SetHighShelf(sampleRate, 8000.0, highDb);
             }
+        }
+
+        /// <summary>
+        /// Magnitude response in dB at <paramref name="freq"/> Hz for the
+        /// current configuration (0 dB when bypassed).  For UI curve display.
+        /// </summary>
+        public double ResponseDb(double freq) {
+            if (bypassed) {
+                return 0;
+            }
+            double w = 2.0 * Math.PI * freq / sampleRate;
+            return stages[StageLowShelf, 0].MagnitudeDb(w)
+                + stages[StagePeak, 0].MagnitudeDb(w)
+                + stages[StageHighShelf, 0].MagnitudeDb(w);
         }
 
         public void Reset() {
@@ -89,6 +109,15 @@ namespace OpenUtau.Core.SignalChain.Effects {
                 x2 = x1; x1 = x;
                 y2 = y1; y1 = y;
                 return y;
+            }
+
+            /// <summary>|H(e^jw)| in dB.</summary>
+            public double MagnitudeDb(double w) {
+                double c1 = Math.Cos(w), s1 = Math.Sin(w);
+                double c2 = Math.Cos(2 * w), s2 = Math.Sin(2 * w);
+                double nr = b0 + b1 * c1 + b2 * c2, ni = b1 * s1 + b2 * s2;
+                double dr = 1 + a1 * c1 + a2 * c2, di = a1 * s1 + a2 * s2;
+                return 10.0 * Math.Log10((nr * nr + ni * ni) / (dr * dr + di * di));
             }
 
             // RBJ Audio EQ Cookbook coefficients ----------------------

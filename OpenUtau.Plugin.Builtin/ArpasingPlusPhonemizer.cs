@@ -45,6 +45,7 @@ namespace OpenUtau.Plugin.Builtin {
         protected override string[] GetVowels() => vowels;
         protected override string[] GetConsonants() => consonants;
         protected override string GetDictionaryName() => "";
+        protected override bool EnablePhonemeTokenization => true;
 
         // For banks with missing vowels
         private readonly Dictionary<string, string> missingVphonemes = "ax=ah,aa=ah,ae=ah,iy=ih,uh=uw,ix=ih,ux=uh,oh=ao,eu=uh,oe=ax,uy=uw,yw=uw,yx=iy,wx=uw,ea=eh,ia=iy,oa=ao,ua=uw,R=-,N=n,mm=m,ll=l".Split(',')
@@ -705,6 +706,10 @@ namespace OpenUtau.Plugin.Builtin {
                                 basePhoneme = AliasFormat($"{string.Join("", cc)} {v}", "dynMid", syllable.vowelTone, "");
                                 lastC = i;
                                 break;
+                            } else if (HasOto(crv, syllable.vowelTone) || HasOto(ValidateAlias(crv, syllable.vowelTone), syllable.vowelTone) || HasOto(cv, syllable.vowelTone) || HasOto(ValidateAlias(cv, syllable.vowelTone), syllable.vowelTone)) {
+                                basePhoneme = AliasFormat($"{cc.Last()} {v}", "dynMid", syllable.vowelTone, "");
+                            } else {
+                                basePhoneme = AliasFormat($"{cc.Last()} {v}", "dynMid", syllable.vowelTone, "");
                             }
                             /// C-Last
                         } else if (CurrentWordCc.Length == 1 && PreviousWordCc.Length == 1) {
@@ -1277,40 +1282,32 @@ namespace OpenUtau.Plugin.Builtin {
             return alias;
         }
 
-        protected override string ValidateAlias(string alias, int tone = 0) {
-            if (HasOto(alias, tone)) return alias;
-
-            string baseResolved = base.ValidateAlias(alias, tone);
-            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
-                if (HasOto(baseResolved, tone)) {
-                    return baseResolved;
-                }
-                alias = baseResolved;
-            }
-
-            // Apply Vowel-Only global fallbacks
+        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+            // Apply Vowel-Only global fallbacks (skipping suppressed tokens)
             string vAlias = alias;
             if (missingVphonemes != null) {
                 foreach (var fb in missingVphonemes.OrderByDescending(f => f.Key.Length)) {
-                    vAlias = vAlias.Replace(fb.Key, fb.Value);
+                    if (suppressedTokens.Contains(fb.Key)) continue;
+                    vAlias = vAlias.Replace(fb.Key, fb.Value, StringComparison.Ordinal);
                 }
             }
-            if (vAlias != alias && HasOto(vAlias, tone)) return vAlias;
+            if (!string.Equals(vAlias, alias, StringComparison.Ordinal) && HasOto(vAlias, tone)) return vAlias;
 
-            // Apply Consonant-Only global fallbacks
+            // Apply Consonant-Only global fallbacks (skipping suppressed tokens)
             string cAlias = alias;
             if (missingCphonemes != null) {
                 foreach (var fb in missingCphonemes.OrderByDescending(f => f.Key.Length)) {
-                    cAlias = cAlias.Replace(fb.Key, fb.Value);
+                    if (suppressedTokens.Contains(fb.Key)) continue;
+                    cAlias = cAlias.Replace(fb.Key, fb.Value, StringComparison.Ordinal);
                 }
             }
-            if (cAlias != alias && HasOto(cAlias, tone)) return cAlias;
+            if (!string.Equals(cAlias, alias, StringComparison.Ordinal) && HasOto(cAlias, tone)) return cAlias;
 
-            // contextual array fallbacks
-            string contextualAlias = ApplyContextualFallbacks(alias, tone);
-            if (contextualAlias != alias) return contextualAlias;
+            // Contextual array fallbacks (respecting suppressed tokens)
+            string contextualAlias = ApplyContextualFallbacks(alias, tone, suppressedTokens);
+            if (!string.Equals(contextualAlias, alias, StringComparison.Ordinal)) return contextualAlias;
 
-            return alias;
+            return null;
         }
 
         // VV FALLBACKS, START and END
@@ -1414,12 +1411,12 @@ namespace OpenUtau.Plugin.Builtin {
         };
 
         private readonly Dictionary<string, string[]> vcConsonantFallbacks = new Dictionary<string, string[]> {
-            { "b", new[] { "p", "d", "v" } },
+            { "b", new[] { "p", "d" } },
             { "ch", new[] { "t", "k", "q", "p", "g" } },
             { "d", new[] { "p", "b", "g" } },
             { "dh", new[] { "d", "v"} },
             { "dx", new[] { "d", "t", "r" } },
-            { "f", new[] { "s", "p", "th" } },
+            { "f", new[] { "s", "th" } },
             { "g", new[] { "k", "p", "b" } },
             { "hh", new[] { "f", "th" } },
             { "jh", new[] { "d", "b", "g" } },
@@ -1444,11 +1441,11 @@ namespace OpenUtau.Plugin.Builtin {
 
         // CC FALLBACKS
         private readonly Dictionary<string, string[]> ccConsonant1Fallbacks = new Dictionary<string, string[]> {
-            { "b", new[] { "p", "d", "v" } },
+            { "b", new[] { "p", "d" } },
             { "d", new[] { "p", "b", "g" } },
             { "dh", new[] { "d", "v"} },
             { "dx", new[] { "d", "t", "r" } },
-            { "f", new[] { "s", "p", "th" } },
+            { "f", new[] { "s", "th" } },
             { "g", new[] { "k", "p", "b" } },
             { "hh", new[] { "f", "th" } },
             { "k", new[] { "g", "d", "t" } },
@@ -1471,7 +1468,7 @@ namespace OpenUtau.Plugin.Builtin {
         };
 
         private readonly Dictionary<string, string[]> ccConsonant2Fallbacks = new Dictionary<string, string[]> {
-            { "b", new[] { "p", "d", "v" } },
+            { "b", new[] { "p", "d" } },
             { "ch", new[] { "sh", "jh"} },
             { "d", new[] { "p", "d", "v" } },
             { "dh", new[] { "d", "v"} },
@@ -1499,7 +1496,7 @@ namespace OpenUtau.Plugin.Builtin {
             { "zh", new[] { "jh", "ch"} },
         };
 
-        private string ApplyContextualFallbacks(string alias, int tone) {
+        private string ApplyContextualFallbacks(string alias, int tone, HashSet<string> suppressedTokens = null) {
             string p1 = null;
             string p2 = null;
             bool hasSpace = alias.Contains(' ');
@@ -1513,9 +1510,9 @@ namespace OpenUtau.Plugin.Builtin {
             } else {
                 var allPhonemes = vowels.Concat(consonants).Concat(new[] { "-", "R" }).OrderByDescending(p => p.Length);
                 foreach (var ph1 in allPhonemes) {
-                    if (alias.StartsWith(ph1)) {
+                    if (alias.StartsWith(ph1, StringComparison.Ordinal)) {
                         string remainder = alias.Substring(ph1.Length);
-                        if (vowels.Contains(remainder) || consonants.Contains(remainder) || remainder == "-" || remainder == "R") {
+                        if (vowels.Contains(remainder, StringComparer.Ordinal) || consonants.Contains(remainder, StringComparer.Ordinal) || remainder == "-" || remainder == "R") {
                             p1 = ph1;
                             p2 = remainder;
                             break;
@@ -1526,17 +1523,23 @@ namespace OpenUtau.Plugin.Builtin {
 
             if (p1 == null || p2 == null) return alias;
 
+            // If either part is explicitly suppressed by YAML (e.g. "ng"), do not run contextual fallbacks on it
+            bool suppressP1 = suppressedTokens != null && suppressedTokens.Contains(p1);
+            bool suppressP2 = suppressedTokens != null && suppressedTokens.Contains(p2);
+
+            if (suppressP1 && suppressP2) return alias;
+
             int GetPhType(string ph) {
-                if (tails.Contains(ph)) return 0; // Rest
-                if (vowels.Contains(ph)) return 1;    // Vowel
-                if (consonants.Contains(ph)) return 2; // Consonant
+                if (tails.Contains(ph, StringComparer.Ordinal)) return 0; // Rest
+                if (vowels.Contains(ph, StringComparer.Ordinal)) return 1;    // Vowel
+                if (consonants.Contains(ph, StringComparer.Ordinal)) return 2; // Consonant
                 return -1; // Unknown
             }
 
             int type1 = GetPhType(p1);
             int type2 = GetPhType(p2);
-            var dict1 = new Dictionary<string, string[]>();
-            var dict2 = new Dictionary<string, string[]>();
+            var dict1 = new Dictionary<string, string[]>(StringComparer.Ordinal);
+            var dict2 = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
             if (type1 == 2 && type2 == 1) { // CV
                 dict1 = cvConsonantFallbacks; dict2 = cvVowelFallbacks;
@@ -1548,7 +1551,7 @@ namespace OpenUtau.Plugin.Builtin {
                 dict1 = ccConsonant1Fallbacks; dict2 = ccConsonant2Fallbacks;
             } 
             else if (type1 == 1 && type2 == 1) { // VV
-                dict1 = vvVowel1Fallbacks; dict2 = vvVowel2Fallbacks;
+                dict1 = vvVowel2Fallbacks; dict2 = vvVowel1Fallbacks;
             }
             else if (type1 == 0 && type2 == 1) { // Starting Vowel (- V)
                 dict2 = cvVowelFallbacks; // Fallback the vowel normally
@@ -1562,6 +1565,7 @@ namespace OpenUtau.Plugin.Builtin {
             else if (type1 == 2 && type2 == 0) { // Ending Consonant (C -)
                 dict1 = vcConsonantFallbacks; 
             }
+
             return FindValidCombination(p1, p2, dict1, dict2, tone, hasSpace) ?? alias;
         }
 
@@ -1575,20 +1579,29 @@ namespace OpenUtau.Plugin.Builtin {
                 p2Options.AddRange(fallbacks2);
             }
 
-            foreach (var opt1 in p1Options.Skip(1)) {
-                string tryAlias = hasSpace ? $"{opt1} {part2}" : $"{opt1}{part2}";
-                if (HasOto(tryAlias, tone)) return tryAlias;
-            }
-
-            foreach (var opt2 in p2Options.Skip(1)) {
-                string tryAlias = hasSpace ? $"{part1} {opt2}" : $"{part1}{opt2}";
-                if (HasOto(tryAlias, tone)) return tryAlias;
-            }
-
-            foreach (var opt1 in p1Options.Skip(1)) {
-                foreach (var opt2 in p2Options.Skip(1)) {
-                    string tryAlias = hasSpace ? $"{opt1} {opt2}" : $"{opt1}{opt2}";
+            // Only try part1 fallbacks if part1 actually has fallbacks
+            if (p1Options.Count > 1) {
+                foreach (var opt1 in p1Options.Skip(1)) {
+                    string tryAlias = hasSpace ? $"{opt1} {part2}" : $"{opt1}{part2}";
                     if (HasOto(tryAlias, tone)) return tryAlias;
+                }
+            }
+
+            // Only try part2 fallbacks if part2 actually has fallbacks
+            if (p2Options.Count > 1) {
+                foreach (var opt2 in p2Options.Skip(1)) {
+                    string tryAlias = hasSpace ? $"{part1} {opt2}" : $"{part1}{opt2}";
+                    if (HasOto(tryAlias, tone)) return tryAlias;
+                }
+            }
+
+            // Only try combining both if both have fallbacks
+            if (p1Options.Count > 1 && p2Options.Count > 1) {
+                foreach (var opt1 in p1Options.Skip(1)) {
+                    foreach (var opt2 in p2Options.Skip(1)) {
+                        string tryAlias = hasSpace ? $"{opt1} {opt2}" : $"{opt1}{opt2}";
+                        if (HasOto(tryAlias, tone)) return tryAlias;
+                    }
                 }
             }
 

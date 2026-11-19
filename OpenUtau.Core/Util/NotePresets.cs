@@ -104,6 +104,8 @@ namespace OpenUtau.Core.Util {
             public float VibratoDrift = 0;
             public float VibratoVolLink = 0;
 
+            public VibratoPreset() { }
+
             public VibratoPreset(string name, float length, float period, float depth, float fadein, float fadeout, float shift, float drift, float volLink) {
                 Name = name;
                 VibratoLength = length;

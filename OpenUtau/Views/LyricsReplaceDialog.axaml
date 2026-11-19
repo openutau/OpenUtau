@@ -2,6 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        x:DataType="vm:LyricsReplaceViewModel"
         mc:Ignorable="d" MinWidth="200" MinHeight="200" Width="300" Height="350"
         x:Class="OpenUtau.App.Views.LyricsReplaceDialog"  WindowStartupLocation="CenterOwner"
         Icon="/Assets/open-utau.ico"

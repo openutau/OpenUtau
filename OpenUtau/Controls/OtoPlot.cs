@@ -415,10 +415,21 @@ namespace OpenUtau.App.Controls {
             preText.Draw(context, new Point(preutterX, height));
         }
 
+        // The plot unloads when the Singers dialog closes or shows another tab, and may load again.
+        protected override void OnLoaded(RoutedEventArgs e) {
+            base.OnLoaded(e);
+            if (melBitmap == null && WaveFile != null) {
+                UpdateMel(WaveFile);
+                InvalidateVisual();
+            }
+        }
+
         protected override void OnUnloaded(RoutedEventArgs e) {
             base.OnUnloaded(e);
             wavBitmap?.Dispose();
+            wavBitmap = null;
             melBitmap?.Dispose();
+            melBitmap = null;
         }
     }
 }

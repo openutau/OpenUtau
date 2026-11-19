@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
-using DynamicData;
 using DynamicData.Binding;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
@@ -60,6 +59,24 @@ namespace OpenUtau.App.ViewModels {
         public PartRedrawEvent(UPart part) { this.part = part; }
     }
 
+    /// <summary>Raised when the voice part loaded in the piano roll changes (including null).</summary>
+    public partial class PianoRollOpenPartChangedEvent {
+        public readonly UPart? Part;
+        public PianoRollOpenPartChangedEvent(UPart? part) {
+            Part = part;
+        }
+    }
+
+    /// <summary>Raised when the piano roll horizontal viewport changes (part-local ticks).</summary>
+    public partial class PianoRollViewportChangedEvent {
+        public readonly double TickOffset;
+        public readonly double ViewportTicks;
+        public PianoRollViewportChangedEvent(double tickOffset, double viewportTicks) {
+            TickOffset = tickOffset;
+            ViewportTicks = viewportTicks;
+        }
+    }
+
     public partial class TracksViewModel : ViewModelBase, ICmdSubscriber {
         public UProject Project => DocManager.Inst.Project;
         [Reactive] public partial Rect Bounds { get; set; }
@@ -78,6 +95,12 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial double PlayPosHighlightX { get; set; }
         [Reactive] public partial double PlayPosHighlightWidth { get; set; }
         [Reactive] public partial bool PlayPosWaitingRendering { get; set; }
+        /// <summary>Voice part currently open in the piano roll; null if none.</summary>
+        [Reactive] public partial UPart? PianoRollOpenPart { get; set; }
+        /// <summary>Piano roll viewport start in part-local ticks.</summary>
+        [Reactive] public partial double PianoRollViewTickOffset { get; set; }
+        /// <summary>Piano roll viewport width in part-local ticks.</summary>
+        [Reactive] public partial double PianoRollViewViewportTicks { get; set; }
         public double ViewportTicks => viewportTicks.Value;
         public double ViewportTracks => viewportTracks.Value;
         public double SmallChangeX => smallChangeX.Value;
@@ -142,6 +165,17 @@ namespace OpenUtau.App.ViewModels {
             TrackHeight = ViewConstants.TrackHeightDefault;
             Notify();
 
+            MessageBus.Current.Listen<PianoRollOpenPartChangedEvent>()
+                .Subscribe(e => {
+                    PianoRollOpenPart = e.Part;
+                });
+
+            MessageBus.Current.Listen<PianoRollViewportChangedEvent>()
+                .Subscribe(e => {
+                    PianoRollViewTickOffset = e.TickOffset;
+                    PianoRollViewViewportTicks = e.ViewportTicks;
+                });
+
             DocManager.Inst.AddSubscriber(this);
         }
 
@@ -178,7 +212,10 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void OnYZoomed(Point position, double delta) {
-            double trackHeight = TrackHeight + Math.Sign(delta) * ViewConstants.TrackHeightDelta;
+            SetTrackHeight(TrackHeight + Math.Sign(delta) * ViewConstants.TrackHeightDelta);
+        }
+
+        public void SetTrackHeight(double trackHeight) {
             trackHeight = Math.Clamp(trackHeight, ViewConstants.TrackHeightMin, ViewConstants.TrackHeightMax);
             trackHeight = Math.Max(trackHeight, TrackCount);
             TrackHeight = trackHeight;
@@ -501,6 +538,7 @@ namespace OpenUtau.App.ViewModels {
                     Tracks.Clear();
                     Tracks.AddRange(loadProjectNotif.project.tracks);
                     SelectedTracks.Clear();
+                    PianoRollOpenPart = null;
                     MessageBus.Current.SendMessage(new TracksRefreshEvent());
                     MessageBus.Current.SendMessage(new TrackSelectionEvent(SelectedTracks.ToArray()));
                 } else if (cmd is SetPlayPosTickNotification setPlayPosTick) {

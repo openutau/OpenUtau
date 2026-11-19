@@ -7,7 +7,6 @@ cc_library(
     srcs = glob(["*.cpp"]),
     hdrs = glob(["*.h"]),
     deps = [
-        "//worldline/classic:frq",
         "@libpyin",
         "@world",
     ],

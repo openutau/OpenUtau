@@ -1,4 +1,4 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Media.TextFormatting;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
@@ -8,9 +8,9 @@ using OpenUtau.Core.Util;
 
 namespace OpenUtau.App.Controls {
     static class PhonemeUIRender {
-        public static bool IsDiffSinger(UVoicePart part) {
+        public static bool SupportsPhonemeEnvelope(UVoicePart part) {
             var track = DocManager.Inst.Project.tracks[part.trackNo];
-            return track.Phonemizer is DiffSingerBasePhonemizer;
+            return track.RendererSettings.Renderer?.SupportsPhonemeEnvelope ?? true;
         }
 
         public static string getLangCode(UVoicePart part) {
@@ -36,7 +36,8 @@ namespace OpenUtau.App.Controls {
             }
             var x = viewModel.TickToneToPoint(phoneme.position, 0).X;
             var bold = phoneme.phoneme != phoneme.rawPhoneme;
-            var textLayout = TextLayoutCache.Get(phonemeText, ThemeManager.ForegroundBrush!, 12, bold);
+            var textLayout = TextLayoutCache.Get(phonemeText, ThemeManager.ForegroundBrush!, 12, bold,
+                useUiFont: Preferences.Default.UseUiFontForNotes);
             if (x < lastTextEndX) {
                 raiseText = !raiseText;
             } else {

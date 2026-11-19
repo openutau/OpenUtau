@@ -67,7 +67,6 @@ namespace OpenUtau.Plugins {
             }).ToList();
 
             var phonemizer = new EnglishVCCVPhonemizer();
-            phonemizer.Testing = true;
             phonemizer.SetSinger(singer);
             phonemizer.SetTiming(timeAxis);
             phonemizer.SetUp(groups.ToArray(), project, track);

@@ -1,17 +1,21 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using OpenUtau.Core;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Render;
+using OpenUtau.Core.Ustx;
 using Serilog;
 
 namespace OpenUtau.Classic {
     internal class WorldlineResampler : IResampler {
         public const string name = "worldline";
         public string FilePath { get; private set; }
+        public bool NoWrapperScript { get; private set; }
 
         public WorldlineResampler() {
             string ext = OS.IsWindows() ? ".dll" : OS.IsMacOS() ? ".dylib" : ".so";
             FilePath = Path.Join(PathManager.Inst.RootPath, name + ext);
+            NoWrapperScript = true;
         }
 
         public float[] DoResampler(ResamplerItem item, ILogger logger) {
@@ -44,8 +48,14 @@ namespace OpenUtau.Classic {
 
         public void CheckPermissions() { }
 
-        //TODO: A list of flags supported by worldline resampler
-        public ResamplerManifest Manifest { get; } = new ResamplerManifest();
+        public ResamplerManifest Manifest { get; } = new ResamplerManifest() {
+            expressions = new Dictionary<string, UExpressionDescriptor> {
+                { "ten", new UExpressionDescriptor("tension","ten",-100,100,0,"Mt") },
+                { "brea", new UExpressionDescriptor("breathiness","brea",-100,100,0,"Mb") },
+                { "voi", new UExpressionDescriptor("voicing","voi",0,100,100,"Mv") }
+            },
+            expressionFilter = false
+        };
 
         public bool SupportsFlag(string abbr) {
             return true;
