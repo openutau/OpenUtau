@@ -32,6 +32,11 @@
              KeyDown="OnSearchSingerKeyDown"/>
     <ComboBox Grid.Row="0" x:Name="name" HorizontalAlignment="Stretch" Margin="120,36,0,0" VerticalAlignment="Top"
               ItemsSource="{Binding Singers}" SelectedItem="{Binding Singer}" SelectionChanged="OnSelectedSingerChanged">
+      <ComboBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel/>
+        </ItemsPanelTemplate>
+      </ComboBox.ItemsPanel>
       <ComboBox.ItemTemplate>
         <DataTemplate>
           <TextBlock Text="{Binding LocalizedName}"/>
