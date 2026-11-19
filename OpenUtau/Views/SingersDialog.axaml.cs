@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.LogicalTree;
 using NAudio.Wave;
 using NWaves.Audio;
 using OpenUtau.App.Controls;
@@ -30,14 +31,44 @@ namespace OpenUtau.App.Views {
         public SingersDialog() {
             InitializeComponent();
             DocManager.Inst.AddSubscriber(this);
+            name.ContainerPrepared += (s, e) => ApplySingerSearch(e.Container);
             foreach (var (editor, tab) in YamlTabs) {
                 editor.DirtyChanged += (s, e) => tab.Header = editor.IsDirty ? editor.FileName + " *" : editor.FileName;
             }
             DataContextChanged += (s, e) => {
                 if (DataContext is SingersViewModel viewModel) {
                     ObservableMixins.WhereNotNull(viewModel.WhenAnyValue(vm => vm.Singer)).Subscribe(singer => LoadYaml(viewModel, singer));
+                    viewModel.WhenAnyValue(vm => vm.SingerSearchText).Subscribe(_ => RefreshSingerSearch());
                 }
             };
+        }
+
+        void ApplySingerSearch(Control container) {
+            if (container is ComboBoxItem item && item.Content is USinger singer && DataContext is SingersViewModel viewModel) {
+                item.IsVisible = SingersViewModel.MatchesSearch(singer, viewModel.SingerSearchText);
+            }
+        }
+
+        void RefreshSingerSearch() {
+            foreach (var item in name.GetLogicalDescendants().OfType<ComboBoxItem>()) {
+                ApplySingerSearch(item);
+            }
+        }
+
+        void OnSearchSingerKeyDown(object? sender, KeyEventArgs e) {
+            if (DataContext is not SingersViewModel viewModel) {
+                return;
+            }
+            if (e.Key == Key.Enter) {
+                var first = name.Items.OfType<USinger>().FirstOrDefault(singer => SingersViewModel.MatchesSearch(singer, viewModel.SingerSearchText));
+                if (first != null) {
+                    viewModel.Singer = first;
+                }
+                e.Handled = true;
+            } else if (e.Key == Key.Escape && !string.IsNullOrEmpty(viewModel.SingerSearchText)) {
+                viewModel.SingerSearchText = string.Empty;
+                e.Handled = true;
+            }
         }
 
         (YamlEditor editor, TabItem tab)[] YamlTabs => new[] {

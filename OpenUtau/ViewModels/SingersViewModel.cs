@@ -22,6 +22,11 @@ using Serilog;
 namespace OpenUtau.App.ViewModels {
     public partial class SingersViewModel : ViewModelBase {
         public IEnumerable<USinger> Singers => SingerManager.Inst.SingerGroups.Values.SelectMany(l => l);
+
+        [Reactive] public partial string SingerSearchText { get; set; } = string.Empty;
+
+        public static bool MatchesSearch(USinger singer, string? query) =>
+            SingerTileViewModel.Matches(SingerTileViewModel.BuildSearchTerms(singer), query?.Trim() ?? string.Empty);
         [Reactive] public partial USinger? Singer { get; set; }
         [Reactive] public partial Bitmap? Avatar { get; set; }
         [Reactive] public partial string? Info { get; set; }

@@ -9,14 +9,14 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="640"
         x:Class="OpenUtau.App.Views.SingersDialog"
         Icon="/Assets/open-utau.ico"
-        Title="{DynamicResource singers.caption}" Width="1050" MinWidth="1050" MinHeight="640"
+        Title="{DynamicResource singers.caption}" Width="1050" MinWidth="1050" MinHeight="666"
         WindowStartupLocation="CenterScreen" KeyDown="OnKeyDown">
   <Design.DataContext>
     <vm:SingersViewModel/>
   </Design.DataContext>
   <Grid Margin="{Binding $parent[Window].WindowDecorationMargin}">
     <Grid.RowDefinitions>
-      <RowDefinition Height="140" MinHeight="140"/>
+      <RowDefinition Height="166" MinHeight="166"/>
       <RowDefinition Height="10"/>
       <RowDefinition Height="*" MinHeight="460"/>
       <RowDefinition Height="10"/>
@@ -27,15 +27,23 @@
       <ColumnDefinition Width="1*" MinWidth="300"/>
     </Grid.ColumnDefinitions>
     <Image Grid.Row="0" Width="100" Height="100" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" Source="{Binding Avatar}"/>
-    <ComboBox Grid.Row="0" x:Name="name" HorizontalAlignment="Stretch" Margin="120,10,0,0" VerticalAlignment="Top"
+    <TextBox Grid.Row="0" x:Name="SearchSingerBox" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="120,10,0,0"
+             Text="{Binding SingerSearchText}" PlaceholderText="{DynamicResource tracks.searchsinger}"
+             KeyDown="OnSearchSingerKeyDown"/>
+    <ComboBox Grid.Row="0" x:Name="name" HorizontalAlignment="Stretch" Margin="120,36,0,0" VerticalAlignment="Top"
               ItemsSource="{Binding Singers}" SelectedItem="{Binding Singer}" SelectionChanged="OnSelectedSingerChanged">
+      <ComboBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel/>
+        </ItemsPanelTemplate>
+      </ComboBox.ItemsPanel>
       <ComboBox.ItemTemplate>
         <DataTemplate>
           <TextBlock Text="{Binding LocalizedName}"/>
         </DataTemplate>
       </ComboBox.ItemTemplate>    
     </ComboBox>
-    <Border Grid.Row="0" Margin="120,40,0,30">
+    <Border Grid.Row="0" Margin="120,66,0,30">
       <ScrollViewer>
         <TextBlock x:Name="info" TextWrapping="Wrap" Text="{Binding Info}"/>
       </ScrollViewer>
