@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Core.Ustx;
@@ -163,12 +163,32 @@ namespace OpenUtau.Core.Render {
             IReadOnlySet<ulong> phraseHashes) {
             bool changed = false;
             foreach (var update in updates) {
-                if (!update.IsValid || !phraseHashes.Contains(update.phraseHash)) {
+                if (!update.IsValid) {
+                    continue;
+                }
+                // The phrase list is rebuilt off-thread, so a pass that started before
+                // the rebuild publishes hashes the part no longer has. Its phrases still
+                // cover the same ticks, and dropping those updates is what made a newly
+                // added parameter's real curve appear only after a later pass.
+                if (!phraseHashes.Contains(update.phraseHash) && !Covers(part, update)) {
                     continue;
                 }
                 changed |= ApplyUpdate(project, part, update);
             }
             return changed;
+        }
+
+        static bool Covers(UVoicePart part, RealCurveUpdate update) {
+            lock (part) {
+                foreach (var phrase in part.renderPhrases) {
+                    int start = phrase.position - part.position;
+                    int end = start + phrase.duration;
+                    if (start <= update.startTick && update.endTick <= end) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private static bool ApplyUpdate(UProject project, UVoicePart part, RealCurveUpdate update) {
