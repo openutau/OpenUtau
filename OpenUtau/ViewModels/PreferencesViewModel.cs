@@ -72,6 +72,7 @@ namespace OpenUtau.App.ViewModels {
         public string AdditionalSingersPath => PathManager.Inst.AdditionalSingersPath;
         public string AdditionalResamplersPath => PathManager.Inst.AdditionalResamplersPath;
         [Reactive] public partial bool InstallToAdditionalSingersPath { get; set; }
+        [Reactive] public partial bool InstallToAdditionalResamplersPath { get; set; }
         [Reactive] public partial bool LoadDeepFolders { get; set; }
 
         // Editing
@@ -191,6 +192,7 @@ namespace OpenUtau.App.ViewModels {
             MetronomeLowFrequency = Preferences.Default.MetronomeLowFrequency;
             LockStartTime = Preferences.Default.LockStartTime;
             InstallToAdditionalSingersPath = Preferences.Default.InstallToAdditionalSingersPath;
+            InstallToAdditionalResamplersPath = Preferences.Default.InstallToAdditionalResamplersPath;
             LoadDeepFolders = Preferences.Default.LoadDeepFolderSinger;
             ToolsManager.Inst.Initialize();
             var pattern = new Regex(@"Strings\.([\w-]+)\.axaml");
@@ -321,6 +323,8 @@ namespace OpenUtau.App.ViewModels {
                 lockStartTime => Preferences.Default.LockStartTime = lockStartTime);
             PersistOn(this.WhenAnyValue(vm => vm.InstallToAdditionalSingersPath),
                 additionalSingersPath => Preferences.Default.InstallToAdditionalSingersPath = additionalSingersPath);
+            PersistOn(this.WhenAnyValue(vm => vm.InstallToAdditionalResamplersPath),
+                additionalResamplersPath => Preferences.Default.InstallToAdditionalResamplersPath = additionalResamplersPath);
             PersistOn(this.WhenAnyValue(vm => vm.Wayland),
                 wayland => Preferences.Default.UseWayland = wayland);
             PersistOn(this.WhenAnyValue(vm => vm.LoadDeepFolders),

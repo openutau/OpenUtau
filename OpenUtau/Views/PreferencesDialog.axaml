@@ -227,6 +227,10 @@
                     HorizontalAlignment="Stretch" Click="SelectAddlResamplersPath"/>
           </Grid>
           <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.paths.addlresampler.install}" HorizontalAlignment="Left"/>
+            <ToggleSwitch IsChecked="{Binding InstallToAdditionalResamplersPath}"/>
+          </Grid>
+          <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.paths.addlsinger.install}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding InstallToAdditionalSingersPath}"/>
           </Grid>

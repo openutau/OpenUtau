@@ -86,6 +86,11 @@ namespace OpenUtau.Core {
                 ? AdditionalSingersPath
                 : SingersPath;
         public string ResamplersPath => Path.Combine(DataPath, "Resamplers");
+        public string ResamplersInstallPath => Preferences.Default.InstallToAdditionalResamplersPath
+            && !string.IsNullOrEmpty(AdditionalResamplersPath)
+            && Directory.Exists(AdditionalResamplersPath)
+                ? AdditionalResamplersPath
+                : ResamplersPath;
         public string WavtoolsPath => Path.Combine(DataPath, "Wavtools");
         public string DependencyPath => Path.Combine(DataPath, "Dependencies");
         public string PluginsPath => Path.Combine(DataPath, "Plugins");

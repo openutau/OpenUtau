@@ -214,6 +214,7 @@ namespace OpenUtau.Core.Util {
             public string AdditionalSingerPath = string.Empty;
             public string AdditionalResamplerPath = string.Empty;
             public bool InstallToAdditionalSingersPath = true;
+            public bool InstallToAdditionalResamplersPath = true;
             public bool LoadDeepFolderSinger = true;
             public bool PreferCommaSeparator = false;
             public bool ResamplerLogging = false;
