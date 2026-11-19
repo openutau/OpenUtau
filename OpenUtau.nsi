@@ -9,6 +9,13 @@ ManifestDPIAware true
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
+!ifndef BUILD_DIR
+  !define BUILD_DIR "bin\win-${ARCH}"
+!endif
+!ifndef OUTPUT_NAME
+  !define OUTPUT_NAME "OpenUtau-win-${ARCH}.exe"
+!endif
+
 ; MUI 1.8 compatible ------
 !include "MUI2.nsh"
 
@@ -47,7 +54,7 @@ ManifestDPIAware true
 ; MUI end ------
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "OpenUtau-win-${ARCH}.exe"
+OutFile "${OUTPUT_NAME}"
 InstallDir "$PROGRAMFILES64\OpenUtau"
 ShowInstDetails show
 ShowUnInstDetails show
@@ -59,7 +66,7 @@ FunctionEnd
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File "bin\win-${ARCH}\*"
+  File "${BUILD_DIR}\*"
 SectionEnd
 
 Section -AdditionalIcons
