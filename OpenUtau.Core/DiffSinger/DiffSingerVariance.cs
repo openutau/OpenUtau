@@ -264,8 +264,9 @@ namespace OpenUtau.Core.DiffSinger{
                 AddVarianceInput(NamedOnnxValue.CreateFromTensor("spk_embed", spkEmbedTensor), includeInPatchKey: false);
             }
             ulong? variancePatchKey = null;
-            if (Preferences.Default.DiffSingerTensorCache &&
-                Preferences.Default.DiffSingerVarianceLocalPitchPatch) {
+            // Local retaking is a rendering behaviour, not a cache policy: the state is
+            // kept in memory either way, so the tensor cache preference no longer gates it.
+            if (Preferences.Default.DiffSingerLocalRetakeLevel >= (int)DiffSingerLocalRetake.Variance) {
                 var baseHash = new DiffSingerCache(varianceHash, variancePatchInputs).Hash;
                 variancePatchKey = DiffSingerVariancePatch.BuildStateKey(baseHash, phrase.position, phrase.end);
             }

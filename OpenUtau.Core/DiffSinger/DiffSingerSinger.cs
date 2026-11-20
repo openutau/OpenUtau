@@ -63,6 +63,18 @@ namespace OpenUtau.Core.DiffSinger {
         /// result was an access violation inside onnxruntime rather than a managed exception.
         /// </summary>
         public object SessionLock { get; } = new object();
+        /// <summary>
+        /// Raw acoustic results kept for inpainting, keyed by the structural identity of
+        /// a phrase. Cleared when the models are freed; the mel is a few hundred KB to a
+        /// few MB for a long phrase, so it must not outlive the render sessions.
+        /// </summary>
+        public readonly AcousticInpaintStateCache AcousticInpaintStates = new AcousticInpaintStateCache(8);
+        bool? acousticInpaintSupported;
+        /// <summary>
+        /// Whether the exported inpaint_mask input is bool (the current interface) or
+        /// float (exports made before the mask was changed to bool).
+        /// </summary>
+        public bool AcousticInpaintMaskIsBool { get; private set; }
         public bool HasPitchPredictor => File.Exists(Path.Join(Location, "dspitch", "dsconfig.yaml"));
         public bool HasVariancePredictor => File.Exists(Path.Join(Location,"dsvariance", "dsconfig.yaml"));
 
@@ -200,6 +212,31 @@ namespace OpenUtau.Core.DiffSinger {
             }
         }
 
+        /// <summary>
+        /// Whether the acoustic graph can be asked to keep frames. Also validates the
+        /// voicebank's <c>use_inpaint</c> declaration against the exported inputs and
+        /// throws when they disagree: silently rendering a mis-exported voicebank would
+        /// make the feature look like it works while the kept region is lost.
+        /// </summary>
+        public bool EnsureAcousticInpaintSupported(InferenceSession session) {
+            if (acousticInpaintSupported.HasValue) {
+                return acousticInpaintSupported.Value;
+            }
+            if (!dsConfig.use_inpaint) {
+                acousticInpaintSupported = false;
+                return false;
+            }
+            Type maskType = DiffSingerAcousticInpaint.ValidateModelInputs(
+                dsConfig.acoustic, session.InputNames,
+                name => session.InputMetadata[name].ElementType);
+            AcousticInpaintMaskIsBool = maskType == typeof(bool);
+            if (!AcousticInpaintMaskIsBool) {
+                Log.Debug($"DiffSinger: {Name} exports a float inpaint_mask; the bool interface is preferred.");
+            }
+            acousticInpaintSupported = true;
+            return true;
+        }
+
         public DsVocoder getVocoder() {
             // DirectML session creation, Run and disposal must not overlap.
             using var dmlScope = Onnx.EnterDmlScope();
@@ -299,6 +336,9 @@ namespace OpenUtau.Core.DiffSinger {
                 pitchPredictor = null;
                 variancePredictor?.Dispose();
                 variancePredictor = null;
+                AcousticInpaintStates.Clear();
+                acousticInpaintSupported = null;
+                AcousticInpaintMaskIsBool = false;
                 DiffSingerRealCurveScheduler.CancelAll();
             }
         }

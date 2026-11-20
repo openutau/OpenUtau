@@ -428,10 +428,12 @@
             <TextBlock Text="{DynamicResource prefs.cache.diffsingertensorcache}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerTensorCache}" />
           </Grid>
-          <Grid Margin="0,5,0,0">
-            <TextBlock Text="{DynamicResource prefs.rendering.diffsingervariancelocalpitchpatch}" HorizontalAlignment="Left" />
-            <ToggleSwitch IsChecked="{Binding DiffSingerVarianceLocalPitchPatch}" IsEnabled="{Binding DiffSingerTensorCache}" />
-          </Grid>
+          <TextBlock Text="{DynamicResource prefs.rendering.diffsingerlocalretake}" Margin="0,10,0,0"/>
+          <ComboBox SelectedIndex="{Binding DiffSingerLocalRetakeLevel}" HorizontalAlignment="Stretch">
+            <ComboBoxItem Content="{DynamicResource prefs.rendering.diffsingerlocalretake.off}"/>
+            <ComboBoxItem Content="{DynamicResource prefs.rendering.diffsingerlocalretake.variance}"/>
+            <ComboBoxItem Content="{DynamicResource prefs.rendering.diffsingerlocalretake.acoustic}"/>
+          </ComboBox>
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.diffsingerlangcodehide}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerLangCodeHide}" />

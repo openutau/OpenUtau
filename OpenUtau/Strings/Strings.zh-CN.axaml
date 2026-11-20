@@ -872,7 +872,10 @@ OpenUtau 是一个开源项目, 旨在为 UTAU 用户社区提供现代的用户
   <system:String x:Key="prefs.rendering.diffsingersteps">针对于 Acoustic 的 DiffSinger 渲染步骤</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepspitch">针对于 Pitch 的 DiffSinger 渲染步骤</system:String>
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">针对于 Variance 的 DiffSinger 渲染步骤</system:String>
-  <system:String x:Key="prefs.rendering.diffsingervariancelocalpitchpatch">DiffSinger 编辑音高时保留未编辑区域演唱细节</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerlocalretake">DiffSinger 局部更新</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerlocalretake.off">全段更新：每次编辑整句重新采样</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerlocalretake.variance">仅 variance 局部：编辑音高时只重算改动帧的方差</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerlocalretake.acoustic">variance + acoustic 局部：只重绘条件变化的帧（需声库支持 inpainting）</system:String>
   <system:String x:Key="prefs.rendering.gamebackend">GAME 推理后端</system:String>
   <system:String x:Key="prefs.rendering.mergephrases">乐句合并间隔（秒）</system:String>
   <!--<system:String x:Key="prefs.rendering.onnxgpu">GPU</system:String>-->

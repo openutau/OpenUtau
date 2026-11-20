@@ -50,6 +50,8 @@ namespace OpenUtau.Core.DiffSinger {
         public bool useVoicingEmbed = false;
         [Description("The acoustic model takes a tension curve.")]
         public bool useTensionEmbed = false;
+        [Description("The acoustic model was exported with the inpainting inputs ref_mel and inpaint_mask, so a re-render can keep the frames whose conditions did not change.")]
+        public bool use_inpaint = false;
         [Description("Data augmentation the acoustic model was trained with.")]
         public AugmentationArgs augmentationArgs;
         [Description("The models use continuous acceleration: max_depth is from 0 to 1 instead of steps out of 1000.")]

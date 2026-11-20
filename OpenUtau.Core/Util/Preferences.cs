@@ -11,6 +11,18 @@ using Serilog;
 
 namespace OpenUtau.Core.Util {
 
+    /// <summary>
+    /// How much of a DiffSinger phrase a curve edit re-renders.
+    /// </summary>
+    public enum DiffSingerLocalRetake {
+        /// <summary>Every edit re-samples the whole phrase (the historical behaviour).</summary>
+        Off = 0,
+        /// <summary>Only the variance prediction is retaken locally; the acoustic model still re-renders the phrase.</summary>
+        Variance = 1,
+        /// <summary>Variance and acoustic re-render only the frames whose conditions changed, when the voicebank supports inpainting.</summary>
+        VarianceAndAcoustic = 2,
+    }
+
     public static class Preferences {
         public static SerializablePreferences Default { get; private set; }
 
@@ -136,6 +148,7 @@ namespace OpenUtau.Core.Util {
                         Default.PreferPortAudio = null;
                     }
                     Default.MigrateRealTimePitchMode();
+                    Default.MigrateDiffSingerLocalRetake();
                     Default.RecentSingers = Default.RecentSingers?
                         .Where(s => !string.IsNullOrWhiteSpace(s))
                         .ToList()
@@ -197,7 +210,13 @@ namespace OpenUtau.Core.Util {
             public int DiffSingerStepsVariance = 20;
             public int DiffSingerStepsPitch = 10;
             public bool DiffSingerTensorCache = true;
+            /// <summary>Legacy; migrated to <see cref="DiffSingerLocalRetakeLevel"/> on load.</summary>
             public bool DiffSingerVarianceLocalPitchPatch = false;
+            /// <summary>
+            /// How much of a phrase a curve edit re-renders, see <see cref="DiffSingerLocalRetake"/>.
+            /// Null until migrated from the legacy boolean, so an explicit choice is never overwritten.
+            /// </summary>
+            public int? DiffSingerLocalRetakeLevel = null;
             public bool DiffSingerLangCodeHide = false;
             /// <summary>
             /// Auto-merge nearby DiffSinger phrases (piano roll toggle). Off by
@@ -335,6 +354,23 @@ namespace OpenUtau.Core.Util {
                 if (RealTimePitchMode < (int)LivePitchMode.Off
                     || RealTimePitchMode > (int)LivePitchMode.Fast) {
                     RealTimePitchMode = (int)LivePitchMode.Off;
+                }
+            }
+
+            /// <summary>
+            /// Carries the old on/off variance retake preference over to the three-level
+            /// setting. Only fills it in when this file predates the new key, so a later
+            /// explicit choice is never overwritten.
+            /// </summary>
+            public void MigrateDiffSingerLocalRetake() {
+                if (DiffSingerLocalRetakeLevel == null) {
+                    DiffSingerLocalRetakeLevel = DiffSingerVarianceLocalPitchPatch
+                        ? (int)DiffSingerLocalRetake.Variance
+                        : (int)DiffSingerLocalRetake.Off;
+                }
+                if (DiffSingerLocalRetakeLevel < (int)DiffSingerLocalRetake.Off
+                    || DiffSingerLocalRetakeLevel > (int)DiffSingerLocalRetake.VarianceAndAcoustic) {
+                    DiffSingerLocalRetakeLevel = (int)DiffSingerLocalRetake.Off;
                 }
             }
         }
