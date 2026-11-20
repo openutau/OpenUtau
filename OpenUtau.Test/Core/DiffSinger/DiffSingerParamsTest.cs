@@ -405,6 +405,107 @@ params:
             Assert.Contains(unknown, d => d.Kind == YamlDiagnosticKind.UnknownKey && d.Detail == "typo_key");
         }
 
+        [Theory]
+        [InlineData(-1, 100, 0.01f, 100, false)]
+        [InlineData(-100, 0, -0.01f, -100, true)]
+        [InlineData(-100, 1, -0.01f, -100, false)]
+        [InlineData(0, 100, 0.01f, 100, true)]
+        public void GainValidatesBothScaledEndpoints(float min, float max, float scale, float neutral, bool valid) {
+            var definition = new DsParamConfig {
+                name = "gain", abbr = "gain", category = "variance", mode = "gain",
+                min = min, max = max, scale = scale, defaultValue = neutral,
+                valueMin = -96, valueMax = 0,
+            };
+            if (valid) {
+                Assert.Equal(-96f, Registry(definition).ByName("gain")!.CombinedValue(-20, 0));
+            } else {
+                Assert.Throws<InvalidDataException>(() => Registry(definition));
+            }
+        }
+
+        [Fact]
+        public void ConflictingIdentifiersAreRejected() {
+            var config = new DsConfig { useEnergyEmbed = true, useBreathinessEmbed = true,
+                paramDefinitions = new DsParamsConfig { definitions = new List<DsParamConfig> {
+                    new DsParamConfig { name = "breathiness", abbr = DiffSingerUtils.ENE },
+                } },
+            };
+            Assert.Contains("different parameters", Assert.Throws<InvalidDataException>(() => DsParamRegistry.From(config)).Message);
+        }
+
+        [Fact]
+        public void MetadataOverridesPreserveSpecialConverters() {
+            var config = new DsConfig { useSpeedEmbed = true, useKeyShiftEmbed = true,
+                augmentationArgs = new AugmentationArgs {
+                    randomPitchShifting = new RandomPitchShifting { range = new[] { -6f, 12f } },
+                },
+            };
+            var original = DsParamRegistry.From(config);
+            config.paramDefinitions = new DsParamsConfig { definitions = original.All.Select(p =>
+                new DsParamConfig { abbr = p.Abbr, displayName = "renamed" }).ToList() };
+            var updated = DsParamRegistry.From(config);
+            foreach (var param in original.All) {
+                foreach (float curve in new[] { -50f, 0f, 50f, 200f }) {
+                    Assert.Equal(param.AcousticValue(curve), updated.ByName(param.Name)!.AcousticValue(curve));
+                }
+            }
+        }
+
+        [Fact]
+        public void PredictorHeadsIncludeDisabledAcousticBuiltinsAndRejectUnknownHeads() {
+            var config = new DsConfig { predict_energy = true, predict_breathiness = true };
+            Assert.Equal(new[] { "energy", "breathiness" },
+                DsParamRegistry.Predicted(config, DsParamRegistry.Empty).Select(p => p.Name));
+            config.dynamicFlags["predict_emotion"] = true;
+            Assert.Throws<InvalidDataException>(() => DsParamRegistry.Predicted(config, DsParamRegistry.Empty));
+        }
+
+        [Fact]
+        public void ParameterReadErrorsPreserveTheMainConfiguration() {
+            string dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(dir);
+            try {
+                File.WriteAllText(Path.Combine(dir, "dsconfig.yaml"), "phonemes: custom.txt\nuse_energy_embed: true");
+                File.WriteAllText(Path.Combine(dir, "params.yaml"), "params: [");
+                Exception? reported = null;
+                var config = DsConfig.Load(dir, e => reported = e);
+                Assert.NotNull(reported);
+                Assert.Equal("custom.txt", config.phonemes);
+                Assert.True(config.UsesEmbed("energy"));
+                Assert.NotNull(DsParamRegistry.From(config).ByName("energy"));
+            } finally {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void SingerKeepsPhonemesOnParameterFailureAndSuggestsOverrideDescriptors() {
+            string dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(dir);
+            try {
+                File.WriteAllText(Path.Combine(dir, "dsconfig.yaml"), "phonemes: custom.txt\nuse_energy_embed: true");
+                File.WriteAllText(Path.Combine(dir, "custom.txt"), "SP\na\n");
+                File.WriteAllText(Path.Combine(dir, "params.yaml"), "params: [");
+                var singer = new DiffSingerSinger(new OpenUtau.Classic.Voicebank {
+                    File = Path.Combine(dir, "character.txt"), Name = "test",
+                });
+                Assert.Contains("a", singer.phonemes);
+                Assert.Contains(singer.Errors, e => e.StartsWith("Failed to load params.yaml:"));
+                Assert.DoesNotContain(singer.Errors, e => e.StartsWith("Failed to load dsconfig.yaml:"));
+                File.WriteAllText(Path.Combine(dir, "params.yaml"),
+                    "params:\n  - abbr: ene\n    min: -50\n    max: 80\n    default: 10");
+                singer.Reload();
+                Assert.DoesNotContain(singer.Errors, e => e.StartsWith("Failed to load params.yaml:"));
+                var descriptor = Assert.Single(new DiffSingerRenderer().GetSuggestedExpressions(singer, new OpenUtau.Core.Ustx.URenderSettings()),
+                    d => d.abbr == DiffSingerUtils.ENE);
+                Assert.Equal(-50f, descriptor.min);
+                Assert.Equal(80f, descriptor.max);
+                Assert.Equal(10f, descriptor.defaultValue);
+            } finally {
+                Directory.Delete(dir, true);
+            }
+        }
+
         static DsParamRegistry Registry(params DsParamConfig[] definitions) {
             var config = new DsConfig {
                 paramDefinitions = new DsParamsConfig { definitions = definitions.ToList() },

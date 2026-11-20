@@ -102,7 +102,7 @@ namespace OpenUtau.Core.DiffSinger {
             bool dsConfigLoaded = false;
             if(configPath != null && File.Exists(configPath)){
                 try {
-                    dsConfig = DsConfig.Load(Location);
+                    dsConfig = DsConfig.Load(Location, ReportParamError);
                     dsConfigLoaded = true;
                 } catch (Exception e) {
                     Log.Error(e, $"Failed to load dsconfig.yaml for {Name} from {configPath}");
@@ -246,6 +246,11 @@ namespace OpenUtau.Core.DiffSinger {
             }
         }
 
+        void ReportParamError(Exception e) {
+            Log.Error(e, $"Failed to load the parameters of {Name}");
+            errors.Add($"Failed to load params.yaml: {e.Message}");
+        }
+
         /// <summary>
         /// Resolves the tunable parameters of the voicebank. A broken params.yaml keeps
         /// the built-in parameters usable and reports the file instead of failing the
@@ -255,25 +260,28 @@ namespace OpenUtau.Core.DiffSinger {
             try {
                 return DsParamRegistry.From(config);
             } catch (Exception e) {
-                Log.Error(e, $"Failed to load the parameters of {Name}");
-                errors.Add($"Failed to load params.yaml: {e.Message}");
+                ReportParamError(e);
                 return DsParamRegistry.From(config, includeDefinitions: false);
             }
         }
 
         /// <summary>
         /// Re-reads dsconfig.yaml and params.yaml after the singer dialog saves them.
-        /// The models keep their sessions: only the configuration they are driven by
-        /// changes.
+        /// The variance predictor is recreated with the updated parameter registry.
         /// </summary>
         public override void Reload() {
             // A reload replaces the previous one's verdict rather than piling up errors.
             errors.RemoveAll(e => e.StartsWith("Failed to reload dsconfig.yaml:") || e.StartsWith("Failed to load params.yaml:"));
             try {
-                var config = DsConfig.Load(Location);
+                var config = DsConfig.Load(Location, ReportParamError);
                 var registry = BuildParamRegistry(config);
-                dsConfig = config;
-                paramRegistry = registry;
+                using var dmlScope = Onnx.EnterDmlScope();
+                lock (SessionLock) {
+                    variancePredictor?.Dispose();
+                    variancePredictor = null;
+                    dsConfig = config;
+                    paramRegistry = registry;
+                }
             } catch (Exception e) {
                 Log.Error(e, $"Failed to reload the DiffSinger configuration of {Name}");
                 errors.Add($"Failed to reload dsconfig.yaml: {e.Message}");

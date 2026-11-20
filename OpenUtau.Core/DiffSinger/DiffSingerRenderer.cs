@@ -597,15 +597,16 @@ namespace OpenUtau.Core.DiffSinger {
                     isFlag = false
                 },
             };
-            // The voicebank's own parameters, e.g. from params.yaml. The built-in ones
-            // are already in the project's default expressions, so suggestions skip them.
+            // Registry descriptors also replace seeded suggestions when overridden.
             var dsSinger = singer as DiffSingerSinger;
             if (dsSinger != null) {
                 foreach (var param in dsSinger.paramRegistry.All) {
-                    if (result.Any(d => d.abbr == param.Abbr)) {
-                        continue;
+                    int index = result.FindIndex(d => d.abbr == param.Abbr);
+                    if (index >= 0) {
+                        result[index] = param.Descriptor;
+                    } else {
+                        result.Add(param.Descriptor);
                     }
-                    result.Add(param.Descriptor);
                 }
             }
             //speakers

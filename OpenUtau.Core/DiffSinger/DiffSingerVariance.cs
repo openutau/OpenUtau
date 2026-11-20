@@ -56,7 +56,7 @@ namespace OpenUtau.Core.DiffSinger{
     public class DsVariance : IDisposable{
         string rootPath;
         DsConfig dsConfig;
-        readonly DsParamRegistry paramRegistry;
+        readonly IReadOnlyList<DsParam> predictedParams;
         Dictionary<string, int> languageIds = new Dictionary<string, int>();
         Dictionary<string, int> phonemeTokens;
         ulong linguisticHash;
@@ -74,10 +74,10 @@ namespace OpenUtau.Core.DiffSinger{
 
         /// <summary>
         /// The variance parameters this predictor produces, in the order of the model's
-        /// heads. The singer passes its registry so the acoustic model and the variance
-        /// model agree on the channel layout; standalone users get one from dsconfig.
+        /// heads, including heads the acoustic model does not consume. The singer's
+        /// registry supplies overrides; standalone users get one from dsconfig.
         /// </summary>
-        public IReadOnlyList<DsParam> Params => paramRegistry.Variance;
+        public IReadOnlyList<DsParam> Params => predictedParams;
 
         public DsVariance(string rootPath, DsParamRegistry? registry = null)
         {
@@ -91,7 +91,15 @@ namespace OpenUtau.Core.DiffSinger{
             if(dsConfig.variance == null){
                 throw new Exception("This voicebank doesn't contain a variance model");
             }
-            paramRegistry = registry ?? DsParamRegistry.From(dsConfig);
+            var paramRegistry = registry ?? DsParamRegistry.From(dsConfig);
+            predictedParams = DsParamRegistry.Predicted(dsConfig, paramRegistry);
+            foreach (var param in paramRegistry.Variance) {
+                if (!dsConfig.Predicts(param.Name)) {
+                    throw new InvalidDataException(
+                        $"The variance dsconfig.yaml of {rootPath} does not set predict_{param.Name}, " +
+                        $"but params.yaml declares \"{param.Name}\" as a variance parameter.");
+                }
+            }
             //Load language id if needed
             if(dsConfig.use_lang_id){
                 if(dsConfig.languages == null){
@@ -119,29 +127,30 @@ namespace OpenUtau.Core.DiffSinger{
             var linguisticModelBytes = File.ReadAllBytes(linguisticModelPath);
             linguisticHash = XXH64.DigestOf(linguisticModelBytes);
             linguisticModel = Onnx.getInferenceSession(linguisticModelBytes);
-            var varianceModelPath = Path.Join(rootPath, dsConfig.variance);
-            var varianceModelBytes = File.ReadAllBytes(varianceModelPath);
-            varianceHash = XXH64.DigestOf(varianceModelBytes);
-            varianceModel = Onnx.getInferenceSession(varianceModelBytes);
-            // Every variance parameter has to be an input and a prediction of the model;
-            // a mismatch here is a config error, not something to discover mid-render.
-            var varianceInputNames = varianceModel.InputNames.ToHashSet();
-            var varianceOutputNames = varianceModel.OutputNames.ToHashSet();
-            foreach (var param in paramRegistry.Variance) {
-                if (!dsConfig.Predicts(param.Name)) {
-                    throw new InvalidDataException(
-                        $"The variance dsconfig.yaml of {rootPath} does not set predict_{param.Name}, " +
-                        $"but params.yaml declares \"{param.Name}\" as a variance parameter.");
+            try {
+                var varianceModelPath = Path.Join(rootPath, dsConfig.variance);
+                var varianceModelBytes = File.ReadAllBytes(varianceModelPath);
+                varianceHash = XXH64.DigestOf(varianceModelBytes);
+                varianceModel = Onnx.getInferenceSession(varianceModelBytes);
+                // Every variance parameter has to be an input and a prediction of the model;
+                // a mismatch here is a config error, not something to discover mid-render.
+                var varianceInputNames = varianceModel.InputNames.ToHashSet();
+                var varianceOutputNames = varianceModel.OutputNames.ToHashSet();
+                foreach (var param in predictedParams) {
+                    if (!varianceInputNames.Contains(param.Name) || !varianceOutputNames.Contains(param.Name + "_pred")) {
+                        throw new InvalidDataException(
+                            $"The variance model of {rootPath} takes no \"{param.Name}\" input or does not output \"{param.Name}_pred\". " +
+                            "Check dsconfig.yaml and params.yaml.");
+                    }
                 }
-                if (!varianceInputNames.Contains(param.Name) || !varianceOutputNames.Contains(param.Name + "_pred")) {
-                    throw new InvalidDataException(
-                        $"The variance model of {rootPath} takes no \"{param.Name}\" input or does not output \"{param.Name}_pred\". " +
-                        "Check dsconfig.yaml and params.yaml.");
-                }
+                frameMs = 1000f * dsConfig.hop_size / dsConfig.sample_rate;
+                //Load g2p
+                g2p = LoadG2p(rootPath);
+            } catch {
+                linguisticModel.Dispose();
+                varianceModel?.Dispose();
+                throw;
             }
-            frameMs = 1000f * dsConfig.hop_size / dsConfig.sample_rate;
-            //Load g2p
-            g2p = LoadG2p(rootPath);
         }
 
         protected IG2p LoadG2p(string rootPath) {
@@ -260,7 +269,7 @@ namespace OpenUtau.Core.DiffSinger{
             AddVarianceInput(NamedOnnxValue.CreateFromTensor("pitch",
                 new DenseTensor<float>(pitch, new int[] { pitch.Length }, false)
                 .Reshape(new int[] { 1, totalFrames })), includeInPatchKey: false);
-            var varianceParams = paramRegistry.Variance;
+            var varianceParams = predictedParams;
             foreach (var param in varianceParams) {
                 var zeros = Enumerable.Repeat(0f, totalFrames).ToArray();
                 AddVarianceInput(NamedOnnxValue.CreateFromTensor(param.Name,
@@ -389,7 +398,7 @@ namespace OpenUtau.Core.DiffSinger{
             int headFrames,
             int tailFrames,
             int totalFrames) {
-            var varianceParams = paramRegistry.Variance;
+            var varianceParams = predictedParams;
             var channels = new float[]?[varianceParams.Count];
             for (int i = 0; i < varianceParams.Count; i++) {
                 channels[i] = outputs.First(o => o.Name == varianceParams[i].Name + "_pred").AsTensor<float>().ToArray();

@@ -262,34 +262,52 @@ namespace OpenUtau.Core.DiffSinger {
             }
         }
 
+        /// <summary>Resolves predictor heads independently of acoustic embedding flags.</summary>
+        public static IReadOnlyList<DsParam> Predicted(DsConfig config, DsParamRegistry registry) {
+            var builtIns = new List<DsParam>();
+            AddBuiltIns(config, builtIns, prediction: true);
+            var names = builtIns.Where(p => p.Category == DsParamCategory.Variance).Select(p => p.Name)
+                .Concat(registry.Variance.Where(p => config.Predicts(p.Name)).Select(p => p.Name))
+                .Concat(config.dynamicFlags.Where(p => p.Value && p.Key.StartsWith("predict_")
+                    && p.Key != "predict_dur").Select(p => p.Key.Substring("predict_".Length)))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            return names.Select(name => registry.ByName(name)
+                ?? builtIns.FirstOrDefault(p => p.Name == name)
+                ?? throw new InvalidDataException($"The variance dsconfig.yaml predicts \"{name}\", but params.yaml defines no such parameter."))
+                .ToArray();
+        }
+
         /// <summary>The built-in parameters, ordered as the variance model's heads are.</summary>
-        static void AddBuiltIns(DsConfig config, List<DsParam> all) {
+        static void AddBuiltIns(DsConfig config, List<DsParam> all, bool prediction = false) {
             // Variance parameters, in the order DiffSinger's heads come in. Their curves
             // are graded the way the built-in ones always were: 100 curve units are 12
             // parameter units (energy, breathiness, voicing) or 5 (tension).
-            if (config.UsesEmbed("energy")) {
+            if (prediction ? config.Predicts("energy") : config.UsesEmbed("energy")) {
                 all.Add(MakeVariance("energy", DiffSingerUtils.ENE, "energy (curve)", -100, 100, 0,
                     0.12f, -96, 0,
                     phrase => phrase.curves.FirstOrDefault(c => c.Item1 == DiffSingerUtils.ENE)?.Item2,
                     isBuiltIn: true));
             }
-            if (config.UsesEmbed("breathiness")) {
+            if (prediction ? config.Predicts("breathiness") : config.UsesEmbed("breathiness")) {
                 all.Add(MakeVariance("breathiness", Format.Ustx.BREC, "breathiness (curve)", -100, 100, 0,
                     0.12f, -96, 0,
                     phrase => phrase.breathiness,
                     isBuiltIn: true));
             }
-            if (config.UsesEmbed("voicing")) {
+            if (prediction ? config.Predicts("voicing") : config.UsesEmbed("voicing")) {
                 all.Add(MakeVariance("voicing", Format.Ustx.VOIC, "voicing (curve)", 0, 100, 100,
                     0.12f, -96, 0,
                     phrase => phrase.voicing,
                     isBuiltIn: true));
             }
-            if (config.UsesEmbed("tension")) {
+            if (prediction ? config.Predicts("tension") : config.UsesEmbed("tension")) {
                 all.Add(MakeVariance("tension", Format.Ustx.TENC, "tension (curve)", -100, 100, 0,
                     0.05f, -10, 10,
                     phrase => phrase.tension,
                     isBuiltIn: true));
+            }
+            if (prediction) {
+                return;
             }
             // Acoustic-only parameters. Their conversions are not a single scale:
             // gender is asymmetric and velocity is logarithmic.
@@ -328,6 +346,9 @@ namespace OpenUtau.Core.DiffSinger {
             float scale, float valueMin, float valueMax,
             Func<RenderPhrase, float[]?> curveOf, bool isBuiltIn,
             DsParamMode mode = DsParamMode.Add, float displayScale = 1f) {
+            if (mode == DsParamMode.Gain && (min * scale < 0 || max * scale < 0)) {
+                throw new InvalidDataException($"params.yaml: gain range for \"{name}\" must not contain negative scaled values.");
+            }
             var descriptor = Curve(displayName, abbr, min, max, defaultValue);
             Func<float, float, float> combine = mode switch {
                 DsParamMode.Multiply => (predicted, curve) => predicted * curve * scale,
@@ -342,10 +363,11 @@ namespace OpenUtau.Core.DiffSinger {
         /// <summary>An acoustic-only parameter whose input is its curve, scaled.</summary>
         static DsParam MakeAcoustic(
             string name, string abbr, string displayName, float min, float max, float defaultValue,
-            float scale, Func<RenderPhrase, float[]?> curveOf, bool isBuiltIn) {
+            float scale, Func<RenderPhrase, float[]?> curveOf, bool isBuiltIn,
+            Func<float, float>? fromCurve = null) {
             return new DsParam(name, abbr, DsParamCategory.Acoustic,
                 Curve(displayName, abbr, min, max, defaultValue), min, max, scale, isBuiltIn,
-                curveOf, curve => curve * scale, (predicted, curve) => predicted);
+                curveOf, fromCurve ?? (curve => curve * scale), (predicted, curve) => predicted);
         }
 
         /// <summary>An acoustic-only parameter with a conversion of its own, e.g. velocity.</summary>
@@ -372,9 +394,13 @@ namespace OpenUtau.Core.DiffSinger {
                     $"params.yaml: every parameter needs an abbr{(string.IsNullOrWhiteSpace(definition.name) ? "" : $" (\"{definition.name}\")")}.");
             }
             string abbr = definition.abbr.Trim().ToLowerInvariant();
-            DsParam? inherited = all.FirstOrDefault(p => string.Equals(p.Abbr, abbr, StringComparison.OrdinalIgnoreCase))
-                ?? all.FirstOrDefault(p => !string.IsNullOrWhiteSpace(definition.name)
-                    && string.Equals(p.Name, definition.name.Trim(), StringComparison.OrdinalIgnoreCase));
+            var byAbbr = all.FirstOrDefault(p => string.Equals(p.Abbr, abbr, StringComparison.OrdinalIgnoreCase));
+            var byName = all.FirstOrDefault(p => !string.IsNullOrWhiteSpace(definition.name)
+                && string.Equals(p.Name, definition.name.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (byAbbr != null && byName != null && byAbbr != byName) {
+                throw new InvalidDataException($"params.yaml: name \"{definition.name}\" and abbr \"{abbr}\" identify different parameters.");
+            }
+            DsParam? inherited = byAbbr ?? byName;
             string? name = string.IsNullOrWhiteSpace(definition.name) ? inherited?.Name : definition.name.Trim();
             if (name != null && !config.UsesEmbed(name)) {
                 // dsconfig.yaml has the last word: a definition alone does not make the
@@ -459,7 +485,10 @@ namespace OpenUtau.Core.DiffSinger {
                 throw new InvalidDataException($"params.yaml: display_scale of {label} must be a positive number.");
             }
             if (category == DsParamCategory.Acoustic) {
-                return MakeAcoustic(name, abbr, displayName, min.Value, max.Value, defaultValue, scale, curveOf, isBuiltIn: false);
+                return MakeAcoustic(name, abbr, displayName, min.Value, max.Value, defaultValue, scale, curveOf, isBuiltIn: false,
+                    fromCurve: inherited?.Category == DsParamCategory.Acoustic
+                        && definition.scale == null && definition.mode == null
+                        ? inherited.AcousticValue : null);
             }
             return MakeVariance(name, abbr, displayName, min.Value, max.Value, defaultValue, scale,
                 valueMin, valueMax, curveOf, isBuiltIn: false, mode, displayScale);

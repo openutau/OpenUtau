@@ -410,6 +410,7 @@ namespace OpenUtau.App.ViewModels {
             int index = SelectedIndex;
 
             Singer.Reload();
+            Info = $"Author: {Singer.Author}\nVoice: {Singer.Voice}\nWeb: {Singer.Web}\nVersion: {Singer.Version}\n{Singer.OtherInfo}\n\n{string.Join("\n", Singer.Errors)}";
             HasDsParams = Singer is DiffSingerSinger;
             Avatar = LoadAvatar(Singer);
             Otos.Clear();

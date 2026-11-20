@@ -175,12 +175,16 @@ namespace OpenUtau.Core.DiffSinger {
         /// Reads dsconfig.yaml of a voicebank, the params.yaml beside it, and the
         /// use_*_embed / predict_* flags that are not typed fields.
         /// </summary>
-        public static DsConfig Load(string rootPath) {
+        public static DsConfig Load(string rootPath, Action<Exception>? reportParamError = null) {
             string configPath = Path.Combine(rootPath, "dsconfig.yaml");
             string text = File.ReadAllText(configPath, Encoding.UTF8);
             var config = Yaml.DefaultDeserializer.Deserialize<DsConfig>(text);
             config.ReadDynamicFlags(text);
-            config.LoadParamDefinitions(rootPath);
+            try {
+                config.LoadParamDefinitions(rootPath);
+            } catch (Exception e) when (reportParamError != null) {
+                reportParamError(e);
+            }
             return config;
         }
 
