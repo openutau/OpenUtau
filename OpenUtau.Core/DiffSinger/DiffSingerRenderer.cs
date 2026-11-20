@@ -353,7 +353,7 @@ namespace OpenUtau.Core.DiffSinger {
                     }
                     varianceResult = singer.getVariancePredictor().Process(phrase);
                 }
-                renderEvents?.ReportRealCurves(BuildRenderedRealCurves(phrase, varianceResult));
+                renderEvents?.ReportRealCurves(BuildRenderedRealCurves(phrase, varianceResult, parameters.Variance));
                 foreach (var param in varianceParams) {
                     if (varianceResult.Channel(param.Name) == null) {
                         throw new KeyNotFoundException(
@@ -529,12 +529,19 @@ namespace OpenUtau.Core.DiffSinger {
             return singer == null && builtinVarianceExp.Contains(abbr);
         }
 
-        private List<RenderRealCurveResult> BuildRenderedRealCurves(RenderPhrase phrase, VarianceResult result) {
+        /// <summary>
+        /// Real curves of a variance result. <paramref name="parameters"/> is the list
+        /// the acoustic inputs were built from, so a reload cannot make the display and
+        /// the model disagree about a parameter; without it the singer's current
+        /// registry is used.
+        /// </summary>
+        internal List<RenderRealCurveResult> BuildRenderedRealCurves(
+                RenderPhrase phrase, VarianceResult result, IReadOnlyList<DsParam>? parameters = null) {
             var frameMs = result.frameMs;
             var headFrames = result.headFrames;
             var tailFrames = result.tailFrames;
             var startMs = phrase.positionMs - headFrames * frameMs;
-            var parameters = (phrase.singer as DiffSingerSinger)?.paramRegistry.Variance
+            parameters ??= (phrase.singer as DiffSingerSinger)?.paramRegistry.Variance
                 ?? Array.Empty<DsParam>();
             var realCurves = new List<RenderRealCurveResult>(parameters.Count);
             foreach (var param in parameters) {

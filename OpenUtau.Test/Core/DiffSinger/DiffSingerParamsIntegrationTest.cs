@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -191,6 +191,99 @@ params:
 
                 // mul: prediction * curve * scale = -0.5 * 20 * 0.01.
                 Assert.All(values, value => Assert.Equal(-0.1f, value, 5));
+            } finally {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void RebindingToADbParameterReadsItsPhraseField() {
+            // Rebinding energy to brec: breathiness is disabled, so no parameter owns
+            // that abbreviation and the definition is a rebind. RenderPhrase folds brec
+            // into the phrase's breathiness field, so the lookup must follow the final
+            // abbreviation rather than the curve list.
+            string dir = CreateVoicebank(@"
+acoustic: acoustic.onnx
+vocoder: nsf_hifigan
+use_energy_embed: true
+", @"
+variance: variance.onnx
+linguistic: linguistic.onnx
+predict_energy: true
+", @"
+params:
+  - name: energy
+    abbr: brec
+");
+            try {
+                var config = DsConfig.Load(dir);
+                var registry = DsParamRegistry.From(config);
+                var energy = registry.ByName("energy")!;
+                Assert.Equal(Format.Ustx.BREC, energy.Abbr);
+
+                var (phrase, frameMs, headFrames, tailFrames, totalFrames) = BuildPhrase(
+                    registry,
+                    new Dictionary<string, int> { [Format.Ustx.BREC] = 50 });
+                var varianceResult = Result(
+                    registry.Variance,
+                    new Dictionary<string, float> { ["energy"] = -30f },
+                    frameMs, headFrames, tailFrames, totalFrames);
+
+                var values = DiffSingerParamInputs.Variance(
+                    phrase, energy, varianceResult.Channel("energy")!, varianceResult,
+                    frameMs, totalFrames, headFrames, tailFrames);
+
+                // 50 curve units of the brec curve, scaled by the inherited 12/100.
+                Assert.All(values, value => Assert.Equal(-24f, value, 4));
+            } finally {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Fact]
+        public void RealCurvesUseTheCapturedParameterList() {
+            // The display must follow the same parameter definitions the acoustic
+            // inputs used, even if the singer's registry changed meanwhile.
+            string dir = CreateVoicebank(@"
+acoustic: acoustic.onnx
+vocoder: nsf_hifigan
+use_emotion_embed: true
+", @"
+variance: variance.onnx
+linguistic: linguistic.onnx
+predict_emotion: true
+", @"
+params:
+  - name: emotion
+    abbr: emo
+    category: variance
+    min: 0
+    max: 100
+    default: 0
+    scale: 0.01
+    value_min: 0
+    value_max: 1
+");
+            try {
+                var config = DsConfig.Load(dir);
+                var registry = DsParamRegistry.From(config);
+                var emotion = registry.ByName("emotion")!;
+
+                var (phrase, frameMs, headFrames, tailFrames, totalFrames) = BuildPhrase(
+                    registry,
+                    new Dictionary<string, int> { ["emo"] = 50 });
+                var varianceResult = Result(
+                    registry.Variance,
+                    new Dictionary<string, float> { ["emotion"] = 0f },
+                    frameMs, headFrames, tailFrames, totalFrames);
+
+                var curves = new DiffSingerRenderer().BuildRenderedRealCurves(
+                    phrase, varianceResult, new[] { emotion });
+
+                var curve = Assert.Single(curves);
+                Assert.Equal("emo", curve.abbr);
+                // prediction 0 + curve 50 * 0.01 = 0.5, normalized over value 0..1.
+                Assert.All(curve.values, value => Assert.Equal(0.5f, value, 4));
             } finally {
                 Directory.Delete(dir, true);
             }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -475,11 +475,12 @@ namespace OpenUtau.Core.DiffSinger {
             // Some built-in parameters do not live in the phrase's curve list: their
             // drawn curve is folded into a field of the phrase (voicing, breathiness,
             // tension, gender). An override keeps the same abbreviation, so it has to
-            // keep reading the same curve.
+            // keep reading the same curve; a rebinding to one of those abbreviations has
+            // to read the field of the abbreviation it ends up with.
             Func<RenderPhrase, float[]?> curveOf =
                 inherited?.Abbr is string inheritedAbbr && string.Equals(inheritedAbbr, abbr, StringComparison.OrdinalIgnoreCase)
                     ? inherited.CurveOf
-                    : phrase => phrase.curves.FirstOrDefault(c => c.Item1 == abbr)?.Item2;
+                    : CurveAccessor(abbr);
             float displayScale = definition.displayScale ?? inherited?.DisplayScale ?? 1f;
             if (displayScale <= 0 || float.IsNaN(displayScale) || float.IsInfinity(displayScale)) {
                 throw new InvalidDataException($"params.yaml: display_scale of {label} must be a positive number.");
@@ -493,6 +494,19 @@ namespace OpenUtau.Core.DiffSinger {
             return MakeVariance(name, abbr, displayName, min.Value, max.Value, defaultValue, scale,
                 valueMin, valueMax, curveOf, isBuiltIn: false, mode, displayScale);
         }
+
+        /// <summary>
+        /// Where a curve lives in a phrase. Most curves are in the phrase's curve list,
+        /// but the built-in ones whose parameter is graded in dB are folded into a field
+        /// of the phrase instead, so their abbreviation has to map to that field.
+        /// </summary>
+        static Func<RenderPhrase, float[]?> CurveAccessor(string abbr) => abbr switch {
+            Format.Ustx.BREC => phrase => phrase.breathiness,
+            Format.Ustx.VOIC => phrase => phrase.voicing,
+            Format.Ustx.TENC => phrase => phrase.tension,
+            Format.Ustx.GENC => phrase => phrase.gender,
+            _ => phrase => phrase.curves.FirstOrDefault(c => c.Item1 == abbr)?.Item2,
+        };
 
         static DsParamCategory ParseCategory(string? value, string label) {
             switch ((value ?? "").Trim().ToLowerInvariant()) {
