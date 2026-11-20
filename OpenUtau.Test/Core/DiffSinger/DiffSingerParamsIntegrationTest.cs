@@ -334,6 +334,49 @@ params:
             }
         }
 
+        [Theory]
+        [InlineData(-1, -20f)]
+        [InlineData(0, -96f)]
+        [InlineData(50, -26.0206f)]
+        [InlineData(100, -20f)]
+        public void ReboundBreathinessGainDistinguishesUndrawnFromDrawnZero(int curve, float expected) {
+            string dir = CreateVoicebank(@"
+acoustic: acoustic.onnx
+vocoder: nsf_hifigan
+use_voicing_embed: true
+", @"
+variance: variance.onnx
+linguistic: linguistic.onnx
+predict_voicing: true
+", @"
+params:
+  - name: voicing
+    abbr: brec
+    mode: gain
+    default: 100
+    scale: 0.01
+");
+            try {
+                var registry = DsParamRegistry.From(DsConfig.Load(dir));
+                var voicing = registry.ByName("voicing")!;
+                var curves = new Dictionary<string, int>();
+                if (curve >= 0) {
+                    curves[Format.Ustx.BREC] = curve;
+                }
+                var (phrase, frameMs, headFrames, tailFrames, totalFrames) = BuildPhrase(registry, curves);
+                Assert.Equal(curve < 0, voicing.CurveOf(phrase) == null);
+                var result = Result(registry.Variance,
+                    new Dictionary<string, float> { ["voicing"] = -20f },
+                    frameMs, headFrames, tailFrames, totalFrames);
+                var values = DiffSingerParamInputs.Variance(
+                    phrase, voicing, result.Channel("voicing")!, result,
+                    frameMs, totalFrames, headFrames, tailFrames);
+                Assert.All(values, value => Assert.Equal(expected, value, 4));
+            } finally {
+                Directory.Delete(dir, true);
+            }
+        }
+
         static string CreateVoicebank(string dsconfig, string varianceDsconfig, string parameters) {
             string dir = Path.Combine(Path.GetTempPath(), "ou-ds-params-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(Path.Combine(dir, "dsvariance"));

@@ -501,7 +501,7 @@ namespace OpenUtau.Core.DiffSinger {
         /// of the phrase instead, so their abbreviation has to map to that field.
         /// </summary>
         static Func<RenderPhrase, float[]?> CurveAccessor(string abbr) => abbr switch {
-            Format.Ustx.BREC => phrase => phrase.breathiness,
+            Format.Ustx.BREC => phrase => phrase.hasBreathinessCurve ? phrase.breathiness : null,
             Format.Ustx.VOIC => phrase => phrase.voicing,
             Format.Ustx.TENC => phrase => phrase.tension,
             Format.Ustx.GENC => phrase => phrase.gender,

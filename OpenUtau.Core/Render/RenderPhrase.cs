@@ -189,6 +189,7 @@ namespace OpenUtau.Core.Render {
         public readonly float[] dynamics;
         public readonly float[] gender;
         public readonly float[] breathiness;
+        internal readonly bool hasBreathinessCurve;
         public readonly float[] toneShift;
         public readonly float[] tension;
         public readonly float[] voicing;
@@ -495,7 +496,11 @@ namespace OpenUtau.Core.Render {
                     case Format.Ustx.SHFC: toneShift = curveSampled; break;
                     case Format.Ustx.GENC: gender = curveSampled; break;
                     case Format.Ustx.TENC: tension = curveSampled; break;
-                    case Format.Ustx.BREC: breathiness = curveSampled; break;
+                    case Format.Ustx.BREC:
+                        breathiness = curveSampled;
+                        hasBreathinessCurve = curve.Xs.Length > 0
+                            || (drivenCurveValues?.ContainsKey(curve.Abbr) ?? false);
+                        break;
                     case Format.Ustx.VOIC: voicing = curveSampled; break;
                     case Format.Ustx.XSY:
                         xsy = curveSampled;
@@ -567,6 +572,9 @@ namespace OpenUtau.Core.Render {
                         writer.Write(phone.hash);
                     }
                     if (postEffect) {
+                        if (hasBreathinessCurve) {
+                            writer.Write("brec-drawn");
+                        }
                         foreach (var array in new float[][] { pitches, dynamics, gender, breathiness, toneShift, tension, voicing, xsy }) {
                             if (array == null) {
                                 writer.Write("null");
