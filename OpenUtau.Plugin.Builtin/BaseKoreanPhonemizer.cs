@@ -33,7 +33,7 @@ namespace OpenUtau.Plugin.Builtin {
             // 음소와 노트를 입력받고, 다음계 및 보이스컬러 에일리어스를 적용한다. 
             // nullIfNotFound가 true이면 음소가 찾아지지 않을 때 음소가 아닌 null을 리턴한다.
             // nullIfNotFound가 false면 음소가 찾아지지 않을 때 그대로 음소를 반환
-            string phonemeToReturn;
+            string? phonemeToReturn;
             var attr = note.phonemeAttributes?.FirstOrDefault(attr => attr.index == 0) ?? default;
             string color = attr.voiceColor ?? GetParentVoiceColor();
             int toneShift = attr.toneShift ?? GetParentToneShift();

@@ -8,13 +8,13 @@ namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Russian CVC Phonemizer", "RU CVC", "Heiden.BZR", language: "RU")]
     public class RussianCVCPhonemizer : SyllableBasedPhonemizer {
 
-        private readonly string[] vowels = "a,e,o,u,y,i,M,N".Split(",");
-        private readonly string[] consonants = "b',b,v',v,g',g,d',d,z',z,k',k,l',l,m',m,n',n,p',p,r',r,s',s,t',t,f',f,h',h,w',w,j,~,c,4',".Split(",");
+        private new readonly string[] vowels = "a,e,o,u,y,i,M,N".Split(",");
+        private new readonly string[] consonants = "b',b,v',v,g',g,d',d,z',z,k',k,l',l,m',m,n',n,p',p,r',r,s',s,t',t,f',f,h',h,w',w,j,~,c,4',".Split(",");
         private readonly Dictionary<string, string> aliasesFallback = "ic=yc;y4'=i4';ij=yj;ic-=yc-;y4'-=i4'-;ij-=yj-".Split(';')
                 .Select(entry => entry.Split('='))
                 .ToDictionary(parts => parts[0], parts => parts[1]);
         private readonly string[] burstConsonants = "t,t',k,k',p,p',4',c,b,b',g,g',d,d'".Split(",");
-        private readonly Dictionary<string, string> dictionaryReplacements = ("a=a;aa=a;ay=a;b=b;bb=b';c=c;ch=4';d=d;dd=d';ee=e;f=f;ff=f';" +
+        private new readonly Dictionary<string, string> dictionaryReplacements = ("a=a;aa=a;ay=a;b=b;bb=b';c=c;ch=4';d=d;dd=d';ee=e;f=f;ff=f';" +
             "g=g;gg=g';h=h;hh=h';i=i;ii=i;j=~;ja=a;je=e;jo=o;ju=u;k=k;kk=k';l=l;ll=l';m=m;mm=m';n=n;nn=n';oo=o;p=p;pp=p';r=r;rr=r';ae=e;" +
             "s=s;sch=w';sh=w;ss=s';t=t;tt=t';u=u;uj=u;uu=u;v=v;vv=v';y=y;yy=y;z=z;zh=j;zz=z'").Split(';')
                 .Select(entry => entry.Split('='))

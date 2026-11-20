@@ -174,8 +174,8 @@ namespace OpenUtau.Plugin.Builtin {
         protected override IG2p[] GetBaseG2ps() {
             return new IG2p[] { new ArpabetG2p() };
         }
-        protected override string[] GetSymbols(Note note) {
-            string[] original = base.GetSymbols(note);
+        protected override string[]? GetSymbols(Note note) {
+            string[]? original = base.GetSymbols(note);
             if (original == null) {
                 return null;
             }
@@ -765,7 +765,7 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
-        protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
+        protected override string? GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
             string candidate = alias;
 
             // Helper to apply dictionary substitutions while honoring YAML suppressed tokens and strict casing

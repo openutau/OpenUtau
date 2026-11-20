@@ -8,10 +8,10 @@ namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Russian VCCV Phonemizer", "RU VCCV", "Heiden.BZR", language: "RU")]
     public class RussianVCCVPhonemizer : SyllableBasedPhonemizer {
 
-        private readonly string[] vowels = "a,e,o,u,y,i,M,N,ex,ax,x".Split(",");
-        private readonly string[] consonants = "sh',sh,zh,j,ts,ch,b',b,v',v,g',g,d',d,z',z,k',k,l',l,m',m,n',n,p',p,r',r,s',s,t',t,f',f,h',h".Split(",");
+        private new readonly string[] vowels = "a,e,o,u,y,i,M,N,ex,ax,x".Split(",");
+        private new readonly string[] consonants = "sh',sh,zh,j,ts,ch,b',b,v',v,g',g,d',d,z',z,k',k,l',l,m',m,n',n,p',p,r',r,s',s,t',t,f',f,h',h".Split(",");
         private readonly string[] burstConsonants = "t,t',k,k',p,p',ch,ts,b,b',g,g',d,d'".Split(",");
-        private readonly Dictionary<string, string> dictionaryReplacements = ("a=ax;aa=a;ay=a;b=b;bb=b';c=ts;ch=ch;d=d;dd=d';ee=e;" +
+        private new readonly Dictionary<string, string> dictionaryReplacements = ("a=ax;aa=a;ay=a;b=b;bb=b';c=ts;ch=ch;d=d;dd=d';ee=e;" +
             "f=f;ff=f';g=g;gg=g';h=h;hh=h';i=x;ii=i;j=j;ja=a;je=e;jo=o;ju=u;k=k;kk=k';l=l;ll=l';m=m;mm=m';n=n;nn=n';oo=o;ae=e;" +
             "p=p;pp=p';r=r;rr=r';s=s;sch=sh';sh=sh;ss=s';t=t;tt=t';u=u;uj=u;uu=u;v=v;vv=v';y=ex;yy=y;z=z;zh=zh;zz=z'").Split(';')
                 .Select(entry => entry.Split('='))
@@ -35,7 +35,7 @@ namespace OpenUtau.Plugin.Builtin {
             string[] cc = syllable.cc;
             string v = syllable.v;
 
-            string basePhoneme;
+            string? basePhoneme;
             var phonemes = new List<string>();
             if (syllable.IsStartingV) {
                 basePhoneme = $"- {v}";

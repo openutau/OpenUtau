@@ -12,7 +12,7 @@ namespace OpenUtau.Plugin.Builtin {
     [Phonemizer("Polish CVC Phonemizer", "PL CVC", "Heiden.BZR", language: "PL")]
     public class PolishCVCPhonemizer : SyllableBasedPhonemizer {
 
-        private readonly string[] vowels = "a A e E i o u y".Split(" ");
+        private readonly new string[] vowels = "a A e E i o u y".Split(" ");
         protected override string[] GetVowels() => vowels;
 
         protected override List<string> ProcessSyllable(Syllable syllable) {
