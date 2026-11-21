@@ -9,6 +9,24 @@ namespace OpenUtau.Classic {
             this.output = output;
         }
 
+        [Fact]
+        public void OptionalVoiceColorPortraitsRoundTripWithExactColorNames() {
+            using var yaml = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(
+                "portrait: portraits/normal.png\nvoice_color_portraits:\n  Soft Voice: portraits/soft.png\n"));
+            var config = VoicebankConfig.Load(yaml);
+            using var saved = new System.IO.MemoryStream();
+            config.Save(saved);
+            using var roundTrip = new System.IO.MemoryStream(saved.ToArray());
+            var bank = new Voicebank();
+            VoicebankLoader.ApplyConfig(bank, VoicebankConfig.Load(roundTrip));
+            Assert.Equal("portraits/normal.png", bank.Portrait);
+            Assert.Equal("portraits/soft.png", bank.VoiceColorPortraits!["Soft Voice"]);
+            Assert.False(bank.VoiceColorPortraits.ContainsKey("soft voice"));
+            VoicebankLoader.ApplyConfig(bank, new VoicebankConfig { Portrait = "legacy.png" });
+            Assert.Null(bank.VoiceColorPortraits);
+            Assert.Equal("legacy.png", bank.Portrait);
+        }
+
         static VoicebankConfig CreateConfig() {
             return new VoicebankConfig() {
                 PortraitOpacity = 0.75f,

@@ -51,6 +51,8 @@ namespace OpenUtau.Classic {
         public string Image;
         [Description("Portrait image shown in the piano roll, relative to the voicebank folder.")]
         public string Portrait;
+        [Description("Optional piano-roll portrait paths by exact voice color name, relative to the voicebank folder.")]
+        public Dictionary<string, string>? VoiceColorPortraits;
         [Description("Opacity of the portrait, from 0 (transparent) to 1 (opaque).")]
         public float PortraitOpacity = 0.67f;
         [Description("Height in pixels the portrait is scaled to. 0 scales portraits taller than 800 pixels down to 800.")]
