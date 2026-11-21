@@ -65,6 +65,13 @@ namespace OpenUtau.Classic.Hifisampler {
                 () => Worldline.SourceF0(inputFile, wave, Worldline.InitAnalysisConfig(config.SampleRate, HifiRdTension.Hop, 2048))
                     ?? throw new Exception($"Failed to analyze the f0 of {inputFile}."));
             var melRender = timing.RenderMel(features.Mel);
+            var rng = new RandomNormalDistribution();
+
+            foreach (float[] melSlice in melRender) {
+                for (int i = 0; i < melSlice.Length; i++) {
+                    melSlice[i] += rng.Next() * 0.25f;
+                }
+            }
 
             var t = new double[melRender.Length];
             for (int i = 0; i < t.Length; i++) {
@@ -89,6 +96,36 @@ namespace OpenUtau.Classic.Hifisampler {
 
             return HifiPostProcess.Apply(render, features.Scale, flags, config, pitchRender, t,
                 timing.NewStart, timing.NewEnd, timing.LengthReq, volume, growl, tempo, wavMax, VoicedRatio);
+        }
+    }
+    
+    /// <summary>
+    /// RNG with a normal distribution using Marsaglia polar method
+    /// https://en.wikipedia.org/wiki/Marsaglia_polar_method
+    /// </summary>
+    internal sealed class RandomNormalDistribution {
+        private readonly Random rng = new();
+        private double spare;
+        private bool hasSpare;
+
+        public float Next() {
+            if (hasSpare) {
+                hasSpare = false;
+                return (float) spare;
+            } else {
+                double u, v, s;
+                do {
+                    u = rng.NextDouble() * 2.0 - 1.0;
+                    v = rng.NextDouble() * 2.0 - 1.0;
+                    s = u * u + v * v;
+                } while (s is >= 1.0 or 0.0);
+
+                s = Math.Sqrt(-2.0 * Math.Log(s) / s);
+
+                spare = v * s;
+                hasSpare = true;
+                return (float)u;
+            }
         }
     }
 
