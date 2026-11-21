@@ -69,7 +69,7 @@ namespace OpenUtau.Classic.Hifisampler {
 
             foreach (float[] melSlice in melRender) {
                 for (int i = 0; i < melSlice.Length; i++) {
-                    melSlice[i] += rng.Next() * 0.25f;
+                    melSlice[i] += rng.Next() * 0.1f;
                 }
             }
 
@@ -124,7 +124,7 @@ namespace OpenUtau.Classic.Hifisampler {
 
                 spare = v * s;
                 hasSpare = true;
-                return (float)u;
+                return (float) (u * s);
             }
         }
     }
