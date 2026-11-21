@@ -15,6 +15,11 @@ namespace OpenUtau.Core.Render {
         public readonly int tuning;
         public readonly float adjustedTone;
 
+        /// <summary>Index of the note in the part's note list.</summary>
+        public readonly int noteIndex;
+        /// <summary>Part note index of the note this one extends with "+", or -1.</summary>
+        public readonly int extends;
+
         public readonly int position;
         public readonly int duration;
         public readonly int end;
@@ -28,6 +33,8 @@ namespace OpenUtau.Core.Render {
             tone = note.Tone;
             tuning = note.Tuning;
             adjustedTone = note.AdjustedTone;
+            noteIndex = note.Index;
+            extends = note.Extends;
 
             position = partPosition + note.Position - phrasePosition;
             duration = note.Duration;
@@ -54,6 +61,7 @@ namespace OpenUtau.Core.Render {
 
         public readonly string phoneme;
         public readonly int tone;
+        /// <summary>Index of the owning note in the part's note list, or -1.</summary>
         public readonly int noteIndex;
         public readonly double tempo;
         public readonly UTempo[] tempos;
@@ -109,6 +117,7 @@ namespace OpenUtau.Core.Render {
 
             this.phoneme = phoneme.Phoneme;
             tone = phoneme.Tone;
+            noteIndex = phoneme.NoteIndex;
             tempos = phoneme.Tempos;
             tempo = phoneme.Tempo;
             adjustedTempo = phoneme.AdjustedTempo;
