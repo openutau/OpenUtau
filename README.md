@@ -21,6 +21,8 @@ It is **strongly recommended** that you read these Github wiki pages before usin
 
 - [中文使用说明](https://opensynth.miraheze.org/wiki/OpenUTAU/%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95)
 
+[Configure voice color portraits](OpenUtau.Core/Classic/VoiceColorPortraits.md)
+
 ## How to contribute
 
 Tried OpenUtau and not satisfied? Don't just walk away! You can help:

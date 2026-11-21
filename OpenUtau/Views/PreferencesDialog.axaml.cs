@@ -18,6 +18,12 @@ namespace OpenUtau.App.Views {
             InitializeComponent();
         }
 
+        void OnPortraitTimingLostFocus(object? sender, FocusChangedEventArgs e) {
+            if (sender is NumericUpDown input && string.IsNullOrEmpty(input.Text)) {
+                input.SetCurrentValue(NumericUpDown.ValueProperty, 0m);
+            }
+        }
+
         void OnMetronomeSliderPointerPressed(object? sender, PointerPressedEventArgs e) {
             if (sender is not Slider slider || viewModel == null) {
                 return;

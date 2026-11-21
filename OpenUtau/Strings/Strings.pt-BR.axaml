@@ -815,6 +815,11 @@ Aviso: esta opção remove predefinições personalizadas.</system:String>
   <system:String x:Key="prefs.appearance.renderbackground">Mostrar estado da renderização no fundo da faixa</system:String>
   <system:String x:Key="prefs.appearance.showghostnotes">Mostrar notas fantasma</system:String>
   <system:String x:Key="prefs.appearance.showicon">Mostrar ícone no piano roll</system:String>
+  <system:String x:Key="prefs.appearance.portrait.advanced">Configurações avançadas de retrato</system:String>
+  <system:String x:Key="prefs.appearance.portrait.multiple">Usar várias ilustrações</system:String>
+  <system:String x:Key="prefs.appearance.portrait.dim">Reduzir opacidade durante o silêncio</system:String>
+  <system:String x:Key="prefs.appearance.portrait.silence">Tempo de silêncio (ms)</system:String>
+  <system:String x:Key="prefs.appearance.portrait.fade">Duração da transição (ms)</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Mostrar retrato no piano roll</system:String>
   <system:String x:Key="prefs.appearance.sortorder">Idioma de exibição do nome do cantor</system:String>
   <system:String x:Key="prefs.appearance.theme">Tema</system:String>

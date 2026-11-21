@@ -116,6 +116,11 @@ namespace OpenUtau.App.ViewModels {
         public List<string>  UiFontFamilies { get; private set; } = new();
         [Reactive] public partial int DegreeStyle { get; set; }
         [Reactive] public partial bool UseTrackColor { get; set; }
+        [Reactive] public partial bool AdvancedPortraitSettings { get; set; }
+        [Reactive] public partial bool UseVoiceColorPortraits { get; set; }
+        [Reactive] public partial bool DimPortraitDuringSilence { get; set; }
+        [Reactive] public partial int? PortraitSilenceMs { get; set; }
+        [Reactive] public partial int? PortraitFadeMs { get; set; }
         [Reactive] public partial bool ShowPortrait { get; set; }
         [Reactive] public partial bool ShowIcon { get; set; }
         [Reactive] public partial bool ShowGhostNotes { get; set; }
@@ -242,6 +247,11 @@ namespace OpenUtau.App.ViewModels {
             DegreeStyle = Preferences.Default.DegreeStyle;
             UseTrackColor = Preferences.Default.UseTrackColor;
             ShowPortrait = Preferences.Default.ShowPortrait;
+            AdvancedPortraitSettings = Preferences.Default.AdvancedPortraitSettings;
+            UseVoiceColorPortraits = Preferences.Default.UseVoiceColorPortraits;
+            DimPortraitDuringSilence = Preferences.Default.DimPortraitDuringSilence;
+            PortraitSilenceMs = Preferences.Default.PortraitSilenceMs;
+            PortraitFadeMs = Preferences.Default.PortraitFadeMs;
             ShowIcon = Preferences.Default.ShowIcon;
             ShowGhostNotes = Preferences.Default.ShowGhostNotes;
             NoteHoverGlow = Preferences.Default.NoteHoverGlow;
@@ -387,6 +397,28 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("TrackColor"));
                 });
+            PersistOn(this.WhenAnyValue(vm => vm.AdvancedPortraitSettings), value => {
+                Preferences.Default.AdvancedPortraitSettings = value;
+                MessageBus.Current.SendMessage(new PianorollRefreshEvent("PortraitOptions"));
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.UseVoiceColorPortraits), value => {
+                Preferences.Default.UseVoiceColorPortraits = value;
+                MessageBus.Current.SendMessage(new PianorollRefreshEvent("PortraitOptions"));
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.DimPortraitDuringSilence), value => {
+                Preferences.Default.DimPortraitDuringSilence = value;
+                MessageBus.Current.SendMessage(new PianorollRefreshEvent("PortraitOptions"));
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.PortraitSilenceMs)
+                .Where(ms => ms.HasValue).Select(ms => ms.GetValueOrDefault()), value => {
+                Preferences.Default.PortraitSilenceMs = value;
+                MessageBus.Current.SendMessage(new PianorollRefreshEvent("PortraitOptions"));
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.PortraitFadeMs)
+                .Where(ms => ms.HasValue).Select(ms => ms.GetValueOrDefault()), value => {
+                Preferences.Default.PortraitFadeMs = value;
+                MessageBus.Current.SendMessage(new PianorollRefreshEvent("PortraitOptions"));
+            });
             this.WhenAnyValue(vm => vm.ShowPortrait)
                 .Skip(1)
                 .Subscribe(showPortrait => {

@@ -48,6 +48,17 @@
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
       </Style>
     </Style>
+    <Style Selector="NumericUpDown.portraitTiming">
+      <Setter Property="MinHeight" Value="32"/>
+      <Setter Property="Padding" Value="2,0"/>
+      <Setter Property="TextAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="NumericUpDown.portraitTiming /template/ TextBox">
+      <Setter Property="Height" Value="NaN"/>
+      <Setter Property="Margin" Value="0"/>
+      <Setter Property="VerticalAlignment" Value="Stretch"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
     <Style Selector="ToggleSwitch">
       <Setter Property="OnContent" Value="{DynamicResource button.on}"/>
       <Setter Property="OffContent" Value="{DynamicResource button.off}"/>
@@ -340,6 +351,30 @@
             <TextBlock Text="{DynamicResource prefs.appearance.showportrait}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding ShowPortrait}"/>
           </Grid>
+          <Grid Margin="0,5,0,0">
+            <TextBlock Text="{DynamicResource prefs.appearance.portrait.advanced}" HorizontalAlignment="Left"/>
+            <ToggleSwitch Name="AdvancedPortraitToggle" IsChecked="{Binding AdvancedPortraitSettings}"/>
+          </Grid>
+          <StackPanel Name="PortraitOptions" Margin="12,0,0,6" IsVisible="{Binding AdvancedPortraitSettings}">
+            <Grid Margin="0,5,0,0">
+              <TextBlock Text="{DynamicResource prefs.appearance.portrait.multiple}" HorizontalAlignment="Left"/>
+              <ToggleSwitch IsChecked="{Binding UseVoiceColorPortraits}"/>
+            </Grid>
+            <Grid Margin="0,5,0,0">
+              <TextBlock Text="{DynamicResource prefs.appearance.portrait.dim}" HorizontalAlignment="Left"/>
+              <ToggleSwitch IsChecked="{Binding DimPortraitDuringSilence}"/>
+            </Grid>
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0" IsEnabled="{Binding DimPortraitDuringSilence}">
+              <TextBlock Text="{DynamicResource prefs.appearance.portrait.silence}" VerticalAlignment="Center"/>
+              <NumericUpDown Classes="portraitTiming" Grid.Column="1" Width="110" Minimum="0" Maximum="2147483647" Increment="25"
+                             Name="PortraitSilenceMsInput" LostFocus="OnPortraitTimingLostFocus" FormatString="0" Value="{Binding PortraitSilenceMs}"/>
+            </Grid>
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <TextBlock Text="{DynamicResource prefs.appearance.portrait.fade}" VerticalAlignment="Center"/>
+              <NumericUpDown Classes="portraitTiming" Grid.Column="1" Width="110" Minimum="0" Maximum="2147483647" Increment="25"
+                             Name="PortraitFadeMsInput" LostFocus="OnPortraitTimingLostFocus" FormatString="0" Value="{Binding PortraitFadeMs}"/>
+            </Grid>
+          </StackPanel>
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.appearance.showicon}" HorizontalAlignment="Left"/>
             <ToggleSwitch IsChecked="{Binding ShowIcon}"/>
