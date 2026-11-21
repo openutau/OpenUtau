@@ -275,6 +275,77 @@ namespace OpenUtau.UiTest {
         });
 
         [Theory]
+        [InlineData(false, 150)]
+        [InlineData(true, 150)]
+        [InlineData(false, 0)]
+        public void TouchingPhonemesRestoreBrightnessAtTheOriginalDeadline(bool reduce, int fadeMs) => HeadlessUi.Run(() => {
+            MainWindowTest.InitCore();
+            var prefs = Preferences.Default;
+            var saved = (prefs.ShowPortrait, prefs.AdvancedPortraitSettings, prefs.DimPortraitDuringSilence,
+                prefs.PortraitSilenceMs, prefs.PortraitFadeMs, prefs.ReduceAnimations, prefs.PreRender);
+            var playback = PlaybackManager.Inst;
+            var device = playback.AudioOutput;
+            var doc = DocManager.Inst;
+            var previous = doc.Project;
+            var vm = new NotesViewModel();
+            try {
+                (prefs.ShowPortrait, prefs.AdvancedPortraitSettings, prefs.DimPortraitDuringSilence,
+                    prefs.PortraitSilenceMs, prefs.PortraitFadeMs, prefs.ReduceAnimations, prefs.PreRender) =
+                    (true, true, true, 0, fadeMs, reduce, false);
+                var project = Core.Format.Ustx.Create();
+                doc.ExecuteCmd(new LoadProjectNotification(project));
+                var output = new Output();
+                playback.AudioOutput = output;
+                var track = project.tracks[0];
+                track.Singer = new Singer("test", new());
+                track.Validate(new ValidateOptions(), project);
+                var part = new UVoicePart { duration = 960 };
+                project.parts.Add(part);
+                // At 120 BPM the first note ends at 200 ms. Singing resumes at 400 ms.
+                foreach (var (start, length) in new[] { (0, 192), (384, 48), (432, 48), (480, 48), (528, 96) }) {
+                    var note = project.CreateNote(60, start, length);
+                    note.ExtendedDuration = length;
+                    part.notes.Add(note);
+                    var phone = new UPhoneme { Parent = note, position = start, phoneme = "a" };
+                    part.phonemes.Add(phone);
+                    phone.Validate(new ValidateOptions(), project, track, part, note);
+                    Assert.False(phone.Error);
+                    Assert.Equal(start + length, phone.End);
+                }
+                vm.OnNext(new LoadPartNotification(part, project, 0), false);
+                playback.Play(project, 0);
+                Assert.True(SpinWait.SpinUntil(() => {
+                    HeadlessUi.Flush();
+                    return !playback.StartingToPlay && output.PlaybackState == PlaybackState.Playing;
+                }, 5000));
+                void Check(int tick, double expected) {
+                    output.Position = sizeof(float) * (long)Math.Round(project.timeAxis.TickPosToMsPos(tick) * 44.1);
+                    playback.UpdatePlayPos();
+                    Assert.Equal(expected, vm.Portrait!.OpacityFactor, 5);
+                }
+                bool immediate = reduce || fadeMs == 0;
+                Check(336, 0.5);
+                Check(384, immediate ? 1 : 0.5);
+                Check(432, immediate ? 1 : 2.0 / 3);
+                Check(480, immediate ? 1 : 5.0 / 6);
+                Check(528, 1);
+                Check(696, immediate ? 0.5 : 0.75); // 75 ms into another genuine gap.
+                if (reduce) {
+                    prefs.ReduceAnimations = false;
+                    Check(708, 1 - 0.5 * 87.5 / fadeMs);
+                    Assert.Equal(fadeMs, vm.Portrait!.FadeMs);
+                }
+            } finally {
+                playback.StopPlayback();
+                playback.AudioOutput = device;
+                (prefs.ShowPortrait, prefs.AdvancedPortraitSettings, prefs.DimPortraitDuringSilence,
+                    prefs.PortraitSilenceMs, prefs.PortraitFadeMs, prefs.ReduceAnimations, prefs.PreRender) = saved;
+                doc.RemoveSubscriber(vm);
+                doc.ExecuteCmd(new LoadProjectNotification(previous));
+            }
+        });
+
+        [Theory]
         [InlineData(1f)]
         [InlineData(0.6f)]
         [InlineData(0.8f)]
@@ -386,9 +457,10 @@ namespace OpenUtau.UiTest {
             var singer = new Singer(folder.FullName, new());
             var control = new SingerPortrait();
             var window = new Window { Content = control, Width = 240, Height = 80, Background = Brushes.Black };
-            var reduce = Preferences.Default.ReduceAnimations;
+            var prefs = Preferences.Default;
+            var saved = (prefs.AdvancedPortraitSettings, prefs.ReduceAnimations, prefs.PortraitFadeMs);
             try {
-                Preferences.Default.ReduceAnimations = false;
+                (prefs.AdvancedPortraitSettings, prefs.ReduceAnimations, prefs.PortraitFadeMs) = (true, true, 500);
                 const int red = 0xff0000, blue = 0x0000ff, green = 0x00ff00;
                 WriteColor(singer.Portrait, red | unchecked((int)0xff000000));
                 WriteColor(Path.Combine(folder.FullName, "soft.png"), blue | unchecked((int)0xff000000));
@@ -408,7 +480,22 @@ namespace OpenUtau.UiTest {
                 void Select(string? path) => control.Selection = new PortraitSelection(singer, 1, path);
                 Select(null); WaitColor(red);
                 Select("soft.png");
+                // While an uncached image loads, only the previous or final image may be visible.
+                Assert.True(SpinWait.SpinUntil(() => {
+                    int pixel = Pixel();
+                    Assert.True(pixel == red || pixel == blue);
+                    return pixel == blue;
+                }, 5000));
+                Select("whisper.png");
+                Select(null); // Supersede the pending load with a cached portrait.
+                Assert.Equal(red, Pixel());
+                prefs.ReduceAnimations = false;
+                Select("soft.png");
                 Assert.True(SpinWait.SpinUntil(() => { var p = Pixel(); return (p & red) != 0 && (p & blue) != 0; }, 5000));
+                WaitColor(blue);
+                prefs.PortraitFadeMs = 0;
+                Select(null);
+                Assert.Equal(red, Pixel());
                 Select("whisper.png"); WaitColor(green);
                 File.Delete(Path.Combine(folder.FullName, "soft.png"));
                 Select("soft.png"); WaitColor(blue);
@@ -419,7 +506,7 @@ namespace OpenUtau.UiTest {
                 WaitColor(0);
             } finally {
                 window.Close();
-                Preferences.Default.ReduceAnimations = reduce;
+                (prefs.AdvancedPortraitSettings, prefs.ReduceAnimations, prefs.PortraitFadeMs) = saved;
                 folder.Delete(true);
             }
         });

@@ -606,7 +606,8 @@ namespace OpenUtau.App.ViewModels {
                     continue;
                 }
                 // An adjacent phoneme must not restart an unfinished restoration.
-                if (lastPortraitPhone == null || phone.PositionMs >= lastPortraitPhone.EndMs + SilenceBeforeDimMs) {
+                if (lastPortraitPhone == null || (phone.position > lastPortraitPhone.End &&
+                        phone.PositionMs >= lastPortraitPhone.EndMs + SilenceBeforeDimMs)) {
                     restoreFrom = PortraitFactorAt(phone.PositionMs);
                     restoreStartMs = phone.PositionMs;
                 }
