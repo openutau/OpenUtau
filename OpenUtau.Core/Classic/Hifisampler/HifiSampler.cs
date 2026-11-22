@@ -65,11 +65,12 @@ namespace OpenUtau.Classic.Hifisampler {
                 () => Worldline.SourceF0(inputFile, wave, Worldline.InitAnalysisConfig(config.SampleRate, HifiRdTension.Hop, 2048))
                     ?? throw new Exception($"Failed to analyze the f0 of {inputFile}."));
             var melRender = timing.RenderMel(features.Mel);
+            var times = timing.SourceTimes();
             var rng = new RandomNormalDistribution();
 
-            foreach (float[] melSlice in melRender) {
-                for (int i = 0; i < melSlice.Length; i++) {
-                    melSlice[i] += rng.Next() * 0.1f;
+            for (int j = 0; j < times.Length - 1; j++) {
+                for (int i = 0; i < melRender[j].Length; i++) {
+                    if (times[j + 1] - times[j] <= 0.5 * timing.Thop) melRender[j][i] += rng.Next() * 0.1f;
                 }
             }
 
