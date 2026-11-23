@@ -13,7 +13,9 @@ namespace OpenUtau.Core.Render {
 
         const int SampleRate = 44100;
         const float Amplitude = 0.25f;
-        const double FadeMs = 10;
+        const double AttackMs = 10;
+        const double ReleaseMs = 80;
+        const double MaxReleaseRatio = 0.4;
         const int FrameSize = 256;
         const int PitchInterval = 5;
 
@@ -77,14 +79,15 @@ namespace OpenUtau.Core.Render {
                 int index = Math.Clamp(ticks / PitchInterval, 0, phrase.pitches.Length - 1);
                 freq[i] = MusicMath.ToneToFreq(phrase.pitches[index] * 0.01);
             }
-            double fadeSamples = Math.Max(1.0, FadeMs / 1000.0 * SampleRate);
+            double attackSamples = Math.Max(1.0, AttackMs / 1000.0 * SampleRate);
+            double releaseSamples = Math.Max(attackSamples, Math.Min(ReleaseMs / 1000.0 * SampleRate, totalSamples * MaxReleaseRatio));
             double phase = 0;
             for (int i = 0; i < totalSamples; ++i) {
                 double t = (double)i / FrameSize;
                 int k = Math.Min((int)t, frameCount - 2);
                 double f = freq[k] + (freq[k + 1] - freq[k]) * (t - k);
                 phase += 2 * Math.PI * f / SampleRate;
-                double fade = Math.Clamp(Math.Min(i / fadeSamples, (totalSamples - i) / fadeSamples), 0.0, 1.0);
+                double fade = Math.Clamp(Math.Min(i / attackSamples, (totalSamples - i) / releaseSamples), 0.0, 1.0);
                 samples[i] = (float)(Math.Sin(phase) * Amplitude * fade);
             }
             return samples;
