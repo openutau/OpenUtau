@@ -360,7 +360,8 @@
                   Fill="{DynamicResource NeutralAccentBrushSemi}"
                   Data="M -6.5 0 L 6.5 0 L 6.5 3 L 0 9 L -6.5 3 Z"/>
             <Canvas.ContextMenu>
-              <ContextMenu Name="TimelineContextMenu" ItemsSource="{Binding TimelineContextMenuItems}">
+              <ContextMenu Name="TimelineContextMenu" ItemsSource="{Binding TimelineContextMenuItems}"
+                           Opening="TimelineContextMenuOpening">
                 <ContextMenu.Styles>
                   <Style Selector="MenuItem" x:DataType="vm:MenuItemViewModel">
                     <Setter Property="Header" Value="{Binding Header}"/>
