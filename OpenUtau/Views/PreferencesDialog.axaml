@@ -310,6 +310,27 @@
               </Grid>
             </Button>
           </Grid>
+          <TextBlock Text="{DynamicResource prefs.appearance.bgimage}" Margin="0,10,0,0"/>
+          <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2,0,0">
+              <TextBlock Grid.Column="0" Text="{Binding BackgroundImagePath}" TextWrapping="Wrap" VerticalAlignment="Center"
+                         Margin="4,0,6,0" IsVisible="{Binding BackgroundImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+              <TextBlock Grid.Column="0" Text="{DynamicResource prefs.appearance.bgimage.none}" VerticalAlignment="Center"
+                         Margin="4,0,6,0" IsVisible="{Binding BackgroundImagePath, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+              <Button Grid.Column="1" Content="{DynamicResource button.select}" Click="SelectBackgroundImage" Margin="0,0,5,0"/>
+              <Button Grid.Column="2" Content="{DynamicResource button.reset}" Click="ResetBackgroundImage"/>
+          </Grid>
+          <Grid ColumnDefinitions="Auto,8,30,8,*" Margin="0,5,0,0">
+            <TextBlock Grid.Column="0" Text="{DynamicResource prefs.appearance.bgimage.opacity}"/>
+            <TextBlock Grid.Column="2">
+              <TextBlock.Text>
+                <MultiBinding StringFormat="{}{0:#0.00}">
+                  <Binding Path="BackgroundImageOpacity"/>
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
+            <Slider Grid.Column="4" Classes="fader" Value="{Binding BackgroundImageOpacity}" Minimum="0" Maximum="1"
+                    TickPlacement="BottomRight" TickFrequency="0.05" IsSnapToTickEnabled="true"/>
+          </Grid>
           <TextBlock Text="{DynamicResource prefs.appearance.customfont}" Margin="0,10,0,0"/>
           <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2,0,0">
               <TextBlock Grid.Column="0" Text="{Binding UiFontPath}" TextWrapping="Wrap" VerticalAlignment="Center"

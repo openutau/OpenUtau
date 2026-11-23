@@ -152,6 +152,10 @@
                         SnapDiv="{Binding NotesViewModel.SnapDiv, Mode=OneWay}"
                         ShowBar="False"/>
       <!-- Expression backgrounds end -->
+      <Image Grid.Row="3" Grid.Column="1" IsHitTestVisible="False" ClipToBounds="True" Stretch="UniformToFill"
+             RenderOptions.BitmapInterpolationMode="MediumQuality"
+             Source="{Binding NotesViewModel.BackgroundImage}" Opacity="{Binding NotesViewModel.BackgroundImageOpacity}"
+             IsVisible="{Binding NotesViewModel.BackgroundImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
       <Canvas Name="PortraitCanvas" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" IsHitTestVisible="False">
         <Image Name="PortraitImage" Source="{Binding NotesViewModel.Portrait}" OpacityMask="{Binding NotesViewModel.PortraitMask}" Stretch="None"/>
       </Canvas>
