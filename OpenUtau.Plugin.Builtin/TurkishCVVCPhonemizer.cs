@@ -9,10 +9,31 @@ namespace OpenUtau.Plugin.Builtin {
     // Contributed by ise with the help of Japanese CVVC phonemizer by TUBS
     public class TurkishCVVCPhonemizer : Phonemizer {
         static readonly string[] glottalStops = new string[] { "?", "q" };
-        static readonly string[] vowels = new string[] { "a", "e", "ae", "eu", "i", "o", "oe", "u", "ue" };
+        static string[] vowels = new string[] { "a", "e", "i", "o", "u", "æ", "ı", "ö", "ü" };
+        static readonly string[,] vowelAlternatives = new string[,] {
+            { "E", "æ", "ae" },
+            { "I", "ı", "eu" },
+            { "O", "ö", "oe" },
+            { "U", "ü", "ue" }
+        };
+        static bool[] consonantReplace = new bool[11];
+        static readonly string[,] consonantAlternatives = new string[,] {
+            { "Y", "y" },
+            { "L", "l" },
+            { "LY", "l'" },
+            { "ly", "l'" },
+            { "M", "m" },
+            { "N", "n" },
+            { "NG", "ng" },
+            { "?", "q" },
+            { "l'", "l" },
+            { "k'", "ky" },
+            { "g'", "gy" }
+        };
         static readonly string[] sustainedConsonants = new string[] { "Y", "L", "LY", "M", "N", "NG" };
-        static readonly string[] consonants = "9,b,c,ch,d,f,g,h,j,k,l,m,n,ng,p,r,rr,r',s,sh,t,v,w,y,z,by,dy,gy,hy,ky,ly,my,ny,py,ry,ty,Y,L,LY,M,N,NG,-,?,q".Split(',');
+        static readonly string[] consonants = "9,b,c,ch,d,f,g,h,j,k,l,m,n,ng,p,r,rr,r',s,sh,t,v,w,y,z,by,dy,gy,g',hy,ky,k',ly,l',my,ny,py,ry,ty,Y,L,LY,M,N,NG,-,?,q".Split(',');
 
+        private string singerName = ""; // for detecting singer changes
         // Store singer in field, will try reading presamp.ini later
         private USinger singer;
         public override void SetSinger(USinger singer) => this.singer = singer;
@@ -57,8 +78,9 @@ namespace OpenUtau.Plugin.Builtin {
 
             if (phonemesCurrent.StartC1 == "") {
                 if (phonemesPrev.hasConsonantAfterVowel()) { //vc + V
-                    if (sustainedConsonants.Contains(phonemesPrev.EndC1.ToUpper())) {
-                        result[0] = phonemesPrev.EndC1.ToUpper() + " " + phonemesCurrent.Vow;
+                    if (sustainedConsonants.Contains(phonemesPrev.EndC1)) {
+                        result[1] = result[0];
+                        result[0] = phonemesPrev.EndC1 + " " + phonemesCurrent.Vow;
                     }
                 } else if (phonemesPrev.Vow != "") { //v + V
                     if (phonemesCurrent.Has9BeforeVow) {
@@ -76,6 +98,10 @@ namespace OpenUtau.Plugin.Builtin {
         private string getAlternativeConsonant(string consonant, string vow) {
             if (vow == "e" || vow == "i" || vow == "ue" || vow == "oe") {
                 string y = "y";
+                if (consonantReplace[3] && consonant == "l") { //if ly does not exist
+                    return consonant;
+                }
+
                 if (consonant.ToUpper() == consonant) {
                     y = "Y";
                 }
@@ -127,15 +153,44 @@ namespace OpenUtau.Plugin.Builtin {
             return "-";
         }
 
+        private void syncPhonemesFromSinger() {
+            for (int i = 5; i < 9; i++) {
+                for (int j = 0; j < 3; j++) {
+                    string v = vowelAlternatives[i - 5, j];
+                    if (singer.TryGetOto("- " + v, out UOto oto)) {
+                        vowels[i] = v;
+                        break;
+                    }
+                }
+            }
+
+            for (int i = 0; i < consonantAlternatives.GetLength(0); i++) {
+                if (!singer.TryGetOto("a " + consonantAlternatives[i, 0], out UOto oto))
+                    consonantReplace[i] = true;
+                else
+                    consonantReplace[i] = false;
+            }
+        }
+
         private string convertToOtoStyledLyric(string lyric) {
+            if (singerName != singer.Name) {
+                singerName = singer.Name;
+                syncPhonemesFromSinger();
+            }
+
             lyric = lyric.Replace("ç", "ch");
             lyric = lyric.Replace("ş", "sh");
             lyric = lyric.Replace("ğ", "9");
-            lyric = lyric.Replace("æ", "ae");
-            lyric = lyric.Replace("E", "ae");
-            lyric = lyric.Replace("ı", "eu");
-            lyric = lyric.Replace("ö", "oe");
-            lyric = lyric.Replace("ü", "ue");
+
+            for (int i = 0; i < consonantAlternatives.GetLength(0); i++)
+                if (consonantReplace[i])
+                    lyric = lyric.Replace(consonantAlternatives[i, 0], consonantAlternatives[i, 1]);
+
+            for (int i = 5; i < 9; i++)
+                for (int j = 0; j < 3; j++)
+                    if (vowelAlternatives[i - 5, j] != vowels[i])
+                        lyric = lyric.Replace(vowelAlternatives[i - 5, j], vowels[i]);
+
             return lyric;
         }
 
@@ -181,6 +236,18 @@ namespace OpenUtau.Plugin.Builtin {
                     twoCharPhoneme = lyric.Substring(charIndex, 2);
                 }
                 string oneCharPhoneme = lyric.Substring(charIndex, 1);
+
+                if (phonemes[0] == "s" && i == 1) { // for CCCV exceptions
+                    if (twoCharPhoneme == "pr") {
+                        phonemes[i] = "pr";
+                        charIndex += 2;
+                        continue;
+                    } else if (twoCharPhoneme == "tr") {
+                        phonemes[i] = "tr";
+                        charIndex += 2;
+                        continue;
+                    }
+                }
 
                 if (i < 2 && oneCharPhoneme == "9") {
                     has9BeforeVow |= true;
@@ -241,10 +308,8 @@ namespace OpenUtau.Plugin.Builtin {
             string noteStart = "", noteEnd = "", noteEndCC = "";
 
             if (phonemesCurrent.EndC2 != "") { // + VCC
-                noteEndInput = new string[] { phonemesCurrent.Vow + " " + phonemesCurrent.EndC1 + checkPChTK(phonemesCurrent.EndC1) };
-                noteEndCC = phonemesCurrent.EndC1 + phonemesCurrent.EndC2 + " -";
+                noteEndInput = new string[] { phonemesCurrent.Vow + " " + phonemesCurrent.EndC1 + phonemesCurrent.EndC2 + "-" };
             }
-
 
             if (checkOtoUntilHit(noteStartInput, note, out var o1)) {
                 noteStart = o1.Alias;
@@ -252,8 +317,12 @@ namespace OpenUtau.Plugin.Builtin {
 
             if (checkOtoUntilHit(noteEndInput, note, out var o2)) {
                 noteEnd = o2.Alias;
-            } else {
-                noteEnd = "";
+            } else if (phonemesCurrent.EndC2 != "") { //if oto has no vcc, try vc+c
+                noteEndInput = new string[] { phonemesCurrent.Vow + " " + phonemesCurrent.EndC1 + checkPChTK(phonemesCurrent.EndC1) };
+                if (checkOtoUntilHit(noteEndInput, note, out var o2_)) {
+                    noteEnd = o2_.Alias;
+                    noteEndCC = phonemesCurrent.EndC1 + phonemesCurrent.EndC2 + " -";
+                }
             }
 
             var input = new string[] { noteEndCC };
