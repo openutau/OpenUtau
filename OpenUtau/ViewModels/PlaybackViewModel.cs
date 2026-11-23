@@ -118,6 +118,7 @@ namespace OpenUtau.App.ViewModels {
                 this.RaisePropertyChanged(nameof(PlayPosTime));
             } else if (cmd is SetRangeSelectionNotification) {
                 this.RaisePropertyChanged(nameof(ShowPlayPosHighlight));
+                this.RaisePropertyChanged(nameof(HasRangeSelection));
             }
         }
     }

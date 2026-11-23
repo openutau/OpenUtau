@@ -49,6 +49,11 @@
               <MenuItem Header="{DynamicResource menu.file.exportwav}" Click="OnMenuExportWav"/>
               <MenuItem Header="{DynamicResource menu.file.exportwavto}" Click="OnMenuExportWavTo"/>
               <MenuItem Header="{DynamicResource menu.file.exportmixdown}" Click="OnMenuExportMixdown"/>
+              <MenuItem Header="-" Height="1"/>
+              <MenuItem Header="{DynamicResource menu.file.exportwavrangeto}" Click="OnMenuExportWavRangeTo"
+                        IsEnabled="{Binding PlaybackViewModel.HasRangeSelection}"/>
+              <MenuItem Header="{DynamicResource menu.file.exportmixdownrange}" Click="OnMenuExportMixdownRange"
+                        IsEnabled="{Binding PlaybackViewModel.HasRangeSelection}"/>
             </MenuItem>
             <MenuItem Header="{DynamicResource menu.file.exportproject}">
               <MenuItem Header="{DynamicResource menu.file.exportust}" Click="OnMenuExportUst"/>

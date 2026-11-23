@@ -466,10 +466,12 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="menu.file.exportds">Export DiffSinger Scripts To</system:String>
   <system:String x:Key="menu.file.exportmidi">Export Midi File</system:String>
   <system:String x:Key="menu.file.exportmixdown">Mixdown To Wav File</system:String>
+  <system:String x:Key="menu.file.exportmixdownrange">Mixdown Selected Range To Wav File</system:String>
   <system:String x:Key="menu.file.exportproject">Export Project</system:String>
   <system:String x:Key="menu.file.exportust">Export Ust Files</system:String>
   <system:String x:Key="menu.file.exportustto">Export Ust Files To...</system:String>
   <system:String x:Key="menu.file.exportwav">Export Wav Files</system:String>
+  <system:String x:Key="menu.file.exportwavrangeto">Export Wav Files Of Selected Range To...</system:String>
   <system:String x:Key="menu.file.exportwavto">Export Wav Files To...</system:String>
   <system:String x:Key="menu.file.importaudio">Import Audio...</system:String>
   <system:String x:Key="menu.file.importmidi">Import Midi...</system:String>
