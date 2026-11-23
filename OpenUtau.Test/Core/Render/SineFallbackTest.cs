@@ -111,6 +111,47 @@ namespace OpenUtau.Core {
             Assert.True(Math.Abs(phrase.pitches.Last() - (60 * 100 + 200)) < 1);
         }
 
+        static float Peak(float[] samples, int from, int to) {
+            float peak = 0;
+            for (int i = from; i < to; i++) {
+                peak = Math.Max(peak, Math.Abs(samples[i]));
+            }
+            return peak;
+        }
+
+        [Fact]
+        public void ToneFadesOutGraduallyAtTheTail() {
+            var project = CreateProject(out var track, out var part);
+            part.notes.Add(MakeNote(0, 960, 60));
+            var phrase = RenderPhrase.FromPart(project, track, part).Single();
+            var layout = SineRenderer.Instance.Layout(phrase);
+            int total = (int)Math.Ceiling(layout.estimatedLengthMs / 1000.0 * 44100);
+
+            var samples = SineRenderer.Instance.Synthesize(phrase, layout, total);
+
+            int ms = 44100 / 1000;
+            float middle = Peak(samples, total / 2, total / 2 + 20 * ms);
+            float early = Peak(samples, total - 80 * ms, total - 60 * ms);
+            float late = Peak(samples, total - 20 * ms, total);
+            Assert.True(middle > 0.2f);
+            Assert.True(early < middle);
+            Assert.True(late < early);
+            Assert.True(late < 0.1f);
+        }
+
+        [Fact]
+        public void ShortToneStillReachesFullAmplitudeBeforeReleasing() {
+            var project = CreateProject(out var track, out var part);
+            part.notes.Add(MakeNote(0, 60, 60));
+            var phrase = RenderPhrase.FromPart(project, track, part).Single();
+            var layout = SineRenderer.Instance.Layout(phrase);
+            int total = (int)Math.Ceiling(layout.estimatedLengthMs / 1000.0 * 44100);
+
+            var samples = SineRenderer.Instance.Synthesize(phrase, layout, total);
+
+            Assert.True(Peak(samples, 0, total) > 0.1f);
+        }
+
         [Fact]
         public void FromPartUsesPhonemesWhenSingerLoaded() {
             var project = CreateProject(out var track, out var part);
