@@ -83,6 +83,7 @@ namespace OpenUtau.Core {
             var project = CreateProject(out var track, out var part);
             var note1 = MakeNote(0, 480, 60);
             var note2 = MakeNote(480, 240, 60);
+            note2.lyric = "+~";
             note2.Extends = note1;
             note1.Next = note2;
             note2.Prev = note1;
@@ -93,6 +94,48 @@ namespace OpenUtau.Core {
 
             var phrase = Assert.Single(phrases);
             Assert.Equal(720, phrase.duration);
+        }
+
+        [Fact]
+        public void PlusStartsNewPhraseAndSlurStaysInIt() {
+            var project = CreateProject(out var track, out var part);
+            var head = MakeNote(0, 480, 60);
+            var plus = MakeNote(480, 480, 64);
+            plus.lyric = "+";
+            var slur = MakeNote(960, 480, 67);
+            slur.lyric = "+*";
+            Link(head, plus);
+            Link(plus, slur);
+            plus.Extends = head;
+            slur.Extends = head;
+            part.notes.Add(head);
+            part.notes.Add(plus);
+            part.notes.Add(slur);
+
+            var phrases = RenderPhrase.FromPart(project, track, part);
+
+            Assert.Equal(2, phrases.Count);
+            Assert.Equal(480, phrases[0].duration);
+            Assert.Equal(960, phrases[1].duration);
+            Assert.Equal(60 * 100, phrases[0].pitches[0], 0);
+            Assert.Equal(60 * 100, phrases[0].pitches[phrases[0].pitches.Length - 2], 0);
+            Assert.Equal(64 * 100, phrases[1].pitches[0], 0);
+            Assert.Equal(67 * 100, phrases[1].pitches.Last(), 0);
+        }
+
+        [Fact]
+        public void SlurWithoutTouchingNoteGetsItsOwnPhrase() {
+            var project = CreateProject(out var track, out var part);
+            var first = MakeNote(0, 480, 60);
+            var slur = MakeNote(960, 480, 64);
+            slur.lyric = "+~";
+            Link(first, slur);
+            part.notes.Add(first);
+            part.notes.Add(slur);
+
+            var phrases = RenderPhrase.FromPart(project, track, part);
+
+            Assert.Equal(2, phrases.Count);
         }
 
         [Fact]
