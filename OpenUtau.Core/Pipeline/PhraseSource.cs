@@ -509,7 +509,7 @@ namespace OpenUtau.Core.Pipeline {
                 var phraseGroups = new List<(int Start, int End)>();
                 int groupStart = 0;
                 foreach (var note in Notes.Where(n => !n.OverlapError)) {
-                    if (note.Extends == -1 && sinePhonemes.Count > groupStart) {
+                    if (!(note.Extends != -1 && IsSlur(note.Lyric)) && sinePhonemes.Count > groupStart) {
                         phraseGroups.Add((groupStart, sinePhonemes.Count));
                         groupStart = sinePhonemes.Count;
                     }
@@ -585,6 +585,10 @@ namespace OpenUtau.Core.Pipeline {
         }
 
         // The musical notes of a phrase, including extension notes but not pitch-context neighbors.
+        static bool IsSlur(string? lyric) {
+            return lyric != null && (lyric.StartsWith("+~") || lyric.StartsWith("+*"));
+        }
+
         internal List<int> PhraseNotes(int start, int end) {
             var result = new List<int> { Phonemes[start].NoteIndex };
             int last = Phonemes[end - 1].NoteIndex;
