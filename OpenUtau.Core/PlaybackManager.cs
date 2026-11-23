@@ -346,7 +346,7 @@ namespace OpenUtau.Core {
         }
 
         public void PlayTone(double freq) {
-            if (!Core.Util.Preferences.Default.PlayTone) {
+            if (!Preferences.Default.PlayTone) {
                 return;
             }
             toneGenerator.StartTone(freq);

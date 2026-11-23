@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Input;
@@ -47,6 +47,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial NotesViewModel NotesViewModel { get; set; }
         [Reactive] public partial PlaybackViewModel? PlaybackViewModel { get; set; }
         [Reactive] public partial CurveViewModel CurveViewModel { get; set; }
+        [Reactive] public partial MidiInViewModel MidiInViewModel { get; set; }
 
         public double Width => Preferences.Default.PianorollWindowSize.Width;
         public double Height => Preferences.Default.PianorollWindowSize.Height;
@@ -82,6 +83,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial int ToolIndex { get; set; } = Preferences.Default.EditTool.BaseTool;
         [Reactive] public partial int PenToolIndex { get; set; } = Preferences.Default.EditTool.PenToolVariation;
         [Reactive] public partial bool PitchOverwrite { get; set; } = Preferences.Default.EditTool.OverwritePitch;
+        [Reactive] public partial bool MidiInput { get; set; } = false;
 
         public ObservableCollectionExtended<MenuItemViewModel> LegacyPlugins { get; private set; }
             = new ObservableCollectionExtended<MenuItemViewModel>();
@@ -121,6 +123,7 @@ namespace OpenUtau.App.ViewModels {
         public PianoRollViewModel() {
             NotesViewModel = new NotesViewModel();
             CurveViewModel = new CurveViewModel();
+            MidiInViewModel = new MidiInViewModel(NotesViewModel);
 
             this.WhenAnyValue(vm => vm.ToolIndex)
                 .Subscribe(index => EditTool.BaseTool = index);
@@ -128,6 +131,14 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(index => EditTool.PenToolVariation = index);
             this.WhenAnyValue(vm => vm.PitchOverwrite)
                 .Subscribe(val => { EditTool.OverwritePitch = val; Preferences.Default.EditTool.OverwritePitch = val; Preferences.Save(); });
+            this.WhenAnyValue(x => x.MidiInput)
+                .Subscribe(value => {
+                    if (value) {
+                        MidiInput = MidiInViewModel.TryInitDevice();
+                    } else {
+                        MidiInViewModel.StopMidiInput();
+                    }
+                });
 
             NoteDeleteCommand = ReactiveCommand.Create<NoteHitInfo>(info => {
                 NotesViewModel.DeleteSelectedNotes();
