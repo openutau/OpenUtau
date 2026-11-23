@@ -554,10 +554,11 @@ namespace OpenUtau.Core {
         }
 
         // Exporting mixdown
-        public async Task RenderMixdown(UProject project, string exportPath) {
+        public async Task RenderMixdown(UProject project, string exportPath, int startTick = 0, int endTick = -1) {
             await Task.Run(() => {
                 try {
-                    RenderEngine engine = new RenderEngine(project);
+                    RenderEngine engine = new RenderEngine(project, startTick, endTick);
+                    var (startMs, endMs) = ExportRangeMs(project, startTick, endTick);
                     // A throwaway planner: the export session must not clobber a live
                     // playback session on the shared planner.
                     var planner = new MixPlanner();
@@ -565,7 +566,7 @@ namespace OpenUtau.Core {
                     DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"Exporting to {exportPath}."));
 
                     CheckFileWritable(exportPath);
-                    WaveFileWriter.CreateWaveFile16(exportPath, new ExportAdapter(projectMix));
+                    WaveFileWriter.CreateWaveFile16(exportPath, new ExportAdapter(projectMix, startMs, endMs));
                     DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"Exported to {exportPath}."));
                 } catch (IOException ioe) {
                     var customEx = new MessageCustomizableException($"Failed to export {exportPath}.", $"<translate:errors.failed.export>: {exportPath}", ioe);
@@ -580,11 +581,12 @@ namespace OpenUtau.Core {
         }
 
         // Exporting each tracks
-        public async Task RenderToFiles(UProject project, string exportPath) {
+        public async Task RenderToFiles(UProject project, string exportPath, int startTick = 0, int endTick = -1) {
             await Task.Run(() => {
                 string file = "";
                 try {
-                    RenderEngine engine = new RenderEngine(project);
+                    RenderEngine engine = new RenderEngine(project, startTick, endTick);
+                    var (startMs, endMs) = ExportRangeMs(project, startTick, endTick);
                     // A throwaway planner: the export session must not clobber a live
                     // playback session on the shared planner.
                     var planner = new MixPlanner();
@@ -597,7 +599,7 @@ namespace OpenUtau.Core {
                         DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"Exporting to {file}."));
 
                         CheckFileWritable(file);
-                        WaveFileWriter.CreateWaveFile16(file, new ExportAdapter(trackMixes[i]).ToMono(1, 0));
+                        WaveFileWriter.CreateWaveFile16(file, new ExportAdapter(trackMixes[i], startMs, endMs).ToMono(1, 0));
                         DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"Exported to {file}."));
                     }
                 } catch (IOException ioe) {
@@ -610,6 +612,13 @@ namespace OpenUtau.Core {
                     DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"Failed to render."));
                 }
             });
+        }
+
+        private static (double startMs, double endMs) ExportRangeMs(UProject project, int startTick, int endTick) {
+            if (endTick == -1) {
+                return (0, double.PositiveInfinity);
+            }
+            return (project.timeAxis.TickPosToMsPos(startTick), project.timeAxis.TickPosToMsPos(endTick));
         }
 
         private void CheckFileWritable(string filePath) {

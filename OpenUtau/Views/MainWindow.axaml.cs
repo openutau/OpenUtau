@@ -503,6 +503,34 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        async void OnMenuExportMixdownRange(object sender, RoutedEventArgs args) {
+            var project = DocManager.Inst.Project;
+            int startTick = DocManager.Inst.rangeStartTick;
+            int endTick = DocManager.Inst.rangeEndTick;
+            if (endTick <= startTick) {
+                return;
+            }
+            var file = await FilePicker.SaveFileAboutProject(
+                this, "menu.file.exportmixdownrange", FilePicker.WAV);
+            if (!string.IsNullOrEmpty(file)) {
+                await PlaybackManager.Inst.RenderMixdown(project, file, startTick, endTick);
+            }
+        }
+
+        async void OnMenuExportWavRangeTo(object sender, RoutedEventArgs args) {
+            var project = DocManager.Inst.Project;
+            int startTick = DocManager.Inst.rangeStartTick;
+            int endTick = DocManager.Inst.rangeEndTick;
+            if (endTick <= startTick) {
+                return;
+            }
+            var file = await FilePicker.SaveFileAboutProject(
+                this, "menu.file.exportwavrangeto", FilePicker.WAV);
+            if (!string.IsNullOrEmpty(file)) {
+                await PlaybackManager.Inst.RenderToFiles(project, file, startTick, endTick);
+            }
+        }
+
         async void OnMenuExportWav(object sender, RoutedEventArgs args) {
             var project = DocManager.Inst.Project;
             if (await WarnToSave(project)) {
