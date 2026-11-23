@@ -177,6 +177,8 @@ namespace OpenUtau.Core.Util {
             public string UiFontPath = string.Empty;
             public string UiFontFamily = string.Empty;
             public bool UseUiFontForNotes = false;
+            public string PianoRollBackgroundImage = string.Empty;
+            public double PianoRollBackgroundOpacity = 0.5;
             public int DegreeStyle;
             public bool UseTrackColor = false;
             public bool ClearCacheOnQuit = false;

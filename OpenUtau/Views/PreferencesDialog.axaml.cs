@@ -111,6 +111,17 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        async void SelectBackgroundImage(object sender, RoutedEventArgs e) {
+            var path = await FilePicker.OpenFile(this, "prefs.appearance.bgimage.select", FilePicker.ImageFiles);
+            if (!string.IsNullOrEmpty(path)) {
+                viewModel!.SetBackgroundImage(path);
+            }
+        }
+
+        void ResetBackgroundImage(object sender, RoutedEventArgs e) {
+            viewModel!.ResetBackgroundImage();
+        }
+
         async void SelectUiFont(object sender, RoutedEventArgs e) {
             var path = await FilePicker.OpenFile(this, "prefs.appearance.customfont.select", FilePicker.FontFiles);
             if (!string.IsNullOrEmpty(path) && UiFontManager.IsSupportedFontPath(path)) {

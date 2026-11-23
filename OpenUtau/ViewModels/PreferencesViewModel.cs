@@ -111,6 +111,8 @@ namespace OpenUtau.App.ViewModels {
         // Appearance
         [Reactive] public partial string ThemeName { get; set; }
         [Reactive] public partial string UiFontPath { get; set; }
+        [Reactive] public partial string BackgroundImagePath { get; set; }
+        [Reactive] public partial double BackgroundImageOpacity { get; set; }
         [Reactive] public partial string UiFontFamily { get; set; }
         [Reactive] public partial bool UseUiFontForNotes { get; set; }
         public List<string>  UiFontFamilies { get; private set; } = new();
@@ -236,6 +238,8 @@ namespace OpenUtau.App.ViewModels {
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
             UiFontPath = Preferences.Default.UiFontPath;
+            BackgroundImagePath = Preferences.Default.PianoRollBackgroundImage;
+            BackgroundImageOpacity = Preferences.Default.PianoRollBackgroundOpacity;
             UiFontFamily = Preferences.Default.UiFontFamily;
             UseUiFontForNotes = Preferences.Default.UseUiFontForNotes;
             RefreshUiFontFamilies();
@@ -350,6 +354,14 @@ namespace OpenUtau.App.ViewModels {
                         App.SetTheme();
                     }
                 });
+            PersistOn(this.WhenAnyValue(vm => vm.BackgroundImagePath), path => {
+                Preferences.Default.PianoRollBackgroundImage = path ?? string.Empty;
+                MessageBus.Current.SendMessage(new PianorollRefreshEvent("Background"));
+            });
+            PersistOn(this.WhenAnyValue(vm => vm.BackgroundImageOpacity), opacity => {
+                Preferences.Default.PianoRollBackgroundOpacity = opacity;
+                MessageBus.Current.SendMessage(new PianorollRefreshEvent("Background"));
+            });
             this.WhenAnyValue(vm => vm.UiFontPath)
                 .Skip(1)
                 .Subscribe(path => {
@@ -573,6 +585,14 @@ namespace OpenUtau.App.ViewModels {
             this.RaisePropertyChanged(nameof(SetParamPath));
         }
         
+        public void SetBackgroundImage(string path) {
+            BackgroundImagePath = path;
+        }
+
+        public void ResetBackgroundImage() {
+            BackgroundImagePath = string.Empty;
+        }
+
         public void SetUiFontPath(string path) {
             UiFontPath = path;
             UiFontFamily = UiFontManager.GetSuggestedFamilyName(path);
