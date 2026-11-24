@@ -71,6 +71,20 @@ namespace OpenUtau.Core.Ustx {
 
         [YamlIgnore] public string FilePath { get; set; } = string.Empty;
         [YamlIgnore] public bool Saved { get; set; } = false;
+
+        /// <summary>
+        /// Set when loading gave tracks ids the file did not have yet (a project saved before
+        /// track ids existed, or one with duplicates). Such ids only matter once something
+        /// outside the project holds on to them, so a plain open stays unmodified.
+        /// </summary>
+        [YamlIgnore] public bool TrackIdsUnsaved { get; set; }
+
+        /// <summary>
+        /// Set when ids from <see cref="TrackIdsUnsaved"/> were sent to a DAW plugin, which will
+        /// remember them: the project now has changes to save, or the next open makes new ids
+        /// and the plugin's binding is lost. Part of <see cref="DocManager.ChangesSaved"/>.
+        /// </summary>
+        [YamlIgnore] public bool TrackIdsShared { get; set; }
         [YamlIgnore] public int EndTick => parts.Count == 0 ? 0 : parts.Max(p => p.End);
 
         [YamlIgnore] public readonly TimeAxis timeAxis = new TimeAxis();
@@ -185,7 +199,39 @@ namespace OpenUtau.Core.Ustx {
             waveParts = null;
         }
 
+        /// <summary>
+        /// Gives every track an id and makes the ids unique, keeping the first track's id and
+        /// replacing later duplicates (a project imported twice, or a copy of itself). Returns
+        /// whether any id changed.
+        /// </summary>
+        public bool EnsureUniqueTrackIds() {
+            bool changed = false;
+            var seen = new HashSet<string>();
+            foreach (var track in tracks) {
+                if (!track.HasId || !seen.Add(track.Id)) {
+                    string id;
+                    do {
+                        id = UTrack.NewId();
+                    } while (!seen.Add(id));
+                    track.Id = id;
+                    changed = true;
+                }
+            }
+            return changed;
+        }
+
+        /// <summary>New ids for every track, for a project started from a template: projects
+        /// made from the same template must not share track identities.</summary>
+        public void RegenerateTrackIds() {
+            foreach (var track in tracks) {
+                track.Id = UTrack.NewId();
+            }
+        }
+
         public void AfterLoad() {
+            if (EnsureUniqueTrackIds()) {
+                TrackIdsUnsaved = true;
+            }
             foreach (var track in tracks) {
                 track.AfterLoad(this);
             }

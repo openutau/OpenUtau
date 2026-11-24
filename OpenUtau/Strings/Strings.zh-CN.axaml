@@ -100,6 +100,9 @@
   <system:String x:Key="context.timeline.deltempo">删除位于 {0} 的曲速标签</system:String>
   <system:String x:Key="context.timeline.deltimesig">删除节拍标签</system:String>
 
+  <system:String x:Key="dawintegration.binding.duplicate">有 {0} 个插件在播放轨道 {1}，因此它在 DAW 中听起来更响。</system:String>
+  <system:String x:Key="dawintegration.binding.missing">（已删除的轨道）</system:String>
+  <system:String x:Key="dawintegration.binding.none">（无轨道）</system:String>
   <system:String x:Key="dawintegration.bpmmismatch">DAW 项目的节奏与此项目的节奏不一致。两条时间线只能以秒为单位保持一致，而无法以小节为单位保持一致——请调整节奏以保持同步。</system:String>
   <system:String x:Key="dawintegration.caption">DAW集成</system:String>
   <system:String x:Key="dawintegration.col.apiversion">API接口</system:String>
@@ -107,6 +110,7 @@
   <system:String x:Key="dawintegration.col.name">插件</system:String>
   <system:String x:Key="dawintegration.col.port">端口</system:String>
   <system:String x:Key="dawintegration.col.state">连接</system:String>
+  <system:String x:Key="dawintegration.col.track">轨道</system:String>
   <system:String x:Key="dawintegration.compatible">兼容</system:String>
   <system:String x:Key="dawintegration.connect">连接</system:String>
   <system:String x:Key="dawintegration.connected">已连接至 {0}</system:String>

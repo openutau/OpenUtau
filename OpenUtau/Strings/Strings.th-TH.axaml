@@ -100,6 +100,9 @@
   <system:String x:Key="context.timeline.deltempo">ลบการเปลี่ยนจังหวะ (Tempo) ที่ {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">ลบการเปลี่ยนเครื่องหมายกำหนดจังหวะ</system:String>
 
+  <system:String x:Key="dawintegration.binding.duplicate">ปลั๊กอิน {0} ตัวเล่นแทร็ก {1} อยู่ เสียงของแทร็กนี้ใน DAW จึงดังขึ้น</system:String>
+  <system:String x:Key="dawintegration.binding.missing">(แทร็กที่ถูกลบ)</system:String>
+  <system:String x:Key="dawintegration.binding.none">(ไม่มีแทร็ก)</system:String>
   <system:String x:Key="dawintegration.bpmmismatch">จังหวะของโปรเจกต์ DAW ไม่ตรงกับโปรเจกต์นี้ ไทม์ไลน์ทั้งสองจะตรงกันในระดับวินาทีเท่านั้น แต่ไม่ตรงในระดับห้องเพลง (Bars) — โปรดปรับจังหวะ Tempo ให้ตรงกันเพื่อให้ระบบซิงค์กันอย่างสมบูรณ์</system:String>
   <system:String x:Key="dawintegration.caption">การเชื่อมต่อ DAW (DAW Integration)</system:String>
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -107,6 +110,7 @@
   <system:String x:Key="dawintegration.col.name">ปลั๊กอิน</system:String>
   <system:String x:Key="dawintegration.col.port">พอร์ต</system:String>
   <system:String x:Key="dawintegration.col.state">การเชื่อมต่อ</system:String>
+  <system:String x:Key="dawintegration.col.track">แทร็ก</system:String>
   <system:String x:Key="dawintegration.compatible">เข้ากันได้</system:String>
   <system:String x:Key="dawintegration.connect">เชื่อมต่อ</system:String>
   <system:String x:Key="dawintegration.connected">เชื่อมต่อกับ {0} แล้ว</system:String>

@@ -33,6 +33,11 @@ namespace OpenUtau.Core {
         public override void Execute() {
             if (track.TrackNo < project.tracks.Count) project.tracks.Insert(track.TrackNo, track);
             else project.tracks.Add(track);
+            // A track built by copying another one's fields must not share its identity. Only
+            // the added track changes: the other one may already be bound in a DAW.
+            if (project.tracks.Any(other => other != track && other.Id == track.Id)) {
+                track.Id = UTrack.NewId();
+            }
             UpdateTrackNo();
         }
         public override void Unexecute() { project.tracks.Remove(track); UpdateTrackNo(); }

@@ -70,6 +70,34 @@ namespace OpenUtau.Core.Ustx {
     }
 
     public class UTrack {
+        /// <summary>
+        /// A stable identity for this track, saved in the project. Unlike <see cref="TrackNo"/>
+        /// it survives reordering, so a DAW plugin bound to a track keeps playing it. A track
+        /// created in code gets a fresh id on first use; <see cref="UProject.EnsureUniqueTrackIds"/>
+        /// fills in projects saved before ids existed and resolves duplicates.
+        /// </summary>
+        public string Id {
+            get => id ??= NewId();
+            set => id = value;
+        }
+        private string id;
+
+        /// <summary>Whether <see cref="Id"/> has been assigned, as opposed to generated on read.</summary>
+        [YamlIgnore] public bool HasId => !string.IsNullOrEmpty(id);
+
+        /// <summary>A random id: a letter, then 10 base-32 characters (50 bits).</summary>
+        public static string NewId() {
+            const string alphabet = "abcdefghijklmnopqrstuvwxyz234567";
+            Span<byte> bytes = stackalloc byte[10];
+            System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
+            Span<char> chars = stackalloc char[11];
+            chars[0] = 't';
+            for (int i = 0; i < bytes.Length; i++) {
+                chars[i + 1] = alphabet[bytes[i] & 31];
+            }
+            return new string(chars);
+        }
+
         public string singer;
         public string phonemizer;
         public URenderSettings RendererSettings { get; set; } = new URenderSettings();

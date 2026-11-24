@@ -100,6 +100,9 @@
   <system:String x:Key="context.timeline.deltempo">{0}のテンポ変更を削除</system:String>
   <system:String x:Key="context.timeline.deltimesig">拍子変更を削除</system:String>
 
+  <!--<system:String x:Key="dawintegration.binding.duplicate">{0} plugins play the track {1}, so it sounds louder in the DAW.</system:String>-->
+  <!--<system:String x:Key="dawintegration.binding.missing">(deleted track)</system:String>-->
+  <!--<system:String x:Key="dawintegration.binding.none">(no track)</system:String>-->
   <system:String x:Key="dawintegration.bpmmismatch">DAWプロジェクトのテンポが、このプロジェクトのテンポと一致していません。2つのタイムラインは「秒」単位でのみ一致し、「小節」単位では一致しません。同期を維持するには、テンポを合わせてください。</system:String>
   <system:String x:Key="dawintegration.caption">DAWとの連携</system:String>
   <system:String x:Key="dawintegration.col.apiversion">APIバージョン</system:String>
@@ -107,6 +110,7 @@
   <system:String x:Key="dawintegration.col.name">プラグイン</system:String>
   <system:String x:Key="dawintegration.col.port">ポート番号</system:String>
   <system:String x:Key="dawintegration.col.state">接続</system:String>
+  <!--<system:String x:Key="dawintegration.col.track">Track</system:String>-->
   <system:String x:Key="dawintegration.compatible">接続可能</system:String>
   <system:String x:Key="dawintegration.connect">接続する</system:String>
   <system:String x:Key="dawintegration.connected">{0} に接続しました。</system:String>

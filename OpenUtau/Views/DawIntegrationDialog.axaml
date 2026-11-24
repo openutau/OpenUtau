@@ -34,6 +34,8 @@
                               Binding="{Binding Compatibility}" Width="Auto"/>
           <DataGridTextColumn Header="{DynamicResource dawintegration.col.state}"
                               Binding="{Binding StateText}" Width="Auto"/>
+          <DataGridTextColumn Header="{DynamicResource dawintegration.col.track}"
+                              Binding="{Binding BoundTrack}" Width="Auto"/>
         </DataGrid.Columns>
       </DataGrid>
 

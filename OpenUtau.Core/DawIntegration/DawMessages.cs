@@ -16,11 +16,15 @@ namespace OpenUtau.Core.DawIntegration {
         public const string GetAudio = "getAudio";
         public const string UpdateTracks = "updateTracks";
         public const string UpdateProjectInfo = "updateProjectInfo";
+        /// <summary>v1.3 request: bind the plugin instance to a track by id.</summary>
+        public const string BindTrack = "bindTrack";
         // plugin -> OpenUtau
         public const string Ping = "ping";
         public const string PlaybackStarted = "playbackStarted";
         public const string Playhead = "playhead";
         public const string Bpm = "bpm";
+        /// <summary>v1.3 notification: the track id the instance is bound to now.</summary>
+        public const string BindingChanged = "bindingChanged";
     }
 
     /// <summary>
@@ -28,8 +32,8 @@ namespace OpenUtau.Core.DawIntegration {
     /// (PROTOCOL.md §4). Major mismatch refuses the connection; minor skew connects.
     /// </summary>
     public readonly struct DawApiVersion : IEquatable<DawApiVersion> {
-        public const string CurrentString = "1.2";
-        public static DawApiVersion Current => new DawApiVersion(1, 2);
+        public const string CurrentString = "1.3";
+        public static DawApiVersion Current => new DawApiVersion(1, 3);
 
         public readonly int Major;
         public readonly int Minor;
@@ -184,6 +188,14 @@ namespace OpenUtau.Core.DawIntegration {
     /// <summary>One entry of <c>updatePartLayout</c>. <see cref="AudioHash"/> is a decimal XXH64 string.</summary>
     public class DawPartLayout {
         [JsonPropertyName("trackNo")] public int TrackNo { get; set; }
+
+        /// <summary>
+        /// v1.3: the owning track's <see cref="Ustx.UTrack.Id"/>, taken in the same snapshot as
+        /// <see cref="TrackNo"/>. A plugin bound by id filters on this, so a reorder never plays
+        /// another track's parts while the layout catches up with the track list. Always sent:
+        /// older plugins ignore unknown fields (§10).
+        /// </summary>
+        [JsonPropertyName("trackId")] public string TrackId { get; set; } = string.Empty;
         [JsonPropertyName("startMs")] public double StartMs { get; set; }
         [JsonPropertyName("endMs")] public double EndMs { get; set; }
         [JsonPropertyName("audioHash")] public string AudioHash { get; set; } = string.Empty;
@@ -206,6 +218,15 @@ namespace OpenUtau.Core.DawIntegration {
 
     /// <summary>One entry of <c>updateTracks</c>, in OpenUtau's internal scale (<c>UTrack.Volume</c> dB, <c>UTrack.Pan</c>).</summary>
     public class DawTrackInfo {
+        /// <summary>
+        /// v1.3: the track's stable <see cref="Ustx.UTrack.Id"/>. A plugin binds to this rather
+        /// than to the track's position, so reordering tracks never changes what it plays.
+        /// Always sent, whatever minor was negotiated: one payload goes to every connection,
+        /// and gating it would strip the id from 1.3 plugins whenever a 1.2 plugin is
+        /// connected too. Older plugins ignore unknown fields (§10).
+        /// </summary>
+        [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
+
         [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
         [JsonPropertyName("volume")] public double Volume { get; set; }
         [JsonPropertyName("pan")] public double Pan { get; set; }
@@ -261,6 +282,29 @@ namespace OpenUtau.Core.DawIntegration {
     public class PlayheadNotification {
         [JsonPropertyName("positionMs")] public double PositionMs { get; set; }
         [JsonPropertyName("playing")] public bool Playing { get; set; }
+    }
+
+    /// <summary>
+    /// <c>bindTrack</c> request payload (v1.3): bind the instance to the track with this id,
+    /// exactly as if it had been picked in the plugin. The plugin answers with an empty
+    /// success, then reports the result with <c>bindingChanged</c>.
+    /// </summary>
+    public class BindTrackRequest {
+        [JsonPropertyName("trackId")] public string TrackId { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// <c>bindingChanged</c> notification payload (v1.3): which track the instance is bound to,
+    /// sent once after <c>init</c> and again whenever the binding changes, whoever changed it
+    /// (the plugin window, host automation, a restored DAW project or <c>bindTrack</c>).
+    /// </summary>
+    public class BindingChangedNotification {
+        /// <summary>The bound track's id, or null when the instance is bound to nothing.</summary>
+        [JsonPropertyName("trackId")] public string? TrackId { get; set; }
+
+        /// <summary>The DAW's own name for the track the instance sits on, when the host
+        /// reports one; null otherwise. Informational.</summary>
+        [JsonPropertyName("hostTrackName")] public string? HostTrackName { get; set; }
     }
 
     /// <summary><c>bpm</c> notification payload (v1.1): the DAW project's tempo.</summary>

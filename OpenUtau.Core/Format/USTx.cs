@@ -113,6 +113,8 @@ namespace OpenUtau.Core.Format {
                 project.BeforeSave();
                 File.WriteAllText(filePath, Yaml.DefaultSerializer.Serialize(project), Encoding.UTF8);
                 project.Saved = true;
+                project.TrackIdsUnsaved = false;
+                project.TrackIdsShared = false;
                 project.AfterSave();
                 Preferences.Default.RecoveryPath = string.Empty;
                 Preferences.Save();

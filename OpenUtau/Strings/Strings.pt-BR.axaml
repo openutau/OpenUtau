@@ -100,6 +100,9 @@
   <system:String x:Key="context.timeline.deltempo">Remover mudança de andamento em {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Remover mudança de compasso</system:String>
 
+  <system:String x:Key="dawintegration.binding.duplicate">{0} plugins tocam a faixa {1}, então ela soa mais alta no DAW.</system:String>
+  <system:String x:Key="dawintegration.binding.missing">(faixa apagada)</system:String>
+  <system:String x:Key="dawintegration.binding.none">(nenhuma faixa)</system:String>
   <system:String x:Key="dawintegration.bpmmismatch">O andamento musical do projeto do DAW não condiz com o andamento deste projeto. As duas linhas do tempo irão se concordar apenas em segundos, não em compassos — alinhe os andamentos para mantê-los sincronizados.</system:String>
   <system:String x:Key="dawintegration.caption">Integração DAW</system:String>
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -107,6 +110,7 @@
   <!--<system:String x:Key="dawintegration.col.name">Plugin</system:String>-->
   <system:String x:Key="dawintegration.col.port">Porta</system:String>
   <system:String x:Key="dawintegration.col.state">Conexão</system:String>
+  <system:String x:Key="dawintegration.col.track">Faixa</system:String>
   <system:String x:Key="dawintegration.compatible">Compatível</system:String>
   <system:String x:Key="dawintegration.connect">Conectar</system:String>
   <system:String x:Key="dawintegration.connected">Conectado a {0}</system:String>

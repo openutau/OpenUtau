@@ -100,6 +100,9 @@
   <system:String x:Key="context.timeline.deltempo">Supprimer le changement de tempo à {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Supprimer le changement de signature rythmique</system:String>
 
+  <system:String x:Key="dawintegration.binding.duplicate">{0} plugins lisent la piste {1}, elle sonne donc plus fort dans le DAW.</system:String>
+  <system:String x:Key="dawintegration.binding.missing">(piste supprimée)</system:String>
+  <system:String x:Key="dawintegration.binding.none">(aucune piste)</system:String>
   <system:String x:Key="dawintegration.bpmmismatch">Le tempo du DAW ne correspond pas à ce projet. Les timelines seront synchronisées en secondes, mais pas en mesures (Bars) — Veuillez synchroniser les BPM.</system:String>
   <system:String x:Key="dawintegration.caption">Intégration DAW</system:String>
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -107,6 +110,7 @@
   <!--<system:String x:Key="dawintegration.col.name">Plugin</system:String>-->
   <!--<system:String x:Key="dawintegration.col.port">Port</system:String>-->
   <system:String x:Key="dawintegration.col.state">Connexion</system:String>
+  <system:String x:Key="dawintegration.col.track">Piste</system:String>
   <!--<system:String x:Key="dawintegration.compatible">Compatible</system:String>-->
   <system:String x:Key="dawintegration.connect">Connecter</system:String>
   <system:String x:Key="dawintegration.connected">Connecté à {0}</system:String>
