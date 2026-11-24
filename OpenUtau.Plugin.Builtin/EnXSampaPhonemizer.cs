@@ -175,26 +175,6 @@ namespace OpenUtau.Plugin.Builtin {
             return new IG2p[] { new ArpabetG2p() };
         }
 
-        private IEnumerable<string> SplitDiphthongs(IEnumerable<string> symbols, int tone) {
-            var allDiphthongs = new HashSet<string>(
-                new[] { "aI", "eI", "OI", "aU", "oU", "VI", "VU", "@U", "ai", "ei", "Oi", "au", "ou", "Ou", "@u" }
-                    .Concat(diphthongTails.Keys),
-                StringComparer.Ordinal
-            );
-
-            foreach (string s in symbols) {
-                if (allDiphthongs.Contains(s) && s.Length > 1
-                    && ((!HasOto($"b{s}", tone) && !HasOto(ValidateAlias($"b{s}", tone), tone))
-                        || (!HasOto($"- {s}", tone) && !HasOto(s, tone) && !HasOto(ValidateAlias($"- {s}", tone), tone) && !HasOto(ValidateAlias(s, tone), tone)))) {
-                    yield return s[0].ToString();
-                    for (int i = 1; i < s.Length; i++) {
-                        yield return $"{s[i]}^";
-                    }
-                } else {
-                    yield return s;
-                }
-            }
-        }
         protected override string[] GetSymbols(Note note) {
             string[] original = base.GetSymbols(note);
             if (original == null) {
@@ -208,20 +188,25 @@ namespace OpenUtau.Plugin.Builtin {
                 }
             }
             string[] affricates = new[] { "dZ", "tS" };
+            var allDiphthongs = new HashSet<string>(
+                new[] { "aI", "eI", "OI", "aU", "oU", "VI", "VU", "@U", "ai", "ei", "Oi", "au", "ou", "Ou", "@u" }
+                    .Concat(diphthongTails.Keys),
+                StringComparer.Ordinal
+            );
             for (int idx = 0; idx < original.Length; idx++) {
                 string s = original[idx];
 
-                if (affricates.Contains(s) && !HasOto($"{s}A", note.tone) && !HasOto($"{s} A", note.tone) && !HasOto($"{s}Q", note.tone) && !HasOto($"{s} Q", note.tone)) {
+                if (allDiphthongs.Contains(s)
+                    && ((!HasOto($"b{s}", note.tone) && !HasOto(ValidateAlias($"b{s}", note.tone), note.tone))
+                        || (!HasOto($"- {s}", note.tone) && !HasOto(s, note.tone) && !HasOto(ValidateAlias($"- {s}", note.tone), note.tone) && !HasOto(ValidateAlias(s, note.tone), note.tone)))) {
+                    finalProcessedPhonemes.AddRange(new string[] { s[0].ToString(), s[1].ToString() + "^" });
+                } else if (affricates.Contains(s) && !HasOto($"{s}A", note.tone) && !HasOto($"{s} A", note.tone) && !HasOto($"{s}Q", note.tone) && !HasOto($"{s} Q", note.tone)) {
                     finalProcessedPhonemes.AddRange(new string[] { s[0].ToString(), s[1].ToString() });
                 } else {
                     finalProcessedPhonemes.Add(s);
                 }
             }
-            return SplitDiphthongs(finalProcessedPhonemes, note.tone).ToArray();
-        }
-        protected override List<string> ApplyReplacements(List<string> inputPhonemes, bool isBoundary) {
-            var replaced = base.ApplyReplacements(inputPhonemes, isBoundary);
-            return SplitDiphthongs(replaced, 0).ToList();
+            return finalProcessedPhonemes.ToArray();
         }
         protected override List<string> ProcessSyllable(Syllable syllable) {
             syllable.prevV = tails.Contains(syllable.prevV) ? "" : syllable.prevV;
