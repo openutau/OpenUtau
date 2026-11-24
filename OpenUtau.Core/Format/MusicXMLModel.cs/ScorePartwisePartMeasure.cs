@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
@@ -95,14 +96,14 @@ namespace OpenUtau.Core.Format.MusicXMLSchema {
                 reader.MoveToElement();
             }
             if (reader.MoveToAttribute("implicit")) {
-                if (YesNo.TryParse(reader.Value, out YesNo implicitValue)) {
+                if (Enum.TryParse(reader.Value, true, out YesNo implicitValue)) {
                     this.Implicit = implicitValue;
                     this.ImplicitSpecified = true;
                 }
                 reader.MoveToElement();
             }
             if (reader.MoveToAttribute("non-controlling")) {
-                if (YesNo.TryParse(reader.Value, out YesNo nonControllingValue)) {
+                if (Enum.TryParse(reader.Value, true, out YesNo nonControllingValue)) {
                     this.NonControlling = nonControllingValue;
                     this.NonControllingSpecified = true;
                 }
@@ -121,7 +122,12 @@ namespace OpenUtau.Core.Format.MusicXMLSchema {
             }
 
             // 2. Enter the Measure element (read start tag)
+            // An empty element such as <measure number="1"/> has no content and no end tag.
+            bool isEmpty = reader.IsEmptyElement;
             reader.ReadStartElement();
+            if (isEmpty) {
+                return;
+            }
 
             // 3. Loop to read all child elements inside Measure
             while (reader.NodeType != XmlNodeType.EndElement && reader.NodeType != XmlNodeType.None) {

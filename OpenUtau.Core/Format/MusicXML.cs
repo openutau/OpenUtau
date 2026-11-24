@@ -73,6 +73,22 @@ namespace OpenUtau.Core.Format
             return lyric.Syllabic[0];
         }
 
+        /// <summary>
+        /// Find the divisions in effect at the start of a part.
+        /// The first measure may be empty or have no attributes, so look for the first
+        /// attributes element that specifies divisions. Fall back to 1 (one division per quarter note).
+        /// </summary>
+        static int InitialDivisions(MusicXMLSchema.ScorePartwisePart part) {
+            foreach (var measure in part.Measure) {
+                foreach (var attributes in measure.Attributes) {
+                    if (attributes.DivisionsSpecified && attributes.Divisions > 0) {
+                        return (int)attributes.Divisions;
+                    }
+                }
+            }
+            return 1;
+        }
+
         static public UProject LoadProject(string file) {
             UProject uproject = new UProject();
             Ustx.AddDefaultExpressions(uproject);
@@ -93,7 +109,7 @@ namespace OpenUtau.Core.Format
                 upart.trackNo = utrack.TrackNo;
                 uproject.parts.Add(upart);
 
-                int divisions = (int)part.Measure[0].Attributes[0].Divisions;
+                int divisions = InitialDivisions(part);
                 int prevPosTick = 0;
                 int currPosTick = 0;
 

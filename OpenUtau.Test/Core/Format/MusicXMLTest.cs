@@ -215,5 +215,75 @@ namespace OpenUtau.Core.Format {
             Assert.Equal("+", notesList[7].lyric);
             Assert.Equal("Bah!", notesList[9].lyric);
         }
+
+        static string WriteTempXml(string measures) {
+            var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".musicxml");
+            File.WriteAllText(path, @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<score-partwise version=""4.0"">
+  <part-list><score-part id=""P1""><part-name>Voice</part-name></score-part></part-list>
+  <part id=""P1"">" + measures + @"</part>
+</score-partwise>");
+            return path;
+        }
+
+        static UProject LoadFromMeasures(string measures) {
+            var path = WriteTempXml(measures);
+            try {
+                return MusicXML.LoadProject(path);
+            } finally {
+                File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public void EmptyMeasureTest() {
+            foreach (var measures in new[] {
+                @"<measure number=""1""></measure>",
+                @"<measure number=""1""/>",
+                @"<measure number=""1""/><measure number=""2""/>",
+            }) {
+                var project = LoadFromMeasures(measures);
+                Assert.Empty(((UVoicePart)project.parts.First()).notes);
+            }
+        }
+
+        [Fact]
+        public void EmptyFirstMeasureTest() {
+            var project = LoadFromMeasures(@"
+<measure number=""1""/>
+<measure number=""2"">
+  <attributes><divisions>2</divisions></attributes>
+  <note><pitch><step>C</step><octave>4</octave></pitch><duration>2</duration></note>
+</measure>");
+            var note = ((UVoicePart)project.parts.First()).notes.Single();
+            Assert.Equal(project.resolution, note.duration);
+        }
+
+        [Fact]
+        public void MeasureWithoutAttributesTest() {
+            var project = LoadFromMeasures(@"
+<measure number=""1"">
+  <note><pitch><step>C</step><octave>4</octave></pitch><duration>1</duration></note>
+</measure>");
+            var note = ((UVoicePart)project.parts.First()).notes.Single();
+            Assert.Equal(60, note.tone);
+            // Divisions fall back to 1, i.e. a quarter note.
+            Assert.Equal(project.resolution, note.duration);
+        }
+
+        [Fact]
+        public void DivisionsInheritedTest() {
+            var project = LoadFromMeasures(@"
+<measure number=""1"">
+  <attributes><divisions>4</divisions></attributes>
+  <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration></note>
+</measure>
+<measure number=""2"">
+  <note><pitch><step>D</step><octave>4</octave></pitch><duration>4</duration></note>
+</measure>");
+            var notes = ((UVoicePart)project.parts.First()).notes.ToList();
+            Assert.Equal(2, notes.Count);
+            Assert.All(notes, n => Assert.Equal(project.resolution, n.duration));
+        }
     }
 }
