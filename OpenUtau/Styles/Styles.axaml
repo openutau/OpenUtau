@@ -537,4 +537,50 @@
       </ControlTemplate>
     </Setter>
   </Style>
+
+  <Style Selector=":is(Window)">
+    <Setter Property="Template">
+      <ControlTemplate TargetType="Window">
+        <Panel>
+          <Border Name="PART_TransparencyFallback" IsHitTestVisible="False" />
+          <Border Background="{TemplateBinding Background}" IsHitTestVisible="False" />
+          <Panel Background="Transparent" Margin="{TemplateBinding WindowDecorationMargin}" />
+          <VisualLayerManager Name="PART_VisualLayerManager">
+            <LayoutTransformControl>
+              <LayoutTransformControl.LayoutTransform>
+                <ScaleTransform ScaleX="{DynamicResource UiScale}" ScaleY="{DynamicResource UiScale}" />
+              </LayoutTransformControl.LayoutTransform>
+              <ContentPresenter Name="PART_ContentPresenter"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                Content="{TemplateBinding Content}"
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </LayoutTransformControl>
+          </VisualLayerManager>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="PopupRoot">
+    <Setter Property="Template">
+      <ControlTemplate TargetType="PopupRoot">
+        <Panel>
+          <Border Name="PART_TransparencyFallback" IsHitTestVisible="False" />
+          <VisualLayerManager Name="PART_VisualLayerManager">
+            <LayoutTransformControl>
+              <LayoutTransformControl.LayoutTransform>
+                <ScaleTransform ScaleX="{DynamicResource UiScale}" ScaleY="{DynamicResource UiScale}" />
+              </LayoutTransformControl.LayoutTransform>
+              <ContentPresenter Name="PART_ContentPresenter"
+                                Background="{TemplateBinding Background}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                Content="{TemplateBinding Content}"
+                                Padding="{TemplateBinding Padding}" />
+            </LayoutTransformControl>
+          </VisualLayerManager>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </Style>
 </Styles>

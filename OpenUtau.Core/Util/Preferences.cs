@@ -135,6 +135,9 @@ namespace OpenUtau.Core.Util {
                         };
                         Default.PreferPortAudio = null;
                     }
+                    if (Default.UiScale < 0.75 || Default.UiScale > 2.0) {
+                        Default.UiScale = 1.0;
+                    }
                     Default.MigrateRealTimePitchMode();
                     Default.RecentSingers = Default.RecentSingers?
                         .Where(s => !string.IsNullOrWhiteSpace(s))
@@ -326,6 +329,7 @@ namespace OpenUtau.Core.Util {
             [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
             public int? Theme;
             public bool? PreferPortAudio = false;
+            public double UiScale = 1.0;
 
             public void MigrateRealTimePitchMode() {
                 if (RealTimePitchGeneration && RealTimePitchMode == (int)LivePitchMode.Off) {
