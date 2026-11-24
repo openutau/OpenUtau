@@ -30,6 +30,7 @@
       <ResourceInclude x:Key="themes-dark" Source="/Colors/DarkTheme.axaml"/>
       <ResourceInclude x:Key="themes-light" Source="/Colors/LightTheme.axaml"/>
       <ResourceInclude x:Key="themes-custom" Source="/Colors/CustomTheme.axaml"/>
+      <x:Double x:Key="UiScale">1.0</x:Double>
       <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="/Colors/Brushes.axaml"/>
       </ResourceDictionary.MergedDictionaries>

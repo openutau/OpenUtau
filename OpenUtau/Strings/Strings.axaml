@@ -821,6 +821,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.theme.dark">Dark</system:String>
   <system:String x:Key="prefs.appearance.theme.light">Light</system:String>
   <system:String x:Key="prefs.appearance.trackcolor">Use track color in UI</system:String>
+  <system:String x:Key="prefs.appearance.uiscale">UI Scale</system:String>
   <system:String x:Key="prefs.cache">Cache</system:String>
   <system:String x:Key="prefs.cache.clearonquit">Clear cache on quit</system:String>
   <system:String x:Key="prefs.cache.diffsingertensorcache">DiffSinger Tensor Cache</system:String>

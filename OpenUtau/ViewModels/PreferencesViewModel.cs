@@ -110,6 +110,8 @@ namespace OpenUtau.App.ViewModels {
 
         // Appearance
         [Reactive] public partial string ThemeName { get; set; }
+
+        [Reactive] public partial double UiScale { get; set; }
         [Reactive] public partial string UiFontPath { get; set; }
         [Reactive] public partial string UiFontFamily { get; set; }
         [Reactive] public partial bool UseUiFontForNotes { get; set; }
@@ -235,6 +237,7 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
+            UiScale = Preferences.Default.UiScale;
             UiFontPath = Preferences.Default.UiFontPath;
             UiFontFamily = Preferences.Default.UiFontFamily;
             UseUiFontForNotes = Preferences.Default.UseUiFontForNotes;
@@ -349,6 +352,13 @@ namespace OpenUtau.App.ViewModels {
                         Preferences.Save();
                         App.SetTheme();
                     }
+                });
+            this.WhenAnyValue(vm => vm.UiScale)
+                .Subscribe(scale => {
+                    scale = Math.Round(scale, 2);
+                    Preferences.Default.UiScale = scale;
+                    Preferences.Save();
+                    App.SetUiScale(scale);
                 });
             this.WhenAnyValue(vm => vm.UiFontPath)
                 .Skip(1)
@@ -572,7 +582,19 @@ namespace OpenUtau.App.ViewModels {
             Preferences.Save();
             this.RaisePropertyChanged(nameof(SetParamPath));
         }
-        
+
+        public void DecreaseUiScale() {
+            UiScale = Math.Max(0.75, Math.Round(UiScale - 0.05, 2));
+        }
+
+        public void IncreaseUiScale() {
+            UiScale = Math.Min(2.0, Math.Round(UiScale + 0.05, 2));
+        }
+
+        public void ResetUiScale() {
+            UiScale = 1.0;
+        }
+
         public void SetUiFontPath(string path) {
             UiFontPath = path;
             UiFontFamily = UiFontManager.GetSuggestedFamilyName(path);

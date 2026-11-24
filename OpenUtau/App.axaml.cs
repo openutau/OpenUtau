@@ -10,6 +10,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Avalonia.Interactivity;
 using OpenUtau.App.Views;
 using OpenUtau.Colors;
 using OpenUtau.Core;
@@ -25,6 +26,7 @@ namespace OpenUtau.App {
 #endif
             InitializeCulture();
             InitializeTheme();
+            InitializeUiScale();
             Log.Information("Initialized application.");
         }
 
@@ -183,6 +185,57 @@ namespace OpenUtau.App {
             var res = Current?.Resources;
             foreach (var item in resDict) {
                 res![item.Key] = item.Value;
+            }
+        }
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Window, object> scaledWindows = new();
+
+        public static void InitializeUiScale() {
+            SetUiScale(Core.Util.Preferences.Default.UiScale);
+
+            Window.WindowOpenedEvent.AddClassHandler<Window>((window, args) => {
+                // MainWindow et PianoRollDetachedWindow gèrent déjà leurs propres dimensions sauvegardées
+                if (window is Views.MainWindow || window is Views.PianoRollDetachedWindow) {
+                    return;
+                }
+                if (scaledWindows.TryGetValue(window, out _)) {
+                    return;
+                }
+                scaledWindows.Add(window, new object());
+
+                double scale = Core.Util.Preferences.Default.UiScale;
+                if (Math.Abs(scale - 1.0) < 0.001) {
+                    return;
+                }
+
+                var screen = window.Screens.ScreenFromWindow(window) ?? window.Screens.Primary;
+                double maxWidth = screen != null ? (screen.WorkingArea.Width / screen.Scaling) * 0.95 : double.PositiveInfinity;
+                double maxHeight = screen != null ? (screen.WorkingArea.Height / screen.Scaling) * 0.95 : double.PositiveInfinity;
+
+                double targetWidth = !double.IsNaN(window.Width) ? window.Width : window.MinWidth;
+                if ((window.SizeToContent == SizeToContent.Manual || window.SizeToContent == SizeToContent.Height)
+                    && targetWidth > 0 && !double.IsInfinity(targetWidth)) {
+                    if (window.MinWidth > 0 && !double.IsInfinity(window.MinWidth)) {
+                        window.MinWidth = Math.Min(window.MinWidth * scale, maxWidth);
+                    }
+                    window.Width = Math.Min(targetWidth * scale, maxWidth);
+                }
+
+                double targetHeight = !double.IsNaN(window.Height) ? window.Height : window.MinHeight;
+                if ((window.SizeToContent == SizeToContent.Manual || window.SizeToContent == SizeToContent.Width)
+                    && targetHeight > 0 && !double.IsInfinity(targetHeight)) {
+                    if (window.MinHeight > 0 && !double.IsInfinity(window.MinHeight)) {
+                        window.MinHeight = Math.Min(window.MinHeight * scale, maxHeight);
+                    }
+                    window.Height = Math.Min(targetHeight * scale, maxHeight);
+                }
+            });
+        }
+
+        public static void SetUiScale(double scale) {
+            scale = Math.Clamp(scale, 0.75, 2.0);
+            if (Current != null) {
+                Current.Resources["UiScale"] = scale;
             }
         }
     }
