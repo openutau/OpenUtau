@@ -2014,7 +2014,7 @@ namespace OpenUtau.App.Views {
             if (colors.Length == 0) return;
             var parts = DocManager.Inst.Project.parts.Where(p => p.trackNo == track.TrackNo && p is UVoicePart).Cast<UVoicePart>().ToArray();
             var modes = parts.SelectMany(p => p.curves)
-                .Where(c => c.descriptor != null && IsImportedVocalModeCurve(c.abbr))
+                .Where(track.IsImportedVocalModeCurve)
                 .Select(c => c.descriptor.name)
                 .Where(n => !string.IsNullOrWhiteSpace(n))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -2047,13 +2047,6 @@ namespace OpenUtau.App.Views {
             }
         }
 
-        static bool IsImportedVocalModeCurve(string abbr) {
-            if (abbr.StartsWith("cl", StringComparison.OrdinalIgnoreCase)) return false;
-            return abbr != Ustx.DYN && abbr != Ustx.PITD && abbr != Ustx.TENC &&
-                abbr != Ustx.BREC && abbr != Ustx.GENC && abbr != Ustx.VOIC &&
-                abbr != Ustx.SHFC && abbr != Ustx.CLR && abbr != Ustx.CLRY &&
-                abbr != "opec";
-        }
         async Task VoiceColorRemappingAsync(UTrack track, string[] oldColors, string[] newColors) {
             var parts = DocManager.Inst.Project.parts
                 .Where(part => part.trackNo == track.TrackNo && part is UVoicePart)

@@ -156,6 +156,29 @@ namespace OpenUtau.Core.Ustx {
             return list;
         }
 
+        /// <summary>
+        /// Whether a part curve looks like a vocal mode carried over from another editor, which is offered for
+        /// remapping onto a DiffSinger voice color when a project is opened. Voice color curves and any curve the
+        /// track's renderer supports (e.g. DiffSinger's velc) are this track's own expressions, not imported modes.
+        /// </summary>
+        public bool IsImportedVocalModeCurve(UCurve curve) {
+            if (curve?.descriptor == null) {
+                return false;
+            }
+            // Voice color curves are cl01, cl02, ...; an imported mode such as "Clear" (abbr "clear") is not one.
+            if (curve.abbr.Length > 2 && curve.abbr.StartsWith("cl", StringComparison.OrdinalIgnoreCase)
+                && curve.abbr.Substring(2).All(char.IsDigit)) {
+                return false;
+            }
+            if (RendererSettings?.Renderer?.SupportsExpression(curve.descriptor) == true) {
+                return false;
+            }
+            return curve.abbr != Format.Ustx.DYN && curve.abbr != Format.Ustx.PITD && curve.abbr != Format.Ustx.TENC &&
+                curve.abbr != Format.Ustx.BREC && curve.abbr != Format.Ustx.GENC && curve.abbr != Format.Ustx.VOIC &&
+                curve.abbr != Format.Ustx.SHFC && curve.abbr != Format.Ustx.CLR && curve.abbr != Format.Ustx.CLRY &&
+                curve.abbr != Format.Ustx.XSY && curve.abbr != Format.Ustx.GRWC && curve.abbr != "opec";
+        }
+
         public void OnSingerRefreshed() {
             if (Singer != null && Singer.Loaded && !SingerManager.Inst.Singers.ContainsKey(Singer.Id)) {
                 Singer = USinger.CreateMissing(Singer.Name);
