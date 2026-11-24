@@ -766,9 +766,13 @@ namespace OpenUtau.Core.DawIntegration {
 
         private Task<UpdateTracksNotification> BuildTracksAsync(int minor) {
             bool emitV12Fields = minor >= 2;
+            bool remembered;
+            lock (stateLock) {
+                remembered = connections.Any(c => c.Ready && c.NegotiatedMinor >= 3);
+            }
             return OnDocumentThreadAsync(() => {
                 var project = ProjectSource();
-                if (project.TrackIdsUnsaved) {
+                if (project.TrackIdsUnsaved && remembered) {
                     // The ids were made up when an older project was opened. A plugin is about
                     // to remember them, so they have to be saved, or the next open makes new ones
                     // and every binding is lost: the project now counts as modified.

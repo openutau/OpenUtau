@@ -226,6 +226,8 @@ namespace OpenUtau.Core.Ustx {
             foreach (var track in tracks) {
                 track.Id = UTrack.NewId();
             }
+            // Fresh ids for a new project are not changes to an existing one.
+            TrackIdsUnsaved = false;
         }
 
         public void AfterLoad() {

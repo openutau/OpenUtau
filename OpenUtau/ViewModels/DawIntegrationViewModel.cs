@@ -375,7 +375,12 @@ namespace OpenUtau.App.ViewModels {
 
         public void OnNext(UCommand cmd, bool isUndo) {
             if (cmd is TrackCommand || cmd is LoadProjectNotification) {
-                ApplyConnectionStates();
+                // Only the Track cells: the status line may hold a connect error or a lost
+                // connection that a track edit must not wipe.
+                var infos = DawManager.Inst.Connections;
+                foreach (var server in Servers) {
+                    server.BoundTrack = DescribeBinding(infos.FirstOrDefault(i => i.Port == server.Port));
+                }
             }
         }
     }

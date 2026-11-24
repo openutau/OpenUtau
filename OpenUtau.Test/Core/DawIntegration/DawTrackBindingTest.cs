@@ -141,6 +141,17 @@ namespace OpenUtau.Core.DawIntegration {
         }
 
         [Fact]
+        public async Task AnOlderPluginDoesNotMakeMadeUpIdsWorthSaving() {
+            // A 1.2 plugin binds by position and forgets the ids it is sent.
+            project.TrackIdsUnsaved = true;
+
+            await ConnectAsync("1.2");
+
+            Assert.False(project.TrackIdsShared);
+            Assert.True(project.TrackIdsUnsaved);
+        }
+
+        [Fact]
         public async Task ASavedProjectStaysUnmodified() {
             project.Saved = true;
 

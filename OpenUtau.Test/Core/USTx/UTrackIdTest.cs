@@ -129,8 +129,11 @@ namespace OpenUtau.Test.Core.USTx {
             var project = ProjectWithTracks("Lead", "Harmony");
             var before = new HashSet<string>(project.tracks.Select(t => t.Id));
 
+            // As for a template saved before ids existed: its made-up ids are not changes.
+            project.TrackIdsUnsaved = true;
             project.RegenerateTrackIds();
 
+            Assert.False(project.TrackIdsUnsaved);
             Assert.DoesNotContain(project.tracks, t => before.Contains(t.Id));
             Assert.Equal(2, project.tracks.Select(t => t.Id).Distinct().Count());
         }
