@@ -184,6 +184,9 @@ namespace OpenUtau.Core.Format {
                 project.tempos.Clear();
                 project.tempos.AddRange(loaded.tempos);
             }
+            // Importing a file twice, or a copy of this project, must not duplicate track ids;
+            // the tracks already here keep theirs.
+            project.EnsureUniqueTrackIds();
             for (int i = initialTracks; i < project.tracks.Count; i++) {
                 project.tracks[i].AfterLoad(project);
             }

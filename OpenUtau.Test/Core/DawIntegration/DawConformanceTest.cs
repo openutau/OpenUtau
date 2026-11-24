@@ -191,6 +191,8 @@ namespace OpenUtau.Core.DawIntegration {
             // engine informational fields a plugin GUI shows next to the track name.
             Assert.Collection(plugin.Tracks,
                 track => {
+                    // v1.3: the stable id a plugin binds to.
+                    Assert.Equal(project.tracks[0].Id, track.Id);
                     Assert.Equal("Lead", track.Name);
                     Assert.Equal(-3d, track.Volume);
                     Assert.Equal(-20d, track.Pan);
@@ -199,6 +201,7 @@ namespace OpenUtau.Core.DawIntegration {
                     Assert.Equal("DIFFSINGER", track.Engine);
                 },
                 track => {
+                    Assert.Equal(project.tracks[1].Id, track.Id);
                     Assert.Equal("Harmony", track.Name);
                     Assert.Equal(0d, track.Volume);
                     Assert.Equal(15d, track.Pan);
@@ -211,11 +214,13 @@ namespace OpenUtau.Core.DawIntegration {
             Assert.Collection(plugin.Layout,
                 part => {
                     Assert.Equal(0, part.TrackNo);
+                    Assert.Equal(project.tracks[0].Id, part.TrackId);
                     Assert.Equal(0d, part.StartMs, 3);
                     Assert.Equal(500d, part.EndMs, 3);
                 },
                 part => {
                     Assert.Equal(1, part.TrackNo);
+                    Assert.Equal(project.tracks[1].Id, part.TrackId);
                     Assert.Equal(500d, part.StartMs, 3);
                     Assert.Equal(1500d, part.EndMs, 3);
                 });

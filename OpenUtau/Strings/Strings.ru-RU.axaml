@@ -100,6 +100,9 @@
   <system:String x:Key="context.timeline.deltempo">Удалить изменение темпа на {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Удалить изменение метки такта</system:String>
 
+  <!--<system:String x:Key="dawintegration.binding.duplicate">{0} plugins play the track {1}, so it sounds louder in the DAW.</system:String>-->
+  <!--<system:String x:Key="dawintegration.binding.missing">(deleted track)</system:String>-->
+  <!--<system:String x:Key="dawintegration.binding.none">(no track)</system:String>-->
   <system:String x:Key="dawintegration.bpmmismatch">Темп проекта DAW не совпадает с темпом этого проекта. Обе временные шкалы будут совпадать в секундах, но не в тактах — выровняйте темпы, чтобы синхронизировать их.</system:String>
   <system:String x:Key="dawintegration.caption">Интеграция с DAW</system:String>
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -107,6 +110,7 @@
   <system:String x:Key="dawintegration.col.name">Плагин</system:String>
   <system:String x:Key="dawintegration.col.port">Порт</system:String>
   <system:String x:Key="dawintegration.col.state">Соединение</system:String>
+  <!--<system:String x:Key="dawintegration.col.track">Track</system:String>-->
   <system:String x:Key="dawintegration.compatible">Совместимо</system:String>
   <system:String x:Key="dawintegration.connect">Подключиться</system:String>
   <system:String x:Key="dawintegration.connected">Подключено к {0}.</system:String>

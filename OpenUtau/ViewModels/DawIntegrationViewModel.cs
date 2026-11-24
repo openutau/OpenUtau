@@ -24,6 +24,9 @@ namespace OpenUtau.App.ViewModels {
 
         [Reactive] public partial DawConnectionState ConnectionState { get; set; } = DawConnectionState.Disconnected;
 
+        /// <summary>The OpenUtau track this instance plays, as it reported (v1.3).</summary>
+        [Reactive] public partial string BoundTrack { get; set; } = string.Empty;
+
         public bool IsConnected => ConnectionState == DawConnectionState.Connected;
 
         /// <summary>
@@ -65,7 +68,7 @@ namespace OpenUtau.App.ViewModels {
     /// "How to use" panel auto-expands while nothing is discovered. Every string is a
     /// resource key, so translations fall back to English where a language has none yet.
     /// </remarks>
-    public partial class DawIntegrationViewModel : ViewModelBase, IDisposable {
+    public partial class DawIntegrationViewModel : ViewModelBase, IDisposable, ICmdSubscriber {
         private readonly DawServerFinder finder = new DawServerFinder(DawServerFinder.DefaultDirectory);
         private bool disposed;
 
@@ -197,6 +200,9 @@ namespace OpenUtau.App.ViewModels {
             DawManager.Inst.StateChanged += OnStateChanged;
             DawManager.Inst.ConnectionLost += OnConnectionLost;
             DawManager.Inst.ConnectionsChanged += OnConnectionsChanged;
+            // Renaming or deleting a track, or opening another project, changes what the
+            // Track column shows without any connection event.
+            DocManager.Inst.AddSubscriber(this);
             this.WhenAnyValue(x => x.SelectedServer, x => x.IsBusy)
                 .Subscribe(_ => {
                     this.RaisePropertyChanged(nameof(ConnectEnabled));
@@ -293,14 +299,42 @@ namespace OpenUtau.App.ViewModels {
             var infos = DawManager.Inst.Connections;
             ConnectedCount = infos.Count(info => info.State == DawConnectionState.Connected);
             foreach (var server in Servers) {
-                server.ConnectionState = infos
-                    .FirstOrDefault(info => info.Port == server.Port)
-                    ?.State ?? DawConnectionState.Disconnected;
+                var info = infos.FirstOrDefault(i => i.Port == server.Port);
+                server.ConnectionState = info?.State ?? DawConnectionState.Disconnected;
+                server.BoundTrack = DescribeBinding(info);
                 server.RefreshState();
             }
             ShowState(DawManager.Inst.State);
             this.RaisePropertyChanged(nameof(ConnectEnabled));
             this.RaisePropertyChanged(nameof(DisconnectEnabled));
+        }
+
+        /// <summary>The bound track's name; empty for a plugin that does not report its binding
+        /// (api below 1.3) or is not connected.</summary>
+        private static string DescribeBinding(DawConnectionInfo? info) {
+            if (info == null || info.State != DawConnectionState.Connected || info.NegotiatedMinor < 3) {
+                return string.Empty;
+            }
+            if (info.BoundTrackId == null) {
+                return ThemeManager.GetString("dawintegration.binding.none");
+            }
+            var track = DocManager.Inst.Project.tracks.FirstOrDefault(t => t.Id == info.BoundTrackId);
+            return track?.TrackName ?? ThemeManager.GetString("dawintegration.binding.missing");
+        }
+
+        /// <summary>Two instances on one track is allowed, but plays it twice as loud.</summary>
+        private static string DuplicateBindingWarning() {
+            var shared = DawManager.Inst.Connections
+                .Where(info => info.State == DawConnectionState.Connected && info.NegotiatedMinor >= 3
+                    && info.BoundTrackId != null)
+                .GroupBy(info => info.BoundTrackId)
+                .FirstOrDefault(group => group.Count() > 1);
+            if (shared == null) {
+                return string.Empty;
+            }
+            var track = DocManager.Inst.Project.tracks.FirstOrDefault(t => t.Id == shared.Key);
+            return string.Format(ThemeManager.GetString("dawintegration.binding.duplicate"),
+                shared.Count(), track?.TrackName ?? shared.Key);
         }
 
         private void OnConnectionLost(string reason) {
@@ -321,6 +355,10 @@ namespace OpenUtau.App.ViewModels {
                     ? string.Format(ThemeManager.GetString("dawintegration.connected.count"), ConnectedCount)
                     : ThemeManager.GetString("dawintegration.disconnected"),
             };
+            string warning = DuplicateBindingWarning();
+            if (warning.Length > 0) {
+                Status += " " + warning;
+            }
         }
 
         public void Dispose() {
@@ -332,6 +370,18 @@ namespace OpenUtau.App.ViewModels {
             DawManager.Inst.StateChanged -= OnStateChanged;
             DawManager.Inst.ConnectionLost -= OnConnectionLost;
             DawManager.Inst.ConnectionsChanged -= OnConnectionsChanged;
+            DocManager.Inst.RemoveSubscriber(this);
+        }
+
+        public void OnNext(UCommand cmd, bool isUndo) {
+            if (cmd is TrackCommand || cmd is LoadProjectNotification) {
+                // Only the Track cells: the status line may hold a connect error or a lost
+                // connection that a track edit must not wipe.
+                var infos = DawManager.Inst.Connections;
+                foreach (var server in Servers) {
+                    server.BoundTrack = DescribeBinding(infos.FirstOrDefault(i => i.Port == server.Port));
+                }
+            }
         }
     }
 }

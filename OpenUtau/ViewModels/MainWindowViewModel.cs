@@ -233,6 +233,7 @@ namespace OpenUtau.App.ViewModels {
             if (File.Exists(defaultTemplate)) {
                 try {
                     OpenProject(new[] { defaultTemplate });
+                    DocManager.Inst.Project.RegenerateTrackIds();
                     DocManager.Inst.Project.Saved = false;
                     DocManager.Inst.Project.FilePath = string.Empty;
                     this.RaisePropertyChanged(nameof(Title));
@@ -278,6 +279,7 @@ namespace OpenUtau.App.ViewModels {
             try {
                 OpenProject(new string[] { file });
                 Page = 1;
+                DocManager.Inst.Project.RegenerateTrackIds();
                 DocManager.Inst.Project.Saved = false;
                 DocManager.Inst.Project.FilePath = string.Empty;
                 this.RaisePropertyChanged(nameof(Title));

@@ -100,6 +100,9 @@
   <system:String x:Key="context.timeline.deltempo">[템포] 이곳의 변경값 삭제 ({0})</system:String>
   <system:String x:Key="context.timeline.deltimesig">[박자표] 이곳의 변경값 삭제</system:String>
 
+  <!--<system:String x:Key="dawintegration.binding.duplicate">{0} plugins play the track {1}, so it sounds louder in the DAW.</system:String>-->
+  <!--<system:String x:Key="dawintegration.binding.missing">(deleted track)</system:String>-->
+  <!--<system:String x:Key="dawintegration.binding.none">(no track)</system:String>-->
   <!--<system:String x:Key="dawintegration.bpmmismatch">The DAW project's tempo does not match this project's tempo. The two timelines will only agree in seconds, not in bars — align the tempos to keep them in sync.</system:String>-->
   <!--<system:String x:Key="dawintegration.caption">DAW Integration</system:String>-->
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -107,6 +110,7 @@
   <!--<system:String x:Key="dawintegration.col.name">Plugin</system:String>-->
   <!--<system:String x:Key="dawintegration.col.port">Port</system:String>-->
   <!--<system:String x:Key="dawintegration.col.state">Connection</system:String>-->
+  <!--<system:String x:Key="dawintegration.col.track">Track</system:String>-->
   <!--<system:String x:Key="dawintegration.compatible">Compatible</system:String>-->
   <!--<system:String x:Key="dawintegration.connect">Connect</system:String>-->
   <!--<system:String x:Key="dawintegration.connected">Connected to {0}.</system:String>-->

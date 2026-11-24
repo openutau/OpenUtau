@@ -220,6 +220,7 @@ namespace OpenUtau.Core {
             get {
                 return (Project.Saved || (Project.tracks.Count <= 1 && Project.parts.Count == 0)) &&
                     (undoQueue.Count > 0 && savedPoint == undoQueue.Last() || undoQueue.Count == 0 && savedPoint == null) &&
+                    !Project.TrackIdsShared &&
                     !Recovered;
             }
         }

@@ -200,10 +200,28 @@ namespace OpenUtau.Core.DawIntegration {
         public string Name { get; }
         public DawConnectionState State { get; }
 
-        public DawConnectionInfo(int port, string name, DawConnectionState state) {
+        /// <summary>v1.3: the id of the track the instance reported itself bound to, which may
+        /// name a track the project no longer has (the instance is then silent); null when it is
+        /// bound to none or has not reported (an older plugin never does).</summary>
+        public string? BoundTrackId { get; }
+
+        /// <summary>v1.3: the DAW's name for the track the instance sits on, when known.</summary>
+        public string? HostTrackName { get; }
+
+        /// <summary>The protocol minor agreed with this plugin; <c>bindTrack</c> needs 3.</summary>
+        public int NegotiatedMinor { get; }
+
+        public DawConnectionInfo(int port, string name, DawConnectionState state)
+            : this(port, name, state, null, null, DawApiVersion.Current.Minor) { }
+
+        public DawConnectionInfo(int port, string name, DawConnectionState state,
+            string? boundTrackId, string? hostTrackName, int negotiatedMinor) {
             Port = port;
             Name = name;
             State = state;
+            BoundTrackId = boundTrackId;
+            HostTrackName = hostTrackName;
+            NegotiatedMinor = negotiatedMinor;
         }
     }
 
@@ -247,6 +265,12 @@ namespace OpenUtau.Core.DawIntegration {
             /// <summary>The init answer's minor (§4.2). Defaults to this build's own, so a
             /// connection that has not finished its handshake is treated as fully capable.</summary>
             public int NegotiatedMinor = DawApiVersion.Current.Minor;
+            /// <summary>From the plugin's last <c>bindingChanged</c> (v1.3). Cleared on every
+            /// (re)connect: the plugin re-sends it after each init.</summary>
+            public string? BoundTrackId;
+            public string? HostTrackName;
+            /// <summary>The init handshake finished, so <see cref="NegotiatedMinor"/> is real.</summary>
+            public bool Ready;
         }
 
         private readonly DawSyncScheduler scheduler;
@@ -318,7 +342,8 @@ namespace OpenUtau.Core.DawIntegration {
             get {
                 lock (stateLock) {
                     return connections
-                        .Select(c => new DawConnectionInfo(c.Server.Port, c.Server.Name, StateOf(c)))
+                        .Select(c => new DawConnectionInfo(c.Server.Port, c.Server.Name, StateOf(c),
+                            c.BoundTrackId, c.HostTrackName, c.NegotiatedMinor))
                         .ToList();
                 }
             }
@@ -396,6 +421,10 @@ namespace OpenUtau.Core.DawIntegration {
             opened.RequestHandler = ServeRequestAsync;
             lock (stateLock) {
                 conn.Transport = opened;
+                // Whatever was bound before may be another plugin build now on this port.
+                conn.BoundTrackId = null;
+                conn.HostTrackName = null;
+                conn.Ready = false;
             }
             try {
                 // §6.1 as decided: init carries the USTX baseline and the answer is the api version.
@@ -410,6 +439,7 @@ namespace OpenUtau.Core.DawIntegration {
                 }
                 lock (stateLock) {
                     conn.NegotiatedMinor = version.Minor;
+                    conn.Ready = true;
                 }
                 Subscribe();
                 RecomputeState();
@@ -736,22 +766,36 @@ namespace OpenUtau.Core.DawIntegration {
 
         private Task<UpdateTracksNotification> BuildTracksAsync(int minor) {
             bool emitV12Fields = minor >= 2;
-            return OnDocumentThreadAsync(() => new UpdateTracksNotification {
-                Tracks = ProjectSource().tracks
-                    .Select(track => new DawTrackInfo {
-                        Name = track.TrackName,
-                        Volume = track.Volume,
-                        Pan = track.Pan,
-                        // Kept on the wire for compatibility, but the bridge sends pre-fader
-                        // audio and leaves gain, pan, mute and solo to the DAW mixer.
-                        Muted = track.Muted,
-                        // v1.2: informational fields for the plugin's GUI. Singer changes and
-                        // renderer changes are TrackCommands, so the same Tracks sync keeps
-                        // these fresh without new triggers. Omitted for lower minors (§10).
-                        Singer = emitV12Fields ? track.Singer?.Name ?? string.Empty : null,
-                        Engine = emitV12Fields ? track.RendererSettings.renderer ?? string.Empty : null,
-                    })
-                    .ToList(),
+            bool remembered;
+            lock (stateLock) {
+                remembered = connections.Any(c => c.Ready && c.NegotiatedMinor >= 3);
+            }
+            return OnDocumentThreadAsync(() => {
+                var project = ProjectSource();
+                if (project.TrackIdsUnsaved && remembered) {
+                    // The ids were made up when an older project was opened. A plugin is about
+                    // to remember them, so they have to be saved, or the next open makes new ones
+                    // and every binding is lost: the project now counts as modified.
+                    project.TrackIdsShared = true;
+                }
+                return new UpdateTracksNotification {
+                    Tracks = project.tracks
+                        .Select(track => new DawTrackInfo {
+                            Id = track.Id,
+                            Name = track.TrackName,
+                            Volume = track.Volume,
+                            Pan = track.Pan,
+                            // Kept on the wire for compatibility, but the bridge sends pre-fader
+                            // audio and leaves gain, pan, mute and solo to the DAW mixer.
+                            Muted = track.Muted,
+                            // v1.2: informational fields for the plugin's GUI. Singer changes and
+                            // renderer changes are TrackCommands, so the same Tracks sync keeps
+                            // these fresh without new triggers. Omitted for lower minors (§10).
+                            Singer = emitV12Fields ? track.Singer?.Name ?? string.Empty : null,
+                            Engine = emitV12Fields ? track.RendererSettings.renderer ?? string.Empty : null,
+                        })
+                        .ToList(),
+                };
             });
         }
 
@@ -773,6 +817,7 @@ namespace OpenUtau.Core.DawIntegration {
             public UProject Project = null!;
             public UVoicePart Part = null!;
             public int TrackNo;
+            public string TrackId = string.Empty;
             public double StartMs;
             public double EndMs;
         }
@@ -786,6 +831,9 @@ namespace OpenUtau.Core.DawIntegration {
                         Project = project,
                         Part = part,
                         TrackNo = part.trackNo,
+                        TrackId = part.trackNo >= 0 && part.trackNo < project.tracks.Count
+                            ? project.tracks[part.trackNo].Id
+                            : string.Empty,
                         StartMs = project.timeAxis.TickPosToMsPos(part.position),
                         EndMs = project.timeAxis.TickPosToMsPos(part.End),
                     })
@@ -835,6 +883,7 @@ namespace OpenUtau.Core.DawIntegration {
                 audioCache.Put(hash, pcm);
                 layout.Add(new DawPartLayout {
                     TrackNo = entry.TrackNo,
+                    TrackId = entry.TrackId,
                     StartMs = entry.StartMs,
                     EndMs = entry.EndMs,
                     AudioHash = hash,
@@ -948,9 +997,73 @@ namespace OpenUtau.Core.DawIntegration {
                         }
                     }
                     break;
+                case DawMessageKind.BindingChanged:
+                    if (payload.HasValue) {
+                        var note = payload.Value.Deserialize<BindingChangedNotification>(DawJson.Options);
+                        if (note != null) {
+                            HandleBindingChanged(conn, note);
+                        }
+                    }
+                    break;
                 default:
                     Log.Information($"DAW: ignoring unknown notification '{kind}'.");
                     break;
+            }
+        }
+
+        private void HandleBindingChanged(Connection conn, BindingChangedNotification note) {
+            string? trackId = string.IsNullOrEmpty(note.TrackId) ? null : note.TrackId;
+            string? hostName = string.IsNullOrEmpty(note.HostTrackName) ? null : note.HostTrackName;
+            lock (stateLock) {
+                if (conn.BoundTrackId == trackId && conn.HostTrackName == hostName) {
+                    return;
+                }
+                conn.BoundTrackId = trackId;
+                conn.HostTrackName = hostName;
+            }
+            Log.Information($"DAW: plugin '{conn.Server.Name}' is bound to track {trackId ?? "(none)"}.");
+            ConnectionsChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Binds a connected plugin instance to a track by id (v1.3 <c>bindTrack</c>), as if the
+        /// track had been picked in the plugin. The instance confirms with <c>bindingChanged</c>,
+        /// which is what updates <see cref="DawConnectionInfo.BoundTrackId"/>.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">No live connection on that port, or no
+        /// track with that id.</exception>
+        /// <exception cref="DawProtocolException">The plugin speaks a minor below 3, or refused.</exception>
+        public async Task BindTrackAsync(int port, string trackId, CancellationToken cancellation = default) {
+            bool known = await OnDocumentThreadAsync(() => ProjectSource().tracks.Any(t => t.Id == trackId));
+            if (!known) {
+                throw new InvalidOperationException($"No track has the id '{trackId}'.");
+            }
+            Connection? conn;
+            DawTransport? live;
+            int minor;
+            lock (stateLock) {
+                conn = connections.FirstOrDefault(
+                    c => c.Server.Port == port && c.Ready && c.Transport?.IsConnected == true);
+                live = conn?.Transport;
+                minor = conn?.NegotiatedMinor ?? 0;
+            }
+            if (conn == null || live == null) {
+                throw new InvalidOperationException($"No plugin is connected on port {port}.");
+            }
+            if (minor < 3) {
+                throw new DawProtocolException(
+                    $"Plugin '{conn.Server.Name}' speaks api 1.{minor}; binding a track needs 1.3.");
+            }
+            DawResult result;
+            try {
+                result = await live.SendRequestAsync(
+                    DawMessageKind.BindTrack, new BindTrackRequest { TrackId = trackId }, cancellation: cancellation);
+            } catch (TimeoutException e) {
+                throw new DawProtocolException($"Plugin '{conn.Server.Name}' did not answer bindTrack.", e);
+            }
+            if (!result.Success) {
+                throw new DawProtocolException(
+                    $"Plugin '{conn.Server.Name}' refused the binding: {result.Error ?? "(no reason)"}");
             }
         }
 

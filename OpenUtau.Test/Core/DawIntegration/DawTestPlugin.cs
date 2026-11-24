@@ -36,6 +36,9 @@ namespace OpenUtau.Core.DawIntegration {
         public List<DawPartLayout> Layout { get; private set; } = new List<DawPartLayout>();
         public List<DawTrackInfo> Tracks { get; private set; } = new List<DawTrackInfo>();
 
+        /// <summary>The track id the last <c>bindTrack</c> asked for (v1.3).</summary>
+        public string? BoundTrackId { get; private set; }
+
         /// <summary>What this plugin answers <c>init</c> with. Set before connecting to test §4.</summary>
         public string ApiVersion { get; set; } = DawApiVersion.CurrentString;
 
@@ -148,6 +151,13 @@ namespace OpenUtau.Core.DawIntegration {
                             .ToList(),
                     }));
                     break;
+                case DawMessageKind.BindTrack:
+                    // A real plugin binds, answers, then reports the binding like any other change.
+                    BoundTrackId = request.ReadPayload<BindTrackRequest>().TrackId;
+                    Received.Enqueue(request.Kind);
+                    await request.RespondAsync(DawResult.Ok());
+                    await SendBindingChangedAsync(BoundTrackId);
+                    break;
                 default:
                     Received.Enqueue(request.Kind);
                     await request.RespondAsync(DawResult.Fail($"Unsupported request '{request.Kind}'."));
@@ -170,6 +180,10 @@ namespace OpenUtau.Core.DawIntegration {
 
         public Task SendPlaybackStartedAsync() =>
             Transport!.SendNotificationAsync(DawMessageKind.PlaybackStarted, new DawEmptyPayload());
+
+        public Task SendBindingChangedAsync(string? trackId, string? hostTrackName = null) =>
+            Transport!.SendNotificationAsync(DawMessageKind.BindingChanged,
+                new BindingChangedNotification { TrackId = trackId, HostTrackName = hostTrackName });
 
         public Task SendPingAsync() =>
             Transport!.SendNotificationAsync(DawMessageKind.Ping, new DawEmptyPayload());
