@@ -15,7 +15,7 @@ namespace OpenUtau.Plugins {
             new string[] { "- maI", "aI t", "tE", "E st-" })]
         [InlineData("en_delta7",
             new string[] { "my", "test" },
-            new string[] { "maI", "aI -", "tE", "E s", "s t-" })]
+            new string[] { "ma", "a -", "I t", "tE", "E s", "s t-" })]
         public void BasicPhonemizingTest(string singerName, string[] lyrics, string[] aliases) {
             SameAltsTonesColorsTest(singerName, lyrics, aliases, "", "C4", "");
         }

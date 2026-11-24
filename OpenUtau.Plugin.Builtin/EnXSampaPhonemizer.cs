@@ -174,6 +174,7 @@ namespace OpenUtau.Plugin.Builtin {
         protected override IG2p[] GetBaseG2ps() {
             return new IG2p[] { new ArpabetG2p() };
         }
+
         protected override string[] GetSymbols(Note note) {
             string[] original = base.GetSymbols(note);
             if (original == null) {
@@ -186,14 +187,19 @@ namespace OpenUtau.Plugin.Builtin {
                     original[i] = replaced;
                 }
             }
-            
-            // Splits diphthongs and affricates if not present in the bank
-            string[] diphthongs = new[] { "aI", "eI", "OI", "aU", "oU", "VI", "VU", "@U", "ai", "ei", "Oi", "au", "ou", "Ou", "@u", };
             string[] affricates = new[] { "dZ", "tS" };
-            
-            foreach (string s in original) {
-                if (diphthongs.Contains(s) && !HasOto($"- {s}", note.tone) && !HasOto(s, note.tone) && !HasOto(ValidateAlias($"- {s}"), note.tone) && !HasOto(ValidateAlias(s), note.tone)) {
-                    finalProcessedPhonemes.AddRange(new string[] { s[0].ToString(), s[1] + '^'.ToString() });
+            var allDiphthongs = new HashSet<string>(
+                new[] { "aI", "eI", "OI", "aU", "oU", "VI", "VU", "@U", "ai", "ei", "Oi", "au", "ou", "Ou", "@u" }
+                    .Concat(diphthongTails.Keys),
+                StringComparer.Ordinal
+            );
+            for (int idx = 0; idx < original.Length; idx++) {
+                string s = original[idx];
+
+                if (allDiphthongs.Contains(s)
+                    && ((!HasOto($"b{s}", note.tone) && !HasOto(ValidateAlias($"b{s}", note.tone), note.tone))
+                        || (!HasOto($"- {s}", note.tone) && !HasOto(s, note.tone) && !HasOto(ValidateAlias($"- {s}", note.tone), note.tone) && !HasOto(ValidateAlias(s, note.tone), note.tone)))) {
+                    finalProcessedPhonemes.AddRange(new string[] { s[0].ToString(), s[1].ToString() + "^" });
                 } else if (affricates.Contains(s) && !HasOto($"{s}A", note.tone) && !HasOto($"{s} A", note.tone) && !HasOto($"{s}Q", note.tone) && !HasOto($"{s} Q", note.tone)) {
                     finalProcessedPhonemes.AddRange(new string[] { s[0].ToString(), s[1].ToString() });
                 } else {
@@ -295,7 +301,6 @@ namespace OpenUtau.Plugin.Builtin {
                             phonemes.Add($"{prevV} -");
                         }
                     }
-
                     else if (Delta5vvExceptions.ContainsKey(prevV)) {
                         var tail = Delta5vvExceptions[prevV];
                         var vcSpace = $"{prevV} {tail}";
@@ -765,6 +770,25 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
+        protected override string ValidateAlias(string alias, int tone = 0) {
+            if (HasOto(alias, tone)) return alias;
+
+            string baseResolved = base.ValidateAlias(alias, tone);
+            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
+                if (HasOto(baseResolved, tone)) {
+                    return baseResolved;
+                }
+                alias = baseResolved;
+            }
+
+            // Split diphthongs adjuster (casing preserved)
+            alias = alias.Replace("U^", "U", StringComparison.Ordinal)
+                         .Replace("I^", "I", StringComparison.Ordinal)
+                         .Replace("u^", "u", StringComparison.Ordinal)
+                         .Replace("i^", "i", StringComparison.Ordinal);
+            return alias;
+        }
+
         protected override string GetHardcodedFallback(string alias, int tone, HashSet<string> suppressedTokens) {
             string candidate = alias;
 
@@ -788,11 +812,6 @@ namespace OpenUtau.Plugin.Builtin {
             if (isMissingCanadianRaising) ApplyDictionary(CanadianRaising);
             if (isDarkLVowel) ApplyDictionary(darkLVowel);
 
-            // Split diphthongs adjuster (casing preserved)
-            candidate = candidate.Replace("U^", "U", StringComparison.Ordinal)
-                                 .Replace("I^", "I", StringComparison.Ordinal)
-                                 .Replace("u^", "u", StringComparison.Ordinal)
-                                 .Replace("i^", "i", StringComparison.Ordinal);
 
             // Other validations
             if (!candidate.Contains("@r", StringComparison.Ordinal) && !candidate.Contains("3r", StringComparison.Ordinal)) {
