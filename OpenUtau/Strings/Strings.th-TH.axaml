@@ -100,6 +100,8 @@
   <system:String x:Key="context.timeline.deltempo">ลบการเปลี่ยนจังหวะ (Tempo) ที่ {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">ลบการเปลี่ยนเครื่องหมายกำหนดจังหวะ</system:String>
 
+  <system:String x:Key="dawintegration.autoconnect">เชื่อมต่ออัตโนมัติ</system:String>
+  <system:String x:Key="dawintegration.autoconnect.tooltip">เชื่อมต่อกับ OpenUtau Bridge ทุกอินสแตนซ์ทันทีที่ปรากฏใน DAW โดยไม่ต้องเปิดหน้าต่างนี้ ต้องบันทึกโปรเจกต์ก่อน ปลั๊กอินที่ยกเลิกการเชื่อมต่อจากหน้านี้จะยังไม่ถูกเชื่อมต่อจนกว่าจะถูกโหลดใหม่</system:String>
   <system:String x:Key="dawintegration.bpmmismatch">จังหวะของโปรเจกต์ DAW ไม่ตรงกับโปรเจกต์นี้ ไทม์ไลน์ทั้งสองจะตรงกันในระดับวินาทีเท่านั้น แต่ไม่ตรงในระดับห้องเพลง (Bars) — โปรดปรับจังหวะ Tempo ให้ตรงกันเพื่อให้ระบบซิงค์กันอย่างสมบูรณ์</system:String>
   <system:String x:Key="dawintegration.caption">การเชื่อมต่อ DAW (DAW Integration)</system:String>
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -109,6 +111,8 @@
   <system:String x:Key="dawintegration.col.state">การเชื่อมต่อ</system:String>
   <system:String x:Key="dawintegration.compatible">เข้ากันได้</system:String>
   <system:String x:Key="dawintegration.connect">เชื่อมต่อ</system:String>
+  <system:String x:Key="dawintegration.connectall">เชื่อมต่อทั้งหมด</system:String>
+  <system:String x:Key="dawintegration.connectall.failed">ไม่สามารถเชื่อมต่อกับปลั๊กอินจำนวน {0} ตัว: {1}</system:String>
   <system:String x:Key="dawintegration.connected">เชื่อมต่อกับ {0} แล้ว</system:String>
   <system:String x:Key="dawintegration.connected.count">เชื่อมต่อกับปลั๊กอินจำนวน {0} ตัวแล้ว</system:String>
   <system:String x:Key="dawintegration.connecting">กำลังเชื่อมต่อ...</system:String>

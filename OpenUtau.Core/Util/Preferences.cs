@@ -322,6 +322,9 @@ namespace OpenUtau.Core.Util {
             public bool MixFxApplyOnExportMixdown = true;
             public List<MixFxUserPreset> MixFxUserPresets = new List<MixFxUserPreset>();
 
+            /// <summary>Connect DAW plugin instances as soon as they are advertised.</summary>
+            public bool DawAutoConnect = false;
+
             // Legacy
             [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
             public int? Theme;

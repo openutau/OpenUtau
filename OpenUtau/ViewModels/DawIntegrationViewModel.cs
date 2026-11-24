@@ -182,6 +182,24 @@ namespace OpenUtau.App.ViewModels {
             }
         }
 
+        /// <summary>Connect plugin instances as they appear, without this dialog. Stored in
+        /// the preferences and applied at startup.</summary>
+        public bool AutoConnect {
+            get => Preferences.Default.DawAutoConnect;
+            set {
+                if (Preferences.Default.DawAutoConnect == value) {
+                    return;
+                }
+                Preferences.Default.DawAutoConnect = value;
+                Preferences.Save();
+                DawAutoConnector.Inst.Enabled = value;
+                this.RaisePropertyChanged(nameof(AutoConnect));
+            }
+        }
+
+        public bool ConnectAllEnabled => !IsBusy && Servers.Any(
+            server => server.Server.IsCompatible && server.ConnectionState == DawConnectionState.Disconnected);
+
         public bool ConnectEnabled => !IsBusy
             && SelectedServer is { } connectable
             && connectable.ConnectionState == DawConnectionState.Disconnected
@@ -200,6 +218,7 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(x => x.SelectedServer, x => x.IsBusy)
                 .Subscribe(_ => {
                     this.RaisePropertyChanged(nameof(ConnectEnabled));
+                    this.RaisePropertyChanged(nameof(ConnectAllEnabled));
                     this.RaisePropertyChanged(nameof(DisconnectEnabled));
                     this.RaisePropertyChanged(nameof(Vst3InstallEnabled));
                     this.RaisePropertyChanged(nameof(ClapInstallEnabled));
@@ -258,6 +277,37 @@ namespace OpenUtau.App.ViewModels {
             }
         }
 
+        /// <summary>
+        /// Connects every compatible plugin in the list that is not connected yet. One that
+        /// fails does not stop the rest; the failures are summed up in <see cref="Status"/>.
+        /// </summary>
+        public async Task ConnectAllAsync() {
+            if (IsBusy) {
+                return;
+            }
+            IsBusy = true;
+            try {
+                // An explicit "connect all" overrides earlier manual disconnects.
+                DawAutoConnector.Inst.ClearSkips();
+                var result = await DawManager.Inst.ConnectAllAsync(Servers.Select(item => item.Server).ToList());
+                if (result.Failed.Count > 0) {
+                    Status = string.Format(ThemeManager.GetString("dawintegration.connectall.failed"),
+                        result.Failed.Count,
+                        string.Join("; ", result.Failed.Select(f => $"{f.Server.Name}: {f.Error.Message}")));
+                }
+            } catch (MessageCustomizableException e) {
+                Log.Warning($"DAW: connect all refused: {e.Message}");
+                Status = e.Message;
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+            } catch (Exception e) {
+                Log.Error(e, "DAW: connect all failed.");
+                Status = e.Message;
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+            } finally {
+                IsBusy = false;
+            }
+        }
+
         public async Task DisconnectAsync() {
             var target = SelectedServer;
             if (IsBusy) {
@@ -267,9 +317,14 @@ namespace OpenUtau.App.ViewModels {
             try {
                 // Only target a port that actually has a manager connection; the discovery
                 // entry may have lost it (or never had one), in which case tear down all.
+                // Either way auto-connect must not bring the plugins straight back.
                 if (target is { } connected && connected.ConnectionState != DawConnectionState.Disconnected) {
+                    DawAutoConnector.Inst.Skip(connected.Port);
                     await DawManager.Inst.DisconnectAsync(connected.Port);
                 } else {
+                    foreach (var info in DawManager.Inst.Connections) {
+                        DawAutoConnector.Inst.Skip(info.Port);
+                    }
                     await DawManager.Inst.DisconnectAsync();
                 }
             } finally {
@@ -286,7 +341,23 @@ namespace OpenUtau.App.ViewModels {
         }
 
         private void OnConnectionsChanged() {
-            Dispatcher.UIThread.Post(ApplyConnectionStates);
+            Dispatcher.UIThread.Post(() => {
+                // Auto-connect can connect a plugin this list has not scanned yet.
+                if (!disposed && !IsBusy && DawManager.Inst.Connections.Any(
+                        info => Servers.All(server => server.Port != info.Port))) {
+                    RefreshAfterExternalConnect();
+                } else {
+                    ApplyConnectionStates();
+                }
+            });
+        }
+
+        private async void RefreshAfterExternalConnect() {
+            try {
+                await RefreshAsync();
+            } catch (Exception e) {
+                Log.Warning(e, "DAW: refreshing the plugin list failed.");
+            }
         }
 
         private void ApplyConnectionStates() {
@@ -300,6 +371,7 @@ namespace OpenUtau.App.ViewModels {
             }
             ShowState(DawManager.Inst.State);
             this.RaisePropertyChanged(nameof(ConnectEnabled));
+            this.RaisePropertyChanged(nameof(ConnectAllEnabled));
             this.RaisePropertyChanged(nameof(DisconnectEnabled));
         }
 

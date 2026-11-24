@@ -100,6 +100,8 @@
   <system:String x:Key="context.timeline.deltempo">Remover mudança de andamento em {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Remover mudança de compasso</system:String>
 
+  <system:String x:Key="dawintegration.autoconnect">Conectar automaticamente</system:String>
+  <system:String x:Key="dawintegration.autoconnect.tooltip">Conecta cada instância do OpenUtau Bridge assim que ela aparece no DAW, sem abrir esta janela. O projeto precisa estar salvo. Um plugin desconectado aqui continua desconectado até ser carregado de novo.</system:String>
   <system:String x:Key="dawintegration.bpmmismatch">O andamento musical do projeto do DAW não condiz com o andamento deste projeto. As duas linhas do tempo irão se concordar apenas em segundos, não em compassos — alinhe os andamentos para mantê-los sincronizados.</system:String>
   <system:String x:Key="dawintegration.caption">Integração DAW</system:String>
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -109,6 +111,8 @@
   <system:String x:Key="dawintegration.col.state">Conexão</system:String>
   <system:String x:Key="dawintegration.compatible">Compatível</system:String>
   <system:String x:Key="dawintegration.connect">Conectar</system:String>
+  <system:String x:Key="dawintegration.connectall">Conectar todos</system:String>
+  <system:String x:Key="dawintegration.connectall.failed">{0} plugin(s) não puderam ser conectados: {1}</system:String>
   <system:String x:Key="dawintegration.connected">Conectado a {0}</system:String>
   <system:String x:Key="dawintegration.connected.count">Conectado a {0} plugin(s).</system:String>
   <system:String x:Key="dawintegration.connecting">Conectando...</system:String>

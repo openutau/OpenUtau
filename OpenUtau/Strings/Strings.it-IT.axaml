@@ -100,6 +100,8 @@
   <system:String x:Key="context.timeline.deltempo">Elimina cambiamento del tempo in {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Elimina indicazione del tempo</system:String>
 
+  <!--<system:String x:Key="dawintegration.autoconnect">Connect automatically</system:String>-->
+  <!--<system:String x:Key="dawintegration.autoconnect.tooltip">Connect every OpenUtau Bridge instance as soon as it appears in the DAW, without opening this window. The project has to be saved first. A plugin you disconnect here stays disconnected until it is loaded again.</system:String>-->
   <!--<system:String x:Key="dawintegration.bpmmismatch">The DAW project's tempo does not match this project's tempo. The two timelines will only agree in seconds, not in bars — align the tempos to keep them in sync.</system:String>-->
   <!--<system:String x:Key="dawintegration.caption">DAW Integration</system:String>-->
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -109,6 +111,8 @@
   <!--<system:String x:Key="dawintegration.col.state">Connection</system:String>-->
   <!--<system:String x:Key="dawintegration.compatible">Compatible</system:String>-->
   <!--<system:String x:Key="dawintegration.connect">Connect</system:String>-->
+  <!--<system:String x:Key="dawintegration.connectall">Connect all</system:String>-->
+  <!--<system:String x:Key="dawintegration.connectall.failed">{0} plugin(s) could not be connected: {1}</system:String>-->
   <!--<system:String x:Key="dawintegration.connected">Connected to {0}.</system:String>-->
   <!--<system:String x:Key="dawintegration.connected.count">Connected to {0} plugin(s).</system:String>-->
   <!--<system:String x:Key="dawintegration.connecting">Connecting...</system:String>-->

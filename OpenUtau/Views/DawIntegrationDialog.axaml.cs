@@ -1,7 +1,9 @@
 using System;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
 using OpenUtau.Core.DawIntegration;
@@ -76,6 +78,24 @@ namespace OpenUtau.App.Views {
             try {
                 if (DataContext is DawIntegrationViewModel vm) {
                     await vm.ConnectAsync();
+                }
+            } catch (Exception ex) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(ex));
+            }
+        }
+
+        void OnAutoConnectTapped(object? sender, TappedEventArgs e) {
+            // The CheckBox handles its own clicks; this catches the label.
+            if (DataContext is DawIntegrationViewModel vm
+                && (e.Source as Visual)?.FindAncestorOfType<CheckBox>(includeSelf: true) == null) {
+                vm.AutoConnect = !vm.AutoConnect;
+            }
+        }
+
+        async void OnConnectAll(object sender, RoutedEventArgs e) {
+            try {
+                if (DataContext is DawIntegrationViewModel vm) {
+                    await vm.ConnectAllAsync();
                 }
             } catch (Exception ex) {
                 DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(ex));
