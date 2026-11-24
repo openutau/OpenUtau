@@ -100,6 +100,8 @@
   <system:String x:Key="context.timeline.deltempo">Hapus ubah tempo di {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Hapus ubah time signature</system:String>
 
+  <system:String x:Key="dawintegration.autoconnect">Hubungkan otomatis</system:String>
+  <system:String x:Key="dawintegration.autoconnect.tooltip">Hubungkan setiap instance OpenUtau Bridge begitu muncul di DAW, tanpa membuka jendela ini. Proyek harus disimpan dulu. Plugin yang diputus di sini tetap terputus sampai dimuat ulang.</system:String>
   <system:String x:Key="dawintegration.bpmmismatch">Tempo proyek DAW tidak sama dengan tempo proyek.Tiimeline keduanya hanya akan sama di detik, bukan di bar-nya — samakan tempo agar saling sinkron.</system:String>
   <system:String x:Key="dawintegration.caption">Integrasi DAW</system:String>
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -109,6 +111,8 @@
   <system:String x:Key="dawintegration.col.state">Koneksi</system:String>
   <system:String x:Key="dawintegration.compatible">Kompatibel</system:String>
   <system:String x:Key="dawintegration.connect">Hubungkan</system:String>
+  <system:String x:Key="dawintegration.connectall">Hubungkan semua</system:String>
+  <system:String x:Key="dawintegration.connectall.failed">{0} plugin tidak dapat dihubungkan: {1}</system:String>
   <system:String x:Key="dawintegration.connected">Terhubung ke {0}.</system:String>
   <system:String x:Key="dawintegration.connected.count">Terhubung ke {0} plugin.</system:String>
   <system:String x:Key="dawintegration.connecting">Menghubungkan...</system:String>

@@ -39,15 +39,25 @@
 
       <TextBlock Grid.Row="2" Text="{Binding Status}" TextWrapping="Wrap" Margin="0,8,0,0"/>
 
-      <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="10" Margin="0,10,0,0"
-                  HorizontalAlignment="Right">
-        <Button Content="{DynamicResource dawintegration.refresh}" Click="OnRefresh"
-                IsEnabled="{Binding !IsBusy}"/>
-        <Button Content="{DynamicResource dawintegration.connect}" Click="OnConnect"
-                IsEnabled="{Binding ConnectEnabled}"/>
-        <Button Content="{DynamicResource dawintegration.disconnect}" Click="OnDisconnect"
-                IsEnabled="{Binding DisconnectEnabled}"/>
-      </StackPanel>
+      <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+        <!-- The label toggles too: the app's CheckBox template has no room for content. -->
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                    Background="Transparent" Cursor="Hand" Tapped="OnAutoConnectTapped"
+                    ToolTip.Tip="{DynamicResource dawintegration.autoconnect.tooltip}">
+          <CheckBox VerticalAlignment="Center" IsChecked="{Binding AutoConnect}"/>
+          <TextBlock VerticalAlignment="Center" Text="{DynamicResource dawintegration.autoconnect}"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+          <Button Content="{DynamicResource dawintegration.refresh}" Click="OnRefresh"
+                  IsEnabled="{Binding !IsBusy}"/>
+          <Button Content="{DynamicResource dawintegration.connect}" Click="OnConnect"
+                  IsEnabled="{Binding ConnectEnabled}"/>
+          <Button Content="{DynamicResource dawintegration.connectall}" Click="OnConnectAll"
+                  IsEnabled="{Binding ConnectAllEnabled}"/>
+          <Button Content="{DynamicResource dawintegration.disconnect}" Click="OnDisconnect"
+                  IsEnabled="{Binding DisconnectEnabled}"/>
+        </StackPanel>
+      </Grid>
     </Grid>
 
     <!-- Floating guide: dims the dialog and floats a fixed-width card above it. The card is

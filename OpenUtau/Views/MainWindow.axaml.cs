@@ -20,6 +20,7 @@ using OpenUtau.App.ViewModels;
 using OpenUtau.Classic;
 using OpenUtau.Core;
 using OpenUtau.Core.Analysis;
+using OpenUtau.Core.DawIntegration;
 using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
@@ -78,6 +79,8 @@ namespace OpenUtau.App.Views {
 
             // Edit commands validate once per frame instead of once per pointer move.
             DocManager.Inst.RequestFrame = action => RequestAnimationFrame(_ => action());
+
+            DawAutoConnector.Inst.Enabled = Preferences.Default.DawAutoConnect;
 
             var smoothViewport = new SmoothViewport(this);
             hScroll = smoothViewport.Scroll(HScrollBar);

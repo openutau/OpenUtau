@@ -100,6 +100,8 @@
   <system:String x:Key="context.timeline.deltempo">Supprimer le changement de tempo à {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Supprimer le changement de signature rythmique</system:String>
 
+  <system:String x:Key="dawintegration.autoconnect">Connecter automatiquement</system:String>
+  <system:String x:Key="dawintegration.autoconnect.tooltip">Connecte chaque instance d'OpenUtau Bridge dès qu'elle apparaît dans le DAW, sans ouvrir cette fenêtre. Le projet doit d'abord être enregistré. Un plugin déconnecté ici reste déconnecté jusqu'à ce qu'il soit rechargé.</system:String>
   <system:String x:Key="dawintegration.bpmmismatch">Le tempo du DAW ne correspond pas à ce projet. Les timelines seront synchronisées en secondes, mais pas en mesures (Bars) — Veuillez synchroniser les BPM.</system:String>
   <system:String x:Key="dawintegration.caption">Intégration DAW</system:String>
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -109,6 +111,8 @@
   <system:String x:Key="dawintegration.col.state">Connexion</system:String>
   <!--<system:String x:Key="dawintegration.compatible">Compatible</system:String>-->
   <system:String x:Key="dawintegration.connect">Connecter</system:String>
+  <system:String x:Key="dawintegration.connectall">Tout connecter</system:String>
+  <system:String x:Key="dawintegration.connectall.failed">{0} plugin(s) n'ont pas pu être connectés : {1}</system:String>
   <system:String x:Key="dawintegration.connected">Connecté à {0}</system:String>
   <system:String x:Key="dawintegration.connected.count">Connecté à {0} plugin(s)</system:String>
   <system:String x:Key="dawintegration.connecting">Connexion en cours...</system:String>

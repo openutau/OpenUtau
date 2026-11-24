@@ -194,6 +194,25 @@ namespace OpenUtau.Core.DawIntegration {
         Reconnecting,
     }
 
+    /// <summary>One plugin <see cref="DawManager.ConnectAllAsync"/> could not connect, and why.</summary>
+    public sealed class DawConnectFailure {
+        public DawServer Server { get; }
+        public Exception Error { get; }
+
+        public DawConnectFailure(DawServer server, Exception error) {
+            Server = server;
+            Error = error;
+        }
+    }
+
+    /// <summary>What one <see cref="DawManager.ConnectAllAsync"/> run did. Plugins that were
+    /// already connected appear in none of the lists.</summary>
+    public sealed class DawConnectAllResult {
+        public List<DawServer> Connected { get; } = new List<DawServer>();
+        public List<DawServer> Incompatible { get; } = new List<DawServer>();
+        public List<DawConnectFailure> Failed { get; } = new List<DawConnectFailure>();
+    }
+
     /// <summary>One plugin connection, as the connection list shows it.</summary>
     public sealed class DawConnectionInfo {
         public int Port { get; }
@@ -253,6 +272,9 @@ namespace OpenUtau.Core.DawIntegration {
         private readonly DawAudioCache audioCache;
         private readonly TimeSpan[] reconnectBackoff;
         private readonly SemaphoreSlim syncGate = new SemaphoreSlim(1, 1);
+        /// <summary>Serializes connects (single, all, automatic), so two callers never race
+        /// each other into replacing a connection the other one is still opening.</summary>
+        private readonly SemaphoreSlim connectGate = new SemaphoreSlim(1, 1);
         private readonly object stateLock = new object();
 
         /// <summary>Advertised hash → the part that produced it, so a cache miss can be re-extracted.</summary>
@@ -346,6 +368,15 @@ namespace OpenUtau.Core.DawIntegration {
         /// The advertisement, or the plugin's own init answer, is an api major this build cannot speak (§4).
         /// </exception>
         public async Task ConnectAsync(DawServer target, CancellationToken cancellation = default) {
+            await connectGate.WaitAsync(cancellation);
+            try {
+                await ConnectCoreAsync(target, cancellation);
+            } finally {
+                connectGate.Release();
+            }
+        }
+
+        private async Task ConnectCoreAsync(DawServer target, CancellationToken cancellation) {
             if (!target.IsCompatible) {
                 throw new DawProtocolException(
                     $"Plugin '{target.Name}' speaks api '{target.Info.ApiVersion}', " +
@@ -377,6 +408,58 @@ namespace OpenUtau.Core.DawIntegration {
                 UnsubscribeIfIdle();
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Connects every compatible plugin in <paramref name="servers"/> that has no connection
+        /// yet. Plugins already connected, connecting or reconnecting are left alone, so running
+        /// it again only picks up instances added since. One plugin failing does not stop the
+        /// others; its error is reported in the result. <paramref name="stillWanted"/> is asked
+        /// right before each connect, so a caller can drop a plugin the user disconnected while
+        /// an earlier one was still handshaking.
+        /// </summary>
+        /// <exception cref="MessageCustomizableException">
+        /// A failure every plugin would hit the same way, such as an unsaved project. Thrown
+        /// once, before any further plugin is tried.
+        /// </exception>
+        public async Task<DawConnectAllResult> ConnectAllAsync(
+            IEnumerable<DawServer> servers, CancellationToken cancellation = default,
+            Func<DawServer, bool>? stillWanted = null) {
+            var result = new DawConnectAllResult();
+            await connectGate.WaitAsync(cancellation);
+            try {
+                foreach (var server in servers) {
+                    if (!server.IsCompatible) {
+                        result.Incompatible.Add(server);
+                        continue;
+                    }
+                    bool held;
+                    lock (stateLock) {
+                        held = connections.Any(c => c.Server.Port == server.Port);
+                    }
+                    if (held || (stillWanted != null && !stillWanted(server))) {
+                        continue;
+                    }
+                    // Checked before any socket is opened: every plugin would fail the same way.
+                    if (string.IsNullOrEmpty(ProjectSource()?.FilePath)) {
+                        throw DawUstx.UnsavedProject();
+                    }
+                    try {
+                        await ConnectCoreAsync(server, cancellation);
+                        result.Connected.Add(server);
+                    } catch (MessageCustomizableException) {
+                        throw;
+                    } catch (OperationCanceledException) when (cancellation.IsCancellationRequested) {
+                        throw;
+                    } catch (Exception e) {
+                        Log.Warning(e, $"DAW: could not connect to {server}.");
+                        result.Failed.Add(new DawConnectFailure(server, e));
+                    }
+                }
+            } finally {
+                connectGate.Release();
+            }
+            return result;
         }
 
         /// <summary>

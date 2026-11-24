@@ -100,6 +100,8 @@
   <system:String x:Key="context.timeline.deltempo">{0}のテンポ変更を削除</system:String>
   <system:String x:Key="context.timeline.deltimesig">拍子変更を削除</system:String>
 
+  <!--<system:String x:Key="dawintegration.autoconnect">Connect automatically</system:String>-->
+  <!--<system:String x:Key="dawintegration.autoconnect.tooltip">Connect every OpenUtau Bridge instance as soon as it appears in the DAW, without opening this window. The project has to be saved first. A plugin you disconnect here stays disconnected until it is loaded again.</system:String>-->
   <system:String x:Key="dawintegration.bpmmismatch">DAWプロジェクトのテンポが、このプロジェクトのテンポと一致していません。2つのタイムラインは「秒」単位でのみ一致し、「小節」単位では一致しません。同期を維持するには、テンポを合わせてください。</system:String>
   <system:String x:Key="dawintegration.caption">DAWとの連携</system:String>
   <system:String x:Key="dawintegration.col.apiversion">APIバージョン</system:String>
@@ -109,6 +111,8 @@
   <system:String x:Key="dawintegration.col.state">接続</system:String>
   <system:String x:Key="dawintegration.compatible">接続可能</system:String>
   <system:String x:Key="dawintegration.connect">接続する</system:String>
+  <!--<system:String x:Key="dawintegration.connectall">Connect all</system:String>-->
+  <!--<system:String x:Key="dawintegration.connectall.failed">{0} plugin(s) could not be connected: {1}</system:String>-->
   <system:String x:Key="dawintegration.connected">{0} に接続しました。</system:String>
   <system:String x:Key="dawintegration.connected.count">{0} 個のプラグインに接続しました。</system:String>
   <system:String x:Key="dawintegration.connecting">接続中...</system:String>

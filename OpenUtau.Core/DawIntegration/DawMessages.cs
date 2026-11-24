@@ -141,11 +141,14 @@ namespace OpenUtau.Core.DawIntegration {
         /// exception that tells the user nothing. That case is reported here instead, in the
         /// same shape as the renderer's friendly errors.
         /// </summary>
+        /// <summary>The friendly error for a project that has never been saved.</summary>
+        public static MessageCustomizableException UnsavedProject() => new MessageCustomizableException(
+            "The project has not been saved. Save it before connecting a DAW plugin.",
+            "<translate:dawintegration.unsavedproject>", new InvalidOperationException(), false);
+
         public static string Serialize(Ustx.UProject project) {
             if (string.IsNullOrEmpty(project.FilePath)) {
-                throw new MessageCustomizableException(
-                    "The project has not been saved. Save it before connecting a DAW plugin.",
-                    "<translate:dawintegration.unsavedproject>", new InvalidOperationException(), false);
+                throw UnsavedProject();
             }
             project.ustxVersion = Format.Ustx.kUstxVersion;
             project.BeforeSave();

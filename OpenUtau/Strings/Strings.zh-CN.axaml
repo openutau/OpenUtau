@@ -100,6 +100,8 @@
   <system:String x:Key="context.timeline.deltempo">删除位于 {0} 的曲速标签</system:String>
   <system:String x:Key="context.timeline.deltimesig">删除节拍标签</system:String>
 
+  <system:String x:Key="dawintegration.autoconnect">自动连接</system:String>
+  <system:String x:Key="dawintegration.autoconnect.tooltip">DAW 中出现 OpenUtau Bridge 实例时立即自动连接，无需打开此窗口。项目需要先保存。在此处断开的插件会保持断开，直到它被重新加载。</system:String>
   <system:String x:Key="dawintegration.bpmmismatch">DAW 项目的节奏与此项目的节奏不一致。两条时间线只能以秒为单位保持一致，而无法以小节为单位保持一致——请调整节奏以保持同步。</system:String>
   <system:String x:Key="dawintegration.caption">DAW集成</system:String>
   <system:String x:Key="dawintegration.col.apiversion">API接口</system:String>
@@ -109,6 +111,8 @@
   <system:String x:Key="dawintegration.col.state">连接</system:String>
   <system:String x:Key="dawintegration.compatible">兼容</system:String>
   <system:String x:Key="dawintegration.connect">连接</system:String>
+  <system:String x:Key="dawintegration.connectall">全部连接</system:String>
+  <system:String x:Key="dawintegration.connectall.failed">有 {0} 个插件无法连接：{1}</system:String>
   <system:String x:Key="dawintegration.connected">已连接至 {0}</system:String>
   <system:String x:Key="dawintegration.connected.count">已连接到 {0} 个插件</system:String>
   <system:String x:Key="dawintegration.connecting">正在连接...</system:String>

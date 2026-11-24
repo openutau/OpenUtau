@@ -100,6 +100,8 @@
   <system:String x:Key="context.timeline.deltempo">Удалить изменение темпа на {0}</system:String>
   <system:String x:Key="context.timeline.deltimesig">Удалить изменение метки такта</system:String>
 
+  <!--<system:String x:Key="dawintegration.autoconnect">Connect automatically</system:String>-->
+  <!--<system:String x:Key="dawintegration.autoconnect.tooltip">Connect every OpenUtau Bridge instance as soon as it appears in the DAW, without opening this window. The project has to be saved first. A plugin you disconnect here stays disconnected until it is loaded again.</system:String>-->
   <system:String x:Key="dawintegration.bpmmismatch">Темп проекта DAW не совпадает с темпом этого проекта. Обе временные шкалы будут совпадать в секундах, но не в тактах — выровняйте темпы, чтобы синхронизировать их.</system:String>
   <system:String x:Key="dawintegration.caption">Интеграция с DAW</system:String>
   <!--<system:String x:Key="dawintegration.col.apiversion">API</system:String>-->
@@ -109,6 +111,8 @@
   <system:String x:Key="dawintegration.col.state">Соединение</system:String>
   <system:String x:Key="dawintegration.compatible">Совместимо</system:String>
   <system:String x:Key="dawintegration.connect">Подключиться</system:String>
+  <!--<system:String x:Key="dawintegration.connectall">Connect all</system:String>-->
+  <!--<system:String x:Key="dawintegration.connectall.failed">{0} plugin(s) could not be connected: {1}</system:String>-->
   <system:String x:Key="dawintegration.connected">Подключено к {0}.</system:String>
   <system:String x:Key="dawintegration.connected.count">Подключено к {0} плагинам.</system:String>
   <system:String x:Key="dawintegration.connecting">Подключение...</system:String>
