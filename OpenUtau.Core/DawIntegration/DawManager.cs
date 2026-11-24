@@ -200,8 +200,9 @@ namespace OpenUtau.Core.DawIntegration {
         public string Name { get; }
         public DawConnectionState State { get; }
 
-        /// <summary>v1.3: the id of the track the instance reported itself bound to, or null
-        /// when it is unbound or has not reported (an older plugin never does).</summary>
+        /// <summary>v1.3: the id of the track the instance reported itself bound to, which may
+        /// name a track the project no longer has (the instance is then silent); null when it is
+        /// bound to none or has not reported (an older plugin never does).</summary>
         public string? BoundTrackId { get; }
 
         /// <summary>v1.3: the DAW's name for the track the instance sits on, when known.</summary>
