@@ -136,9 +136,31 @@ namespace OpenUtau.App.ViewModels {
         public string SetParamPath => Preferences.Default.SetParamPath;
 
         // Diffsinger
-        public List<int> DiffSingerStepsOptions { get; } = new List<int> { 2, 5, 10, 20, 50, 100, 200, 500, 1000 };
-        public List<int> DiffSingerStepsVarianceOptions { get; } = new List<int> { 2, 5, 10, 20, 50, 100, 200, 500, 1000 };
-        public List<int> DiffSingerStepsPitchOptions { get; } = new List<int> { 2, 5, 10, 20, 50, 100, 200, 500, 1000 };
+        static int NearestIndex(List<int> options, int value) {
+            int best = 0;
+            for (int i = 1; i < options.Count; i++) {
+                if (Math.Abs(options[i] - value) < Math.Abs(options[best] - value)) {
+                    best = i;
+                }
+            }
+            return best;
+        }
+
+        public int DiffSingerStepsIndex {
+            get => NearestIndex(DdpmSteps, DiffSingerSteps);
+            set => DiffSingerSteps = DdpmSteps[Math.Clamp(value, 0, DdpmSteps.Count - 1)];
+        }
+        public int DiffSingerStepsVarianceIndex {
+            get => NearestIndex(DdpmSteps, DiffSingerStepsVariance);
+            set => DiffSingerStepsVariance = DdpmSteps[Math.Clamp(value, 0, DdpmSteps.Count - 1)];
+        }
+        public int DiffSingerStepsPitchIndex {
+            get => NearestIndex(DdpmSteps, DiffSingerStepsPitch);
+            set => DiffSingerStepsPitch = DdpmSteps[Math.Clamp(value, 0, DdpmSteps.Count - 1)];
+        }
+
+        private static List<int> DdpmSteps { get; } = new List<int> { 1, 2, 4, 5, 8, 10, 20, 25, 40, 50, 100, 125, 200, 250, 500, 1000 };
+
         [Reactive] public partial int DiffSingerSteps { get; set; }
         [Reactive] public partial int DiffSingerStepsVariance { get; set; }
         [Reactive] public partial int DiffSingerStepsPitch { get; set; }
@@ -284,6 +306,13 @@ namespace OpenUtau.App.ViewModels {
                 .Select(themeName => themeName != "Light" && themeName != "Dark" && !Colors.CustomTheme.IsPackageTheme(themeName))
                 .ToProperty(this, vm => vm.ThemeEditable, out themeEditable);
 
+            this.WhenAnyValue(vm => vm.DiffSingerSteps)
+                .Subscribe(_ => this.RaisePropertyChanged(nameof(DiffSingerStepsIndex)));
+            this.WhenAnyValue(vm => vm.DiffSingerStepsVariance)
+                .Subscribe(_ => this.RaisePropertyChanged(nameof(DiffSingerStepsVarianceIndex)));
+            this.WhenAnyValue(vm => vm.DiffSingerStepsPitch)
+                .Subscribe(_ => this.RaisePropertyChanged(nameof(DiffSingerStepsPitchIndex)));
+            
             PersistOn(this.WhenAnyValue(vm => vm.UseSystemDefaultDevice),
                 useDefault => Preferences.Default.UseSystemDefaultAudioDevice = useDefault);
             this.WhenAnyValue(vm => vm.AudioOutputDevice)
