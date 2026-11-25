@@ -2,6 +2,7 @@
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
+using OpenUtau.Core.Util.MusicTheory;
 using ReactiveUI;
 
 namespace OpenUtau.App.ViewModels {
@@ -11,8 +12,8 @@ namespace OpenUtau.App.ViewModels {
         public int BeatPerBar => Project.timeSignatures[0].beatPerBar;
         public int BeatUnit => Project.timeSignatures[0].beatUnit;
         public double Bpm => Project.tempos[0].bpm;
-        public int Key => Project.key;
-        public string KeyName => MusicMath.KeysInOctave[Key].Item1;
+        public Note Key => Project.key;
+        public string KeyName => MusicMath.KeysInOctave[(int) Key].Item1;
         public int Resolution => Project.resolution;
         public int PlayPosTick => DocManager.Inst.playPosTick;
         public TimeSpan PlayPosTime => TimeSpan.FromMilliseconds((int)Project.timeAxis.TickPosToMsPos(DocManager.Inst.playPosTick));
@@ -84,7 +85,7 @@ namespace OpenUtau.App.ViewModels {
             DocManager.Inst.EndUndoGroup();
         }
 
-        public void SetKey(int key) {
+        public void SetKey(Note key) {
             if (key == DocManager.Inst.Project.key) {
                 return;
             }

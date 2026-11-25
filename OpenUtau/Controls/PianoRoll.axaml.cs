@@ -1528,6 +1528,11 @@ namespace OpenUtau.App.Controls {
             KeyMenu.Open();
         }
 
+        public void OnModeMenuButton(object sender, RoutedEventArgs args) {
+            ModeMenu.PlacementTarget = sender as Button;
+            ModeMenu.Open();
+        }
+
         bool MoveToNextPart(bool next) {
             var notesVm = ViewModel.NotesViewModel;
             var playVm = ViewModel.PlaybackViewModel;
@@ -1557,7 +1562,7 @@ namespace OpenUtau.App.Controls {
             return true;
         }
 
-        void OnKeyKeyDown(object sender, KeyEventArgs e) {
+        void OnScaleKeyDown(object sender, KeyEventArgs e) {
             if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None) {
                 if (sender is ContextMenu menu && menu.SelectedItem is MenuItemViewModel item) {
                     item.Command?.Execute(item.CommandParameter);

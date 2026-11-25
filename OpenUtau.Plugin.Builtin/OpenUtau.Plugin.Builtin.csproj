@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+  <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
+    <TargetFramework>net10.0-windows</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
     <TargetFramework>net10.0</TargetFramework>
-    <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
-    <DebugType>embedded</DebugType>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
