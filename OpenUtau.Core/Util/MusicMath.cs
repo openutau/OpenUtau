@@ -204,23 +204,27 @@ namespace OpenUtau.Core {
             return Math.Log(freq / 440.0, a) + 69;
         }
 
-        public static List<int> GetSnapDivs(int resolution) {
-            var result = new List<int>();
+        public static Dictionary<string, int> GetSnapDivs() {
+            var result = new Dictionary<string, int>();
+            // Straight
             int div = 4;
-            int ticks = resolution * 4 / div;
-            result.Add(div);
-            while (ticks % 2 == 0) {
-                ticks /= 2;
+            while (div <= 128) {
+                result.Add(div.ToString(), div);
                 div *= 2;
-                result.Add(div);
             }
-            div = 6;
-            ticks = resolution * 4 / div;
-            result.Add(div);
-            while (ticks % 2 == 0) {
-                ticks /= 2;
+            // Triplet
+            div = 4;
+            int triDiv = 6;
+            while (div <= 128) {
+                result.Add($"{div} T", triDiv);
                 div *= 2;
-                result.Add(div);
+                triDiv *= 2;
+            }
+            // Swing
+            div = 4;
+            while (div <= 16) {
+                result.Add($"{div} Sw", div + 1);
+                div *= 2;
             }
             return result;
         }
@@ -233,6 +237,112 @@ namespace OpenUtau.Core {
             while (ticks % 2 == 0 && ticks / 2 >= minTicks) {
                 ticks /= 2;
                 div *= 2;
+            }
+        }
+
+        public static int GetSnappedTick(int resolution, int tickInPart, int partPosition, int snapDiv, int swing, int roundMode = 0) {
+            double snapUnit = resolution * 4 / snapDiv;
+            if (swing == 0) {
+                if (roundMode == 1) {
+                    return (int)(Math.Round(tickInPart / snapUnit) * snapUnit);
+                } else if (roundMode == 2) {
+                    return (int)(Math.Ceiling(tickInPart / snapUnit) * snapUnit);
+                } else {
+                    return (int)(Math.Floor(tickInPart / snapUnit) * snapUnit);
+                }
+            }
+
+            double absoluteTick = (double)tickInPart + partPosition;
+            double maxSwingOffset = snapUnit / 3.0;
+            double normalizedSwing = Math.Max(0, Math.Min(100, swing)) / 100.0;
+            double swingOffset = maxSwingOffset * normalizedSwing;
+
+            Func<long, double> getActualGridTick = (i) => {
+                double pos = i * snapUnit;
+                if (i % 2 != 0) { // On the offbeat
+                    pos += swingOffset;
+                }
+                return pos;
+            };
+
+            long baseIndex = (long)Math.Floor(absoluteTick / snapUnit);
+            long bestIndex = baseIndex;
+
+            if (roundMode == 1) {
+                // Round
+                double minDiff = double.MaxValue;
+                for (long i = baseIndex - 2; i <= baseIndex + 2; i++) {
+                    double actualTick = getActualGridTick(i);
+                    double diff = Math.Abs(absoluteTick - actualTick);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        bestIndex = i;
+                    }
+                }
+            } else if (roundMode == 2) {
+                // Ceiling
+                bestIndex = long.MinValue;
+                for (long i = baseIndex; i <= baseIndex + 2; i++) {
+                    if (getActualGridTick(i) >= absoluteTick) {
+                        bestIndex = i;
+                        break;
+                    }
+                }
+                if (bestIndex == long.MinValue) bestIndex = baseIndex + 1;
+            } else {
+                // Floor
+                bestIndex = long.MinValue;
+                for (long i = baseIndex + 1; i >= baseIndex - 1; i--) {
+                    if (getActualGridTick(i) <= absoluteTick) {
+                        bestIndex = i;
+                        break;
+                    }
+                }
+                if (bestIndex == long.MinValue) bestIndex = baseIndex - 1;
+            }
+
+            double snappedAbsoluteTick = getActualGridTick(bestIndex);
+            int snappedAbsoluteInt = (int)Math.Round(snappedAbsoluteTick);
+            return snappedAbsoluteInt - partPosition;
+        }
+
+        public static int GetEffectiveSnapUnit(int resolution, int startTick, int partPosition, int snapDiv, int swing) {
+            if (snapDiv <= 0 || resolution <= 0)
+                return resolution * 4 / snapDiv;
+
+            double baseSnapUnit = (double)(resolution * 4) / snapDiv;
+            if (swing == 0) return (int)baseSnapUnit;
+
+            double absoluteTick = (double)startTick + partPosition;
+            double maxSwingOffset = baseSnapUnit / 3.0;
+            double normalizedSwing = Math.Max(0, Math.Min(100, swing)) / 100.0;
+            double swingOffset = maxSwingOffset * normalizedSwing;
+
+            Func<long, double> getActualGridTick = (i) => {
+                double pos = i * baseSnapUnit;
+                if (i % 2 != 0) { // On the offbeat
+                    pos += swingOffset;
+                }
+                return pos;
+            };
+
+            long baseIndex = (long)Math.Floor(absoluteTick / baseSnapUnit);
+            long bestIndex = baseIndex;
+            double minDiff = double.MaxValue;
+
+            for (long i = baseIndex - 2; i <= baseIndex + 2; i++) {
+                double actualTick = getActualGridTick(i);
+                double diff = Math.Abs(absoluteTick - actualTick);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    bestIndex = i;
+                }
+            }
+
+            if (bestIndex % 2 != 0) {
+                return (int)Math.Round(baseSnapUnit - swingOffset);
+            } else {
+                return (int)Math.Round(baseSnapUnit + swingOffset);
             }
         }
 

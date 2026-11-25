@@ -56,6 +56,9 @@ namespace OpenUtau.Core.Ustx {
         public int key = 0;//Music key of the project, 0 = C, 1 = C#, 2 = D, ..., 11 = B
         public List<UTimeSignature> timeSignatures;
         public List<UTempo> tempos;
+        public int snapDiv = -2;
+        /// <summary>This value is used only when SnapDiv is set to swing.</summary>
+        public int swing = 100;
         public List<UTrack> tracks;
         [YamlIgnore] public List<UPart> parts;
         [YamlIgnore] public bool SoloTrackExist { get => tracks.Any(t => t.Solo); }

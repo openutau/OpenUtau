@@ -142,11 +142,13 @@ namespace OpenUtau.Core.Editing {
     public class QuantizeNotes : BatchEdit {
         public virtual string Name => name;
 
-        private int quantize;
+        private int snapDiv;
+        private int swing;
         private string name;
 
-        public QuantizeNotes(int quantize) {
-            this.quantize = quantize;
+        public QuantizeNotes(int snapDiv, int swing) {
+            this.snapDiv = snapDiv;
+            this.swing = swing;
             name = $"pianoroll.menu.notes.quantize";
         }
 
@@ -156,8 +158,8 @@ namespace OpenUtau.Core.Editing {
             foreach (var note in notes) {
                 int pos = note.position;
                 int end = note.End;
-                int newPos = (int)Math.Round(1.0 * pos / quantize) * quantize;
-                int newEnd = (int)Math.Round(1.0 * end / quantize) * quantize;
+                int newPos = MusicMath.GetSnappedTick(project.resolution, pos, part.position, snapDiv, swing, 1);
+                int newEnd = MusicMath.GetSnappedTick(project.resolution, end, part.position, snapDiv, swing, 1);
                 if (newPos != pos) {
                     docManager.ExecuteCmd(new MoveNoteCommand(part, note, newPos - pos, 0));
                     docManager.ExecuteCmd(new ResizeNoteCommand(part, note, newEnd - newPos - note.duration));
