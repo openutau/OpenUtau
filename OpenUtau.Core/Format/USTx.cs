@@ -40,7 +40,7 @@ namespace OpenUtau.Core.Format {
         public const string RPIT = "rpit";
         public const string PITO = "pito";
 
-        public static readonly string[] required = { DYN, PITD, CLR, ENG, VEL, VOL, ATK, DEC };
+        public static readonly string[] required = { DYN, PITD, CLR, ENG, VEL, VOL, ATK, DEC, GEN, GENC, BRE, BREC, LPF, NORM, MOD, MODP, ALT, DIR, SHFT, SHFC, TENC, VOIC };
 
         public static void AddDefaultExpressions(UProject project) {
             project.RegisterExpression(new UExpressionDescriptor("dynamics (curve)", DYN, -240, 120, 0) { type = UExpressionType.Curve });
