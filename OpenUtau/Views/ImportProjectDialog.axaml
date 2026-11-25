@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Class="OpenUtau.App.Views.ImportProjectDialog"
+        Icon="/Assets/open-utau.ico" Closing="WindowClosing"
+        Title="{DynamicResource dialogs.projectimport.caption}"  Width="525" Height="250" WindowStartupLocation="CenterOwner">
+  <Grid ColumnDefinitions="*,auto,20,auto,*" RowDefinitions="auto,20,*,20,auto" Margin="20">
+    <TextBlock Text="{DynamicResource dialogs.projectimport.message}" Grid.ColumnSpan="5" Grid.Row="0"/>
+    <ListBox Name="FilesList" Grid.ColumnSpan="5" Grid.Row="2">
+      <ListBox.Styles>
+        <Style Selector="ListBoxItem">
+          <Setter Property="Height" Value="NaN" />
+        </Style>
+      </ListBox.Styles>
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <TextBlock TextWrapping="Wrap" MaxLines="0" Height="NaN" Text="{Binding}"/>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+    <Button Click="ImportAsNewProject" Content="{DynamicResource dialogs.projectimport.asproject}" Grid.Column="1" Grid.Row="4"/>
+    <Button Click="ImportAsTracks" Content="{DynamicResource dialogs.projectimport.astracks}" Grid.Column="3" Grid.Row="4"/>
+  </Grid>
+</Window>
