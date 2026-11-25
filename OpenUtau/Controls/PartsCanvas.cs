@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
@@ -117,6 +118,8 @@ namespace OpenUtau.App.Controls {
                 .Subscribe(_ => {
                     foreach (var (part, control) in partControls) {
                         control.SetPosition();
+                        // Parts can now overlap others than before.
+                        control.InvalidateVisual();
                     }
                 });
             MessageBus.Current.Listen<PartsSelectionEvent>()
@@ -129,6 +132,8 @@ namespace OpenUtau.App.Controls {
             MessageBus.Current.Listen<PartRefreshEvent>()
                 .Subscribe(e => {
                     if (partControls.TryGetValue(e.part, out var control)) {
+                        // The parts it overlapped; Refersh redraws those it overlaps now.
+                        InvalidateOverlapping(control.DrawnSpan);
                         control.SetSize();
                         control.SetPosition();
                         control.Refersh();
@@ -137,7 +142,7 @@ namespace OpenUtau.App.Controls {
             MessageBus.Current.Listen<PartRedrawEvent>()
                 .Subscribe(e => {
                     if (partControls.TryGetValue(e.part, out var control)) {
-                        control.InvalidateVisual();
+                        control.Redraw();
                     }
                 });
             MessageBus.Current.Listen<TimeAxisChangedEvent>()
@@ -149,6 +154,43 @@ namespace OpenUtau.App.Controls {
             MessageBus.Current.Listen<ThemeChangedEvent>()
                 .Subscribe(_ => InvalidateVisual());
         }
+
+        /// <summary>
+        /// The part controls in the order they are drawn: by z-index, which puts selected parts on
+        /// top, then in the order they were added. A later one covers an earlier one.
+        /// </summary>
+        internal IEnumerable<PartControl> PartsInDrawnOrder() => Children.OfType<PartControl>()
+            .Select((control, index) => (control, index))
+            .OrderBy(p => p.control.ZIndex)
+            .ThenBy(p => p.index)
+            .Select(p => p.control);
+
+        /// <summary>The parts drawn under a part that overlap it, bottom first.</summary>
+        internal IEnumerable<PartControl> PartsUnder(PartControl top) {
+            foreach (var control in PartsInDrawnOrder()) {
+                if (control == top) {
+                    yield break;
+                }
+                if (Overlaps(control.DrawnSpan, top.DrawnSpan)) {
+                    yield return control;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Redraws the parts overlapping a span of a track, as the part there changed: a part draws
+        /// the parts under it where they overlap.
+        /// </summary>
+        internal void InvalidateOverlapping((int trackNo, int start, int end) span) {
+            foreach (var control in partControls.Values) {
+                if (Overlaps(control.DrawnSpan, span)) {
+                    control.InvalidateVisual();
+                }
+            }
+        }
+
+        static bool Overlaps((int trackNo, int start, int end) a, (int trackNo, int start, int end) b) =>
+            a.trackNo == b.trackNo && a.start < b.end && b.start < a.end;
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
             base.OnPropertyChanged(change);
@@ -194,6 +236,7 @@ namespace OpenUtau.App.Controls {
             var control = new PartControl(part, this);
             Children.Add(control);
             partControls.Add(part, control);
+            InvalidateOverlapping(control.DrawnSpan);
         }
 
         void Remove(UPart part) {
@@ -201,6 +244,8 @@ namespace OpenUtau.App.Controls {
             control.Dispose();
             partControls.Remove(part);
             Children.Remove(control);
+            // The parts above it drew it where they overlapped it.
+            InvalidateOverlapping(control.DrawnSpan);
         }
 
         public void HandlePhraseRenderStateEvent(UVoicePart part, int startTick, int endTick, bool rendered) {

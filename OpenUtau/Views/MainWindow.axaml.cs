@@ -1310,6 +1310,9 @@ namespace OpenUtau.App.Views {
                     } else if (trim) {
                         partEditState = new PartResizeEditState(control, viewModel, hitPartControl.part);
                         Cursor = ViewConstants.cursorSizeWE;
+                    } else if (FindCoveredPartEdge(control, hitPartControl, point.Position, out bool coveredStart) is PartControl covered) {
+                        partEditState = new PartResizeEditState(control, viewModel, covered.part, coveredStart);
+                        Cursor = ViewConstants.cursorSizeWE;
                     } else {
                         partEditState = new PartMoveEditState(control, viewModel, hitPartControl.part);
                         Cursor = ViewConstants.cursorSizeAll;
@@ -1387,7 +1390,7 @@ namespace OpenUtau.App.Views {
                     Cursor = HandCursors.Grab;
                 } else if (fadein || fadeout) {
                     Cursor = ViewConstants.cursorHand;
-                } else if (skip || trim) {
+                } else if (skip || trim || FindCoveredPartEdge(control, hitPartControl, point.Position, out _) != null) {
                     Cursor = ViewConstants.cursorSizeWE;
                 } else {
                     Cursor = null;
@@ -1395,6 +1398,38 @@ namespace OpenUtau.App.Views {
             } else {
                 Cursor = null;
             }
+        }
+
+        /// <summary>
+        /// The part whose edge is at the point under the part on top there, so the edges of an
+        /// overlapped part can still be dragged. Parts drawn higher up come first.
+        /// </summary>
+        static PartControl? FindCoveredPartEdge(Control canvas, PartControl top, Point point, out bool fromStart) {
+            fromStart = false;
+            if (canvas is not PartsCanvas partsCanvas) {
+                return null;
+            }
+            foreach (var partControl in partsCanvas.PartsInDrawnOrder().Reverse()) {
+                var bounds = partControl.Bounds;
+                // A press on a selected part goes to the selection, as dragging the group, not to the
+                // edge of a part under it that isn't selected.
+                if (top.Selected && !partControl.Selected) {
+                    continue;
+                }
+                if (partControl == top || !partControl.IsVisible
+                    || point.Y < bounds.Top || point.Y >= bounds.Bottom
+                    || point.X < bounds.Left || point.X > bounds.Right) {
+                    continue;
+                }
+                if (point.X < bounds.Left + ViewConstants.ResizeMargin) {
+                    fromStart = true;
+                    return partControl;
+                }
+                if (point.X > bounds.Right - ViewConstants.ResizeMargin) {
+                    return partControl;
+                }
+            }
+            return null;
         }
 
         public void PartsCanvasPointerExited(object sender, PointerEventArgs args) {

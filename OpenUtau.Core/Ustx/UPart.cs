@@ -63,16 +63,26 @@ namespace OpenUtau.Core.Ustx {
         public override string DisplayName => name;
         public override int Duration { get => duration; set => duration = value; }
 
+        /// <summary>
+        /// The shortest the part can be without cutting a note: up to the end of the note that ends last,
+        /// rounded up to a beat.
+        /// </summary>
         public override int GetMinDurTick(UProject project) {
-            int endTicks = position + (notes.LastOrDefault()?.End ?? 1);
+            // The last note by position isn't always the one that ends last.
+            int endTicks = position + (notes.Count > 0 ? notes.Max(note => note.End) : 1);
             project.timeAxis.TickPosToBarBeat(endTicks, out int bar, out int beat, out int remainingTicks);
-            return project.timeAxis.BarBeatToTickPos(bar, beat + 1) - position;
+            // An end already on a beat stays there, instead of keeping a whole beat more.
+            return project.timeAxis.BarBeatToTickPos(bar, remainingTicks > 0 ? beat + 1 : beat) - position;
         }
         public int GetMinDurTickForNoteEdit(UProject project, int noteEnd) {
             project.timeAxis.TickPosToBarBeat(position + noteEnd - 1, out int bar, out int beat, out int remainingTicks);
             return project.timeAxis.BarBeatToTickPos(bar + 2, 0) - position;
         }
         
+        /// <summary>
+        /// The latest the part can start: one beat before the beat of its first note, leaving room
+        /// for the phonemes before that note. It can be before the part start already.
+        /// </summary>
         public override int GetMaxPosiTick(UProject project) {
             int maxStartTick = position + (notes.FirstOrDefault()?.position ?? Duration);
             project.timeAxis.TickPosToBarBeat(maxStartTick, out int bar, out int beat, out int remainingTicks);
