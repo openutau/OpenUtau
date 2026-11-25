@@ -19,6 +19,7 @@ jobs:
           - { name: win, runs-on: windows-latest }
           - { name: mac, runs-on: macos-latest }
           - { name: linux, runs-on: ubuntu-22.04 }
+          - { name: wasm, runs-on: ubuntu-latest }
 
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +46,11 @@ jobs:
         working-directory: cpp
         run: bash ./build_mac.sh
         if: ${{ matrix.arch.name == 'mac' }}
+
+      - name: Build Worldline (WASM)
+        working-directory: cpp
+        run: bash ./build_wasm.sh
+        if: ${{ matrix.arch.name == 'wasm' }}
 
       - uses: actions/upload-artifact@v4
         with:
