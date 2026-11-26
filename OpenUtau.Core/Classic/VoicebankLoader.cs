@@ -180,7 +180,8 @@ namespace OpenUtau.Classic {
             if (!string.IsNullOrWhiteSpace(bankConfig.Image)) {
                 bank.Image = bankConfig.Image;
             }
-            if (!string.IsNullOrWhiteSpace(bankConfig.Portrait)) {
+            bank.VoiceColorPortraits = bankConfig.VoiceColorPortraits;
+            if (!string.IsNullOrWhiteSpace(bankConfig.Portrait) || bank.VoiceColorPortraits?.Count > 0) {
                 bank.Portrait = bankConfig.Portrait;
                 bank.PortraitOpacity = bankConfig.PortraitOpacity;
                 bank.PortraitHeight = bankConfig.PortraitHeight;

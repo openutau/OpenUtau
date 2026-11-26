@@ -123,6 +123,90 @@ namespace OpenUtau.UiTest {
             });
         }
 
+        [Fact]
+        public void AppearanceControlsReflectPreferences() => HeadlessUi.Run(() => {
+            InitCore();
+            var vm = new PreferencesViewModel();
+            var dialog = new PreferencesDialog { DataContext = vm };
+            try {
+                dialog.Show();
+                dialog.FindControl<ListBox>("DrawerList")!.SelectedIndex = 5;
+                HeadlessUi.Flush();
+                var options = dialog.FindControl<StackPanel>("PortraitOptions")!;
+                var silence = dialog.FindControl<NumericUpDown>("PortraitSilenceMsInput")!;
+                var fade = dialog.FindControl<NumericUpDown>("PortraitFadeMsInput")!;
+                Assert.Equal(vm.AdvancedPortraitSettings, options.IsVisible);
+                Assert.Equal((decimal?)vm.PortraitSilenceMs, silence.Value);
+                Assert.Equal((decimal?)vm.PortraitFadeMs, fade.Value);
+                foreach (var input in new[] { silence, fade }) {
+                    var editor = Assert.Single(input.GetVisualDescendants().OfType<TextBox>());
+                    Assert.Equal(110, input.Bounds.Width);
+                    Assert.True(input.Bounds.Height >= 32);
+                    Assert.True(editor.Bounds.Height >= editor.FontSize + editor.Padding.Top + editor.Padding.Bottom);
+                }
+            } finally {
+                dialog.Close();
+            }
+        });
+
+        [Theory]
+        [InlineData("PortraitSilenceMsInput", "PortraitFadeMsInput")]
+        [InlineData("PortraitFadeMsInput", "PortraitSilenceMsInput")]
+        public void EmptyPortraitTimingCommitsOnBlur(string name, string otherName) => HeadlessUi.Run(() => {
+            InitCore();
+            var vm = new PreferencesViewModel();
+            var dialog = new PreferencesDialog { DataContext = vm };
+            var originalSilence = vm.PortraitSilenceMs;
+            var originalFade = vm.PortraitFadeMs;
+            try {
+                dialog.Show();
+                dialog.FindControl<ListBox>("DrawerList")!.SelectedIndex = 5;
+                HeadlessUi.Flush();
+                var input = dialog.FindControl<NumericUpDown>(name)!;
+                var editor = input.GetVisualDescendants().OfType<TextBox>().Single();
+                var other = dialog.FindControl<NumericUpDown>(otherName)!.GetVisualDescendants().OfType<TextBox>().Single();
+                void Clear() {
+                    editor.Focus();
+                    editor.SelectAll();
+                    dialog.KeyPressQwerty(PhysicalKey.Backspace, RawInputModifiers.None);
+                    dialog.KeyReleaseQwerty(PhysicalKey.Backspace, RawInputModifiers.None);
+                    HeadlessUi.Flush();
+                    Assert.True(string.IsNullOrEmpty(editor.Text));
+                    Assert.False(DataValidationErrors.GetHasErrors(input));
+                    Assert.False(DataValidationErrors.GetHasErrors(editor));
+                }
+                void LeaveField() {
+                    other.BringIntoView();
+                    HeadlessUi.Flush();
+                    Click(dialog, other);
+                    Assert.False(editor.IsFocused);
+                    Assert.False(DataValidationErrors.GetHasErrors(input));
+                }
+
+                Clear();
+                foreach (var digit in "300") {
+                    dialog.KeyTextInput(digit.ToString());
+                    HeadlessUi.Flush();
+                }
+                LeaveField();
+                Assert.Equal("300", editor.Text);
+                Assert.Equal(300m, input.Value);
+                Clear();
+                LeaveField();
+                Assert.Equal("0", editor.Text);
+                Assert.Equal(0m, input.Value);
+                Clear();
+                dialog.KeyTextInput("0");
+                LeaveField();
+                Assert.Equal("0", editor.Text);
+                Assert.Equal(0m, input.Value);
+            } finally {
+                dialog.Close();
+                vm.PortraitSilenceMs = originalSilence;
+                vm.PortraitFadeMs = originalFade;
+            }
+        });
+
         class FakeSinger : USinger {
             readonly string name;
             readonly USingerType type;

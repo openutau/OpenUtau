@@ -11,6 +11,7 @@ namespace OpenUtau.Classic {
         public List<string> SearchTerms = new List<string>();
         public string Image;
         public string Portrait;
+        public Dictionary<string, string>? VoiceColorPortraits;
         public float PortraitOpacity;
         public int PortraitHeight;
         public string Author;
@@ -33,6 +34,7 @@ namespace OpenUtau.Classic {
             SearchTerms.Clear();
             Image = null;
             Portrait = null;
+            VoiceColorPortraits = null;
             PortraitOpacity = 0;
             PortraitHeight = 0;
             Author = null;

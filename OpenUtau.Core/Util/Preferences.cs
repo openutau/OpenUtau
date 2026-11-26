@@ -230,6 +230,11 @@ namespace OpenUtau.Core.Util {
             public int PlaybackAutoScroll = 2;
             public bool ReverseLogOrder = true;
             public bool ShowPortrait = true;
+            public bool AdvancedPortraitSettings = true;
+            public bool UseVoiceColorPortraits = true;
+            public bool DimPortraitDuringSilence = true;
+            public int PortraitSilenceMs = 225;
+            public int PortraitFadeMs = 150;
             public bool ShowIcon = true;
             public bool ShowGhostNotes = true;
             public bool NoteHoverGlow = true;

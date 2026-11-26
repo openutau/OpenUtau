@@ -23,6 +23,12 @@ using Serilog;
 using static ReactiveUI.Primitives.SubscribeExtensions;
 
 namespace OpenUtau.App.ViewModels {
+    public sealed record PortraitSelection(USinger Singer, int Generation, string? ColorPath = null, double OpacityFactor = 1) {
+        public int FadeMs { get; init; } = EffectiveFadeMs;
+        public static int EffectiveFadeMs => Preferences.Default.AdvancedPortraitSettings && !Preferences.Default.ReduceAnimations
+            ? Math.Max(0, Preferences.Default.PortraitFadeMs) : 0;
+    }
+
     public class NotesRefreshEvent { }
     public class RealCurveRefreshEvent { }
     public class NotesSelectionEvent {
@@ -83,8 +89,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial double ExpHeightMax { get; set; }
         [Reactive] public partial UVoicePart? Part { get; set; }
         [Reactive] public partial Bitmap? Avatar { get; set; }
-        [Reactive] public partial Bitmap? Portrait { get; set; }
-        [Reactive] public partial IBrush? PortraitMask { get; set; }
+        [Reactive] public partial PortraitSelection? Portrait { get; private set; }
         [Reactive] public partial string WindowTitle { get; set; } = "Piano Roll";
         [Reactive] public partial SolidColorBrush TrackAccentColor { get; set; } = ThemeManager.GetTrackColor("Blue").AccentColor;
         public double ViewportTicks => viewportTicks.Value;
@@ -115,8 +120,13 @@ namespace OpenUtau.App.ViewModels {
         private int _lastNoteLength = 480;
         private int playPosTick;
         private UNote[] playbackNotes = Array.Empty<UNote>();
-        private string? portraitSource;
-        private readonly object portraitLock = new object();
+        private int portraitGeneration;
+        private static int SilenceBeforeDimMs => Math.Max(0, Preferences.Default.PortraitSilenceMs);
+        private int lastDisplayedTick;
+        private int? previousPortraitTick;
+        private UPhoneme? lastPortraitPhone;
+        private double restoreStartMs;
+        private double restoreFrom = 1;
         private int userSnapDiv = -2;
         private int userKey => Project.key;
 
@@ -352,6 +362,9 @@ namespace OpenUtau.App.ViewModels {
                                 LoadPart(Part, Project);
                             }
                             break;
+                        case "PortraitOptions":
+                            RefreshPortraitOptions();
+                            break;
                         case "Portrait":
                             LoadPortrait(Part, Project);
                             break;
@@ -527,89 +540,123 @@ namespace OpenUtau.App.ViewModels {
             UpdateKey();
         }
 
-        //If PortraitHeight is 0, the default behaviour is resizing any image taller than 800px to 800px,
-        //and keeping the sizes of images shorter than 800px unchanged.
-        //If PortraitHeight isn't 0, then the image will be resized to the specified height.
-        private Bitmap ResizePortrait(Bitmap Portrait, int PortraitHeight) {
-            int targetHeight;
-            if (PortraitHeight == 0) {
-                if (Portrait.Size.Height > 800) {
-                    targetHeight = 800;
-                } else {
-                    return Portrait;
+        private void LoadPortrait(UPart? part, UProject? project, bool reload = false) {
+            var singer = part == null || project == null ? null : project.tracks[part.trackNo].Singer;
+            var oldAvatar = Avatar;
+            Avatar = null;
+            oldAvatar?.Dispose();
+            if (singer?.AvatarData != null && Preferences.Default.ShowIcon) {
+                try {
+                    using var stream = new MemoryStream(singer.AvatarData);
+                    Avatar = new Bitmap(stream);
+                } catch (Exception e) {
+                    Log.Error(e, "Failed to load avatar {Avatar}", singer.Avatar);
                 }
-            } else {
-                targetHeight = PortraitHeight;
             }
-            int targetWidth = (int)Math.Round(targetHeight * Portrait.Size.Width / Portrait.Size.Height);
-            if (targetWidth == 0) {
-                targetWidth = 1;
+            if (singer == null || !Preferences.Default.ShowPortrait ||
+                (string.IsNullOrEmpty(singer.Portrait) && !(singer.VoiceColorPortraits?.Count > 0))) {
+                lastPortraitPhone = null;
+                Portrait = null;
+            } else if (reload || !ReferenceEquals(Portrait?.Singer, singer)) {
+                previousPortraitTick = null;
+                lastPortraitPhone = null;
+                restoreFrom = 1;
+                Portrait = new PortraitSelection(singer, ++portraitGeneration);
             }
-            return Portrait.CreateScaledBitmap(new PixelSize(targetWidth, targetHeight));
         }
 
-        private void LoadPortrait(UPart? part, UProject? project) {
-            if (part == null || project == null) {
-                lock (portraitLock) {
-                    Avatar = null;
-                    Portrait = null;
-                    portraitSource = null;
-                }
+        private void UpdatePlaybackPortrait(int partTick) {
+            if (Portrait == null || Part is not { PhonemesUpToDate: true } part) {
                 return;
             }
-            var singer = project.tracks[part.trackNo].Singer;
-            lock (portraitLock) {
-                Avatar?.Dispose();
-                Avatar = null;
-                if (singer != null && singer.AvatarData != null && Preferences.Default.ShowIcon) {
-                    try {
-                        using (var stream = new MemoryStream(singer.AvatarData)) {
-                            Avatar = new Bitmap(stream);
-                        }
-                    } catch (Exception e) {
-                        Avatar?.Dispose();
-                        Avatar = null;
-                        Log.Error(e, $"Failed to load Avatar {singer.Avatar}");
+            var phones = part.phonemes;
+            int low = 0, high = phones.Count;
+            while (low < high) {
+                int mid = low + (high - low) / 2;
+                if (phones[mid].position <= partTick) {
+                    low = mid + 1;
+                } else {
+                    high = mid;
+                }
+            }
+            int last = low - 1;
+            bool forward = previousPortraitTick.HasValue && partTick >= previousPortraitTick.Value;
+            int first = last;
+            if (forward) {
+                // Include short phonemes crossed between two playhead notifications.
+                while (first > 0 && phones[first].position > previousPortraitTick.GetValueOrDefault()) {
+                    first--;
+                }
+            } else {
+                // Reconstruct the state at the playhead. A previous phoneme long enough
+                // to finish restoring reached full opacity regardless of earlier history.
+                lastPortraitPhone = null;
+                restoreFrom = 1;
+                int fade = PortraitSelection.EffectiveFadeMs;
+                while (first > 0) {
+                    var earlier = phones[--first];
+                    if (!earlier.Error && earlier.Parent != null && earlier.EndMs - earlier.PositionMs >= fade) {
+                        break;
                     }
                 }
             }
-            if (singer == null || string.IsNullOrEmpty(singer.Portrait) || !Preferences.Default.ShowPortrait) {
-                lock (portraitLock) {
-                    Portrait = null;
-                    portraitSource = null;
+            for (int i = first; i >= 0 && i <= last; i++) {
+                var phone = phones[i];
+                if (phone.Error || phone.Parent == null || phone == lastPortraitPhone) {
+                    continue;
                 }
+                // An adjacent phoneme must not restart an unfinished restoration.
+                if (lastPortraitPhone == null || (phone.position > lastPortraitPhone.End &&
+                        phone.PositionMs >= lastPortraitPhone.EndMs + SilenceBeforeDimMs)) {
+                    restoreFrom = PortraitFactorAt(phone.PositionMs);
+                    restoreStartMs = phone.PositionMs;
+                }
+                lastPortraitPhone = phone;
+            }
+            lastDisplayedTick = partTick;
+            previousPortraitTick = partTick;
+            RefreshPortraitOptions();
+        }
+
+        private void RefreshPortraitOptions() {
+            if (Portrait is not { } selection || Part is not { } part) {
                 return;
             }
-            if (portraitSource != singer.Portrait) {
-                lock (portraitLock) {
-                    Portrait?.Dispose();
-                    Portrait = null;
-                    portraitSource = null;
-                }
-                PortraitMask = new SolidColorBrush(Avalonia.Media.Colors.White, singer.PortraitOpacity);
-                Task.Run(() => {
-                    lock (portraitLock) {
-                        try {
-                            var data = singer.LoadPortrait();
-                            if (data == null) {
-                                Portrait = null;
-                                portraitSource = null;
-                            } else {
-                                using (var stream = new MemoryStream(data)) {
-                                    Portrait = ResizePortrait(new Bitmap(stream), singer.PortraitHeight);
-                                    portraitSource = singer.Portrait;
-                                }
-                            }
-                        } catch (Exception e) {
-                            Portrait?.Dispose();
-                            Portrait = null;
-                            portraitSource = null;
-                            Log.Error(e, $"Failed to load Portrait {singer.Portrait}");
-                        }
-                    }
-                });
+            var prefs = Preferences.Default;
+            var phone = lastPortraitPhone;
+            string? path = null;
+            if (prefs.AdvancedPortraitSettings && prefs.UseVoiceColorPortraits && phone != null &&
+                selection.Singer.VoiceColorPortraits is { Count: > 0 } paths &&
+                phone.GetVoiceColor(Project, Project.tracks[part.trackNo]) is { Length: > 0 } color) {
+                paths.TryGetValue(color, out path);
+            }
+            if (string.IsNullOrWhiteSpace(path)) {
+                path = null;
+            }
+            double opacity = PortraitFactorAt(Project.timeAxis.TickPosToMsPos(part.position + lastDisplayedTick));
+            int fade = PortraitSelection.EffectiveFadeMs;
+            if (selection.ColorPath != path || selection.OpacityFactor != opacity || selection.FadeMs != fade) {
+                Portrait = selection with { ColorPath = path, OpacityFactor = opacity, FadeMs = fade };
             }
         }
+
+        private double PortraitFactorAt(double timeMs) {
+            if (!Preferences.Default.AdvancedPortraitSettings || !Preferences.Default.DimPortraitDuringSilence) {
+                return 1;
+            }
+            if (lastPortraitPhone == null) {
+                return restoreFrom;
+            }
+            int fade = PortraitSelection.EffectiveFadeMs;
+            double dimStart = lastPortraitPhone.EndMs + SilenceBeforeDimMs;
+            double restored = fade == 0 ? 1 : restoreFrom + (1 - restoreFrom) *
+                Math.Clamp((Math.Min(timeMs, dimStart) - restoreStartMs) / fade, 0, 1);
+            if (timeMs < dimStart) {
+                return restored;
+            }
+            return fade == 0 ? 0.5 : restored + (0.5 - restored) * Math.Clamp((timeMs - dimStart) / fade, 0, 1);
+        }
+
         private void LoadWindowTitle(UPart? part, UProject? project) {
             if (part == null || project == null) {
                 WindowTitle = "Piano Roll";
@@ -1198,6 +1245,13 @@ namespace OpenUtau.App.ViewModels {
                     PrimaryKeyNotSupported = !IsExpSupported(PrimaryKey);
                 } else if (cmd is SetPlayPosTickNotification setPlayPosTick) {
                     SetPlayPos(setPlayPosTick.playPosTick, setPlayPosTick.waitingRendering);
+                    if (!setPlayPosTick.waitingRendering) {
+                        if (PlaybackManager.Inst.PlayingMaster && !setPlayPosTick.pause) {
+                            UpdatePlaybackPortrait(playPosTick);
+                        } else {
+                            previousPortraitTick = null;
+                        }
+                    }
                     if (!setPlayPosTick.pause || Preferences.Default.LockStartTime == 1) {
                         MaybeAutoScroll(PlayPosX);
                     }
@@ -1212,7 +1266,7 @@ namespace OpenUtau.App.ViewModels {
                     }
                 } else if (cmd is ValidateProjectNotification || cmd is SingersRefreshedNotification) {
                     if (Part != null) {
-                        LoadPortrait(Part, Project);
+                        LoadPortrait(Part, Project, reload: cmd is SingersRefreshedNotification);
                     }
                     OnPartModified();
                     RebuildPlaybackNoteIndex();
