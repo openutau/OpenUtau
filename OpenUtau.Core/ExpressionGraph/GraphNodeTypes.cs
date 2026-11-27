@@ -66,8 +66,8 @@ namespace OpenUtau.Core.ExpressionGraph {
         public GraphNodeType(string name, GraphNodeRole role, string[] ports, float[] portDefaults, Func<NodeArgs, float[]> evaluate)
             : this(name, role, ports, portDefaults,
                 role is GraphNodeRole.CurveOutput or GraphNodeRole.PhonemeOutput or GraphNodeRole.PitchOutput
-                    ? Array.Empty<string>() : new[] { Out },
-                a => new[] { evaluate(a) }) { }
+                    ? Array.Empty<string>() : [Out],
+                a => [evaluate(a)]) { }
 
         public GraphNodeType(string name, GraphNodeRole role, string[] ports, float[] portDefaults, string[] outputs,
                 Func<NodeArgs, float[][]> evaluate) {
@@ -124,24 +124,30 @@ namespace OpenUtau.Core.ExpressionGraph {
         public const string NotePosition = "note_position";
         public const string PhraseNotes = "phrase_notes";
         public const string NoteEnvelope = "note_envelope";
+        public const string Pow = "power";
+        public const string Exp = "exponential";
+        public const string Ln = "natural_log";
+        public const string Log = "logarithm";
+        public const string STanh = "smooth_clamp";
+
 
         /// <summary>The port of single-input nodes.</summary>
         public const string Value = "value";
 
         static readonly string[] none = Array.Empty<string>();
-        static readonly string[] value = { Value };
-        static readonly string[] ab = { "a", "b" };
+        static readonly string[] value = [Value];
+        static readonly string[] ab = ["a", "b"];
 
         static readonly Dictionary<string, GraphNodeType> types = new[] {
-            new GraphNodeType(Constant, GraphNodeRole.Input, none, new float[0],
+            new GraphNodeType(Constant, GraphNodeRole.Input, none, [],
                 a => Fill(a, a.Node.GetFloat("value", 0))),
-            new GraphNodeType(CurveInput, GraphNodeRole.Input, none, new float[0],
+            new GraphNodeType(CurveInput, GraphNodeRole.Input, none, [],
                 a => Map(a, tick => a.Context.SampleCurve(a.Node.GetString("abbr"), tick))),
-            new GraphNodeType(CurveOutput, GraphNodeRole.CurveOutput, value, new float[] { 0 },
+            new GraphNodeType(CurveOutput, GraphNodeRole.CurveOutput, value, [0],
                 a => (float[])a.Inputs[0].Clone()),
             // The curve where it has a value, else the fallback; and 1 where it has a value, else 0.
-            new GraphNodeType(MaskedCurveInput, GraphNodeRole.Input, new[] { "fallback" }, new float[] { 0 },
-                new[] { Value, "mask" }, a => {
+            new GraphNodeType(MaskedCurveInput, GraphNodeRole.Input, ["fallback"], [0],
+                [Value, "mask"], a => {
                     var abbr = a.Node.GetString("abbr");
                     var fallback = a.Inputs[0];
                     var values = new float[a.Ticks.Length];
@@ -154,9 +160,9 @@ namespace OpenUtau.Core.ExpressionGraph {
                             values[i] = fallback[i];
                         }
                     }
-                    return new[] { values, mask };
+                    return [values, mask];
                 }),
-            new GraphNodeType(PhonemeInput, GraphNodeRole.Input, none, new float[0], a => {
+            new GraphNodeType(PhonemeInput, GraphNodeRole.Input, none, [], a => {
                 var anchors = a.Context.Phonemes;
                 var abbr = a.Node.GetString("abbr");
                 if (a.PhonemeIndices != null) {
@@ -174,14 +180,14 @@ namespace OpenUtau.Core.ExpressionGraph {
                 };
                 return Map(a, tick => anchors.Sample(abbr, tick, mode));
             }),
-            new GraphNodeType(PhonemeOutput, GraphNodeRole.PhonemeOutput, value, new float[] { 0 },
+            new GraphNodeType(PhonemeOutput, GraphNodeRole.PhonemeOutput, value, [0],
                 a => (float[])a.Inputs[0].Clone()),
-            new GraphNodeType(PitchInput, GraphNodeRole.Input, none, new float[0], a => {
+            new GraphNodeType(PitchInput, GraphNodeRole.Input, none, [], a => {
                 PhrasePitch.TryParse(a.Node.GetString("source"), out var source);
                 var context = a.Context;
                 return Map(a, tick => context.Pitch?.Sample(source, tick) ?? 0);
             }),
-            new GraphNodeType(PitchOutput, GraphNodeRole.PitchOutput, value, new float[] { 0 },
+            new GraphNodeType(PitchOutput, GraphNodeRole.PitchOutput, value, [0],
                 a => (float[])a.Inputs[0].Clone()),
 
             Binary(Add, 0, 0, (x, y) => x + y),
@@ -192,9 +198,9 @@ namespace OpenUtau.Core.ExpressionGraph {
             Binary(Max, 0, 0, Math.Max),
             Binary(And, 0, 0, (x, y) => x != 0 && y != 0 ? 1 : 0),
             Binary(Or, 0, 0, (x, y) => x != 0 || y != 0 ? 1 : 0),
-            new GraphNodeType(Not, GraphNodeRole.Process, value, new float[] { 0 },
+            new GraphNodeType(Not, GraphNodeRole.Process, value, [0],
                 a => Unary(a, x => x == 0 ? 1 : 0)),
-            new GraphNodeType(Compare, GraphNodeRole.Process, ab, new float[] { 0, 0 }, a => {
+            new GraphNodeType(Compare, GraphNodeRole.Process, ab, [0, 0], a => {
                 string? op = a.Node.GetString("operator");
                 var result = new float[a.Ticks.Length];
                 for (int i = 0; i < result.Length; ++i) {
@@ -211,15 +217,15 @@ namespace OpenUtau.Core.ExpressionGraph {
                 }
                 return result;
             }),
-            new GraphNodeType(IfElse, GraphNodeRole.Process, new[] { "condition", "then", "else" },
-                new float[] { 0, 1, 0 }, a => {
+            new GraphNodeType(IfElse, GraphNodeRole.Process, ["condition", "then", "else"],
+                [0, 1, 0], a => {
                     var result = new float[a.Ticks.Length];
                     for (int i = 0; i < result.Length; ++i) {
                         result[i] = a.Inputs[0][i] != 0 ? a.Inputs[1][i] : a.Inputs[2][i];
                     }
                     return result;
                 }),
-            new GraphNodeType(Smooth, GraphNodeRole.Process, value, new float[] { 0 }, a => {
+            new GraphNodeType(Smooth, GraphNodeRole.Process, value, [0], a => {
                 // Start at the first input, without inventing history outside this evaluation grid.
                 var result = (float[])a.Inputs[0].Clone();
                 double attack = a.Node.GetFloat("attack_ms", 20);
@@ -233,8 +239,8 @@ namespace OpenUtau.Core.ExpressionGraph {
                 }
                 return result;
             }),
-            new GraphNodeType(Slew, GraphNodeRole.Process, new[] { Value, "speed" }, new float[] { 0, 100 }, SlewValues),
-            new GraphNodeType(RandomRange, GraphNodeRole.Input, new[] { "min", "max" }, new float[] { 0, 1 }, a => {
+            new GraphNodeType(Slew, GraphNodeRole.Process, [Value, "speed"], [0, 100], SlewValues),
+            new GraphNodeType(RandomRange, GraphNodeRole.Input, ["min", "max"], [0, 1], a => {
                 double rate = a.Node.GetFloat("rate", 5);
                 if (!double.IsFinite(rate) || rate < 0) rate = 0;
                 int.TryParse(a.Node.GetString("seed"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int seed);
@@ -253,7 +259,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                 return result;
             }),
             // A to B by the factor, held within 0 to 1: e.g. a 0/1 mask picks one input or the other.
-            new GraphNodeType(Mix, GraphNodeRole.Process, new[] { "a", "b", "factor" }, new float[] { 0, 0, 0.5f }, a => {
+            new GraphNodeType(Mix, GraphNodeRole.Process, ["a", "b", "factor"], [0, 0, 0.5f], a => {
                 var x = a.Inputs[0];
                 var y = a.Inputs[1];
                 var t = a.Inputs[2];
@@ -264,10 +270,10 @@ namespace OpenUtau.Core.ExpressionGraph {
                 }
                 return result;
             }),
-            new GraphNodeType(Abs, GraphNodeRole.Process, value, new float[] { 0 },
+            new GraphNodeType(Abs, GraphNodeRole.Process, value, [0],
                 a => Unary(a, Math.Abs)),
 
-            new GraphNodeType(MapRange, GraphNodeRole.Process, value, new float[] { 0 }, a => {
+            new GraphNodeType(MapRange, GraphNodeRole.Process, value, [0], a => {
                 float inMin = a.Node.GetFloat("in_min", 0);
                 float inMax = a.Node.GetFloat("in_max", 1);
                 float outMin = a.Node.GetFloat("out_min", 0);
@@ -280,13 +286,13 @@ namespace OpenUtau.Core.ExpressionGraph {
                     return clamp ? Math.Clamp(y, lo, hi) : y;
                 });
             }),
-            new GraphNodeType(Clamp, GraphNodeRole.Process, value, new float[] { 0 }, a => {
+            new GraphNodeType(Clamp, GraphNodeRole.Process, value, [0], a => {
                 float min = a.Node.GetFloat("min", float.NegativeInfinity);
                 float max = a.Node.GetFloat("max", float.PositiveInfinity);
                 return Unary(a, x => Math.Max(min, Math.Min(max, x)));
             }),
 
-            new GraphNodeType(Lfo, GraphNodeRole.Input, none, new float[0], a => {
+            new GraphNodeType(Lfo, GraphNodeRole.Input, none, [], a => {
                 float rate = a.Node.GetFloat("rate", 5);
                 bool perBeat = a.Node.GetString("unit") == "beat";
                 double phase = a.Node.GetFloat("phase", 0);
@@ -311,21 +317,21 @@ namespace OpenUtau.Core.ExpressionGraph {
                     return offset + amplitude * (float)wave;
                 });
             }),
-            new GraphNodeType(Time, GraphNodeRole.Input, none, new float[0], a => {
+            new GraphNodeType(Time, GraphNodeRole.Input, none, [], a => {
                 var context = a.Context;
                 bool beats = a.Node.GetString("unit") == "beat";
                 return Map(a, tick => beats
                     ? (float)((context.PartPosition + (double)tick) / context.Resolution)
                     : (float)(context.Axis.TickPosToMsPos(context.PartPosition + tick) / 1000.0));
             }),
-            new GraphNodeType(NotePosition, GraphNodeRole.Input, none, new float[0], a => {
+            new GraphNodeType(NotePosition, GraphNodeRole.Input, none, [], a => {
                 var context = a.Context;
                 return Map(a, tick => {
                     var note = context.NoteAt(tick);
                     return note == null ? 0 : (float)(tick - note.Position) / note.Duration;
                 });
             }),
-            new GraphNodeType(PhraseNotes, GraphNodeRole.Input, none, new float[0], new[] { "index", "count" }, a => {
+            new GraphNodeType(PhraseNotes, GraphNodeRole.Input, none, [], ["index", "count"], a => {
                 var indices = new float[a.Ticks.Length];
                 var counts = new float[a.Ticks.Length];
                 for (int i = 0; i < a.Ticks.Length; i++) {
@@ -333,9 +339,9 @@ namespace OpenUtau.Core.ExpressionGraph {
                     indices[i] = info.index;
                     counts[i] = info.count;
                 }
-                return new[] { indices, counts };
+                return [indices, counts];
             }),
-            new GraphNodeType(NoteEnvelope, GraphNodeRole.Input, none, new float[0], a => {
+            new GraphNodeType(NoteEnvelope, GraphNodeRole.Input, none, [], a => {
                 double attack = a.Node.GetFloat("attack_ms", 0);
                 double release = a.Node.GetFloat("release_ms", 0);
                 var context = a.Context;
@@ -357,6 +363,36 @@ namespace OpenUtau.Core.ExpressionGraph {
                     return (float)Math.Clamp(y, 0, 1);
                 });
             }),
+            new GraphNodeType(Log, GraphNodeRole.Process, value, [0],
+                a => {
+                    float baseVal = a.Node.GetFloat("base", MathF.E);
+                    bool validBase = baseVal != 1 && float.IsFinite(baseVal);
+                    return Unary(a, x => x > 0 && validBase ? MathF.Log(x, baseVal): 0);
+                    }),
+            new GraphNodeType(Ln, GraphNodeRole.Process, value, [0],
+                a =>  Unary(a, x => x > 0 ? MathF.Log(x) : 0)),
+            new GraphNodeType(Pow, GraphNodeRole.Process, value, [0],
+                a => {
+                    float baseVal = a.Node.GetFloat("base", MathF.E);
+                    bool validBase = baseVal > 0 && baseVal != 1 && float.IsFinite(baseVal);
+                    return Unary(a, x => validBase ?  MathF.Pow(x, baseVal): 0);
+                    }),
+            new GraphNodeType(Exp, GraphNodeRole.Process, value, [0],
+                a =>  Unary(a, MathF.Exp)),
+            new GraphNodeType(STanh, GraphNodeRole.Process, value, [0],
+                a => {
+                    float min = a.Node.GetFloat("min", float.NegativeInfinity);
+                    float max = a.Node.GetFloat("max", float.PositiveInfinity);
+                    float spread = a.Node.GetFloat("spread", 1.0f);
+                    if (max > min) {
+                        float t = max;
+                        max = min;
+                        min = t;
+                    }
+                    float mid = (min == float.NegativeInfinity || max == float.PositiveInfinity) ? 0 : (min+max)/2;
+                    float radius = (min == float.NegativeInfinity || max == float.PositiveInfinity) ? 0 : (max-min)/2;
+                    return Unary(a, x => (radius * MathF.Tanh(spread*(x-mid)/radius) + mid));
+                }),
         }.ToDictionary(t => t.Name);
 
         public static IReadOnlyDictionary<string, GraphNodeType> All => types;
@@ -368,49 +404,52 @@ namespace OpenUtau.Core.ExpressionGraph {
         public const string OutputCategory = "output";
 
         /// <summary>Node types by category, in the order the editor offers them.</summary>
-        public static readonly (string category, string[] types)[] Categories = {
+        public static readonly (string category, string[] types)[] Categories = [
             (InputCategory, new[] { CurveInput, MaskedCurveInput, PhonemeInput, PitchInput, Constant }),
-            (MathCategory, new[] { Add, Subtract, Multiply, Divide, Mix, Min, Max, Abs, MapRange, Clamp }),
+            (MathCategory, new[] { Add, Subtract, Multiply, Divide, Mix, Min, Max, Abs, MapRange, Clamp, Pow, Exp, Log, Ln, STanh }),
             (TimeCategory, new[] { Time, Lfo, RandomRange, NotePosition, PhraseNotes, NoteEnvelope, Smooth, Slew }),
             (LogicCategory, new[] { Compare, And, Or, Not, IfElse }),
             (OutputCategory, new[] { CurveOutput, PhonemeOutput, PitchOutput }),
-        };
+        ];
 
-        static GraphNodeParameter Number(string name, string? @default) => new GraphNodeParameter(name, GraphParameterKind.Number, @default);
-        static readonly GraphNodeParameter abbr = new GraphNodeParameter("abbr", GraphParameterKind.Expression) { Labeled = false };
+        static GraphNodeParameter Number(string name, string? @default) => new(name, GraphParameterKind.Number, @default);
+        static readonly GraphNodeParameter abbr = new("abbr", GraphParameterKind.Expression) { Labeled = false };
 
-        static readonly Dictionary<string, GraphNodeParameter[]> parameters = new Dictionary<string, GraphNodeParameter[]> {
-            [Constant] = new[] { Number("value", "0") },
-            [CurveInput] = new[] { abbr },
-            [MaskedCurveInput] = new[] { abbr },
-            [CurveOutput] = new[] { abbr },
-            [PhonemeInput] = new[] { abbr, new GraphNodeParameter("interpolation", GraphParameterKind.Choice, "step", "step", "linear", "cubic") },
-            [PhonemeOutput] = new[] { abbr },
-            [PitchInput] = new[] { new GraphNodeParameter("source", GraphParameterKind.Choice, "pitch_bend",
-                "pitch_bend", "vibrato", "mod_plus", "notes") { Labeled = false } },
-            [MapRange] = new[] {
+        static readonly Dictionary<string, GraphNodeParameter[]> parameters = new() {
+            [Constant] = [Number("value", "0")],
+            [CurveInput] = [abbr],
+            [MaskedCurveInput] = [abbr],
+            [CurveOutput] = [abbr],
+            [PhonemeInput] = [abbr, new GraphNodeParameter("interpolation", GraphParameterKind.Choice, "step", "step", "linear", "cubic")],
+            [PhonemeOutput] = [abbr],
+            [PitchInput] = [ new GraphNodeParameter("source", GraphParameterKind.Choice, "pitch_bend",
+                "pitch_bend", "vibrato", "mod_plus", "notes") { Labeled = false } ],
+            [MapRange] = [
                 Number("in_min", "0"), Number("in_max", "1"), Number("out_min", "0"), Number("out_max", "1"),
                 new GraphNodeParameter("clamp", GraphParameterKind.Bool, "false"),
-            },
-            [Clamp] = new[] { Number("min", null), Number("max", null) },
-            [Lfo] = new[] {
+            ],
+            [Clamp] = [Number("min", null), Number("max", null)],
+            [STanh] = [Number("min", null), Number("max", null),  Number("spread", null)],
+            [Pow] = [Number("base", null)],
+            [Log] = [Number("base", null)],
+            [Lfo] = [
                 new GraphNodeParameter("shape", GraphParameterKind.Choice, "sine", "sine", "triangle", "square", "saw"),
                 Number("rate", "5"), new GraphNodeParameter("unit", GraphParameterKind.Choice, "hz", "hz", "beat"),
                 Number("phase", "0"), Number("amplitude", "1"), Number("offset", "0"),
-            },
-            [NoteEnvelope] = new[] { Number("attack_ms", "0"), Number("release_ms", "0") },
-            [Time] = new[] { new GraphNodeParameter("unit", GraphParameterKind.Choice, "seconds", "seconds", "beat") },
-            [Smooth] = new[] { Number("attack_ms", "20"), Number("release_ms", "20") },
-            [Slew] = new[] {
+            ],
+            [NoteEnvelope] = [Number("attack_ms", "0"), Number("release_ms", "0")],
+            [Time] = [new GraphNodeParameter("unit", GraphParameterKind.Choice, "seconds", "seconds", "beat")],
+            [Smooth] = [Number("attack_ms", "20"), Number("release_ms", "20")],
+            [Slew] = [
                 new GraphNodeParameter("speed", GraphParameterKind.Slider, "100") { Maximum = 1000 },
                 new GraphNodeParameter("easing", GraphParameterKind.Choice, "linear", "linear", "cubic"),
-            },
-            [RandomRange] = new[] {
+            ],
+            [RandomRange] = [
                 Number("rate", "5"), Number("seed", "0"),
                 new GraphNodeParameter("unit", GraphParameterKind.Choice, "hz", "hz", "beat"),
-            },
-            [Compare] = new[] { new GraphNodeParameter("operator", GraphParameterKind.Choice, "less",
-                "less", "less_equal", "greater", "greater_equal", "equal", "not_equal") },
+            ],
+            [Compare] = [ new GraphNodeParameter("operator", GraphParameterKind.Choice, "less",
+                "less", "less_equal", "greater", "greater_equal", "equal", "not_equal") ],
         };
 
         /// <summary>
@@ -462,7 +501,7 @@ namespace OpenUtau.Core.ExpressionGraph {
         }
 
         static GraphNodeType Binary(string name, float aDefault, float bDefault, Func<float, float, float> op) =>
-            new GraphNodeType(name, GraphNodeRole.Process, ab, new[] { aDefault, bDefault }, a => {
+            new(name, GraphNodeRole.Process, ab, [aDefault, bDefault], a => {
                 var x = a.Inputs[0];
                 var y = a.Inputs[1];
                 var result = new float[a.Ticks.Length];
