@@ -256,8 +256,8 @@ namespace OpenUtau.Classic {
                         var toneRanges = new List<string>();
                         int? rangeStart = null;
                         int? rangeEnd = null;
-                        for (int i = 24; i <= 108; i++) {
-                            if (kv.Value.Contains(i) && i < 108) {
+                        for (int i = 0; i <= MusicMath.ToneCount; i++) {
+                            if (kv.Value.Contains(i) && i < MusicMath.ToneCount) {
                                 if (rangeStart == null) {
                                     rangeStart = i;
                                 } else {
