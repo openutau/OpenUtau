@@ -62,6 +62,8 @@ namespace OpenUtau.Core {
             "7",
         };
 
+        public const int ToneCount = 12 * 11;
+
         public static string GetToneName(int noteNum) {
             return noteNum < 0 ? string.Empty : KeysInOctave[noteNum % 12].Item1 + (noteNum / 12 - 1).ToString();
         }
@@ -79,6 +81,26 @@ namespace OpenUtau.Core {
                 return -1;
             }
             return 12 * (octave + 1) + inOctave;
+        }
+
+        public static bool TryParseToneRange(string range, out int start, out int end) {
+            start = NameToTone(range);
+            if (start >= 0) {
+                end = start;
+                return true;
+            }
+            for (int i = 1; i < range.Length - 1; ++i) {
+                if (range[i] != '-') {
+                    continue;
+                }
+                start = NameToTone(range.Substring(0, i));
+                end = NameToTone(range.Substring(i + 1));
+                if (start >= 0 && end >= 0) {
+                    return true;
+                }
+            }
+            start = end = -1;
+            return false;
         }
 
         public static bool IsBlackKey(int noteNum) {

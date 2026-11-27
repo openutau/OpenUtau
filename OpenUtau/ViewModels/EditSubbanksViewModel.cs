@@ -18,26 +18,18 @@ namespace OpenUtau.App.ViewModels {
         public VoiceColor(string color, List<Subbank> subbanks) {
             Name = color;
             Rows = new ObservableCollectionExtended<VoiceColorRow>();
-            for (int i = 107; i >= 24; --i) {
+            for (int i = MusicMath.ToneCount - 1; i >= 0; --i) {
                 Rows.Add(new VoiceColorRow(i, string.Empty, string.Empty));
             }
             foreach (var subbank in subbanks) {
                 foreach (var range in subbank.ToneRanges) {
-                    var parts = range.Split('-');
-                    if (parts.Length == 1) {
-                        int tone = MusicMath.NameToTone(parts[0]);
-                        if (tone >= 24 && tone <= 107) {
-                            Rows[107 - tone].Prefix = subbank.Prefix;
-                            Rows[107 - tone].Suffix = subbank.Suffix;
-                        }
-                    } else if (parts.Length == 2) {
-                        int start = MusicMath.NameToTone(parts[0]);
-                        int end = MusicMath.NameToTone(parts[1]);
-                        for (int tone = start; tone <= end; ++tone) {
-                            if (tone >= 24 && tone <= 107) {
-                                Rows[107 - tone].Prefix = subbank.Prefix;
-                                Rows[107 - tone].Suffix = subbank.Suffix;
-                            }
+                    if (!MusicMath.TryParseToneRange(range, out int start, out int end)) {
+                        continue;
+                    }
+                    for (int tone = start; tone <= end; ++tone) {
+                        if (tone >= 0 && tone < MusicMath.ToneCount) {
+                            Rows[MusicMath.ToneCount - 1 - tone].Prefix = subbank.Prefix;
+                            Rows[MusicMath.ToneCount - 1 - tone].Suffix = subbank.Suffix;
                         }
                     }
                 }
@@ -225,7 +217,7 @@ namespace OpenUtau.App.ViewModels {
         private string[] ToneSetToRanges(SortedSet<int> toneSet) {
             var ranges = new List<string>();
             int start = -1;
-            for (int i = 24; i <= 107; ++i) {
+            for (int i = 0; i < MusicMath.ToneCount; ++i) {
                 if (start < 0) {
                     if (toneSet.Contains(i)) {
                         start = i;
@@ -241,8 +233,8 @@ namespace OpenUtau.App.ViewModels {
                     }
                 }
             }
-            if (start > 0) {
-                ranges.Add($"{MusicMath.GetToneName(start)}-{MusicMath.GetToneName(107)}");
+            if (start >= 0) {
+                ranges.Add($"{MusicMath.GetToneName(start)}-{MusicMath.GetToneName(MusicMath.ToneCount - 1)}");
             }
             return ranges.ToArray();
         }
